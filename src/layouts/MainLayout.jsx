@@ -42,9 +42,9 @@ const titleMap = {
   '/user/profile':     { title: 'My Profile',     breadcrumb: ['User Management', 'My Profile'] },
   '/role/index':       { title: 'Roles',          breadcrumb: ['Authorizations', 'Roles'] },
   '/permission/index': { title: 'Permissions',    breadcrumb: ['Authorizations', 'Permissions'] },
+  '/kpi/index':        { title: 'KPI Templates',  breadcrumb: ['KPI Management', 'KPI Templates'] },
 };
 
-// ─── Menu data ─────────────────────────────────────────────────────────────────
 // ─── Menu data ─────────────────────────────────────────────────────────────────
 const menuData = [
   { key: 'dashboard', title: 'Dashboard', link: '/dashboard', icon: <DashboardOutlined /> },
@@ -88,12 +88,14 @@ const menuData = [
     type: 'group',
     label: 'KPI Management',
     children: [
-      { 
-        key: "kpi-templates", 
-        title: "KPI Template",       
-        icon: <BarChartOutlined />,   
-        link: "/kpi-templates",  
-        permissions: ["role-list", "role-create"] 
+      {
+        key: 'kpi-template',
+        title: 'KPI Template',
+        icon: <BarChartOutlined />,
+        children: [
+          { key: 'kpi-template-list',  title: 'Template List',    link: '/kpi/index',        permissions: ['kpi-template-list'] },
+          { key: 'kpi-template-create',  title: 'Template Create',         link: '/kpi/template-create',  permissions: ['kpi-template-create', 'kpi-template-edit'] },
+        ],
       },
       { 
         key: "employee-evaluations", 

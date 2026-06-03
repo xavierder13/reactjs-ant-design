@@ -14,14 +14,15 @@ import {
   Form,
   Divider,
   Select,
-  message,
+  App,
 } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
 
 const KpiTemplatePage = () => {
   const navigate = useNavigate();
-
+  const { id } = useParams();
+  const { message } = App.useApp();
   // ── State ──────────────────────────────────────────────────────────────────
   const [templateInfo, setTemplateInfo] = useState({
     kpiName:        '',
@@ -29,13 +30,15 @@ const KpiTemplatePage = () => {
     department:     null,
   });
 
+  console.log(id);
+  
   const [categories, setCategories] = useState([
     {
       id:    'cat-1',
       name:  '',
       order: 1,
       items: [
-        { id: 'item-1', name: '', weight: '', target: '', order: 1 },
+        { id: 'item-1', name: '', rate: '', order: 1 },
       ],
     },
   ]);
@@ -273,8 +276,7 @@ const KpiTemplatePage = () => {
           items: cat.items.map((item) => ({
             id:     item.id,
             name:   item.name,
-            weight: Number(item.weight),
-            target: item.target,
+            rate: Number(item.rate),
             order:  item.order,
           })),
         })),
@@ -284,7 +286,7 @@ const KpiTemplatePage = () => {
 
       if (data.success) {
         message.success('KPI Template saved successfully!');
-        navigate('/kpi/templates');
+        navigate('/kpi/index');
       } else {
         message.error('Failed to save. Please try again.');
       }
@@ -447,10 +449,7 @@ const KpiTemplatePage = () => {
                                     <Typography.Text type='secondary' style={{ fontSize: 12 }}>KPI Name</Typography.Text>
                                   </div>
                                   <div style={{ display: 'table-cell', width: 108, paddingRight: 8 }}>
-                                    <Typography.Text type='secondary' style={{ fontSize: 12 }}>Weight (%)</Typography.Text>
-                                  </div>
-                                  <div style={{ display: 'table-cell', width: 118, paddingRight: 8 }}>
-                                    <Typography.Text type='secondary' style={{ fontSize: 12 }}>Target</Typography.Text>
+                                    <Typography.Text type='secondary' style={{ fontSize: 12 }}>Rate (%)</Typography.Text>
                                   </div>
                                   <div style={{ display: 'table-cell', width: 32 }} />
                                 </div>
@@ -519,23 +518,6 @@ const KpiTemplatePage = () => {
                                             onChange={(e) => {
                                               updateItem(cat.id, item.id, 'weight', e.target.value);
                                               clearItemError(cat.id, item.id, 'weight');
-                                            }}
-                                          />
-                                        </Form.Item>
-                                      </div>
-                                      <div style={{ display: 'table-cell', width: 118, paddingRight: 8, verticalAlign: 'top' }}>
-                                        <Form.Item
-                                          validateStatus={errors.categories[cat.id]?.items?.[item.id]?.target ? 'error' : ''}
-                                          help={errors.categories[cat.id]?.items?.[item.id]?.target}
-                                          style={{ margin: 0 }}
-                                        >
-                                          <Input
-                                            placeholder='Target'
-                                            value={item.target}
-                                            size='small'
-                                            onChange={(e) => {
-                                              updateItem(cat.id, item.id, 'target', e.target.value);
-                                              clearItemError(cat.id, item.id, 'target');
                                             }}
                                           />
                                         </Form.Item>

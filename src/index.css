@@ -21,3 +21,7 @@ body {
   padding: 0;
   text-align: left;
 }
+
+.ant-menu-dark .ant-menu-item-divider {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
