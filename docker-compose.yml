@@ -1,0 +1,28 @@
+services:
+  rbac-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: rbac-react-dev
+    env_file:
+      - .env
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app:Z                            # ← mount everything
+      - node_modules:/app/node_modules      # ← persist node_modules
+    # restart: unless-stopped
+
+  rbac-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rbac-react-app
+    env_file:
+      - .env
+    ports:
+      - "3000:80"
+    # restart: unless-stopped
+
+volumes:
+  node_modules:
