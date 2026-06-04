@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Form, Input, Button, Card, Typography, message } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
-import axiosInstance from '../../api/axiosInstance'
+import axios from '../../api/axiosInstance'
 import useAuth from '../../hooks/useAuth'
 
 const { Title } = Typography
@@ -19,10 +19,13 @@ const LoginForm = () => {
     try {
       setLoading(true)
 
-      const { data } = await axiosInstance.post('/auth/login', {
+      const { data } = await axios.post('/auth/login', {
         email:    values.email,
         password: values.password,
       })
+
+      console.log(data);
+      
 
       setTokens(data.access_token, data.refresh_token);
       setAuth(

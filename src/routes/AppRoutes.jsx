@@ -19,22 +19,33 @@ import UserProfile from '../pages/user/UserProfile';
 import UserIndex from '../pages/user/UserIndex';
 import RoleIndex from '../pages/role/RoleIndex';
 import PermissionIndex from '../pages/permission/PermissionIndex';
-import KpiTemplateIndex from '../pages/kpi/KpiTemplateIndex';
-import KpiTemplate from '../pages/kpi/KpiTemplate';
+import KpiTemplateIndex from '../pages/kpi/KpiTemplatesIndex';
+import KpiTemplate from '../pages/kpi/EditKpiTemplate';
 
 // Errors
 import UnauthorizePage from '../pages/errors/UnauthorizePage';
 import NotFoundPage from '../pages/errors/NotFoundPage';
+import EmployeeMasterData from '../pages/employee_master_data/EmployeeMasterData';
+import CreateEmployee from '../pages/employee_master_data/CreateEmployee';
+import EditEmployee from '../pages/employee_master_data/EditEmployee';
+import ViewEmployee from '../pages/employee_master_data/ViewEmployee';
+import JobApplicantList from '../pages/recruitment/JobApplicantList';
 
 // ─── Permission-based routes config ───────────────────────────────────────────
 const permissionRoutes = [
-  { permissions: ['hr-payroll-dashboard'],              path: '/dashboard',        element: <DashboardPage /> },
-  { permissions: ['user-list'],                         path: '/user/index',       element: <UserIndex /> },
-  { permissions: ['role-list'],                         path: '/role/index',       element: <RoleIndex /> },
-  { permissions: ['permission-list'],                   path: '/permission/index', element: <PermissionIndex /> },
-  { permissions: ['kpi-template-list'],                 path: '/kpi/index',        element: <KpiTemplateIndex /> },
-  { permissions: ['kpi-template-create'], path: '/kpi/template-create', element: <KpiTemplate /> },  
-  { permissions: ['kpi-template-edit'], path: '/kpi/template-edit/:id', element: <KpiTemplate /> },  
+  { permissions: ['hr-payroll-dashboard'],      path: '/dashboard',        element: <DashboardPage /> },
+  { permissions: ['user-list'],                 path: '/users',       element: <UserIndex /> },
+  { permissions: ['role-list'],                 path: '/roles',       element: <RoleIndex /> },
+  { permissions: ['permission-list'],           path: '/permissions', element: <PermissionIndex /> },
+  { permissions: ['kpi-template-list'],         path: '/kpi-templates',        element: <KpiTemplateIndex /> },
+  { permissions: ['kpi-template-list'],         path: '/kpi-templates/:id',        element: <KpiTemplateIndex /> },
+  { permissions: ['kpi-template-create'],       path: '/kpi-templates/create', element: <KpiTemplate /> },  
+  { permissions: ['kpi-template-edit'],         path: '/kpi-templates/:id/edit', element: <KpiTemplate /> },  
+  { permissions: ['employee-master-data-list'], path: '/employees', element: <EmployeeMasterData /> },  
+  { permissions: ['employee-master-data-list'], path: '/employees/:id', element: <ViewEmployee /> }, 
+  { permissions: ['employee-master-data-create'], path: '/employees/create', element: <CreateEmployee /> },
+  { permissions: ['careers-applicant-list'], path: '/recruitment/:url', element: <JobApplicantList /> },
+  
 ];
 
 // ─── Smart Redirect ───────────────────────────────────────────────────────────

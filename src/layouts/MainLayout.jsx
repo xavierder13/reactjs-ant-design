@@ -37,12 +37,17 @@ const { Title, Text } = Typography;
 
 // ─── Page title map ────────────────────────────────────────────────────────────
 const titleMap = {
-  '/dashboard':        { title: 'Dashboard',      breadcrumb: ['Home', 'Dashboard'] },
-  '/user/index':       { title: 'User Accounts',  breadcrumb: ['User Management', 'User Accounts'] },
+  '/dashboard':        { title: 'Dashboard',      breadcrumb: ['Dashboard'] },
+  '/users':       { title: 'User Accounts',  breadcrumb: ['User Management', 'User Accounts'] },
   '/user/profile':     { title: 'My Profile',     breadcrumb: ['User Management', 'My Profile'] },
-  '/role/index':       { title: 'Roles',          breadcrumb: ['Authorizations', 'Roles'] },
-  '/permission/index': { title: 'Permissions',    breadcrumb: ['Authorizations', 'Permissions'] },
-  '/kpi/index':        { title: 'KPI Templates',  breadcrumb: ['KPI Management', 'KPI Templates'] },
+  '/roles':       { title: 'Roles',          breadcrumb: ['Authorizations', 'Roles'] },
+  '/permissions': { title: 'Permissions',    breadcrumb: ['Authorizations', 'Permissions'] },
+  '/kpi-templates':        { title: 'KPI Templates',  breadcrumb: ['KPI Management', 'KPI Templates'] },
+  '/kpi-templates/create':        { title: 'Create Templates',  breadcrumb: ['KPI Management', 'Create Templates'] },
+  '/employees':        { title: 'Employee Master Data',  breadcrumb: ['Employee', 'Master Data'] },
+  '/employees/create':        { title: 'Create Employee',  breadcrumb: ['Employee', 'Create'] },
+  '/employees/:id':        { title: 'Edit Employee',  breadcrumb: ['Employee', 'Create'] },
+  '/recruitment/:url':        { title: 'Applicant List',  breadcrumb: ['Recruitment', 'Applicant List'] },
 };
 
 // ─── Menu data ─────────────────────────────────────────────────────────────────
@@ -57,11 +62,13 @@ const menuData = [
     label: 'Human Resource',
     children: [
       {
-        key: 'employee-master-data',
-        title: 'Employee Master Data',
+        key: 'employee',
+        title: 'Employee',
         icon: <IdcardOutlined />,
-        link: '/employee/index',
-        permissions: ['employee-master-data-list'],
+        children: [
+          { key: 'master-data',    title: 'Master Data',    link: '/employees',         permissions: ['employee-master-data-list'] },
+          { key: 'master-data-create',    title: 'Master Data Create',    link: '/employees/create',         permissions: ['employee-master-data-create'] },
+        ]
       },
       {
         key: 'recruitment',
@@ -93,8 +100,8 @@ const menuData = [
         title: 'KPI Template',
         icon: <BarChartOutlined />,
         children: [
-          { key: 'kpi-template-list',  title: 'Template List',    link: '/kpi/index',        permissions: ['kpi-template-list'] },
-          { key: 'kpi-template-create',  title: 'Template Create',         link: '/kpi/template-create',  permissions: ['kpi-template-create', 'kpi-template-edit'] },
+          { key: 'kpi-template-list',  title: 'Template List',    link: '/kpi-templates',        permissions: ['kpi-template-list'] },
+          { key: 'kpi-template-create',  title: 'Template Create',         link: '/kpi-templates/create',  permissions: ['kpi-template-create', 'kpi-template-edit'] },
         ],
       },
       { 
@@ -123,8 +130,8 @@ const menuData = [
           { key: 'user-list', title: 'User Accounts', link: '/user/index', permissions: ['user-list'] },
         ],
       },
-      { key: 'roles',       title: 'Roles',       icon: <TeamOutlined />,    link: '/role/index',       permissions: ['role-list'] },
-      { key: 'permissions', title: 'Permissions', icon: <SettingOutlined />, link: '/permission/index', permissions: ['permission-list'] },
+      { key: 'roles',       title: 'Roles',       icon: <TeamOutlined />,    link: '/roles',       permissions: ['role-list'] },
+      { key: 'permissions', title: 'Permissions', icon: <SettingOutlined />, link: '/permissions', permissions: ['permission-list'] },
     ],
   },
 ];
