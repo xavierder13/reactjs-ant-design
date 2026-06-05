@@ -30,8 +30,6 @@ const KpiTemplatePage = () => {
     department:     null,
   });
 
-  console.log(id);
-  
   const [categories, setCategories] = useState([
     {
       id:    'cat-1',

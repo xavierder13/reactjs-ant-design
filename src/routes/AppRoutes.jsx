@@ -20,7 +20,8 @@ import UserIndex from '../pages/user/UserIndex';
 import RoleIndex from '../pages/role/RoleIndex';
 import PermissionIndex from '../pages/permission/PermissionIndex';
 import KpiTemplateIndex from '../pages/kpi/KpiTemplatesIndex';
-import KpiTemplate from '../pages/kpi/EditKpiTemplate';
+import CreateKpiTemplate from '../pages/kpi/CreateKpiTemplate';
+import EditKpiTemplate from '../pages/kpi/EditKpiTemplate';
 
 // Errors
 import UnauthorizePage from '../pages/errors/UnauthorizePage';
@@ -39,8 +40,8 @@ const permissionRoutes = [
   { permissions: ['permission-list'],           path: '/permissions', element: <PermissionIndex /> },
   { permissions: ['kpi-template-list'],         path: '/kpi-templates',        element: <KpiTemplateIndex /> },
   { permissions: ['kpi-template-list'],         path: '/kpi-templates/:id',        element: <KpiTemplateIndex /> },
-  { permissions: ['kpi-template-create'],       path: '/kpi-templates/create', element: <KpiTemplate /> },  
-  { permissions: ['kpi-template-edit'],         path: '/kpi-templates/:id/edit', element: <KpiTemplate /> },  
+  { permissions: ['kpi-template-create'],       path: '/kpi-templates/create', element: <CreateKpiTemplate /> },  
+  { permissions: ['kpi-template-edit'],         path: '/kpi-templates/:id/edit', element: <EditKpiTemplate /> },  
   { permissions: ['employee-master-data-list'], path: '/employees', element: <EmployeeMasterData /> },  
   { permissions: ['employee-master-data-list'], path: '/employees/:id', element: <ViewEmployee /> }, 
   { permissions: ['employee-master-data-create'], path: '/employees/create', element: <CreateEmployee /> },

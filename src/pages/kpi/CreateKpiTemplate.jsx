@@ -18,8 +18,12 @@ import {
 } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
+import useDepartments from '../../hooks/useDepartments';
 
 const KpiTemplatePage = () => {
+  const { departmentOptions, isLoading } = useDepartments();
+  console.log(departmentOptions);
+  
   const navigate = useNavigate();
   const { id } = useParams();
   const { message } = App.useApp();
@@ -340,7 +344,8 @@ const KpiTemplatePage = () => {
                 setTemplateInfo((prev) => ({ ...prev, department: val }));
                 clearTopError('department');
               }}
-              options={departments}
+              options={departmentOptions}
+              loading={isLoading}
               style={{ width: '100%' }}
             />
           </Form.Item>
