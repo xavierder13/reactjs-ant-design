@@ -20,6 +20,9 @@ import {
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 
+import useBranches from "../../hooks/useBranches";
+import useDepartments from "../../hooks/useDepartments";
+
 // import ColumnSelector from "./components/ColumnSelector";
 import EmployeeTable from "./components/EmployeeTable";
 // import EmployeeCardMobile from "./components/EmployeeCardMobile";
@@ -78,6 +81,14 @@ const defaultHeaders = headers.slice(0, 8);
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200, 300, 500];
 
 export default function EmployeeListPage() {
+  const { branches, branchOptions } = useBranches();
+  const { departments, departmentOptions } = useDepartments();
+
+  console.log(branches);
+  console.log(departments);
+  
+  
+
   const [searchForm] = Form.useForm();
 
   const screens = useBreakpoint();

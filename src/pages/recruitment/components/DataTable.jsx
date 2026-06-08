@@ -1,6 +1,8 @@
 const ApplicantListDataTable = ({ url = null }) => {
-  console.log(url);
-  return 'This is Applicant List Data Table';
+  const listType = url.split('-').join(' ');
+  console.log(listType.toUpperCase());
+  
+  return `This is Applicant List Data Table (${listType.toUpperCase()})`;
 }
 
 export default ApplicantListDataTable;
