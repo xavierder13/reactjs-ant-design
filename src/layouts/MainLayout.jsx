@@ -29,6 +29,7 @@ import {
   SolutionOutlined,
   StarOutlined,
   BarChartOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import useAuth from '../hooks/useAuth';
 
@@ -37,17 +38,20 @@ const { Title, Text } = Typography;
 
 // ─── Page title map ────────────────────────────────────────────────────────────
 const titleMap = {
-  '/dashboard':        { title: 'Dashboard',      breadcrumb: ['Dashboard'] },
-  '/users':       { title: 'User Accounts',  breadcrumb: ['User Management', 'User Accounts'] },
-  '/user/profile':     { title: 'My Profile',     breadcrumb: ['User Management', 'My Profile'] },
-  '/roles':       { title: 'Roles',          breadcrumb: ['Authorizations', 'Roles'] },
-  '/permissions': { title: 'Permissions',    breadcrumb: ['Authorizations', 'Permissions'] },
-  '/kpi-templates':        { title: 'KPI Templates',  breadcrumb: ['KPI Management', 'KPI Templates'] },
-  '/kpi-templates/create':        { title: 'Create Templates',  breadcrumb: ['KPI Management', 'Create Templates'] },
-  '/employees':        { title: 'Employee Master Data',  breadcrumb: ['Employee', 'Master Data'] },
-  '/employees/create':        { title: 'Create Employee',  breadcrumb: ['Employee', 'Create'] },
-  '/employees/:id':        { title: 'Edit Employee',  breadcrumb: ['Employee', 'Create'] },
-  '/recruitment/:url':        { title: 'Applicant List',  breadcrumb: ['Recruitment', 'Applicant List'] },
+  '/dashboard':              { title: 'Dashboard',           breadcrumb: ['Dashboard'] },
+  '/users':                  { title: 'User Accounts',       breadcrumb: ['User Management', 'User Accounts'] },
+  '/user/profile':           { title: 'My Profile',          breadcrumb: ['User Management', 'My Profile'] },
+  '/roles':                  { title: 'Roles',               breadcrumb: ['Authorizations', 'Roles'] },
+  '/permissions':            { title: 'Permissions',         breadcrumb: ['Authorizations', 'Permissions'] },
+  '/employees':              { title: 'Employee Master Data', breadcrumb: ['Employee', 'Master Data'] },
+  '/employees/create':       { title: 'Create Employee',     breadcrumb: ['Employee', 'Create'] },
+  '/recruitment/:url':       { title: 'Applicant List',      breadcrumb: ['Recruitment', 'Applicant List'] },
+  '/kpi-templates':          { title: 'KPI Templates',       breadcrumb: ['KPI Management', 'KPI Templates'] },
+  '/kpi-templates/create':   { title: 'Create KPI Template', breadcrumb: ['KPI Management', 'KPI Templates', 'Create'] },
+  '/kpi-evaluations':        { title: 'KPI Evaluations',     breadcrumb: ['KPI Management', 'Evaluations'] },
+  '/kpi-evaluations/create': { title: 'Create Evaluation',     breadcrumb: ['KPI Management', 'Evaluations', 'Create'] },
+  '/my-evaluations':         { title: 'My Evaluations',        breadcrumb: ['KPI Management', 'My Evaluations'] },
+  
 };
 
 // ─── Menu data ─────────────────────────────────────────────────────────────────
@@ -104,17 +108,18 @@ const menuData = [
           { key: 'kpi-template-create',  title: 'Template Create',         link: '/kpi-templates/create',  permissions: ['kpi-template-create', 'kpi-template-edit'] },
         ],
       },
-      { 
-        key: "employee-evaluations", 
-        title: "Employee Evaluation", 
-        icon: <StarOutlined />,
-        link: "/employee-evaluations", 
-        permissions: ["permission-list", "permission-create"] 
-      },
+      {
+        key: 'kpi-evaluations',
+        title: 'Evaluations',
+        icon: <FileTextOutlined />,
+        children: [
+          { key: 'kpi-evaluation-list',   title: 'All Evaluations', link: '/kpi-evaluations',        permissions: ['kpi-evaluation-list'] },
+          { key: 'kpi-evaluation-create', title: 'Create Evaluation', link: '/kpi-evaluations/create', permissions: ['kpi-evaluation-create'] },
+          { key: 'kpi-my-evaluations',    title: 'My Evaluations',  link: '/my-evaluations',          permissions: ['kpi-self-evaluation-list'] },
+        ],
+      },      
     ],
   },
-
-  { type: 'divider' },
 
   // ── Set Up & Authorizations ─────────────────────────────────────────────────
   {
@@ -127,7 +132,7 @@ const menuData = [
         title: 'User Management',
         icon: <UserOutlined />,
         children: [
-          { key: 'user-list', title: 'User Accounts', link: '/user/index', permissions: ['user-list'] },
+          { key: 'user-list', title: 'User Accounts', link: '/users', permissions: ['user-list'] },
         ],
       },
       { key: 'roles',       title: 'Roles',       icon: <TeamOutlined />,    link: '/roles',       permissions: ['role-list'] },
@@ -141,20 +146,49 @@ function getMenuState(items, path) {
   let activeKey = '';
   let openKeys = [];
 
-  const traverse = (items, parents = []) => {
+  // Pass 1: Exact match
+  const findExact = (items, parents = []) => {
     for (const item of items) {
       if (!item || item.type === 'divider') continue;
-      if (item.link && (path === item.link || path.startsWith(item.link + '/'))) {
+
+      if (item.link === path) {
         activeKey = item.key;
-        openKeys = [...parents];
+        openKeys = parents;
         return true;
       }
-      if (item.children && traverse(item.children, [...parents, item.key])) return true;
+
+      if (item.children && findExact(item.children, [...parents, item.key])) {
+        return true;
+      }
     }
+
     return false;
   };
 
-  traverse(items);
+  // Pass 2: Prefix match
+  const findPartial = (items, parents = []) => {
+    for (const item of items) {
+      if (!item || item.type === 'divider') continue;
+
+      if (
+        item.link &&
+        path.startsWith(item.link + '/')
+      ) {
+        activeKey = item.key;
+        openKeys = parents;
+        return true;
+      }
+
+      if (item.children && findPartial(item.children, [...parents, item.key])) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  findExact(items) || findPartial(items);
+
   return { activeKey, openKeys };
 }
 
@@ -162,10 +196,26 @@ function getMenuState(items, path) {
 const MainLayout = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, isLoaded, hasPermission, clearAuth } = useAuth();
+  const { user, isLoaded, hasPermission, hasRole, hasAnyPermission, clearAuth } = useAuth();
   const [collapsed, setCollapsed] = React.useState(false);
 
-  const pageMeta = titleMap[pathname] ?? { title: '', breadcrumb: ['Home'] };
+  const getPageMeta = (pathname) => {
+    if (titleMap[pathname]) return titleMap[pathname];
+    if (/^\/kpi-templates\/\d+\/edit$/.test(pathname))
+      return { title: 'Edit KPI Template', breadcrumb: ['KPI Management', 'KPI Templates', 'Edit'] };
+    if (/^\/employees\/\d+$/.test(pathname))
+      return { title: 'View Employee', breadcrumb: ['Employee', 'View'] };
+    if (/^\/employees\/\d+\/edit$/.test(pathname))
+      return { title: 'Edit Employee', breadcrumb: ['Employee', 'Edit'] };
+    if (/^\/kpi-evaluations\/\d+$/.test(pathname))
+      return { title: 'View Evaluation', breadcrumb: ['KPI Management', 'Evaluations', 'View'] };
+    if (/^\/my-evaluations\/\d+$/.test(pathname))
+      return { title: 'Self Evaluation', breadcrumb: ['KPI Management', 'My Evaluations', 'Fill'] };
+    return { title: '', breadcrumb: ['Home'] };
+  };
+
+  const pageMeta = getPageMeta(pathname);
+
   const { activeKey, openKeys } = getMenuState(menuData, pathname);
 
   const handleLogout = () => {
@@ -229,6 +279,18 @@ const MainLayout = () => {
         : <span style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.85)', fontSize: 13 }}>{item.title}</span>,
     };
   };
+
+  const isEmployeeOnly = hasRole('KPI Self Evaluation') && !hasAnyPermission('hr-payroll-dashboard');
+  
+  const menuItems = isEmployeeOnly
+    ? [
+        {
+          key:   'my-evaluations',
+          icon:  <StarOutlined style={{ color: 'rgba(255,255,255,0.65)', fontSize: 14 }} />,
+          label: <Link to='/my-evaluations' style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>My Evaluations</Link>,
+        },
+      ]
+    : menuData.map(generateMenuItem).filter(Boolean);
 
   // ─── Avatar dropdown ──────────────────────────────────────────────────────────
   const avatarMenu = {
@@ -366,7 +428,7 @@ const MainLayout = () => {
             mode="inline"
             selectedKeys={[activeKey]}
             defaultOpenKeys={openKeys}
-            items={menuData.map(generateMenuItem).filter(Boolean)}
+            items={menuItems}
             theme="dark"
             style={{
               background: '#1a4d0f',

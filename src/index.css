@@ -25,3 +25,22 @@ body {
 .ant-menu-dark .ant-menu-item-divider {
   border-color: rgba(255, 255, 255, 0.15) !important;
 }
+
+/* index.css */
+
+.login-left-panel {
+  flex: 1;
+  background: #389e0d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 48px;
+}
+
+@media (max-width: 992px) {
+  .login-left-panel {
+    display: none;
+  }
+}

@@ -8,9 +8,9 @@ import useAuth from '../hooks/useAuth';
 import { getToken } from '../utils/tokenHelper';
 
 const ProtectedRoute = ({ permissions = [] }) => {
-  const token                                                    = getToken();
+  const token = getToken();
   const { isLoaded, setAuth, setLoaded, hasAnyPermission } = useAuth();
-  const [loading, setLoading]                                    = useState(!isLoaded);
+  const [loading, setLoading] = useState(!isLoaded);
 
   useEffect(() => {
     const loadUser = async () => {

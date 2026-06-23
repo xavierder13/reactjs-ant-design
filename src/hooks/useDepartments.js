@@ -7,7 +7,7 @@ const useDepartments = () => {
   const isLoaded = useDepartmentStore((state) => state.isLoaded);
   const error = useDepartmentStore((state) => state.error);
   const fetchDepartments = useDepartmentStore((state) => state.fetchDepartments);
-  const clearDepartments = useDepartmentStore((state) => state.fetchDepartments);
+  const clearDepartments = useDepartmentStore((state) => state.clearDepartments);
 
   // auto-fetch on first use
   useEffect(() => {

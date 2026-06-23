@@ -81,12 +81,11 @@ const defaultHeaders = headers.slice(0, 8);
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200, 300, 500];
 
 export default function EmployeeListPage() {
-  const { branches, branchOptions } = useBranches();
-  const { departments, departmentOptions } = useDepartments();
+  const { branches, branchOptions, error: branchError } = useBranches();
+  const { departments, departmentOptions, error: departmentError } = useDepartments();
 
-  console.log(branches);
-  console.log(departments);
-  
+  console.log(branchError);
+  console.log(departmentError);
   
 
   const [searchForm] = Form.useForm();

@@ -16,7 +16,7 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const token = getToken()
     if (token) {
-        config.headers.Authorization = `Bearer ${token}`
+      config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
@@ -27,10 +27,14 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-        clearTokens()
-        window.location.href = '/login'
+    const status = error.response?.status
+    const isLoginRequest = error.config?.url?.includes('/auth/login')
+    
+    if (status === 401 && !isLoginRequest) {
+      // clearTokens()
+      // window.location.href = '/login'
     }
+
     return Promise.reject(error)
   }
 )
