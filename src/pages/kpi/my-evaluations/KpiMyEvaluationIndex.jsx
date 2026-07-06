@@ -5,7 +5,7 @@ import {
 } from 'antd';
 import { EyeOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
-
+import useAuth from '../../../hooks/useAuth';
 import kpiEvaluationApi from '../../../services/kpi/kpiEvaluationApi';
 
 import dayjs from 'dayjs';
@@ -21,6 +21,7 @@ const statusColors = {
 const KpiMyEvaluationIndex = () => {
   const navigate                              = useNavigate();
   const { message }                           = App.useApp();
+  const { hasRole }                           = useAuth();
   const [evaluations, setEvaluations]         = useState([]);
   const [loading,     setLoading]             = useState(false);
 
@@ -41,6 +42,13 @@ const KpiMyEvaluationIndex = () => {
   }, []);
 
   const columns = [
+    ...(hasRole('Administrator') ? [{
+      title:  'Employee',
+      key:    'employee',
+      render: (_, record) => record.employee
+        ? `${record.employee.last_name}, ${record.employee.first_name}`
+        : '-',
+    }] : []),
     {
         title: 'Period',
         key: 'period',

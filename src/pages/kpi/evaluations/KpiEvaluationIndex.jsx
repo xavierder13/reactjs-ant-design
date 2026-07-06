@@ -122,6 +122,16 @@ const KpiEvaluationIndex = () => {
       ),
     },
     {
+      title:     'Status',
+      dataIndex: 'status',
+      key:       'status',
+      render:    (val) => (
+        <Tag color={statusColors[val] || 'default'}>
+          {val?.toUpperCase()}
+        </Tag>
+      ),
+    },
+    {
       title:     'Final Score',
       dataIndex: 'final_score',
       key:       'final_score',

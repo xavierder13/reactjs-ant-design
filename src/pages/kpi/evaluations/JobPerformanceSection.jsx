@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import {
   Typography, Table, InputNumber,
-  Button, App, Space, Tag, Row, Col
+  Button, App, Tag, Row, Col
 } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import kpiEvaluationApi from '../../../services/kpi/kpiEvaluationApi';
 
-const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated }) => {
-  const { message }           = App.useApp();
-  const [grades, setGrades]   = useState({});
-  const [saving, setSaving]   = useState(false);
+const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated, evaluationType }) => {
+  const { message }         = App.useApp();
+  const [grades, setGrades] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const handleGradeChange = (templateItemId, value) => {
     setGrades((prev) => ({ ...prev, [templateItemId]: value }));
@@ -53,35 +53,38 @@ const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated })
 
   const columns = [
     {
-      title:     'Code',
-      key:       'code',
-      width:     60,
-      render:    (_, record) => record.template_item?.component_code || '-',
+      title:  'Code',
+      key:    'code',
+      width:  60,
+      render: (_, record) => record.template_item?.component_code || '-',
     },
     {
-      title:     'KPI Component',
-      key:       'name',
-      render:    (_, record) => record.template_item?.component_name || '-',
+      title:  'KPI Component',
+      key:    'name',
+      render: (_, record) => record.template_item?.component_name || '-',
     },
     {
-      title:     'Weight',
-      key:       'weight',
-      width:     80,
-      render:    (_, record) => `${record.template_item?.weight || 0}%`,
+      title:  'Weight',
+      key:    'weight',
+      width:  80,
+      render: (_, record) => `${record.template_item?.weight || 0}%`,
     },
-    {
-      title:     'Self Grade',
-      key:       'self_grade',
-      width:     100,
-      render:    (_, record) => record.self_grade !== null
+
+    // show self grade column only if evaluation type is self
+    ...(evaluationType === 'self' ? [{
+      title:  'Self Grade',
+      key:    'self_grade',
+      width:  100,
+      render: (_, record) => record.self_grade !== null
         ? `${record.self_grade}%`
         : <Tag color='default'>Not filled</Tag>,
-    },
+    }] : []),
+
     {
-      title:     'Actual Grade',
-      key:       'actual_grade',
-      width:     130,
-      render:    (_, record) => canEdit
+      title:  evaluationType === 'self' ? 'Actual Grade' : 'Grade',
+      key:    'actual_grade',
+      width:  130,
+      render: (_, record) => canEdit
         ? (
           <InputNumber
             min={0}
@@ -96,10 +99,10 @@ const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated })
         : `${record.actual_grade ?? '-'}%`,
     },
     {
-      title:     'Final Score',
-      key:       'final_score',
-      width:     100,
-      render:    (_, record) => getFinalScore(record),
+      title:  'Final Score',
+      key:    'final_score',
+      width:  100,
+      render: (_, record) => getFinalScore(record),
     },
   ];
 

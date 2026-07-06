@@ -14,10 +14,10 @@ const ratingLabels = {
   5: 'Exemplary',
 };
 
-const BehaviorRatingSection = ({ ratings = [], canEdit, evaluationId, onUpdated }) => {
-  const { message }             = App.useApp();
-  const [values,  setValues]    = useState({});
-  const [saving,  setSaving]    = useState(false);
+const BehaviorRatingSection = ({ ratings = [], canEdit, evaluationId, onUpdated, evaluationType }) => {
+  const { message }           = App.useApp();
+  const [values,  setValues]  = useState({});
+  const [saving,  setSaving]  = useState(false);
 
   const handleRatingChange = (criteriaId, value) => {
     setValues((prev) => ({ ...prev, [criteriaId]: value }));
@@ -53,15 +53,15 @@ const BehaviorRatingSection = ({ ratings = [], canEdit, evaluationId, onUpdated 
 
   const columns = [
     {
-      title:     '#',
-      key:       'sort_order',
-      width:     40,
-      render:    (_, record) => record.criteria?.sort_order || '-',
+      title:  '#',
+      key:    'sort_order',
+      width:  40,
+      render: (_, record) => record.criteria?.sort_order || '-',
     },
     {
-      title:     'Criteria',
-      key:       'criteria_name',
-      render:    (_, record) => (
+      title:  'Criteria',
+      key:    'criteria_name',
+      render: (_, record) => (
         <div>
           <Typography.Text strong>
             {record.criteria?.criteria_name}
@@ -74,11 +74,13 @@ const BehaviorRatingSection = ({ ratings = [], canEdit, evaluationId, onUpdated 
         </div>
       ),
     },
-    {
-      title:     'Self Rating',
-      key:       'self_rating',
-      width:     150,
-      render:    (_, record) => record.self_rating
+
+    // show self rating column only if evaluation type is self
+    ...(evaluationType === 'self' ? [{
+      title:  'Self Rating',
+      key:    'self_rating',
+      width:  150,
+      render: (_, record) => record.self_rating
         ? (
           <div>
             <Rate disabled value={record.self_rating} count={5} />
@@ -90,12 +92,13 @@ const BehaviorRatingSection = ({ ratings = [], canEdit, evaluationId, onUpdated 
           </div>
         )
         : <Tag color='default'>Not filled</Tag>,
-    },
+    }] : []),
+
     {
-      title:     'Supervisor Rating',
-      key:       'rating',
-      width:     180,
-      render:    (_, record) => canEdit
+      title:  evaluationType === 'self' ? 'Supervisor Rating' : 'Rating',
+      key:    'rating',
+      width:  180,
+      render: (_, record) => canEdit
         ? (
           <div>
             <Rate

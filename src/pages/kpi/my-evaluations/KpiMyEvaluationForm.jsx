@@ -296,6 +296,16 @@ const KpiMyEvaluationForm = () => {
         {/* Employee Info */}
         <Row gutter={[16, 8]} style={{ marginBottom: 16 }}>
           <Col xs={24} md={8}>
+            <Typography.Text type='secondary'>Employee</Typography.Text>
+            <div>
+              <Typography.Text strong>
+                {evaluation.employee
+                  ? `${evaluation.employee.last_name}, ${evaluation.employee.first_name}`
+                  : '-'}
+              </Typography.Text>
+            </div>
+          </Col>
+          <Col xs={24} md={8}>
             <Typography.Text type='secondary'>Position</Typography.Text>
             <div>
               <Typography.Text strong>

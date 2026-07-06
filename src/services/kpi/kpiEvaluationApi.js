@@ -36,6 +36,8 @@ const kpiEvaluationApi = {
 
   delete: (id) => axios.delete(`/kpi/evaluations/${id}`),
 
+  revert:  (id, payload) => axios.put(`/kpi/evaluations/${id}/revert`, payload),
+
 };
 
 export default kpiEvaluationApi;
