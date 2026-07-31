@@ -6,7 +6,7 @@ import {
 import { SaveOutlined } from '@ant-design/icons';
 import kpiEvaluationApi from '../../../services/kpi/kpiEvaluationApi';
 
-const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated, evaluationType }) => {
+const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated, evaluationType, viewMode = 'supervisor' }) => {
   const { message }         = App.useApp();
   const [grades, setGrades] = useState({});
   const [saving, setSaving] = useState(false);
@@ -51,6 +51,13 @@ const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated, e
     }
   };
 
+  const getSelfFinalScore = (item) => {
+    const grade  = item.self_grade;
+    const weight = item.template_item?.weight || 0;
+    if (grade === null || grade === undefined) return '-';
+    return ((grade * weight) / 100).toFixed(2);
+  };
+
   const columns = [
     {
       title:  'Code',
@@ -70,40 +77,54 @@ const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated, e
       render: (_, record) => `${record.template_item?.weight || 0}%`,
     },
 
-    // show self grade column only if evaluation type is self
-    ...(evaluationType === 'self' ? [{
-      title:  'Self Grade',
-      key:    'self_grade',
-      width:  100,
-      render: (_, record) => record.self_grade !== null
-        ? `${record.self_grade}%`
-        : <Tag color='default'>Not filled</Tag>,
-    }] : []),
-
-    {
-      title:  evaluationType === 'self' ? 'Actual Grade' : 'Grade',
-      key:    'actual_grade',
-      width:  130,
-      render: (_, record) => canEdit
-        ? (
-          <InputNumber
-            min={0}
-            max={100}
-            value={getGrade(record)}
-            onChange={(val) => handleGradeChange(record.kpi_template_item_id, val)}
-            suffix='%'
-            size='small'
-            style={{ width: 100 }}
-          />
-        )
-        : `${record.actual_grade ?? '-'}%`,
-    },
-    {
-      title:  'Final Score',
-      key:    'final_score',
-      width:  100,
-      render: (_, record) => getFinalScore(record),
-    },
+    // Self tab — show self_grade and self_final_score only
+    ...(viewMode === 'self' ? [
+      {
+        title:  'Self Grade',
+        key:    'self_grade',
+        width:  100,
+        render: (_, record) => record.self_grade !== null
+          ? `${record.self_grade}%`
+          : <Tag color='default'>Not filled</Tag>,
+      },
+      {
+        title:  'Self Final Score',
+        key:    'self_final_score',
+        width:  130,
+        render: (_, record) => {
+          const grade  = record.self_grade;
+          const weight = record.template_item ? record.template_item.weight : 0;
+          if (grade === null || grade === undefined) return '-';
+          return ((grade * weight) / 100).toFixed(2);
+        },
+      },
+    ] : [
+      // Supervisor tab — show actual_grade and final_score
+      {
+        title:  evaluationType === 'self' ? 'Actual Grade' : 'Grade',
+        key:    'actual_grade',
+        width:  130,
+        render: (_, record) => canEdit
+          ? (
+            <InputNumber
+              min={0}
+              max={100}
+              value={getGrade(record)}
+              onChange={(val) => handleGradeChange(record.kpi_template_item_id, val)}
+              suffix='%'
+              size='small'
+              style={{ width: 100 }}
+            />
+          )
+          : `${record.actual_grade ?? '-'}%`,
+      },
+      {
+        title:  'Final Score',
+        key:    'final_score',
+        width:  100,
+        render: (_, record) => getFinalScore(record),
+      },
+    ]),
   ];
 
   return (

@@ -11,6 +11,7 @@ import { useNavigate, Link } from 'react-router-dom';
 
 import kpiTemplateApi   from '../../../services/kpi/kpiTemplateApi';
 import usePositions     from '../../../hooks/usePositions';
+import useAuth          from '../../../hooks/useAuth';
 import KpiTemplateItemRow from './KpiTemplateItemRow';
 import useKpiTemplateStore from '../../../store/kpiTemplateStore';
 import handleApiError from '../../../utils/handleApiError';
@@ -30,6 +31,7 @@ const emptyItem = () => ({
   component_name: '',
   weight:         '',
   sort_order:     1,
+  computation_class: '',
 });
 
 // ── Props ──────────────────────────────────────────────────────────────────────
@@ -40,6 +42,7 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
   const navigate                          = useNavigate();
   const { message }                       = App.useApp();
   const { positionOptions, isLoading: positionIsLoading }    = usePositions();
+  const { hasRole }                       = useAuth();
   const { templates, fetchTemplates, refreshTemplates, isLoading } = useKpiTemplateStore();
   // ── Form state ─────────────────────────────────────────────────────────────
   const [name,        setName]        = useState('');
@@ -64,6 +67,7 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
           component_name: item.component_name,
           weight:         item.weight,
           sort_order:     item.sort_order,
+          computation_class: item.computation_class || '', 
         }))
       );
     }
@@ -165,6 +169,7 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
           component_name: item.component_name,
           weight:         parseFloat(item.weight),
           sort_order:     idx + 1,
+          computation_class: item.computation_class || null,
         })),
       };
 
@@ -344,6 +349,9 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
             <Typography.Text type='secondary' style={{ fontSize: 12, width: 80 }}>Code</Typography.Text>
             <Typography.Text type='secondary' style={{ fontSize: 12, flex: 1 }}>Component Name</Typography.Text>
             <Typography.Text type='secondary' style={{ fontSize: 12, width: 100 }}>Weight</Typography.Text>
+            {hasRole('Administrator') && (
+              <Typography.Text type='secondary' style={{ fontSize: 12, width: 210 }}>Computation Class</Typography.Text>
+            )}
             <span style={{ width: 32 }} />
           </div>
         )}

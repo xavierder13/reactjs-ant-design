@@ -14,7 +14,7 @@ const ratingLabels = {
   5: 'Exemplary',
 };
 
-const BehaviorRatingSection = ({ ratings = [], canEdit, evaluationId, onUpdated, evaluationType }) => {
+const BehaviorRatingSection = ({ ratings = [], canEdit, evaluationId, onUpdated, evaluationType, viewMode = 'supervisor' }) => {
   const { message }           = App.useApp();
   const [values,  setValues]  = useState({});
   const [saving,  setSaving]  = useState(false);
@@ -75,59 +75,62 @@ const BehaviorRatingSection = ({ ratings = [], canEdit, evaluationId, onUpdated,
       ),
     },
 
-    // show self rating column only if evaluation type is self
-    ...(evaluationType === 'self' ? [{
-      title:  'Self Rating',
-      key:    'self_rating',
-      width:  150,
-      render: (_, record) => record.self_rating
-        ? (
-          <div>
-            <Rate disabled value={record.self_rating} count={5} />
+    // Self tab — show self_rating only
+    ...(viewMode === 'self' ? [
+      {
+        title:  'Self Rating',
+        key:    'self_rating',
+        width:  200,
+        render: (_, record) => record.self_rating
+          ? (
             <div>
-              <Typography.Text type='secondary' style={{ fontSize: 11 }}>
-                {ratingLabels[record.self_rating]}
-              </Typography.Text>
+              <Rate disabled value={record.self_rating} count={5} />
+              <div>
+                <Typography.Text type='secondary' style={{ fontSize: 11 }}>
+                  {ratingLabels[record.self_rating]}
+                </Typography.Text>
+              </div>
             </div>
-          </div>
-        )
-        : <Tag color='default'>Not filled</Tag>,
-    }] : []),
-
-    {
-      title:  evaluationType === 'self' ? 'Supervisor Rating' : 'Rating',
-      key:    'rating',
-      width:  180,
-      render: (_, record) => canEdit
-        ? (
-          <div>
-            <Rate
-              count={5}
-              value={getRating(record)}
-              onChange={(val) => handleRatingChange(record.kpi_behavior_criteria_id, val)}
-            />
-            {getRating(record) > 0 && (
-              <div>
-                <Typography.Text type='secondary' style={{ fontSize: 11 }}>
-                  {ratingLabels[getRating(record)]}
-                </Typography.Text>
-              </div>
-            )}
-          </div>
-        )
-        : (
-          <div>
-            <Rate disabled value={record.rating || 0} count={5} />
-            {record.rating > 0 && (
-              <div>
-                <Typography.Text type='secondary' style={{ fontSize: 11 }}>
-                  {ratingLabels[record.rating]}
-                </Typography.Text>
-              </div>
-            )}
-          </div>
-        ),
-    },
+          )
+          : <Tag color='default'>Not filled</Tag>,
+      },
+    ] : [
+      // Supervisor tab — show supervisor rating
+      {
+        title:  evaluationType === 'self' ? 'Supervisor Rating' : 'Rating',
+        key:    'rating',
+        width:  200,
+        render: (_, record) => canEdit
+          ? (
+            <div>
+              <Rate
+                count={5}
+                value={getRating(record)}
+                onChange={(val) => handleRatingChange(record.kpi_behavior_criteria_id, val)}
+              />
+              {getRating(record) > 0 && (
+                <div>
+                  <Typography.Text type='secondary' style={{ fontSize: 11 }}>
+                    {ratingLabels[getRating(record)]}
+                  </Typography.Text>
+                </div>
+              )}
+            </div>
+          )
+          : (
+            <div>
+              <Rate disabled value={record.rating || 0} count={5} />
+              {record.rating > 0 && (
+                <div>
+                  <Typography.Text type='secondary' style={{ fontSize: 11 }}>
+                    {ratingLabels[record.rating]}
+                  </Typography.Text>
+                </div>
+              )}
+            </div>
+          ),
+      },
+    ]),
   ];
 
   return (

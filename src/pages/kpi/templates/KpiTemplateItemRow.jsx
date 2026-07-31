@@ -1,5 +1,7 @@
-import { Button, Input, Form, Tooltip } from 'antd';
-import { DeleteOutlined, HolderOutlined } from '@ant-design/icons';
+import { Button, Input, Form, Tooltip, Space } from 'antd';
+import { DeleteOutlined, HolderOutlined, InfoCircleOutlined } from '@ant-design/icons';
+
+import useAuth from '../../../hooks/useAuth';
 
 const KpiTemplateItemRow = ({
   item,
@@ -10,6 +12,9 @@ const KpiTemplateItemRow = ({
   onRemove,
   errors,
 }) => {
+
+  const { hasRole } = useAuth();
+
   return (
     <div
       style={{
@@ -77,7 +82,32 @@ const KpiTemplateItemRow = ({
           onChange={(e) => onUpdate(item.id, 'weight', e.target.value)}
         />
       </Form.Item>
-
+      {/* Computation Class — Admin only */}
+      {hasRole('Administrator') && (
+        <Form.Item style={{ margin: 0, width: 220 }}>
+          <Space>
+            <Input
+              placeholder='e.g. AccountAnalyst/OverdueLedgersService'
+              value={item.computation_class || ''}
+              size='small'
+              onChange={(e) => onUpdate(item.id, 'computation_class', e.target.value)}
+              style={{ width: 200 }}
+            />
+            <Tooltip
+              title={
+                <div>
+                  <div>Format: <strong>Position/ServiceName</strong></div>
+                  <div style={{ marginTop: 4 }}>Example: AccountAnalyst/OverdueLedgersService</div>
+                  <div style={{ marginTop: 4 }}>Leave empty for manual entry.</div>
+                </div>
+              }
+              placement='top'
+            >
+              <InfoCircleOutlined style={{ color: '#389e0d', cursor: 'pointer' }} />
+            </Tooltip>
+          </Space>
+        </Form.Item>
+      )}
       {/* Remove button */}
       <Tooltip title='Remove item'>
         <Button

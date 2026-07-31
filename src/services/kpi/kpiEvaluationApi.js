@@ -38,6 +38,8 @@ const kpiEvaluationApi = {
 
   revert:  (id, payload) => axios.put(`/kpi/evaluations/${id}/revert`, payload),
 
+  compute: (id) => axios.post(`/kpi/evaluations/${id}/compute`),
+
 };
 
 export default kpiEvaluationApi;
