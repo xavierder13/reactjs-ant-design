@@ -40,6 +40,12 @@ const kpiEvaluationApi = {
 
   compute: (id) => axios.post(`/kpi/evaluations/${id}/compute`),
 
+  approve:   (id) => axios.put(`/kpi/evaluations/${id}/approve`),
+
+  reject:    (id, payload) => axios.put(`/kpi/evaluations/${id}/reject`, payload),
+  
+  resubmit:  (id) => axios.put(`/kpi/evaluations/${id}/resubmit`),
+
 };
 
 export default kpiEvaluationApi;

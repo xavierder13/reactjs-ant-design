@@ -17,6 +17,7 @@ const ProtectedRoute = ({ permissions = [] }) => {
       if (!isLoaded && token) {
         try {
           const { data } = await axiosInstance.get('/auth/init');
+          
           setAuth(data.user, data.user_roles, data.user_permissions);
           setLoaded();
         } catch (error) {

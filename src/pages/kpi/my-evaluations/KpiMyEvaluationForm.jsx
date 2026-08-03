@@ -13,6 +13,15 @@ import handleApiError   from '../../../utils/handleApiError';
 
 import dayjs from 'dayjs';
 
+const statusColors = {
+  draft:     'default',
+  self:      'processing',
+  reviewed:  'warning',
+  submitted: 'blue',
+  approved:  'success',
+  rejected:  'error',
+};
+
 const ratingLabels = {
   1: 'Unsatisfactory',
   2: 'Inconsistent',
@@ -54,7 +63,13 @@ const KpiMyEvaluationForm = () => {
 
   if (!evaluation) return null;
 
-  const canSelfEvaluate = evaluation.status === 'draft';
+ // can only self evaluate if:
+  // 1. evaluation type is self (not supervisor only)
+  // 2. status is draft
+  const canSelfEvaluate = (
+    evaluation.evaluation_type === 'self' &&
+    evaluation.status === 'draft'
+  );
   const items           = evaluation.evaluation_items || [];
   const ratings         = evaluation.behavior_ratings || [];
 
@@ -152,35 +167,57 @@ const KpiMyEvaluationForm = () => {
       width:  80,
       render: (_, record) => `${record.template_item?.weight || 0}%`,
     },
-    {
-      title:  'Self Grade',
-      key:    'self_grade',
-      width:  130,
-      render: (_, record) => canSelfEvaluate
-        ? (
-          <InputNumber
-            min={0}
-            max={100}
-            value={getSelfGrade(record)}
-            onChange={(val) =>
-              setSelfGrades((prev) => ({
-                ...prev,
-                [record.kpi_template_item_id]: val,
-              }))
-            }
-            suffix='%'
-            size='small'
-            style={{ width: 100 }}
-          />
-        )
-        : `${record.self_grade ?? '-'}%`,
-    },
-    {
-      title:  'Final Score',
-      key:    'final_score',
-      width:  100,
-      render: (_, record) => getFinalScore(record),
-    },
+    // Show self grade if evaluation type is 'self'
+    ...(evaluation.evaluation_type === 'self' ? [
+      {
+        title:  'Self Grade',
+        key:    'self_grade',
+        width:  130,
+        render: (_, record) => canSelfEvaluate
+          ? (
+            <InputNumber
+              min={0}
+              max={100}
+              value={getSelfGrade(record)}
+              onChange={(val) =>
+                setSelfGrades((prev) => ({
+                  ...prev,
+                  [record.kpi_template_item_id]: val,
+                }))
+              }
+              suffix='%'
+              size='small'
+              style={{ width: 100 }}
+            />
+          )
+          : `${record.self_grade ?? '-'}%`,
+      },
+      {
+        title:  'Self Final Score',
+        key:    'self_final_score',
+        width:  110,
+        render: (_, record) => getFinalScore(record),
+      }
+    ] : []),
+    // show supervisor grades only if status is past self
+    ...(['submitted', 'approved', 'rejected'].includes(evaluation.status) ? [
+      {
+        title:  'Supervisor Grade',
+        key:    'actual_grade',
+        width:  130,
+        render: (_, record) => record.actual_grade !== null
+          ? `${record.actual_grade}%`
+          : <Tag color='default'>Not graded</Tag>,
+      },
+      {
+        title:  'Final Score',
+        key:    'final_score',
+        width:  110,
+        render: (_, record) => record.final_score !== null
+          ? record.final_score
+          : '-',
+      },
+    ] : []),
   ];
 
   const behaviorColumns = [
@@ -206,45 +243,67 @@ const KpiMyEvaluationForm = () => {
         </div>
       ),
     },
-    {
-      title:  'Self Rating',
-      key:    'self_rating',
-      width:  200,
-      render: (_, record) => canSelfEvaluate
-        ? (
-          <div>
-            <Rate
-              count={5}
-              value={getSelfRating(record)}
-              onChange={(val) =>
-                setSelfRatings((prev) => ({
-                  ...prev,
-                  [record.kpi_behavior_criteria_id]: val,
-                }))
-              }
-            />
-            {getSelfRating(record) > 0 && (
+    ...(evaluation.evaluation_type === 'self' ? [
+      {
+        title:  'Self Rating',
+        key:    'self_rating',
+        width:  200,
+        render: (_, record) => canSelfEvaluate
+          ? (
+            <div>
+              <Rate
+                count={5}
+                value={getSelfRating(record)}
+                onChange={(val) =>
+                  setSelfRatings((prev) => ({
+                    ...prev,
+                    [record.kpi_behavior_criteria_id]: val,
+                  }))
+                }
+              />
+              {getSelfRating(record) > 0 && (
+                <div>
+                  <Typography.Text type='secondary' style={{ fontSize: 11 }}>
+                    {ratingLabels[getSelfRating(record)]}
+                  </Typography.Text>
+                </div>
+              )}
+            </div>
+          )
+          : (
+            <div>
+              <Rate disabled value={record.self_rating || 0} count={5} />
+              {record.self_rating > 0 && (
+                <div>
+                  <Typography.Text type='secondary' style={{ fontSize: 11 }}>
+                    {ratingLabels[record.self_rating]}
+                  </Typography.Text>
+                </div>
+              )}
+            </div>
+          ),
+      },
+    ] : []),
+    // show supervisor rating only if status is past self
+    ...(['submitted', 'approved', 'rejected'].includes(evaluation.status) ? [
+      {
+        title:  'Supervisor Rating',
+        key:    'rating',
+        width:  200,
+        render: (_, record) => record.rating
+          ? (
+            <div>
+              <Rate disabled value={record.rating} count={5} />
               <div>
                 <Typography.Text type='secondary' style={{ fontSize: 11 }}>
-                  {ratingLabels[getSelfRating(record)]}
+                  {ratingLabels[record.rating]}
                 </Typography.Text>
               </div>
-            )}
-          </div>
-        )
-        : (
-          <div>
-            <Rate disabled value={record.self_rating || 0} count={5} />
-            {record.self_rating > 0 && (
-              <div>
-                <Typography.Text type='secondary' style={{ fontSize: 11 }}>
-                  {ratingLabels[record.self_rating]}
-                </Typography.Text>
-              </div>
-            )}
-          </div>
-        ),
-    },
+            </div>
+          )
+          : <Tag color='default'>Not rated</Tag>,
+      },
+    ] : []),
   ];
 
   return (
@@ -274,7 +333,7 @@ const KpiMyEvaluationForm = () => {
               </Typography.Title>
             </Col>
             <Col>
-              <Tag color={evaluation.status === 'draft' ? 'default' : 'processing'}>
+              <Tag color={statusColors[evaluation.status]}>
                 {evaluation.status?.toUpperCase()}
               </Tag>
             </Col>
@@ -295,7 +354,7 @@ const KpiMyEvaluationForm = () => {
       >
         {/* Employee Info */}
         <Row gutter={[16, 8]} style={{ marginBottom: 16 }}>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
             <Typography.Text type='secondary'>Employee</Typography.Text>
             <div>
               <Typography.Text strong>
@@ -305,7 +364,7 @@ const KpiMyEvaluationForm = () => {
               </Typography.Text>
             </div>
           </Col>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
             <Typography.Text type='secondary'>Position</Typography.Text>
             <div>
               <Typography.Text strong>
@@ -313,7 +372,7 @@ const KpiMyEvaluationForm = () => {
               </Typography.Text>
             </div>
           </Col>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
             <Typography.Text type='secondary'>Period</Typography.Text>
             <div>
               <Typography.Text strong>
@@ -321,6 +380,33 @@ const KpiMyEvaluationForm = () => {
               </Typography.Text>
             </div>
           </Col>
+          <Col xs={24} md={6}>
+            <Typography.Text type='secondary'>Evaluation Type</Typography.Text>
+            <div>
+              <Tag color={evaluation.evaluation_type === 'self' ? 'blue' : 'orange'}>
+                {evaluation.evaluation_type === 'self' ? 'Self + Supervisor' : 'Supervisor Only'}
+              </Tag>
+            </div>
+          </Col>
+          {/* Rejection Reason — visible to all if rejected */}
+          {evaluation.status === 'rejected' && evaluation.rejection_reason && (
+            <Col xs={24}>
+              <div style={{
+                background:   '#fff2f0',
+                border:       '1px solid #ffccc7',
+                borderRadius: 8,
+                padding:      '8px 12px',
+                marginTop:    8,
+              }}>
+                <Typography.Text type='danger' strong>
+                  Rejection Reason:
+                </Typography.Text>
+                <Typography.Text type='danger' style={{ marginLeft: 8 }}>
+                  {evaluation.rejection_reason}
+                </Typography.Text>
+              </div>
+            </Col>
+          )}
         </Row>
 
         <Divider style={{ borderColor: '#b7eb8f' }} />
@@ -364,7 +450,10 @@ const KpiMyEvaluationForm = () => {
 
         {/* Score Preview */}
         <Typography.Text strong style={{ fontSize: 15 }}>
-          Score Preview
+          {['submitted', 'approved', 'rejected'].includes(evaluation.status)
+            ? 'Final Score Summary'
+            : 'Score Preview'
+          }
         </Typography.Text>
 
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
@@ -376,8 +465,12 @@ const KpiMyEvaluationForm = () => {
                   {jobScorePreview.toFixed(2)}%
                 </Typography.Title>
               </div>
+              <Typography.Text type='secondary' style={{ fontSize: 11 }}>
+                Self Score
+              </Typography.Text>
             </Card>
           </Col>
+
           <Col xs={24} md={8}>
             <Card size='small' style={{ borderColor: '#b7eb8f', textAlign: 'center' }}>
               <Typography.Text type='secondary'>Work Personality</Typography.Text>
@@ -386,22 +479,52 @@ const KpiMyEvaluationForm = () => {
                   {behaviorPreview.toFixed(2)}
                 </Typography.Title>
               </div>
+              <Typography.Text type='secondary' style={{ fontSize: 11 }}>
+                Self Score
+              </Typography.Text>
             </Card>
           </Col>
+
           <Col xs={24} md={8}>
             <Card
               size='small'
               style={{ borderColor: '#389e0d', background: '#f6ffed', textAlign: 'center' }}
             >
-              <Typography.Text type='secondary'>Estimated Final Grade</Typography.Text>
+              <Typography.Text type='secondary'>
+                {['submitted', 'approved'].includes(evaluation.status)
+                  ? 'Final Grade'
+                  : 'Estimated Grade'
+                }
+              </Typography.Text>
               <div>
                 <Typography.Title level={2} style={{ margin: 0, color: '#389e0d' }}>
-                  {finalPreview.toFixed(2)}%
+                  {['submitted', 'approved'].includes(evaluation.status) && evaluation.final_score
+                    ? `${evaluation.final_score}%`
+                    : `${finalPreview.toFixed(2)}%`
+                  }
                 </Typography.Title>
               </div>
             </Card>
           </Col>
         </Row>
+
+        {/* Show rejection reason if rejected */}
+        {evaluation.status === 'rejected' && evaluation.rejection_reason && (
+          <div style={{
+            background:   '#fff2f0',
+            border:       '1px solid #ffccc7',
+            borderRadius: 8,
+            padding:      '8px 12px',
+            marginTop:    16,
+          }}>
+            <Typography.Text type='danger' strong>
+              Rejection Reason:
+            </Typography.Text>
+            <Typography.Text type='danger' style={{ marginLeft: 8 }}>
+              {evaluation.rejection_reason}
+            </Typography.Text>
+          </div>
+        )}
 
       </Card>
     </>

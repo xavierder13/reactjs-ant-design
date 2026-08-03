@@ -25,6 +25,7 @@ const statusColors = {
   reviewed:  'warning',
   submitted: 'blue',
   approved:  'success',
+  rejected:  'error',
 };
 
 const KpiEvaluationIndex = () => {

@@ -3,11 +3,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Card, Spin, Button, Breadcrumb,
   Row, Col, Typography, Tag, Divider,
-  App, Space, Popconfirm, Tabs, Tooltip
+  App, Space, Popconfirm, Tabs, Tooltip,
+  Modal, Input,
 } from 'antd';
 import {
   ArrowLeftOutlined, CheckCircleOutlined,
-  SyncOutlined, InfoCircleOutlined,
+  SyncOutlined, InfoCircleOutlined, CloseCircleOutlined 
 } from '@ant-design/icons';
 import useAuth           from '../../../hooks/useAuth';
 import kpiEvaluationApi  from '../../../services/kpi/kpiEvaluationApi';
@@ -23,24 +24,33 @@ const statusColors = {
   reviewed:  'warning',
   submitted: 'blue',
   approved:  'success',
+  rejected:  'error',
 };
 
 const KpiEvaluationView = () => {
   const { id }                      = useParams();
   const navigate                    = useNavigate();
   const { message }                 = App.useApp();
-  const { hasRole }                 = useAuth();
+  const { hasRole, hasAnyRole, hasAnyPermission, hasPermission } = useAuth();
 
   const [evaluation,  setEvaluation] = useState(null);
   const [loading,     setLoading]    = useState(true);
   const [saving,      setSaving]     = useState(false);
   const [computing,   setComputing]  = useState(false);
 
+  const [rejecting,       setRejecting]       = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [resubmitting,    setResubmitting]    = useState(false);
+  const [canApproveEval, setCanApproveEval] = useState(false);
+  const [submitPopOpen, setSubmitPopOpen] = useState(false);
+
   useEffect(() => {
     const load = async () => {
       try {
         const { data } = await kpiEvaluationApi.getById(id);
         setEvaluation(data.evaluation);
+        setCanApproveEval(data.can_approve);
       } catch {
         message.error('Failed to load evaluation.');
       } finally {
@@ -60,16 +70,24 @@ const KpiEvaluationView = () => {
 
   const employee = evaluation.employee;
 
+  // canEdit — rejected means grades are editable
   const canEdit = (
-    evaluation.evaluation_type === 'supervisor'
-      ? evaluation.status === 'draft'
-      : evaluation.status === 'self'
+    hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit') &&
+    (
+      evaluation.evaluation_type === 'supervisor'
+        ? ['draft', 'rejected'].includes(evaluation.status)
+        : ['self', 'rejected'].includes(evaluation.status)
+    )
   );
 
+  // canSubmit — only show Mark as Submitted for draft/self, NOT rejected
   const canSubmit = (
-    evaluation.evaluation_type === 'supervisor'
-      ? evaluation.status === 'draft'
-      : evaluation.status === 'self'
+    hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit') &&
+    (
+      evaluation.evaluation_type === 'supervisor'
+        ? evaluation.status === 'draft'
+        : evaluation.status === 'self'
+    )
   );
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -88,6 +106,37 @@ const KpiEvaluationView = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSubmitValidation = () => {
+    const items   = evaluation.evaluation_items || [];
+    const ratings = evaluation.behavior_ratings || [];
+
+    // Check all actual grades filled
+    const unfilledGrades = items.filter(
+      (i) => i.actual_grade === null || i.actual_grade === undefined
+    );
+
+    if (unfilledGrades.length > 0) {
+      message.warning(
+        `Please fill in all KPI component grades. ${unfilledGrades.length} grade(s) missing.`
+      );
+      return false;
+    }
+
+    // Check all behavior ratings filled
+    const unfilledRatings = ratings.filter(
+      (r) => !r.rating || r.rating === 0
+    );
+
+    if (unfilledRatings.length > 0) {
+      message.warning(
+        `Please fill in all behavior ratings. ${unfilledRatings.length} rating(s) missing.`
+      );
+      return false;
+    }
+
+    return true;
   };
 
   const handleRevert = async (revertType) => {
@@ -120,6 +169,67 @@ const KpiEvaluationView = () => {
       handleApiError(error, message);
     } finally {
       setComputing(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    try {
+      const { data } = await kpiEvaluationApi.approve(evaluation.id);
+      if (data.success) {
+        message.success(data.message);
+        setEvaluation((prev) => ({ ...prev, status: 'approved' }));
+      } else {
+        message.error(data.message);
+      }
+    } catch (error) {
+      handleApiError(error, message);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectionReason.trim()) {
+      message.warning('Please enter a rejection reason.');
+      return;
+    }
+    setRejecting(true);
+    try {
+      const { data } = await kpiEvaluationApi.reject(evaluation.id, {
+        rejection_reason: rejectionReason,
+      });
+      if (data.success) {
+        message.success(data.message);
+         setEvaluation((prev) => ({
+          ...prev,
+          status:           'rejected',
+          rejection_reason: rejectionReason,
+          rejected_at:      new Date().toISOString(),
+        }));
+        setRejectModalOpen(false);
+        setRejectionReason('');
+      } else {
+        message.error(data.message);
+      }
+    } catch (error) {
+      handleApiError(error, message);
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  const handleResubmit = async () => {
+    setResubmitting(true);
+    try {
+      const { data } = await kpiEvaluationApi.resubmit(evaluation.id);
+      if (data.success) {
+        message.success(data.message);
+        setEvaluation((prev) => ({ ...prev, status: 'submitted' }));
+      } else {
+        message.error(data.message);
+      }
+    } catch (error) {
+      handleApiError(error, message);
+    } finally {
+      setResubmitting(false);
     }
   };
 
@@ -172,7 +282,7 @@ const KpiEvaluationView = () => {
       children: (
         <div>
           {/* Compute Grades button — top of supervisor tab */}
-          {canEdit && (
+          {canEdit && hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit') && (
             <Row justify='end' style={{ marginBottom: 12 }}>
               <Col>
                 <Space>
@@ -301,6 +411,25 @@ const KpiEvaluationView = () => {
               </Tag>
             </div>
           </Col>
+          {/* Rejection Reason — visible to all if rejected */}
+          {evaluation.status === 'rejected' && evaluation.rejection_reason && (
+            <Col xs={24}>
+              <div style={{
+                background:   '#fff2f0',
+                border:       '1px solid #ffccc7',
+                borderRadius: 8,
+                padding:      '8px 12px',
+                marginTop:    8,
+              }}>
+                <Typography.Text type='danger' strong>
+                  Rejection Reason:
+                </Typography.Text>
+                <Typography.Text type='danger' style={{ marginLeft: 8 }}>
+                  {evaluation.rejection_reason}
+                </Typography.Text>
+              </div>
+            </Col>
+          )}
         </Row>
 
         <Divider style={{ borderColor: '#b7eb8f', marginTop: 0 }} />
@@ -364,15 +493,19 @@ const KpiEvaluationView = () => {
                 )}
 
                 {evaluation.evaluation_type === 'supervisor' && (
-                  <Popconfirm
-                    title='Revert rating?'
-                    description='This will clear all supervisor grades and reset status to draft.'
-                    onConfirm={() => handleRevert('supervisor')}
-                    okButtonProps={{ danger: true }}
-                    okText='Revert'
-                  >
-                    <Button danger size='small'>Revert Rating</Button>
-                  </Popconfirm>
+                  <>
+                    {['submitted', 'approved'].includes(evaluation.status) && (
+                      <Popconfirm
+                        title='Revert rating?'
+                        description='This will clear all supervisor grades and reset status to draft.'
+                        onConfirm={() => handleRevert('supervisor')}
+                        okButtonProps={{ danger: true }}
+                        okText='Revert'
+                      >
+                        <Button danger size='small'>Revert Rating</Button>
+                      </Popconfirm>
+                    )}
+                  </>
                 )}
 
               </Space>
@@ -385,7 +518,12 @@ const KpiEvaluationView = () => {
               <Popconfirm
                 title='Mark as Submitted?'
                 description='Once submitted, grades cannot be edited. Only an Administrator can revert this evaluation.'
-                onConfirm={handleSubmit}
+                open={submitPopOpen}
+                onConfirm={() => {
+                  setSubmitPopOpen(false);
+                  handleSubmit();
+                }}
+                onCancel={() => setSubmitPopOpen(false)}
                 okText='Yes, Submit'
                 okButtonProps={{ type: 'primary' }}
               >
@@ -393,13 +531,101 @@ const KpiEvaluationView = () => {
                   type='primary'
                   loading={saving}
                   icon={<CheckCircleOutlined />}
+                  onClick={() => {
+                    // validate first — only open Popconfirm if valid
+                    if (handleSubmitValidation()) {
+                      setSubmitPopOpen(true);
+                    }
+                  }}
                 >
                   Mark as Submitted
                 </Button>
               </Popconfirm>
             </Col>
           )}
+          {/* Approve / Reject — for eligible approvers */}
+          {canApproveEval && evaluation.status === 'submitted' && (
+            <Col>
+              <Space>
+                <Popconfirm
+                  title='Approve this evaluation?'
+                  description='This will mark the evaluation as final and approved.'
+                  onConfirm={handleApprove}
+                  okText='Yes, Approve'
+                  okButtonProps={{ type: 'primary' }}
+                >
+                  <Button type='primary' icon={<CheckCircleOutlined />}>
+                    Approve
+                  </Button>
+                </Popconfirm>
 
+                <Button
+                  danger
+                  icon={<CloseCircleOutlined />}
+                  onClick={() => setRejectModalOpen(true)}
+                >
+                  Reject
+                </Button>
+              </Space>
+            </Col>
+          )}
+
+          {/* Resubmit — for supervisor after rejection */}
+          {(evaluation.status === 'rejected' &&  hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit')) && (
+            <Col>
+              <Popconfirm
+                title='Resubmit this evaluation?'
+                description='This will send the evaluation back for approval.'
+                onConfirm={handleResubmit}
+                okText='Yes, Resubmit'
+                okButtonProps={{ type: 'primary' }}
+              >
+                <Button
+                  type='primary'
+                  loading={resubmitting}
+                  icon={<CheckCircleOutlined />}
+                >
+                  Resubmit for Approval
+                </Button>
+              </Popconfirm>
+            </Col>
+          )}
+
+          {/* Rejection Modal */}
+          <Modal
+            title='Reject Evaluation'
+            open={rejectModalOpen}
+            onCancel={() => {
+              setRejectModalOpen(false);
+              setRejectionReason('');
+            }}
+            footer={[
+              <Button key='cancel' onClick={() => setRejectModalOpen(false)}>
+                Cancel
+              </Button>,
+              <Button
+                key='reject'
+                danger
+                loading={rejecting}
+                onClick={handleReject}
+              >
+                Confirm Reject
+              </Button>,
+            ]}
+          >
+            <Typography.Paragraph type='secondary'>
+              Please provide a reason for rejecting this evaluation.
+              This will be visible to the supervisor and employee.
+            </Typography.Paragraph>
+            <Input.TextArea
+              rows={4}
+              placeholder='Enter rejection reason...'
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              maxLength={500}
+              // showCount
+            />
+          </Modal>
         </Row>
       </Card>
     </>
