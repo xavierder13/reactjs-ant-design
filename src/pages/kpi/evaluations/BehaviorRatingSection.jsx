@@ -27,17 +27,40 @@ const BehaviorRatingSection = ({ ratings = [], canEdit, evaluationId, onUpdated,
     return values[rating.kpi_behavior_criteria_id] ?? rating.rating ?? 0;
   };
 
+  const handleSubmitValidation = () => {
+    const unfilledRatings = ratings.filter((r) => {
+      const rating = getRating(r);
+      return !rating || rating === 0;
+    });
+
+    if (unfilledRatings.length > 0) {
+      message.warning(
+        `Please fill in all behavior ratings. ${unfilledRatings.length} rating(s) missing.`
+      );
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSave = async () => {
+    // Validate before submitting
+    if (!handleSubmitValidation()) {
+      return;
+    }
+
     setSaving(true);
+
     try {
       const payload = {
         behavior_ratings: ratings.map((r) => ({
           kpi_behavior_criteria_id: r.kpi_behavior_criteria_id,
-          rating:                   getRating(r),
+          rating: getRating(r),
         })),
       };
 
       const { data } = await kpiEvaluationApi.update(evaluationId, payload);
+
       if (data.success) {
         message.success('Behavior ratings saved.');
         onUpdated(data.evaluation);

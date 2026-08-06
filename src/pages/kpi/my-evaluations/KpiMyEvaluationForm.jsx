@@ -354,7 +354,7 @@ const KpiMyEvaluationForm = () => {
       >
         {/* Employee Info */}
         <Row gutter={[16, 8]} style={{ marginBottom: 16 }}>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={5}>
             <Typography.Text type='secondary'>Employee</Typography.Text>
             <div>
               <Typography.Text strong>
@@ -364,7 +364,7 @@ const KpiMyEvaluationForm = () => {
               </Typography.Text>
             </div>
           </Col>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={5}>
             <Typography.Text type='secondary'>Position</Typography.Text>
             <div>
               <Typography.Text strong>
@@ -372,7 +372,7 @@ const KpiMyEvaluationForm = () => {
               </Typography.Text>
             </div>
           </Col>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={5}>
             <Typography.Text type='secondary'>Period</Typography.Text>
             <div>
               <Typography.Text strong>
@@ -380,7 +380,7 @@ const KpiMyEvaluationForm = () => {
               </Typography.Text>
             </div>
           </Col>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={4}>
             <Typography.Text type='secondary'>Evaluation Type</Typography.Text>
             <div>
               <Tag color={evaluation.evaluation_type === 'self' ? 'blue' : 'orange'}>
@@ -388,24 +388,71 @@ const KpiMyEvaluationForm = () => {
               </Tag>
             </div>
           </Col>
+          <Col xs={24} md={5}>
+            <Typography.Text type='secondary'>Created By</Typography.Text>
+            <div>
+              <Typography.Text strong>
+                {evaluation.created_by?.name}
+              </Typography.Text>
+            </div>
+          </Col>
+          {evaluation.status === 'approved' && (
+            <>
+              <Col xs={24} md={5}>
+                <Typography.Text type='secondary'>Approved By</Typography.Text>
+                <div>
+                  <Typography.Text strong>
+                    {evaluation.approved_by?.name}
+                  </Typography.Text>
+                </div>
+              </Col>
+              <Col xs={24} md={5}>
+                <Typography.Text type='secondary'>Approved At</Typography.Text>
+                <div>
+                  <Typography.Text strong>
+                    {dayjs(evaluation.approved_at).format('MM-DD-YYYY')}
+                  </Typography.Text>
+                </div>
+              </Col>
+            </>
+          )}
           {/* Rejection Reason — visible to all if rejected */}
           {evaluation.status === 'rejected' && evaluation.rejection_reason && (
-            <Col xs={24}>
-              <div style={{
-                background:   '#fff2f0',
-                border:       '1px solid #ffccc7',
-                borderRadius: 8,
-                padding:      '8px 12px',
-                marginTop:    8,
-              }}>
-                <Typography.Text type='danger' strong>
-                  Rejection Reason:
-                </Typography.Text>
-                <Typography.Text type='danger' style={{ marginLeft: 8 }}>
-                  {evaluation.rejection_reason}
-                </Typography.Text>
-              </div>
-            </Col>
+            <>
+              <Col xs={24} md={5}>
+                <Typography.Text type='secondary'>Rejected By</Typography.Text>
+                <div>
+                  <Typography.Text strong>
+                    {evaluation.rejected_by?.name}
+                  </Typography.Text>  
+                </div>
+              </Col>
+              <Col xs={24} md={5}>
+                <Typography.Text type='secondary'>Rejected At</Typography.Text>
+                <div>
+                  <Typography.Text strong>
+                    {dayjs(evaluation.rejected_at).format('MM-DD-YYYY')}
+                  </Typography.Text>
+                </div>
+              </Col>
+              <Col xs={24}>
+                <div style={{
+                  background:   '#fff2f0',
+                  border:       '1px solid #ffccc7',
+                  borderRadius: 8,
+                  padding:      '8px 12px',
+                  marginTop:    8,
+                }}>
+                  <Typography.Text type='danger' strong>
+                    Rejection Reason:
+                  </Typography.Text>
+                  <Typography.Text type='danger' style={{ marginLeft: 8 }}>
+                    {evaluation.rejection_reason}
+                  </Typography.Text>
+                </div>
+              </Col>
+            </>
+            
           )}
         </Row>
 
