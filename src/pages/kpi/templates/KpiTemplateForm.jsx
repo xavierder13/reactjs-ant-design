@@ -4,7 +4,7 @@ import {
   Card, Row, Col, Typography, Input,
   Button, Space, Form, Divider,
   Select, App, Tag, Breadcrumb,
-  Skeleton,
+  Skeleton, Switch, InputNumber
 } from 'antd';
 import { PlusOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
@@ -13,6 +13,7 @@ import kpiTemplateApi   from '../../../services/kpi/kpiTemplateApi';
 import usePositions     from '../../../hooks/usePositions';
 import useAuth          from '../../../hooks/useAuth';
 import KpiTemplateItemRow from './KpiTemplateItemRow';
+import KpiDemeritItemRow from './KpiDemeritItemRow';
 import useKpiTemplateStore from '../../../store/kpiTemplateStore';
 import handleApiError from '../../../utils/handleApiError';
 
@@ -52,6 +53,10 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
   const [saving,      setSaving]      = useState(false);
   const [errors,      setErrors]      = useState({});
 
+  const [hasDemerit,    setHasDemerit]    = useState(false);
+  const [maxDemerit,    setMaxDemerit]    = useState(5.00);
+  const [demeritItems,  setDemeritItems]  = useState([]);
+
   // ── Populate form in edit mode ─────────────────────────────────────────────
   useEffect(() => {
 
@@ -60,6 +65,8 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
       setName(template.name);
       setDescription(template.description || '');
       setPositionId(template.position_id);
+      setHasDemerit(template.has_demerit || false);   
+      setMaxDemerit(template.max_demerit || 5.00);
       setItems(
         template.items.map((item) => ({
           id:             generateId(),
@@ -151,26 +158,109 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
     //   hasError = true;
     // }
 
+    // validate demerit items if has_demerit is enabled
+    if (hasDemerit) {
+      if (demeritItems.length === 0) {
+        newErrors.demeritGeneral = 'At least one demerit item is required when demerit is enabled.';
+        hasError = true;
+      }
+
+      demeritItems.forEach((item) => {
+        newErrors.demeritItems = newErrors.demeritItems || {};
+        newErrors.demeritItems[item.id] = {};
+
+        if (!item.component_code.trim()) {
+          newErrors.demeritItems[item.id].component_code = 'Code required.';
+          hasError = true;
+        }
+        if (!item.component_name.trim()) {
+          newErrors.demeritItems[item.id].component_name = 'Name required.';
+          hasError = true;
+        }
+        if (!item.max_deduction || isNaN(Number(item.max_deduction)) || Number(item.max_deduction) <= 0) {
+          newErrors.demeritItems[item.id].max_deduction = 'Enter valid max deduction.';
+          hasError = true;
+        }
+      });
+
+      // validate total max_deduction <= max_demerit
+      const totalMaxDeduction = demeritItems.reduce(
+        (sum, i) => sum + (parseFloat(i.max_deduction) || 0), 0
+      );
+      if (totalMaxDeduction > maxDemerit) {
+        newErrors.demeritTotal = `Total max deduction (${totalMaxDeduction.toFixed(2)}%) exceeds max demerit cap (${maxDemerit}%).`;
+        hasError = true;
+      }
+    }
+
     setErrors(newErrors);
     return hasError;
   };
 
+  // ── Demerit Item actions ───────────────────────────────────────────────────────────
+
+  const emptyDemeritItem = () => ({
+    id:                generateId(),
+    component_code:    '',
+    component_name:    '',
+    max_deduction:     '',
+    sort_order:        1,
+    computation_class: '',
+  });
+
+  const addDemeritItem = () => {
+    setDemeritItems((prev) => [
+      ...prev,
+      { ...emptyDemeritItem(), sort_order: prev.length + 1 },
+    ]);
+  };
+
+  const removeDemeritItem = (id) => {
+    setDemeritItems((prev) =>
+      prev
+        .filter((i) => i.id !== id)
+        .map((i, idx) => ({ ...i, sort_order: idx + 1 }))
+    );
+  };
+
+  const updateDemeritItem = (id, field, value) => {
+    setDemeritItems((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, [field]: value } : i))
+    );
+  };
+
+  const onDemeritDragEnd = ({ source, destination }) => {
+    if (!destination) return;
+    setDemeritItems((prev) => reorder(prev, source.index, destination.index));
+  };
+  
   // ── Save ───────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (validate()) return;
     setSaving(true);
     try {
       const payload = {
-        position_id: positionId,
+        position_id:   positionId,
         name,
         description,
+        has_demerit:   hasDemerit,
+        max_demerit:   hasDemerit ? maxDemerit : null,
         items: items.map((item, idx) => ({
-          component_code: item.component_code,
-          component_name: item.component_name,
-          weight:         parseFloat(item.weight),
-          sort_order:     idx + 1,
+          id:                typeof item.id === 'number' ? item.id : null,
+          component_code:    item.component_code,
+          component_name:    item.component_name,
+          weight:            parseFloat(item.weight),
+          sort_order:        idx + 1,
           computation_class: item.computation_class || null,
         })),
+        demerit_items: hasDemerit ? demeritItems.map((item, idx) => ({
+          id:                typeof item.id === 'number' ? item.id : null,
+          component_code:    item.component_code,
+          component_name:    item.component_name,
+          max_deduction:     parseFloat(item.max_deduction),
+          sort_order:        idx + 1,
+          computation_class: item.computation_class || null,
+        })) : [],
       };
 
       let response;
@@ -396,6 +486,115 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
         >
           Add KPI Component
         </Button>
+
+        {/* ── Demerit Section ──────────────────────────────────────────── */}
+        <Divider style={{ borderColor: '#ffd591', marginTop: 8 }} />
+
+        <Row justify='space-between' align='middle' style={{ marginBottom: 12 }}>
+          <Col>
+            <Space align='center'>
+              <Typography.Text strong>Demerit Section</Typography.Text>
+              <Switch
+                checked={hasDemerit}
+                onChange={(checked) => {
+                  setHasDemerit(checked);
+                  if (!checked) setDemeritItems([]);
+                }}
+                checkedChildren='Enabled'
+                unCheckedChildren='Disabled'
+              />
+            </Space>
+          </Col>
+
+          {hasDemerit && (
+            <Col>
+              <Space align='center'>
+                <Typography.Text type='secondary'>Max Demerit Cap:</Typography.Text>
+                <InputNumber
+                  min={0}
+                  max={100}
+                  value={maxDemerit}
+                  onChange={(val) => setMaxDemerit(val)}
+                  suffix='%'
+                  size='small'
+                  style={{ width: 100 }}
+                />
+              </Space>
+            </Col>
+          )}
+        </Row>
+
+        {hasDemerit && (
+          <>
+            {errors.demeritGeneral && (
+              <Typography.Text type='danger' style={{ display: 'block', marginBottom: 8 }}>
+                {errors.demeritGeneral}
+              </Typography.Text>
+            )}
+
+            {errors.demeritTotal && (
+              <Typography.Text type='danger' style={{ display: 'block', marginBottom: 8 }}>
+                {errors.demeritTotal}
+              </Typography.Text>
+            )}
+
+            {/* Column headers */}
+            {demeritItems.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, padding: '0 8px', marginBottom: 4 }}>
+                <span style={{ width: 20 }} />
+                <span style={{ width: 20 }} />
+                <Typography.Text type='secondary' style={{ fontSize: 12, width: 80 }}>Code</Typography.Text>
+                <Typography.Text type='secondary' style={{ fontSize: 12, flex: 1 }}>Component Name</Typography.Text>
+                <Typography.Text type='secondary' style={{ fontSize: 12, width: 120 }}>Max Deduction</Typography.Text>
+                {hasRole('Administrator') && (
+                  <Typography.Text type='secondary' style={{ fontSize: 12, width: 220 }}>Computation Class</Typography.Text>
+                )}
+                <span style={{ width: 32 }} />
+              </div>
+            )}
+
+            {/* Drag & Drop Demerit Items */}
+            <DragDropContext onDragEnd={onDemeritDragEnd}>
+              <Droppable droppableId='demerit-items' type='DEMERIT'>
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps}>
+                    {demeritItems.map((item, idx) => (
+                      <Draggable key={item.id} draggableId={String(item.id)} index={idx}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            style={{ ...provided.draggableProps.style }}
+                          >
+                            <KpiDemeritItemRow
+                              item={item}
+                              index={idx}
+                              dragHandleProps={provided.dragHandleProps}
+                              isDragging={snapshot.isDragging}
+                              onUpdate={updateDemeritItem}
+                              onRemove={removeDemeritItem}
+                              errors={errors.demeritItems?.[item.id]}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+
+            <Button
+              type='dashed'
+              icon={<PlusOutlined />}
+              onClick={addDemeritItem}
+              style={{ marginTop: 8, borderColor: '#fa8c16', color: '#fa8c16' }}
+            >
+              Add Demerit Component
+            </Button>
+          </>
+        )}
       </Card>
     </>
   );
