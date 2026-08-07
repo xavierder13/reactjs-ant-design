@@ -77,6 +77,17 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
           computation_class: item.computation_class || '', 
         }))
       );
+
+      setDemeritItems(
+        (template.demerit_items || []).map((item) => ({
+          id:                item.id,
+          component_code:    item.component_code,
+          component_name:    item.component_name,
+          max_deduction:     item.max_deduction,
+          sort_order:        item.sort_order,
+          computation_class: item.computation_class || '',
+        }))
+      );
     }
   }, [mode, template]);
 
