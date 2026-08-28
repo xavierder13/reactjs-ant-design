@@ -1,0 +1,225 @@
+/* ── Screen styles ─────────────────────────────────────────────────────────── */
+.print-wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: Arial, sans-serif;
+}
+
+.kpi-print {
+  font-size: 11px;
+  color: #000;
+}
+
+/* Header */
+.kpi-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.company-name {
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.form-title {
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Info table */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+.info-table td {
+  padding: 3px 6px;
+}
+
+.info-label {
+  font-weight: bold;
+  white-space: nowrap;
+  width: 120px;
+}
+
+.info-value {
+  border-bottom: 1px solid #000;
+  min-width: 150px;
+}
+
+/* KPI Table */
+.kpi-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.kpi-table th,
+.kpi-table td {
+  border: 1px solid #000;
+  padding: 4px 6px;
+  vertical-align: top;
+}
+
+.kpi-table th {
+  background-color: #d9d9d9;
+  text-align: center;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.section-header {
+  background-color: #d9d9d9 !important;
+  text-align: center !important;
+  font-weight: bold !important;
+  text-transform: uppercase;
+}
+
+.demerit-header {
+  background-color: #ffe0b2 !important;
+}
+
+.col-component { width: auto; }
+.col-weight    { width: 80px;  text-align: center; }
+.col-grade     { width: 100px; text-align: center; }
+.col-final     { width: 80px;  text-align: center; }
+
+.text-center { text-align: center; }
+
+.total-row td {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+.final-grade-row td {
+  background-color: #d9d9d9;
+  font-weight: bold;
+}
+
+.rating-legend {
+  font-size: 10px;
+  padding: 6px;
+  background-color: #fafafa;
+}
+
+/* Rating scale */
+.rating-scale-table {
+  margin-top: 8px;
+}
+
+.scale-label {
+  width: 140px;
+  text-align: center;
+  background-color: #d9d9d9;
+}
+
+.scale-range {
+  width: 80px;
+  text-align: center;
+}
+
+.scale-desc {
+  font-size: 10px;
+}
+
+/* ── Print styles ──────────────────────────────────────────────────────────── */
+@media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  /* Hide EVERYTHING */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Show ONLY .kpi-print and everything inside it */
+  .kpi-print,
+  .kpi-print * {
+    visibility: visible !important;
+  }
+
+  /*
+   * Remove .kpi-print from the existing application layout.
+   * This is important if it is inside Ant Design Layout/Content/Sider.
+   */
+  .kpi-print {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+
+    width: 100% !important;
+    max-width: none !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    font-size: 10px !important;
+    color: #000 !important;
+
+    overflow: visible !important;
+  }
+
+  /* Hide print button */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Make sure wrapper doesn't constrain the print area */
+  .print-wrapper {
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Tables */
+  .info-table,
+  .kpi-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-collapse: collapse !important;
+  }
+
+  /* Allow table to span pages */
+  .kpi-table {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  /* Don't split individual rows */
+  .kpi-table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Repeat headers on new pages */
+  .kpi-table thead {
+    display: table-header-group !important;
+  }
+
+  /* Preserve background colors */
+  .kpi-table th,
+  .section-header,
+  .demerit-header,
+  .total-row td,
+  .final-grade-row td,
+  .rating-legend,
+  .scale-label {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

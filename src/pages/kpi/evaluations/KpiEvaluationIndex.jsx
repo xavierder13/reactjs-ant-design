@@ -8,7 +8,7 @@ import {
 import {
   PlusOutlined, EyeOutlined,
   ReloadOutlined, SearchOutlined,
-  DeleteOutlined
+  DeleteOutlined, PrinterOutlined 
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { App } from 'antd';
@@ -169,6 +169,15 @@ const KpiEvaluationIndex = () => {
               </Tooltip>
             </Popconfirm>
           )}
+          {hasPermission('kpi-evaluation-print') && (
+            <Tooltip title='Print'>
+              <Button
+                icon={<PrinterOutlined />}
+                size='small'
+                onClick={() => window.open(`/kpi-evaluations/${record.id}/print`, '_blank')}
+              />
+            </Tooltip>
+          )}
         </Space>
       ),
     },
@@ -239,7 +248,7 @@ const KpiEvaluationIndex = () => {
                   icon={<ReloadOutlined />}
                   onClick={() => {
                     handleReset();
-                    fetchEvaluations();
+                    refreshEvaluations();
                   }}
                 >
                   Refresh

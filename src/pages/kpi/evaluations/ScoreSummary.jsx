@@ -3,6 +3,15 @@ import { Typography, Row, Col, Card, Divider, Tag } from 'antd';
 const ScoreSummary = ({ evaluation, evaluationType, viewMode = 'supervisor' }) => {
   const items   = evaluation.evaluation_items || [];
   const ratings = evaluation.behavior_ratings || [];
+  const demeritRatings = evaluation.demerit_ratings || [];
+
+  // demerit deduction
+  const demeritDeduction = demeritRatings.reduce((sum, r) => {
+    const val = viewMode === 'self'
+      ? r.self_deduction
+      : r.actual_deduction;
+    return sum + (parseFloat(val) || 0);
+  }, 0);
 
   // Self tab scores
   const selfJobScore = items.reduce((sum, item) => {
@@ -16,7 +25,7 @@ const ScoreSummary = ({ evaluation, evaluationType, viewMode = 'supervisor' }) =
     ? filledSelfRatings.reduce((sum, r) => sum + r.self_rating, 0) / filledSelfRatings.length
     : 0;
 
-  const selfFinalScore = selfJobScore + selfBehaviorScore;
+  const selfFinalScore = selfJobScore + selfBehaviorScore - demeritDeduction;
 
   // Supervisor tab scores
   const jobScore = items.reduce((sum, item) => {
@@ -30,7 +39,7 @@ const ScoreSummary = ({ evaluation, evaluationType, viewMode = 'supervisor' }) =
     ? filledRatings.reduce((sum, r) => sum + r.rating, 0) / filledRatings.length
     : 0;
 
-  const finalScore = jobScore + behaviorScore;
+  const finalScore = jobScore + behaviorScore - demeritDeduction;
 
   return (
     <div>
@@ -96,10 +105,14 @@ const ScoreSummary = ({ evaluation, evaluationType, viewMode = 'supervisor' }) =
                   : finalScore.toFixed(2)}%
               </Typography.Title>
             </div>
-            {viewMode === 'supervisor' && evaluation.demerit_deduction > 0 && (
-              <Tag color='red'>
-                Demerit: -{evaluation.demerit_deduction}%
-              </Tag>
+            {demeritRatings.length > 0 && demeritDeduction > 0 && (
+              <Row gutter={[16, 16]} style={{ marginTop: 8 }}>
+                <Col xs={24}>
+                  <Tag color='orange' style={{ fontSize: 13, padding: '4px 8px' }}>
+                    Demerit Deduction: -{demeritDeduction.toFixed(2)}%
+                  </Tag>
+                </Col>
+              </Row>
             )}
           </Card>
         </Col>

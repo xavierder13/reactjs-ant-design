@@ -23,7 +23,7 @@ const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated, e
     const grade  = getGrade(item);
     const weight = item.template_item?.weight || 0;
     if (grade === null || grade === undefined) return '-';
-    return ((grade * weight) / 100).toFixed(2);
+    return ((grade * weight) / 100).toFixed(2) + '%';
   };
 
   const handleSave = async () => {

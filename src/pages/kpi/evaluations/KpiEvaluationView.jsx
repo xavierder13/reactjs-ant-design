@@ -8,7 +8,8 @@ import {
 } from 'antd';
 import {
   ArrowLeftOutlined, CheckCircleOutlined,
-  SyncOutlined, InfoCircleOutlined, CloseCircleOutlined 
+  SyncOutlined, InfoCircleOutlined, CloseCircleOutlined,
+  PrinterOutlined 
 } from '@ant-design/icons';
 import useAuth           from '../../../hooks/useAuth';
 import kpiEvaluationApi  from '../../../services/kpi/kpiEvaluationApi';
@@ -17,6 +18,8 @@ import BehaviorRatingSection from './BehaviorRatingSection';
 import ScoreSummary          from './ScoreSummary';
 import handleApiError        from '../../../utils/handleApiError';
 import dayjs                 from 'dayjs';
+
+import DemeritSection from './DemeritSection';
 
 const statusColors = {
   draft:     'default',
@@ -44,6 +47,7 @@ const KpiEvaluationView = () => {
   const [resubmitting,    setResubmitting]    = useState(false);
   const [canApproveEval, setCanApproveEval] = useState(false);
   const [submitPopOpen, setSubmitPopOpen] = useState(false);
+  const [template, setTemplate] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -51,6 +55,7 @@ const KpiEvaluationView = () => {
         const { data } = await kpiEvaluationApi.getById(id);
         setEvaluation(data.evaluation);
         setCanApproveEval(data.can_approve);
+        setTemplate(data.template);
         console.log(data);
         
       } catch {
@@ -259,6 +264,23 @@ const KpiEvaluationView = () => {
             viewMode='self'
           />
 
+          {/* Demerit — only if template has demerit */}
+          {evaluation.position?.template?.has_demerit && (
+            <>
+              <Divider style={{ borderColor: '#ffd591' }} />
+              <DemeritSection
+                ratings={evaluation.demerit_ratings || []}
+                canEdit={false}
+                evaluationId={evaluation.id}
+                evaluationType={evaluation.evaluation_type}
+                onUpdated={(updated) => setEvaluation(updated)}
+                viewMode='self'
+                maxDemerit={evaluation.position?.template?.max_demerit || 5}
+                evaluationType={evaluation.evaluation_type}
+              />
+            </>
+          )}
+
           <Divider style={{ borderColor: '#b7eb8f' }} />
 
           <BehaviorRatingSection
@@ -325,6 +347,22 @@ const KpiEvaluationView = () => {
             viewMode='supervisor'
           />
 
+          {/* Demerit — only if template has demerit */}
+          {evaluation.demerit_ratings?.length > 0 && (
+            <>
+              <Divider style={{ borderColor: '#ffd591' }} />
+              <DemeritSection
+                ratings={evaluation.demerit_ratings}
+                canEdit={canEdit}
+                evaluationId={evaluation.id}
+                evaluationType={evaluation.evaluation_type}
+                onUpdated={(updated) => setEvaluation(updated)}
+                viewMode='supervisor'
+                maxDemerit={template?.max_demerit || 5}
+              />
+            </>
+          )}
+
           <Divider style={{ borderColor: '#b7eb8f' }} />
 
           <BehaviorRatingSection
@@ -381,6 +419,18 @@ const KpiEvaluationView = () => {
               </Tag>
             </Col>
           </Row>
+        }
+        extra={
+          <Space>
+            {hasPermission('kpi-evaluation-print') && (
+              <Button
+                icon={<PrinterOutlined />}
+                onClick={() => window.open(`/kpi-evaluations/${evaluation.id}/print`, '_blank')}
+              >
+                Print
+              </Button>
+            )}
+          </Space>
         }
       >
         {/* ── Employee Info — always visible ─────────────────────────────── */}

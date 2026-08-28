@@ -27,6 +27,7 @@ import KpiEvaluationCreate from '../pages/kpi/evaluations/KpiEvaluationCreate';
 import KpiEvaluationView   from '../pages/kpi/evaluations/KpiEvaluationView';
 import KpiMyEvaluationIndex from '../pages/kpi/my-evaluations/KpiMyEvaluationIndex';
 import KpiMyEvaluationForm  from '../pages/kpi/my-evaluations/KpiMyEvaluationForm';
+import KpiEvaluationPrint from '../pages/kpi/evaluations/KpiEvaluationPrint';
 import EmployeeMasterData from '../pages/employee_master_data/EmployeeMasterData';
 import CreateEmployee from '../pages/employee_master_data/CreateEmployee';
 import EditEmployee from '../pages/employee_master_data/EditEmployee';
@@ -57,6 +58,7 @@ const permissionRoutes = [
   { permissions: ['kpi-evaluation-list'],   path: '/kpi-evaluations', element: <KpiEvaluationIndex /> },
   { permissions: ['kpi-evaluation-create'], path: '/kpi-evaluations/create', element: <KpiEvaluationCreate /> },
   { permissions: ['kpi-evaluation-list'],   path: '/kpi-evaluations/:id', element: <KpiEvaluationView /> },
+  { permissions: ['kpi-evaluation-print'],  path: '/kpi-evaluations/:id/print', element: <KpiEvaluationPrint /> },
 
   // Employee self-service routes
   { permissions: ['kpi-self-evaluation-list'],   path: '/my-evaluations', element: <KpiMyEvaluationIndex /> },

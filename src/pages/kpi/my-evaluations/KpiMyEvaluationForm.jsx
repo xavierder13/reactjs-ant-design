@@ -4,12 +4,14 @@ import {
   Card, Spin, Button, Breadcrumb,
   Row, Col, Typography, Tag,
   Table, InputNumber, Rate,
-  Divider, App, Space,
+  Divider, App, Space, Tooltip
 } from 'antd';
-import { ArrowLeftOutlined, SendOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, SendOutlined, PrinterOutlined } from '@ant-design/icons';
 
 import kpiEvaluationApi from '../../../services/kpi/kpiEvaluationApi';
 import handleApiError   from '../../../utils/handleApiError';
+import DemeritSection from '../evaluations/DemeritSection';
+import useAuth           from '../../../hooks/useAuth';
 
 import dayjs from 'dayjs';
 
@@ -34,6 +36,8 @@ const KpiMyEvaluationForm = () => {
   const { id }                              = useParams();
   const navigate                            = useNavigate();
   const { message }                         = App.useApp();
+
+  const { hasRole, hasAnyRole, hasAnyPermission, hasPermission } = useAuth();
 
   const [evaluation,  setEvaluation]        = useState(null);
   const [loading,     setLoading]           = useState(true);
@@ -340,16 +344,26 @@ const KpiMyEvaluationForm = () => {
           </Row>
         }
         extra={
-          canSelfEvaluate && (
-            <Button
-              type='primary'
-              icon={<SendOutlined />}
-              loading={saving}
-              onClick={handleSubmit}
-            >
-              Submit Self Evaluation
-            </Button>
-          )
+          <Space>
+            {hasPermission('kpi-evaluation-print') && (
+              <Button
+                icon={<PrinterOutlined />}
+                onClick={() => window.open(`/kpi-evaluations/${evaluation.id}/print`, '_blank')}
+              >
+                Print
+              </Button>
+            )}
+            {canSelfEvaluate && (
+              <Button
+                type='primary'
+                icon={<SendOutlined />}
+                loading={saving}
+                onClick={handleSubmit}
+              >
+                Submit Self Evaluation
+              </Button>
+            )}
+          </Space>
         }
       >
         {/* Employee Info */}
@@ -471,6 +485,22 @@ const KpiMyEvaluationForm = () => {
           size='small'
           style={{ marginTop: 12, marginBottom: 24 }}
         />
+
+        {/* Demerit — only if has demerit ratings */}
+        {evaluation.demerit_ratings?.length > 0 && (
+          <>
+            <Divider style={{ borderColor: '#ffd591' }} />
+            <DemeritSection
+              ratings={evaluation.demerit_ratings}
+              canEdit={canSelfEvaluate}
+              evaluationId={evaluation.id}
+              evaluationType={evaluation.evaluation_type}
+              onUpdated={(updated) => setEvaluation(updated)}
+              viewMode='self'
+              maxDemerit={5}
+            />
+          </>
+        )}
 
         <Divider style={{ borderColor: '#b7eb8f' }} />
 

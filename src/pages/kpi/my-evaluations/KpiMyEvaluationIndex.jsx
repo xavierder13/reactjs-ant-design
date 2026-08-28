@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import {
   Card, Row, Col, Typography, Button,
   Table, Tag, Breadcrumb, App, Tabs,
+  Space, Tooltip
 } from 'antd';
-import { EyeOutlined, ReloadOutlined } from '@ant-design/icons';
+import { EyeOutlined, ReloadOutlined, PrinterOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import kpiEvaluationApi from '../../../services/kpi/kpiEvaluationApi';
 import useAuth from '../../../hooks/useAuth';
@@ -21,7 +22,7 @@ const statusColors = {
 const KpiMyEvaluationIndex = () => {
   const navigate                      = useNavigate();
   const { message }                   = App.useApp();
-  const { hasRole }                   = useAuth();
+  const { hasRole, hasPermission }                   = useAuth();
   const [evaluations, setEvaluations] = useState([]);
   const [loading,     setLoading]     = useState(false);
 
@@ -104,17 +105,35 @@ const KpiMyEvaluationIndex = () => {
       title:  'Actions',
       key:    'actions',
       render: (_, record) => (
-        <Button
-          color='green'
-          variant='outlined'
-          icon={<EyeOutlined />}
-          size='small'
-          onClick={() => navigate(`/my-evaluations/${record.id}`)}
-        >
-          {record.status === 'draft' ? 'Fill Evaluation' : 'View'}
-        </Button>
+        <Space>
+          <Button
+            color='green'
+            variant='outlined'
+            icon={<EyeOutlined />}
+            size='small'
+            onClick={() => navigate(`/my-evaluations/${record.id}`)}
+          >
+            {record.status === 'draft' ? 'Fill Evaluation' : 'View'}
+          </Button>
+          {hasPermission('kpi-evaluation-print') && (
+            <Tooltip title="Print">
+              <Button
+                icon={<PrinterOutlined />}
+                size="small"
+                onClick={() =>
+                  window.open(
+                    `/kpi-evaluations/${record.id}/print`,
+                    '_blank'
+                  )
+                }
+              />
+            </Tooltip>
+          )}
+        </Space>
+        
       ),
     },
+    
   ];
 
   // ── Supervisor Evaluation columns ──────────────────────────────────────────
@@ -128,15 +147,33 @@ const KpiMyEvaluationIndex = () => {
       title:  'Actions',
       key:    'actions',
       render: (_, record) => (
-        <Button
-          color='green'
-          variant='outlined'
-          icon={<EyeOutlined />}
-          size='small'
-          onClick={() => navigate(`/my-evaluations/${record.id}`)}
-        >
-          View
-        </Button>
+        <Space>
+          <Button
+            color='green'
+            variant='outlined'
+            icon={<EyeOutlined />}
+            size='small'
+            onClick={() => navigate(`/my-evaluations/${record.id}`)}
+          >
+            View
+          </Button>
+          
+          {hasPermission('kpi-evaluation-print') && (
+            <Tooltip title="Print">
+              <Button
+                icon={<PrinterOutlined />}
+                size="small"
+                onClick={() =>
+                  window.open(
+                    `/kpi-evaluations/${record.id}/print`,
+                    '_blank'
+                  )
+                }
+              />
+            </Tooltip>
+          )}
+        </Space>
+        
       ),
     },
   ];
