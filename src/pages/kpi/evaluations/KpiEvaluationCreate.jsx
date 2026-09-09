@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
 import kpiEvaluationApi      from '../../../services/kpi/kpiEvaluationApi';
+import employeeOptionApi      from '../../../services/employee/employeeOptionApi';
 import useKpiEvaluationStore from '../../../store/kpiEvaluationStore';
 import handleApiError        from '../../../utils/handleApiError';
 
@@ -37,9 +38,8 @@ const KpiEvaluationCreate = () => {
     if (loading) return;
     setLoading(true);
     try {
-      const { data } = await kpiEvaluationApi.getEmployees({ search, page: pageNumber });
-
-      const options = data.data.map((emp) => ({
+      const { data } = await employeeOptionApi.getActive({ search, page: pageNumber}); 
+      const options = data.employees.map((emp) => ({
         value: emp.id,
         label: `${emp.employee_code} - ${emp.full_name} (${emp.position_name || ''})`,
       }));
