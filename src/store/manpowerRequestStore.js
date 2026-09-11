@@ -4,9 +4,10 @@ import manpowerRequestApi from '../services/manpower_request/manpowerRequestApi'
 const useManpowerRequestStore = create((set, get) => ({
   items:       [],
   current:     null,
+  approvalStatus: null,
   isLoading:   false,
   error:       null,
-
+  
   fetchItems: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -23,8 +24,8 @@ const useManpowerRequestStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data } = await manpowerRequestApi.getById(id);
-      set({ current: data.manpower_request });
-      return data.manpower_request;
+      set({ current: data.manpower_request, approvalStatus: data.approval_status });
+      return data; // { manpower_request, approval_status }
     } catch (error) {
       set({ error: error.response?.data?.message || 'Failed to load manpower request.' });
     } finally {

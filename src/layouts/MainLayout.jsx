@@ -51,7 +51,9 @@ const titleMap = {
   '/kpi-evaluations':        { title: 'KPI Evaluations',     breadcrumb: ['KPI Management', 'Evaluations'] },
   '/kpi-evaluations/create': { title: 'Create Evaluation',     breadcrumb: ['KPI Management', 'Evaluations', 'Create'] },
   '/my-evaluations':         { title: 'My Evaluations',        breadcrumb: ['KPI Management', 'My Evaluations'] },
-  
+  '/manpower-requests':        { title: 'Manpower Requests',       breadcrumb: ['Manpower Request', 'All Requests'] },
+  '/manpower-requests/create': { title: 'Create Manpower Request', breadcrumb: ['Manpower Request', 'Create'] },
+
 };
 
 // ─── Menu data ─────────────────────────────────────────────────────────────────
@@ -86,6 +88,15 @@ const menuData = [
           { key: 'bi-basic-req',      title: 'B.I & Basic Req.',  link: '/recruitment/bi-list',                permissions: ['careers-bi-list'] },
           { key: 'final-interview',   title: 'Final Interview',   link: '/recruitment/final-interview-list',   permissions: ['careers-final-interview-list'] },
           { key: 'orientation',       title: 'Orientation',       link: '/recruitment/orientation-list',       permissions: ['careers-orientation-list'] },
+        ],
+      },
+      {
+        key: 'manpower-request',
+        title: 'Manpower Request',
+        icon: <FileTextOutlined />,
+        children: [
+          { key: 'manpower-request-list',   title: 'All Requests',    link: '/manpower-requests',        permissions: ['manpower-request-list'] },
+          { key: 'manpower-request-create', title: 'Create Request',  link: '/manpower-requests/create',  permissions: ['manpower-request-create'] },
         ],
       },
     ],
@@ -211,6 +222,10 @@ const MainLayout = () => {
       return { title: 'View Evaluation', breadcrumb: ['KPI Management', 'Evaluations', 'View'] };
     if (/^\/my-evaluations\/\d+$/.test(pathname))
       return { title: 'Self Evaluation', breadcrumb: ['KPI Management', 'My Evaluations', 'Fill'] };
+    if (/^\/manpower-requests\/\d+\/edit$/.test(pathname))
+      return { title: 'Edit Manpower Request', breadcrumb: ['Manpower Request', 'Edit'] };
+    if (/^\/manpower-requests\/\d+$/.test(pathname))
+      return { title: 'View Manpower Request', breadcrumb: ['Manpower Request', 'View'] };
     return { title: '', breadcrumb: ['Home'] };
   };
 

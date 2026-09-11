@@ -19,6 +19,13 @@ const STATUS_COLORS = {
   Cancelled:          'default',
 };
 
+// Display-only relabeling — the underlying status VALUE stays 'Rejected'
+// (used for filtering/comparisons); only the text shown is "Disapproved".
+const STATUS_LABELS = {
+  Rejected: 'Disapproved',
+};
+const displayStatus = (status) => STATUS_LABELS[status] || status;
+
 const ManpowerRequestIndex = () => {
   const { hasPermission, hasAnyPermission, user } = useAuth();
   const { items, isLoading, refetch } = useManpowerRequests();
@@ -33,14 +40,15 @@ const ManpowerRequestIndex = () => {
     ['Draft', 'Returned'].includes(record.status) &&
     record.user_id === user.id;
 
+  // Submit and Resubmit share the same backend permission/endpoint.
   const canSubmit = (record) =>
-    hasAnyPermission('manpower-request-create', 'manpower-request-edit') &&
+    hasPermission('manpower-request-submit') &&
     ['Draft', 'Returned'].includes(record.status) &&
     record.user_id === user.id;
 
   const canCancel = (record) =>
     hasPermission('manpower-request-cancel') &&
-    ['Draft', 'Submitted', 'Pending Approval', 'Returned'].includes(record.status) &&
+    ['Draft', 'Pending Approval', 'Returned'].includes(record.status) &&
     record.user_id === user.id;
 
   const handleSubmit = async (id) => {
@@ -108,7 +116,7 @@ const ManpowerRequestIndex = () => {
     {
       title: 'Status',
       dataIndex: 'status',
-      render: (status) => <Tag color={STATUS_COLORS[status] || 'default'}>{status}</Tag>,
+      render: (status) => <Tag color={STATUS_COLORS[status] || 'default'}>{displayStatus(status)}</Tag>,
     },
     {
       title: 'Current Level',
@@ -173,7 +181,7 @@ const ManpowerRequestIndex = () => {
             allowClear
             style={{ width: 160 }}
             onChange={setStatusFilter}
-            options={Object.keys(STATUS_COLORS).map((s) => ({ label: s, value: s }))}
+            options={Object.keys(STATUS_COLORS).map((s) => ({ label: displayStatus(s), value: s }))}
           />
           <RangePicker onChange={setDateRange} />
         </Space>

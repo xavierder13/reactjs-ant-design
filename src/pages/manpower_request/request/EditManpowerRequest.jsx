@@ -14,8 +14,9 @@ const EditManpowerRequest = () => {
 
   useEffect(() => {
     (async () => {
-      const record = await fetchById(id);
-      if (record) {
+      const result = await fetchById(id);
+      if (result) {
+        const record = result.manpower_request;
         if (!['Draft', 'Returned'].includes(record.status)) {
           setNotEditable(true);
         } else {

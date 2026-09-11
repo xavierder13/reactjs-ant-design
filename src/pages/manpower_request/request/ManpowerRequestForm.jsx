@@ -149,21 +149,21 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
           >
             {(fields, { add, remove }, { errors }) => (
               <>
-                {fields.map((field) => (
+                {fields.map(({ key, name, ...restField }) => (
                   <Card
-                    key={field.key}
+                    key={key}
                     size="small"
                     style={{ marginBottom: 16, background: '#fafafa' }}
                     extra={fields.length > 1 && (
-                      <MinusCircleOutlined onClick={() => remove(field.name)} style={{ color: '#ff4d4f' }} />
+                      <MinusCircleOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />
                     )}
                   >
                     <Row gutter={16}>
                       <Col span={8}>
                         <Form.Item
-                          {...field}
+                          {...restField}
                           label="Position"
-                          name={[field.name, 'position_id']}
+                          name={[name, 'position_id']}
                           rules={[{ required: true, message: 'Position is required' }]}
                         >
                           <Select placeholder="Select position" options={positionOptions} showSearch optionFilterProp="label" />
@@ -171,18 +171,18 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                       </Col>
                       <Col span={8}>
                         <Form.Item
-                          {...field}
+                          {...restField}
                           label="Employment Type"
-                          name={[field.name, 'employment_type']}
+                          name={[name, 'employment_type']}
                         >
                           <Select placeholder="Select type" options={EMPLOYMENT_TYPE_OPTIONS} allowClear />
                         </Form.Item>
                       </Col>
                       <Col span={8}>
                         <Form.Item
-                          {...field}
+                          {...restField}
                           label="Quantity"
-                          name={[field.name, 'quantity']}
+                          name={[name, 'quantity']}
                           rules={[{ required: true, message: 'Quantity is required' }]}
                         >
                           <InputNumber min={1} style={{ width: '100%' }} />
@@ -193,9 +193,9 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                     <Row gutter={16}>
                       <Col span={8}>
                         <Form.Item
-                          {...field}
+                          {...restField}
                           label="Replacement / Additional"
-                          name={[field.name, 'replacement_or_additional']}
+                          name={[name, 'replacement_or_additional']}
                         >
                           <Select
                             placeholder="Select"
@@ -211,16 +211,16 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                         <Form.Item
                           noStyle
                           shouldUpdate={(prev, curr) =>
-                            prev.details?.[field.name]?.replacement_or_additional !==
-                            curr.details?.[field.name]?.replacement_or_additional
+                            prev.details?.[name]?.replacement_or_additional !==
+                            curr.details?.[name]?.replacement_or_additional
                           }
                         >
                           {({ getFieldValue }) =>
-                            getFieldValue(['details', field.name, 'replacement_or_additional']) === 'Replacement' && (
+                            getFieldValue(['details', name, 'replacement_or_additional']) === 'Replacement' && (
                               <Form.Item
-                                {...field}
+                                {...restField}
                                 label="Replacement Employee"
-                                name={[field.name, 'replacement_employee_id']}
+                                name={[name, 'replacement_employee_id']}
                                 rules={[{ required: true, message: 'Select the employee being replaced' }]}
                               >
                                 {/* TODO: wire to an employee search/select once the Employee master data endpoint is confirmed */}
@@ -231,7 +231,7 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                         </Form.Item>
                       </Col>
                       <Col span={8}>
-                        <Form.Item {...field} label="Salary Grade" name={[field.name, 'salary_grade']}>
+                        <Form.Item {...restField} label="Salary Grade" name={[name, 'salary_grade']}>
                           <Input placeholder="e.g. SG-5" />
                         </Form.Item>
                       </Col>
@@ -239,17 +239,17 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
 
                     <Row gutter={16}>
                       <Col span={8}>
-                        <Form.Item {...field} label="Qualifications" name={[field.name, 'qualifications']}>
+                        <Form.Item {...restField} label="Qualifications" name={[name, 'qualifications']}>
                           <Input.TextArea rows={2} />
                         </Form.Item>
                       </Col>
                       <Col span={8}>
-                        <Form.Item {...field} label="Experience" name={[field.name, 'experience']}>
+                        <Form.Item {...restField} label="Experience" name={[name, 'experience']}>
                           <Input.TextArea rows={2} />
                         </Form.Item>
                       </Col>
                       <Col span={8}>
-                        <Form.Item {...field} label="Education" name={[field.name, 'education']}>
+                        <Form.Item {...restField} label="Education" name={[name, 'education']}>
                           <Input.TextArea rows={2} />
                         </Form.Item>
                       </Col>
