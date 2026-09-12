@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Form, Input, Select, DatePicker, InputNumber, Button, Card,
@@ -29,6 +29,9 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
+  // 'draft' | 'submit' | false — which action is in flight, so the two
+  // buttons can show their own loading state and disable each other
+  const [saving, setSaving] = useState(false);
 
   const branches   = useManpowerRequestStore((state) => state.branches);
   const positions  = useManpowerRequestStore((state) => state.positions);
@@ -72,21 +75,55 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
     details:               values.details,
   });
 
-  const handleFinish = async (values) => {
-    const payload = buildPayload(values);
+  // Resubmit and Submit share the same backend action — only the label
+  // differs, same convention as the Index/View pages.
+  const isResubmit = mode === 'edit' && ['Disapproved', 'Cancelled'].includes(initialData?.status);
 
+  const saveRequest = async (values) => {
+    const payload = buildPayload(values);
+    if (mode === 'create') {
+      const { data } = await manpowerRequestApi.create(payload);
+      return { id: data.manpower_request.id, message: data.message };
+    }
+    const { data } = await manpowerRequestApi.update(initialData.id, payload);
+    return { id: initialData.id, message: data.message };
+  };
+
+  const handleSaveDraft = async () => {
     try {
-      if (mode === 'create') {
-        const { data } = await manpowerRequestApi.create(payload);
-        messageApi.success(data.message);
-        navigate(`/manpower-requests/${data.manpower_request.id}`);
-      } else {
-        const { data } = await manpowerRequestApi.update(initialData.id, payload);
-        messageApi.success(data.message);
-        navigate(`/manpower-requests/${initialData.id}`);
-      }
+      const values = await form.validateFields();
+      setSaving('draft');
+      const { id, message: savedMessage } = await saveRequest(values);
+      messageApi.success(savedMessage);
+      navigate(`/manpower-requests/${id}`);
     } catch (error) {
       handleApiError(error, messageApi);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveAndSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      setSaving('submit');
+      const { id } = await saveRequest(values);
+
+      // the save already succeeded at this point — a failure here means
+      // it's sitting as a Draft, not lost, so this gets its own message
+      // rather than falling into the generic error handler below
+      try {
+        const { data } = await manpowerRequestApi.submit(id);
+        messageApi.success(data.message);
+      } catch (submitError) {
+        messageApi.warning('Saved, but could not submit for approval automatically — you can submit it from the request page.');
+      }
+
+      navigate(`/manpower-requests/${id}`);
+    } catch (error) {
+      handleApiError(error, messageApi);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -94,7 +131,7 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
     <div>
       {contextHolder}
 
-      <Form form={form} layout="vertical" onFinish={handleFinish}>
+      <Form form={form} layout="vertical">
         <Card title="Request Details" style={{ marginBottom: 16 }}>
           <Row gutter={16}>
             <Col span={8}>
@@ -223,7 +260,6 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                                 name={[name, 'replacement_employee_id']}
                                 rules={[{ required: true, message: 'Select the employee being replaced' }]}
                               >
-                                {/* TODO: wire to an employee search/select once the Employee master data endpoint is confirmed */}
                                 <EmployeeSelect placeholder="Search employee to replace" />
                               </Form.Item>
                             )
@@ -272,10 +308,24 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
         <Divider />
 
         <Space>
-          <Button type="primary" htmlType="submit">
-            {mode === 'create' ? 'Save as Draft' : 'Save Changes'}
+          <Button
+            onClick={handleSaveDraft}
+            loading={saving === 'draft'}
+            disabled={saving === 'submit'}
+          >
+            Save as Draft
           </Button>
-          <Button onClick={() => navigate('/manpower-requests')}>Cancel</Button>
+          <Button
+            type="primary"
+            onClick={handleSaveAndSubmit}
+            loading={saving === 'submit'}
+            disabled={saving === 'draft'}
+          >
+            {isResubmit ? 'Save & Resubmit' : 'Save & Submit'}
+          </Button>
+          <Button onClick={() => navigate('/manpower-requests')} disabled={saving !== false}>
+            Cancel
+          </Button>
         </Space>
       </Form>
     </div>

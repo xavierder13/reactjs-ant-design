@@ -11,6 +11,7 @@ const manpowerRequestApi = {
   reject:      (id, remarks)     => axios.post(`/manpower_request/reject/${id}`, { remarks }),
   returnForRevision: (id, remarks) => axios.post(`/manpower_request/return/${id}`, { remarks }),
   cancel:      (id)              => axios.post(`/manpower_request/cancel/${id}`),
+  delete:      (id)              => axios.post(`/manpower_request/delete/${id}`),
   approvalHistory: (id)          => axios.post(`/manpower_request/approval_history/${id}`),
 };
 

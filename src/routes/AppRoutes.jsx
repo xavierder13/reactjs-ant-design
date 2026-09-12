@@ -56,7 +56,7 @@ const permissionRoutes = [
   // Manpower Request Routes
   { permissions: ['manpower-request-list'],   path: '/manpower-requests',        element: <ManpowerRequestIndex /> },
   { permissions: ['manpower-request-create'], path: '/manpower-requests/create', element: <CreateManpowerRequest /> },
-  { permissions: ['manpower-request-list'],   path: '/manpower-requests/:id',    element: <ViewManpowerRequest /> },
+  { permissions: ['manpower-request-list', 'manpower-request-edit', 'manpower-request-approve', 'manpower-request-disapprove', 'manpower-request-return'], path: '/manpower-requests/:id', element: <ViewManpowerRequest /> },
   { permissions: ['manpower-request-create', 'manpower-request-edit'], path: '/manpower-requests/:id/edit', element: <EditManpowerRequest /> },
 
   // KPI Template Routes

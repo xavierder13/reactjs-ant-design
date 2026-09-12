@@ -6,7 +6,7 @@ import {
 } from 'antd';
 import {
   ArrowLeftOutlined, EditOutlined, SendOutlined, CloseCircleOutlined,
-  CheckCircleOutlined, FileTextOutlined,
+  CheckCircleOutlined, FileTextOutlined, DeleteOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useAuth from '../../../hooks/useAuth';
@@ -21,30 +21,22 @@ const STATUS_COLORS = {
   Submitted:          'blue',
   'Pending Approval':  'gold',
   Approved:           'green',
-  Rejected:           'red',
+  Disapproved:        'red',
   Returned:           'orange',
   Cancelled:          'default',
 };
 
 const HISTORY_COLORS = {
-  Approved: 'green',
-  Rejected: 'red',
-  Returned: 'orange',
-  Pending:  'gray',
+  Approved:    'green',
+  Disapproved: 'red',
+  Returned:    'orange',
+  Pending:     'gray',
 };
-
-// Display-only relabeling — the underlying status/action VALUE returned by
-// the backend and used in all comparisons below stays 'Rejected'; only the
-// text shown to users is changed to "Disapproved".
-const STATUS_LABELS = {
-  Rejected: 'Disapproved',
-};
-const displayStatus = (status) => STATUS_LABELS[status] || status;
 
 const ViewManpowerRequest = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { hasPermission, hasAnyPermission, user } = useAuth();
+  const { hasPermission, hasAnyPermission, hasRole, user } = useAuth();
   const fetchById = useManpowerRequestStore((state) => state.fetchById);
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -97,17 +89,20 @@ const ViewManpowerRequest = () => {
 
   const canActOnApproval = approvalStatus?.can_approve === true;
 
+  // Editing is Administrator-or-owner, same pattern as canDelete: Admin
+  // bypasses ownership, everyone else needs the permission AND to be the
+  // requestor. Status gate applies to both.
   const canEdit =
-    hasAnyPermission('manpower-request-create', 'manpower-request-edit') &&
-    ['Draft', 'Returned'].includes(record.status) &&
-    record.user_id === user.id;
+    ['Draft', 'Disapproved', 'Cancelled'].includes(record.status) &&
+    (hasRole('Administrator') ||
+      (hasAnyPermission('manpower-request-create', 'manpower-request-edit') && record.user_id === user.id));
 
   // Submit and Resubmit are the same backend action/permission — only the
-  // label differs. Backend currently only allows this from Draft/Returned;
-  // Rejected is NOT resubmittable server-side yet (pending product decision).
+  // label differs. Backend allows this from Draft/Disapproved/Cancelled;
+  // Returned is NOT resubmittable server-side (dead end — see ManpowerRequestService::returnForRevision()).
   const canSubmit =
     hasPermission('manpower-request-submit') &&
-    ['Draft', 'Returned'].includes(record.status) &&
+    ['Draft', 'Disapproved', 'Cancelled'].includes(record.status) &&
     record.user_id === user.id;
 
   const canCancel =
@@ -115,13 +110,21 @@ const ViewManpowerRequest = () => {
     ['Draft', 'Pending Approval', 'Returned'].includes(record.status) &&
     record.user_id === user.id;
 
+  // Delete is a permanent hard-delete, unlike Cancel (which just changes
+  // status). Administrators can delete any Draft/Cancelled request
+  // regardless of who created it; everyone else needs the permission AND
+  // to be the requestor.
+  const canDelete =
+    ['Draft', 'Cancelled'].includes(record.status) &&
+    (hasRole('Administrator') || (hasPermission('manpower-request-delete') && record.user_id === user.id));
+
   const canApprove =
     hasPermission('manpower-request-approve') &&
     record.status === 'Pending Approval' &&
     canActOnApproval;
 
   const canReject =
-    hasPermission('manpower-request-reject') &&
+    hasPermission('manpower-request-disapprove') &&
     record.status === 'Pending Approval' &&
     canActOnApproval;
 
@@ -154,6 +157,18 @@ const ViewManpowerRequest = () => {
     } catch (error) {
       handleApiError(error, messageApi);
     } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setActionLoading(true);
+    try {
+      const { data } = await manpowerRequestApi.delete(record.id);
+      messageApi.success(data.message);
+      navigate('/manpower-requests');
+    } catch (error) {
+      handleApiError(error, messageApi);
       setActionLoading(false);
     }
   };
@@ -244,7 +259,7 @@ const ViewManpowerRequest = () => {
             </Col>
             <Col>
               <Tag color={STATUS_COLORS[record.status] || 'default'}>
-                {displayStatus(record.status)}
+                {record.status}
               </Tag>
             </Col>
           </Row>
@@ -317,18 +332,18 @@ const ViewManpowerRequest = () => {
           </Col>
         </Row>
 
-        {['Rejected', 'Returned'].includes(record.status) && record.remarks && (
+        {['Disapproved', 'Returned'].includes(record.status) && record.remarks && (
           <div style={{
-            background: record.status === 'Rejected' ? '#fff2f0' : '#fff7e6',
-            border: `1px solid ${record.status === 'Rejected' ? '#ffccc7' : '#ffd591'}`,
+            background: record.status === 'Disapproved' ? '#fff2f0' : '#fff7e6',
+            border: `1px solid ${record.status === 'Disapproved' ? '#ffccc7' : '#ffd591'}`,
             borderRadius: 8,
             padding: '8px 12px',
             marginBottom: 16,
           }}>
-            <Typography.Text type={record.status === 'Rejected' ? 'danger' : 'warning'} strong>
-              {record.status === 'Rejected' ? 'Disapproval Reason: ' : 'Return Remarks: '}
+            <Typography.Text type={record.status === 'Disapproved' ? 'danger' : 'warning'} strong>
+              {record.status === 'Disapproved' ? 'Disapproval Reason: ' : 'Return Remarks: '}
             </Typography.Text>
-            <Typography.Text type={record.status === 'Rejected' ? 'danger' : 'warning'}>
+            <Typography.Text type={record.status === 'Disapproved' ? 'danger' : 'warning'}>
               {record.remarks}
             </Typography.Text>
           </div>
@@ -446,11 +461,11 @@ const ViewManpowerRequest = () => {
 
               {canSubmit && (
                 <Popconfirm
-                  title={`${record.status === 'Returned' ? 'Resubmit' : 'Submit'} this request for approval?`}
+                  title={`${['Disapproved', 'Cancelled'].includes(record.status) ? 'Resubmit' : 'Submit'} this request for approval?`}
                   onConfirm={handleSubmit}
                 >
                   <Button type="primary" icon={<SendOutlined />} loading={actionLoading}>
-                    {record.status === 'Returned' ? 'Resubmit' : 'Submit'}
+                    {['Disapproved', 'Cancelled'].includes(record.status) ? 'Resubmit' : 'Submit'}
                   </Button>
                 </Popconfirm>
               )}
@@ -462,6 +477,18 @@ const ViewManpowerRequest = () => {
                 >
                   <Button danger icon={<CloseCircleOutlined />} loading={actionLoading}>
                     Cancel
+                  </Button>
+                </Popconfirm>
+              )}
+
+              {canDelete && (
+                <Popconfirm
+                  title="Delete this request?"
+                  description="This permanently deletes the draft and cannot be undone."
+                  onConfirm={handleDelete}
+                >
+                  <Button danger icon={<DeleteOutlined />} loading={actionLoading}>
+                    Delete
                   </Button>
                 </Popconfirm>
               )}
@@ -518,10 +545,10 @@ const ViewManpowerRequest = () => {
               items={historyEntries.map((entry, idx) => ({
                 key: idx,
                 color: HISTORY_COLORS[entry.action] || 'gray',
-                children: (
+                content: (
                   <div>
                     <Typography.Text strong>
-                      Level {entry.level} — {displayStatus(entry.action)}
+                      Level {entry.level} — {entry.action}
                     </Typography.Text>
                     {entry.approver && (
                       <div><Typography.Text type="secondary">{entry.approver.name}</Typography.Text></div>

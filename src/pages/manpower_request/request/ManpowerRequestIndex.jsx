@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Table, Tag, Button, Input, Select, DatePicker, Space, Popconfirm, message } from 'antd';
-import { PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Table, Tag, Button, Input, Select, DatePicker, Space, Popconfirm, Tooltip, message } from 'antd';
+import { PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, CloseCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useAuth from '../../../hooks/useAuth';
 import useManpowerRequests from '../../../hooks/useManpowerRequests';
@@ -14,20 +14,13 @@ const STATUS_COLORS = {
   Draft:              'default',
   'Pending Approval':  'gold',
   Approved:           'green',
-  Rejected:           'red',
+  Disapproved:        'red',
   Returned:           'orange',
   Cancelled:          'default',
 };
 
-// Display-only relabeling — the underlying status VALUE stays 'Rejected'
-// (used for filtering/comparisons); only the text shown is "Disapproved".
-const STATUS_LABELS = {
-  Rejected: 'Disapproved',
-};
-const displayStatus = (status) => STATUS_LABELS[status] || status;
-
 const ManpowerRequestIndex = () => {
-  const { hasPermission, hasAnyPermission, user } = useAuth();
+  const { hasPermission, hasAnyPermission, hasRole, user } = useAuth();
   const { items, isLoading, refetch } = useManpowerRequests();
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -35,21 +28,33 @@ const ManpowerRequestIndex = () => {
   const [statusFilter, setStatusFilter] = useState(null);
   const [dateRange, setDateRange]     = useState(null);
 
+  // Editing is Administrator-or-owner, same pattern as canDelete: Admin
+  // bypasses ownership, everyone else needs the permission AND to be the
+  // requestor. Status gate applies to both — even Administrators can't
+  // edit past Draft/Disapproved/Cancelled.
   const canEdit = (record) =>
-    hasAnyPermission('manpower-request-create', 'manpower-request-edit') &&
-    ['Draft', 'Returned'].includes(record.status) &&
-    record.user_id === user.id;
+    ['Draft', 'Disapproved', 'Cancelled'].includes(record.status) &&
+    (hasRole('Administrator') ||
+      (hasAnyPermission('manpower-request-create', 'manpower-request-edit') && record.user_id === user.id));
 
   // Submit and Resubmit share the same backend permission/endpoint.
   const canSubmit = (record) =>
     hasPermission('manpower-request-submit') &&
-    ['Draft', 'Returned'].includes(record.status) &&
+    ['Draft', 'Disapproved', 'Cancelled'].includes(record.status) &&
     record.user_id === user.id;
 
   const canCancel = (record) =>
     hasPermission('manpower-request-cancel') &&
     ['Draft', 'Pending Approval', 'Returned'].includes(record.status) &&
     record.user_id === user.id;
+
+  // Delete is a permanent hard-delete, unlike Cancel (which just changes
+  // status). Administrators can delete any Draft/Cancelled request
+  // regardless of who created it; everyone else needs the permission AND
+  // to be the requestor.
+  const canDelete = (record) =>
+    ['Draft', 'Cancelled'].includes(record.status) &&
+    (hasRole('Administrator') || (hasPermission('manpower-request-delete') && record.user_id === user.id));
 
   const handleSubmit = async (id) => {
     try {
@@ -64,6 +69,16 @@ const ManpowerRequestIndex = () => {
   const handleCancel = async (id) => {
     try {
       const { data } = await manpowerRequestApi.cancel(id);
+      messageApi.success(data.message);
+      refetch();
+    } catch (error) {
+      handleApiError(error, messageApi);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const { data } = await manpowerRequestApi.delete(id);
       messageApi.success(data.message);
       refetch();
     } catch (error) {
@@ -116,7 +131,7 @@ const ManpowerRequestIndex = () => {
     {
       title: 'Status',
       dataIndex: 'status',
-      render: (status) => <Tag color={STATUS_COLORS[status] || 'default'}>{displayStatus(status)}</Tag>,
+      render: (status) => <Tag color={STATUS_COLORS[status] || 'default'}>{status}</Tag>,
     },
     {
       title: 'Current Level',
@@ -132,22 +147,28 @@ const ManpowerRequestIndex = () => {
       title: 'Actions',
       render: (_, record) => (
         <Space>
-          <Link to={`/manpower-requests/${record.id}`}>
-            <Button icon={<EyeOutlined />} size="small" />
-          </Link>
+          <Tooltip title="View">
+            <Link to={`/manpower-requests/${record.id}`}>
+              <Button icon={<EyeOutlined />} size="small" />
+            </Link>
+          </Tooltip>
 
           {canEdit(record) && (
-            <Link to={`/manpower-requests/${record.id}/edit`}>
-              <Button icon={<EditOutlined />} size="small" />
-            </Link>
+            <Tooltip title="Edit">
+              <Link to={`/manpower-requests/${record.id}/edit`}>
+                <Button icon={<EditOutlined />} size="small" />
+              </Link>
+            </Tooltip>
           )}
 
           {canSubmit(record) && (
             <Popconfirm
-              title="Submit this request for approval?"
+              title={`${['Disapproved', 'Cancelled'].includes(record.status) ? 'Resubmit' : 'Submit'} this request for approval?`}
               onConfirm={() => handleSubmit(record.id)}
             >
-              <Button icon={<SendOutlined />} size="small" type="primary" />
+              <Tooltip title={['Disapproved', 'Cancelled'].includes(record.status) ? 'Resubmit for Approval' : 'Submit for Approval'}>
+                <Button icon={<SendOutlined />} size="small" type="primary" />
+              </Tooltip>
             </Popconfirm>
           )}
 
@@ -156,7 +177,21 @@ const ManpowerRequestIndex = () => {
               title="Cancel this request?"
               onConfirm={() => handleCancel(record.id)}
             >
-              <Button icon={<CloseCircleOutlined />} size="small" danger />
+              <Tooltip title="Cancel Request">
+                <Button icon={<CloseCircleOutlined />} size="small" danger />
+              </Tooltip>
+            </Popconfirm>
+          )}
+
+          {canDelete(record) && (
+            <Popconfirm
+              title="Delete this request?"
+              description="This permanently deletes the draft and cannot be undone."
+              onConfirm={() => handleDelete(record.id)}
+            >
+              <Tooltip title="Delete Request">
+                <Button icon={<DeleteOutlined />} size="small" danger />
+              </Tooltip>
             </Popconfirm>
           )}
         </Space>
@@ -181,7 +216,7 @@ const ManpowerRequestIndex = () => {
             allowClear
             style={{ width: 160 }}
             onChange={setStatusFilter}
-            options={Object.keys(STATUS_COLORS).map((s) => ({ label: displayStatus(s), value: s }))}
+            options={Object.keys(STATUS_COLORS).map((s) => ({ label: s, value: s }))}
           />
           <RangePicker onChange={setDateRange} />
         </Space>
