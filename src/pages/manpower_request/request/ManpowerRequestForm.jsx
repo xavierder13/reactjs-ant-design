@@ -24,6 +24,42 @@ const EMPLOYMENT_TYPE_OPTIONS = [
   { label: 'Contractual',  value: 'Contractual' },
 ];
 
+// Must match ManpowerRequestController::REPLACEMENT_REASONS exactly.
+const REPLACEMENT_REASON_OPTIONS = [
+  { label: 'Resignation',       value: 'Resignation' },
+  { label: 'Transferred',       value: 'Transferred' },
+  { label: 'Promoted',          value: 'Promoted' },
+  { label: 'Demoted',           value: 'Demoted' },
+  { label: 'AWOL',              value: 'AWOL' },
+  { label: 'Terminated',        value: 'Terminated' },
+  { label: 'End of Probation',  value: 'End of Probation' },
+  { label: 'Retirement',        value: 'Retirement' },
+  { label: 'Death',             value: 'Death' },
+  { label: 'Others',            value: 'Others' },
+];
+
+const GENDER_OPTIONS = [
+  { label: 'Male',              value: 'Male' },
+  { label: 'Female',             value: 'Female' },
+  { label: 'Without Preference', value: 'Without Preference' },
+];
+
+const PRC_LICENSE_STATUS_OPTIONS = [
+  { label: 'Required',       value: 'Required' },
+  { label: 'Not Required',   value: 'Not Required' },
+  { label: 'Not Applicable', value: 'Not Applicable' },
+];
+
+const DRIVERS_LICENSE_STATUS_OPTIONS = [
+  { label: 'Professional',     value: 'Professional' },
+  { label: 'Non-Professional', value: 'Non-Professional' },
+  { label: 'Not Required',     value: 'Not Required' },
+];
+
+// Must match ManpowerRequestController::DRIVERS_LICENSE_CODES exactly.
+const DRIVERS_LICENSE_CODE_OPTIONS = ['A', 'A1', 'B', 'B1', 'B2', 'BE', 'C', 'CE', 'D']
+  .map((code) => ({ label: code, value: code }));
+
 // mode: 'create' | 'edit'
 const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
   const [form] = Form.useForm();
@@ -54,10 +90,22 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
           quantity:                    d.quantity,
           replacement_or_additional:   d.replacement_or_additional,
           replacement_employee_id:     d.replacement_employee_id,
+          replacement_reason:          d.replacement_reason,
+          replacement_reason_other:    d.replacement_reason_other,
+          last_working_day:           d.last_working_day ? dayjs(d.last_working_day) : null,
           qualifications:              d.qualifications,
           experience:                  d.experience,
           education:                   d.education,
           salary_grade:                d.salary_grade,
+          gender:                      d.gender,
+          age_min:                     d.age_min,
+          age_max:                     d.age_max,
+          experience_required:         d.experience_required,
+          experience_years:            d.experience_years,
+          prc_license_status:          d.prc_license_status,
+          prc_license_type:            d.prc_license_type,
+          drivers_license_status:      d.drivers_license_status,
+          drivers_license_code:        d.drivers_license_code,
         })),
       });
     }
@@ -72,12 +120,15 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
     reason:                values.reason,
     target_hiring_date:   values.target_hiring_date ? values.target_hiring_date.format('YYYY-MM-DD') : null,
     priority:              values.priority,
-    details:               values.details,
+    details:               (values.details || []).map((d) => ({
+      ...d,
+      last_working_day: d.last_working_day ? d.last_working_day.format('YYYY-MM-DD') : null,
+    })),
   });
 
   // Resubmit and Submit share the same backend action — only the label
   // differs, same convention as the Index/View pages.
-  const isResubmit = mode === 'edit' && ['Disapproved', 'Cancelled'].includes(initialData?.status);
+  const isResubmit = mode === 'edit' && ['Disapproved', 'Cancelled', 'Returned'].includes(initialData?.status);
 
   const saveRequest = async (values) => {
     const payload = buildPayload(values);
@@ -273,6 +324,62 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                       </Col>
                     </Row>
 
+                    <Form.Item
+                      noStyle
+                      shouldUpdate={(prev, curr) =>
+                        prev.details?.[name]?.replacement_or_additional !==
+                        curr.details?.[name]?.replacement_or_additional
+                      }
+                    >
+                      {({ getFieldValue }) =>
+                        getFieldValue(['details', name, 'replacement_or_additional']) === 'Replacement' && (
+                          <Row gutter={16}>
+                            <Col span={8}>
+                              <Form.Item
+                                {...restField}
+                                label="Reason for Replacement"
+                                name={[name, 'replacement_reason']}
+                                rules={[{ required: true, message: 'Reason for replacement is required' }]}
+                              >
+                                <Select placeholder="Select reason" options={REPLACEMENT_REASON_OPTIONS} allowClear />
+                              </Form.Item>
+                            </Col>
+                            <Col span={8}>
+                              <Form.Item
+                                noStyle
+                                shouldUpdate={(prev, curr) =>
+                                  prev.details?.[name]?.replacement_reason !==
+                                  curr.details?.[name]?.replacement_reason
+                                }
+                              >
+                                {({ getFieldValue: getFieldValue2 }) =>
+                                  getFieldValue2(['details', name, 'replacement_reason']) === 'Others' && (
+                                    <Form.Item
+                                      {...restField}
+                                      label="Please Specify"
+                                      name={[name, 'replacement_reason_other']}
+                                      rules={[{ required: true, message: 'Please specify the reason' }]}
+                                    >
+                                      <Input.TextArea rows={1} placeholder="Specify the reason for replacement" />
+                                    </Form.Item>
+                                  )
+                                }
+                              </Form.Item>
+                            </Col>
+                            <Col span={8}>
+                              <Form.Item
+                                {...restField}
+                                label="Last Working Day"
+                                name={[name, 'last_working_day']}
+                              >
+                                <DatePicker style={{ width: '100%' }} format="MM-DD-YYYY" />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                        )
+                      }
+                    </Form.Item>
+
                     <Row gutter={16}>
                       <Col span={8}>
                         <Form.Item {...restField} label="Qualifications" name={[name, 'qualifications']}>
@@ -287,6 +394,132 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                       <Col span={8}>
                         <Form.Item {...restField} label="Education" name={[name, 'education']}>
                           <Input.TextArea rows={2} />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Divider orientation="left" plain style={{ margin: '8px 0' }}>Job Specifications</Divider>
+
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item {...restField} label="Gender" name={[name, 'gender']}>
+                          <Select placeholder="Select" options={GENDER_OPTIONS} allowClear />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item {...restField} label="Age Range (Min)" name={[name, 'age_min']}>
+                          <InputNumber min={1} style={{ width: '100%' }} placeholder="Min age" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item
+                          {...restField}
+                          label="Age Range (Max)"
+                          name={[name, 'age_max']}
+                          dependencies={[['details', name, 'age_min']]}
+                          rules={[
+                            ({ getFieldValue }) => ({
+                              validator(_, value) {
+                                const min = getFieldValue(['details', name, 'age_min']);
+                                if (value == null || min == null || value >= min) return Promise.resolve();
+                                return Promise.reject(new Error('Max age must be ≥ min age'));
+                              },
+                            }),
+                          ]}
+                        >
+                          <InputNumber min={1} style={{ width: '100%' }} placeholder="Max age" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item {...restField} label="Relevant Work Experience Required" name={[name, 'experience_required']}>
+                          <Select
+                            placeholder="Select"
+                            allowClear
+                            options={[{ label: 'Required', value: true }, { label: 'Not Required', value: false }]}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item
+                          noStyle
+                          shouldUpdate={(prev, curr) =>
+                            prev.details?.[name]?.experience_required !== curr.details?.[name]?.experience_required
+                          }
+                        >
+                          {({ getFieldValue }) =>
+                            getFieldValue(['details', name, 'experience_required']) === true && (
+                              <Form.Item
+                                {...restField}
+                                label="No. of Years"
+                                name={[name, 'experience_years']}
+                                rules={[{ required: true, message: 'No. of years is required' }]}
+                              >
+                                <InputNumber min={0} style={{ width: '100%' }} />
+                              </Form.Item>
+                            )
+                          }
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item {...restField} label="PRC License" name={[name, 'prc_license_status']}>
+                          <Select placeholder="Select" options={PRC_LICENSE_STATUS_OPTIONS} allowClear />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item
+                          noStyle
+                          shouldUpdate={(prev, curr) =>
+                            prev.details?.[name]?.prc_license_status !== curr.details?.[name]?.prc_license_status
+                          }
+                        >
+                          {({ getFieldValue }) =>
+                            getFieldValue(['details', name, 'prc_license_status']) === 'Required' && (
+                              <Form.Item
+                                {...restField}
+                                label="Specify PRC License Type"
+                                name={[name, 'prc_license_type']}
+                                rules={[{ required: true, message: 'Please specify the PRC license type' }]}
+                              >
+                                <Input placeholder="e.g. Certified Public Accountant" />
+                              </Form.Item>
+                            )
+                          }
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item {...restField} label="Driver's License" name={[name, 'drivers_license_status']}>
+                          <Select placeholder="Select" options={DRIVERS_LICENSE_STATUS_OPTIONS} allowClear />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item
+                          noStyle
+                          shouldUpdate={(prev, curr) =>
+                            prev.details?.[name]?.drivers_license_status !== curr.details?.[name]?.drivers_license_status
+                          }
+                        >
+                          {({ getFieldValue }) => {
+                            const status = getFieldValue(['details', name, 'drivers_license_status']);
+                            return (status === 'Professional' || status === 'Non-Professional') && (
+                              <Form.Item
+                                {...restField}
+                                label="Code"
+                                name={[name, 'drivers_license_code']}
+                                rules={[{ required: true, message: "Driver's license code is required" }]}
+                              >
+                                <Select placeholder="Select code" options={DRIVERS_LICENSE_CODE_OPTIONS} />
+                              </Form.Item>
+                            );
+                          }}
                         </Form.Item>
                       </Col>
                     </Row>

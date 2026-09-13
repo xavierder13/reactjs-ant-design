@@ -163,38 +163,66 @@ are available; do not add one unless explicitly requested.
 
 ## Manpower Request Conventions
 
-Module status: **in progress, not fully wired up.**
+Module status: **fully wired up and in active use** — this section was
+badly out of date (previously said `ViewManpowerRequest.jsx` was an empty
+file and routes weren't registered; neither is true). The backend
+(`vueportal`, same session's work) has its own much more detailed
+`.claude/skills/manpower-request/SKILL.md` including a **Roadmap section —
+read that first** for what's done/deferred/next; this section only covers
+frontend-specific conventions.
 
-- Files: `src/pages/manpower_request/request/` (Index, Create, Edit, Form,
-  EmployeeSelect, and `ViewManpowerRequest.jsx` which is currently an
-  **empty file**), `src/store/manpowerRequestStore.js`,
+- Files: `src/pages/manpower_request/request/` — `ManpowerRequestIndex.jsx`
+  (list), `CreateManpowerRequest.jsx`/`EditManpowerRequest.jsx` (thin
+  wrappers around the shared `ManpowerRequestForm.jsx`), `ViewManpowerRequest.jsx`
+  (detail page with the full approve/disapprove/return/cancel/delete
+  action set), `EmployeeSelect.jsx` (async searchable picker, reused for
+  the Replacement Employee field). `src/store/manpowerRequestStore.js`,
+  `src/hooks/useManpowerRequests.js`,
   `src/services/manpower_request/manpowerRequestApi.js`.
-- **Not registered in `AppRoutes.jsx` or `MainLayout.jsx`** — the pages
-  exist but their routes (`/manpower-requests`, `/manpower-requests/:id`,
-  `/manpower-requests/create`, `/manpower-requests/:id/edit`) are not
-  currently reachable in the running app.
+- **Registered** in both `AppRoutes.jsx` and `MainLayout.jsx` — reachable
+  at `/manpower-requests`, `/manpower-requests/:id`,
+  `/manpower-requests/create`, `/manpower-requests/:id/edit`.
 - All service endpoints are POST-only (`/manpower_request/index`,
   `/create`, `/edit/{id}`, `/store`, `/update/{id}`, `/submit/{id}`,
   `/approve/{id}`, `/reject/{id}`, `/return/{id}`, `/cancel/{id}`,
-  `/approval_history/{id}`) — follow this POST convention for any new
-  Manpower Request endpoint, do not switch to REST verbs.
-- Status flow: `Draft → Submitted/Pending Approval → Approved | Rejected |
-  Returned`, with `Cancelled` as a terminal branch from most non-final
-  states. `current_level` on the record suggests multi-level approval.
+  `/delete/{id}`, `/approval_history/{id}`) — follow this POST convention
+  for any new Manpower Request endpoint, do not switch to REST verbs.
+- Statuses: `Draft`, `Pending Approval`, `Approved`, `Disapproved`,
+  `Returned`, `Cancelled`. `Draft`/`Disapproved`/`Cancelled`/`Returned` are
+  all editable+resubmittable (`canEdit`/`canSubmit` in
+  `ManpowerRequestIndex.jsx`/`ViewManpowerRequest.jsx`, and the route guard
+  in `EditManpowerRequest.jsx`, all check this same 4-status list —
+  keep them in sync if it ever changes again). Resubmitting from
+  `Returned` resumes approval at the same `current_level` server-side
+  (not a frontend concern, but affects what "Resubmit" means to the user).
+- Edit/Submit/Delete are Administrator-or-owner: `hasRole('Administrator')`
+  bypasses the ownership check (`record.user_id === user.id`), everyone
+  else needs both the permission and to be the requestor — this exact
+  pattern repeats across `canEdit`/`canSubmit`/`canDelete` in both
+  `ManpowerRequestIndex.jsx` and `ViewManpowerRequest.jsx`; match it for
+  any new action gate rather than inventing a new check shape.
+  Approve/Disapprove/Return additionally require `approval_status.can_approve`
+  from the backend (`ViewManpowerRequest.jsx`'s `canActOnApproval`), not
+  just the permission string.
 - `fetchById` in the store returns `{ manpower_request, approval_status }`.
-- Edit is restricted to `Draft`/`Returned` status and to the record owner
-  (`record.user_id === user.id`) — enforced in the UI, mirror this check
-  in any new MRF page.
-- The `approve`, `reject`, `return`, and `approvalHistory` API methods
-  already exist in `manpowerRequestApi.js` but have no UI consumer yet —
-  this is expected to land in `ViewManpowerRequest.jsx`. Use
-  `KpiEvaluationView.jsx` as the closest existing pattern for a detail
-  page with approve/reject/status actions (Popconfirm for simple
-  transitions, a Modal + reason textarea for reject/return).
-- Permission strings used so far: `manpower-request-create`,
-  `manpower-request-edit`, `manpower-request-cancel`. Not yet confirmed
-  whether these are seeded on the backend; verify before relying on a new
-  permission string.
+- Permission strings in use: `manpower-request-list`, `-create`, `-edit`,
+  `-delete`, `-submit`, `-cancel`, `-approve`, `-disapprove`, `-reject`,
+  `-return`. All seeded on the backend via
+  `database/seeds/PermissionSeeder.php`; `Manpower Requestor` and
+  `Manpower Request Approver` roles (with the right subset of these) are
+  seeded via `database/seeds/ManpowerRequestRoleSeeder.php`.
+- The request form's line items now carry a full Job Specifications block
+  (Gender, Age Range, Relevant Work Experience, PRC License, Driver's
+  License) and Replacement-specific fields (reason from a fixed PH-scenario
+  list + Others/specify, Last Working Day) — see `ManpowerRequestForm.jsx`'s
+  option constants, which must stay in sync with the backend's
+  `ManpowerRequestController::REPLACEMENT_REASONS`/`DRIVERS_LICENSE_CODES`.
+  `required_plantilla`/`existing_headcount` are backend-computed and
+  read-only on this side — display only, never send them.
+- **Not yet built**: a print layout matching the paper MRF form (deferred
+  in this same session until the field work above landed — now
+  unblocked), in-app notifications, a "Pending My Approval"/"My Requests"
+  filtered view (the list is currently unfiltered).
 
 ## Important Rules for Modifying This Existing Project
 

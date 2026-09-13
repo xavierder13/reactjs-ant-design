@@ -24,7 +24,7 @@ const EditManpowerRequest = () => {
         // rendering the form) for anyone with edit access, regardless of
         // ownership, since only the status was checked here.
         const isOwnerOrAdmin = hasRole('Administrator') || record.user_id === user.id;
-        if (!isOwnerOrAdmin || !['Draft', 'Disapproved', 'Cancelled'].includes(record.status)) {
+        if (!isOwnerOrAdmin || !['Draft', 'Disapproved', 'Cancelled', 'Returned'].includes(record.status)) {
           setNotEditable(true);
         } else {
           setData(record);

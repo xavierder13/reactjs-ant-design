@@ -31,16 +31,18 @@ const ManpowerRequestIndex = () => {
   // Editing is Administrator-or-owner, same pattern as canDelete: Admin
   // bypasses ownership, everyone else needs the permission AND to be the
   // requestor. Status gate applies to both — even Administrators can't
-  // edit past Draft/Disapproved/Cancelled.
+  // edit past Draft/Disapproved/Cancelled/Returned.
   const canEdit = (record) =>
-    ['Draft', 'Disapproved', 'Cancelled'].includes(record.status) &&
+    ['Draft', 'Disapproved', 'Cancelled', 'Returned'].includes(record.status) &&
     (hasRole('Administrator') ||
       (hasAnyPermission('manpower-request-create', 'manpower-request-edit') && record.user_id === user.id));
 
   // Submit and Resubmit share the same backend permission/endpoint.
+  // Resubmitting from Returned resumes approval at the same level instead
+  // of restarting the chain — see ManpowerRequestService::submit().
   const canSubmit = (record) =>
     hasPermission('manpower-request-submit') &&
-    ['Draft', 'Disapproved', 'Cancelled'].includes(record.status) &&
+    ['Draft', 'Disapproved', 'Cancelled', 'Returned'].includes(record.status) &&
     record.user_id === user.id;
 
   const canCancel = (record) =>
@@ -163,10 +165,10 @@ const ManpowerRequestIndex = () => {
 
           {canSubmit(record) && (
             <Popconfirm
-              title={`${['Disapproved', 'Cancelled'].includes(record.status) ? 'Resubmit' : 'Submit'} this request for approval?`}
+              title={`${['Disapproved', 'Cancelled', 'Returned'].includes(record.status) ? 'Resubmit' : 'Submit'} this request for approval?`}
               onConfirm={() => handleSubmit(record.id)}
             >
-              <Tooltip title={['Disapproved', 'Cancelled'].includes(record.status) ? 'Resubmit for Approval' : 'Submit for Approval'}>
+              <Tooltip title={['Disapproved', 'Cancelled', 'Returned'].includes(record.status) ? 'Resubmit for Approval' : 'Submit for Approval'}>
                 <Button icon={<SendOutlined />} size="small" type="primary" />
               </Tooltip>
             </Popconfirm>

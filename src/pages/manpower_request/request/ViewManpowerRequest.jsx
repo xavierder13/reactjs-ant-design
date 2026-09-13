@@ -93,16 +93,17 @@ const ViewManpowerRequest = () => {
   // bypasses ownership, everyone else needs the permission AND to be the
   // requestor. Status gate applies to both.
   const canEdit =
-    ['Draft', 'Disapproved', 'Cancelled'].includes(record.status) &&
+    ['Draft', 'Disapproved', 'Cancelled', 'Returned'].includes(record.status) &&
     (hasRole('Administrator') ||
       (hasAnyPermission('manpower-request-create', 'manpower-request-edit') && record.user_id === user.id));
 
   // Submit and Resubmit are the same backend action/permission — only the
-  // label differs. Backend allows this from Draft/Disapproved/Cancelled;
-  // Returned is NOT resubmittable server-side (dead end — see ManpowerRequestService::returnForRevision()).
+  // label differs. Backend allows this from Draft/Disapproved/Cancelled/
+  // Returned; resubmitting from Returned resumes approval at the same level
+  // instead of restarting the chain — see ManpowerRequestService::submit().
   const canSubmit =
     hasPermission('manpower-request-submit') &&
-    ['Draft', 'Disapproved', 'Cancelled'].includes(record.status) &&
+    ['Draft', 'Disapproved', 'Cancelled', 'Returned'].includes(record.status) &&
     record.user_id === user.id;
 
   const canCancel =
@@ -392,6 +393,40 @@ const ViewManpowerRequest = () => {
               </Col>
             </Row>
 
+            {d.replacement_or_additional === 'Replacement' && (
+              <Row gutter={16} style={{ marginTop: 12 }}>
+                <Col xs={24} md={8}>
+                  <Typography.Text type="secondary">Reason for Replacement</Typography.Text>
+                  <div>
+                    <Typography.Text strong>
+                      {d.replacement_reason === 'Others' ? d.replacement_reason_other : d.replacement_reason || '—'}
+                    </Typography.Text>
+                  </div>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Typography.Text type="secondary">Last Working Day</Typography.Text>
+                  <div>
+                    <Typography.Text strong>
+                      {d.last_working_day ? dayjs(d.last_working_day).format('MM-DD-YYYY') : '—'}
+                    </Typography.Text>
+                  </div>
+                </Col>
+              </Row>
+            )}
+
+            {/* Snapshotted at save time (create/update), not live — see
+                ManpowerRequestService::resolveHeadcountSnapshot(). */}
+            <Row gutter={16} style={{ marginTop: 12 }}>
+              <Col xs={24} md={8}>
+                <Typography.Text type="secondary">Required Plantilla</Typography.Text>
+                <div><Typography.Text strong>{d.required_plantilla ?? 'N/A'}</Typography.Text></div>
+              </Col>
+              <Col xs={24} md={8}>
+                <Typography.Text type="secondary">Existing Headcount</Typography.Text>
+                <div><Typography.Text strong>{d.existing_headcount ?? '—'}</Typography.Text></div>
+              </Col>
+            </Row>
+
             {(d.qualifications || d.experience || d.education) && (
               <Row gutter={16} style={{ marginTop: 12 }}>
                 <Col xs={24} md={8}>
@@ -407,6 +442,59 @@ const ViewManpowerRequest = () => {
                   <div><Typography.Text>{d.education || '—'}</Typography.Text></div>
                 </Col>
               </Row>
+            )}
+
+            {(d.gender || d.age_min || d.age_max || d.experience_required != null ||
+              d.prc_license_status || d.drivers_license_status) && (
+              <>
+                <Divider style={{ margin: '12px 0' }} plain>Job Specifications</Divider>
+                <Row gutter={16}>
+                  <Col xs={24} md={8}>
+                    <Typography.Text type="secondary">Gender</Typography.Text>
+                    <div><Typography.Text strong>{d.gender || '—'}</Typography.Text></div>
+                  </Col>
+                  <Col xs={24} md={8}>
+                    <Typography.Text type="secondary">Age Range</Typography.Text>
+                    <div>
+                      <Typography.Text strong>
+                        {d.age_min || d.age_max ? `${d.age_min ?? '—'} - ${d.age_max ?? '—'}` : '—'}
+                      </Typography.Text>
+                    </div>
+                  </Col>
+                  <Col xs={24} md={8}>
+                    <Typography.Text type="secondary">Work Experience</Typography.Text>
+                    <div>
+                      <Typography.Text strong>
+                        {d.experience_required === true
+                          ? `Required (${d.experience_years ?? '—'} yrs)`
+                          : d.experience_required === false ? 'Not Required' : '—'}
+                      </Typography.Text>
+                    </div>
+                  </Col>
+                </Row>
+                <Row gutter={16} style={{ marginTop: 12 }}>
+                  <Col xs={24} md={8}>
+                    <Typography.Text type="secondary">PRC License</Typography.Text>
+                    <div>
+                      <Typography.Text strong>
+                        {d.prc_license_status === 'Required'
+                          ? `Required — ${d.prc_license_type || '—'}`
+                          : d.prc_license_status || '—'}
+                      </Typography.Text>
+                    </div>
+                  </Col>
+                  <Col xs={24} md={8}>
+                    <Typography.Text type="secondary">Driver's License</Typography.Text>
+                    <div>
+                      <Typography.Text strong>
+                        {['Professional', 'Non-Professional'].includes(d.drivers_license_status)
+                          ? `${d.drivers_license_status} — Code ${d.drivers_license_code || '—'}`
+                          : d.drivers_license_status || '—'}
+                      </Typography.Text>
+                    </div>
+                  </Col>
+                </Row>
+              </>
             )}
           </Card>
         ))}
@@ -461,11 +549,11 @@ const ViewManpowerRequest = () => {
 
               {canSubmit && (
                 <Popconfirm
-                  title={`${['Disapproved', 'Cancelled'].includes(record.status) ? 'Resubmit' : 'Submit'} this request for approval?`}
+                  title={`${['Disapproved', 'Cancelled', 'Returned'].includes(record.status) ? 'Resubmit' : 'Submit'} this request for approval?`}
                   onConfirm={handleSubmit}
                 >
                   <Button type="primary" icon={<SendOutlined />} loading={actionLoading}>
-                    {['Disapproved', 'Cancelled'].includes(record.status) ? 'Resubmit' : 'Submit'}
+                    {['Disapproved', 'Cancelled', 'Returned'].includes(record.status) ? 'Resubmit' : 'Submit'}
                   </Button>
                 </Popconfirm>
               )}
