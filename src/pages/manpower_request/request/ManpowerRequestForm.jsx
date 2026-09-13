@@ -398,7 +398,7 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                       </Col>
                     </Row>
 
-                    <Divider orientation="left" plain style={{ margin: '8px 0' }}>Job Specifications</Divider>
+                    <Divider titlePlacement="left" plain style={{ margin: '8px 0' }}>Job Specifications</Divider>
 
                     <Row gutter={16}>
                       <Col span={8}>

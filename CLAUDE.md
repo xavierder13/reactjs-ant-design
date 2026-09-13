@@ -23,6 +23,20 @@ and Manpower Request (in progress).
 - ESLint (flat config) — no Prettier config present
 - No test framework is configured in this project
 
+**Ant Design v6 is recent enough that training data frequently reflects
+older (v4/v5) prop names that have since been renamed or deprecated** —
+e.g. `Divider`'s `orientation` prop was renamed to `titlePlacement`
+(confirmed by a runtime console warning that had to be reported back
+manually, since there's no browser access to observe it directly). Before
+using an AntD prop/API from memory, especially anything touching
+placement, sizing, or a prop that existed in earlier major versions,
+check it against what's actually installed: grep
+`node_modules/antd/es/<component>/index.js` (the runtime source, which
+lists the real accepted values/prop names) or the adjacent `.d.ts`, rather
+than trusting recalled API shape. This app has no browser automation
+available in this environment — a console warning/error will not surface
+on its own; it has to be reported back and then verified this way.
+
 ## Project Architecture
 
 This is an **existing production-oriented project**. Preserve existing
