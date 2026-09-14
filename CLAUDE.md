@@ -199,8 +199,9 @@ frontend-specific conventions.
 - All service endpoints are POST-only (`/manpower_request/index`,
   `/create`, `/edit/{id}`, `/store`, `/update/{id}`, `/submit/{id}`,
   `/approve/{id}`, `/reject/{id}`, `/return/{id}`, `/cancel/{id}`,
-  `/delete/{id}`, `/approval_history/{id}`) — follow this POST convention
-  for any new Manpower Request endpoint, do not switch to REST verbs.
+  `/delete/{id}`, `/approval_history/{id}`, `/record_hire/{id}`) — follow
+  this POST convention for any new Manpower Request endpoint, do not
+  switch to REST verbs.
 - Statuses: `Draft`, `Pending Approval`, `Approved`, `Disapproved`,
   `Returned`, `Cancelled`. `Draft`/`Disapproved`/`Cancelled`/`Returned` are
   all editable+resubmittable (`canEdit`/`canSubmit` in
@@ -221,10 +222,28 @@ frontend-specific conventions.
 - `fetchById` in the store returns `{ manpower_request, approval_status }`.
 - Permission strings in use: `manpower-request-list`, `-create`, `-edit`,
   `-delete`, `-submit`, `-cancel`, `-approve`, `-disapprove`, `-reject`,
-  `-return`. All seeded on the backend via
-  `database/seeds/PermissionSeeder.php`; `Manpower Requestor` and
-  `Manpower Request Approver` roles (with the right subset of these) are
-  seeded via `database/seeds/ManpowerRequestRoleSeeder.php`.
+  `-return`, `-print`, `-record-hire`, `-list-all`. All seeded on the
+  backend via `database/seeds/PermissionSeeder.php`; `Manpower Requestor`,
+  `Manpower Request Approver`, and `Manpower Request Administrator` roles
+  (with the right subset of these — `-record-hire` is Approver/
+  Administrator only; `-list-all` is Administrator only) are seeded via
+  `database/seeds/ManpowerRequestRoleSeeder.php`.
+- **List/detail visibility (added 2026-09-14, tightened + bug-fixed same
+  day)**: without `manpower-request-list-all`, `index()`/`edit()` on the
+  backend scope to a user's own requests, plus requests that are **both**
+  `Pending Approval` **and** at an approval level they themselves are
+  mapped to, **plus** any request they have a real approval-log entry
+  against regardless of its current status/level — the last clause fixes
+  a real reported bug where approving a document (which advances
+  `current_level`) immediately made that same document a 404 for the
+  approver who just approved it. Enforced server-side in both endpoints,
+  not just the list, so a user can't bypass it by requesting a document's
+  ID directly. No frontend logic change was needed for the
+  scoping itself; `manpower-request-list-all` was just added as an
+  alternative permission (alongside plain `-list`) in `AppRoutes.jsx` and
+  `MainLayout.jsx`'s "All Requests" menu entry, so a role holding only
+  `-list-all` isn't blocked client-side. See the `manpower-request` skill
+  for the exact rule.
 - The request form's line items now carry a full Job Specifications block
   (Gender, Age Range, Relevant Work Experience, PRC License, Driver's
   License) and Replacement-specific fields (reason from a fixed PH-scenario
@@ -233,10 +252,41 @@ frontend-specific conventions.
   `ManpowerRequestController::REPLACEMENT_REASONS`/`DRIVERS_LICENSE_CODES`.
   `required_plantilla`/`existing_headcount` are backend-computed and
   read-only on this side — display only, never send them.
-- **Not yet built**: a print layout matching the paper MRF form (deferred
-  in this same session until the field work above landed — now
-  unblocked), in-app notifications, a "Pending My Approval"/"My Requests"
-  filtered view (the list is currently unfiltered).
+- `replacement_or_additional` has three values as of 2026-09-14:
+  `Replacement`, `Additional`, `New Position` — all three use the same
+  fields; New Position still requires an existing `position_id`, it is
+  not a free-text uncataloged job title.
+- **Record Hires** ("FOR HR USE ONLY" step, added 2026-09-14): a button on
+  `ViewManpowerRequest.jsx` visible only when `status === 'Approved'` and
+  the user has `manpower-request-record-hire`, opening a modal with one
+  `EmployeeSelect`(`activeOnly`) + a **read-only** Date Hired display per
+  position line (not a `DatePicker` — Date Hired is always the selected
+  employee's `EmployeeMasterData.date_employed`, never user-entered),
+  saved via `manpowerRequestApi.recordHire(id, hires)` (payload has no
+  `date_hired` field at all). Recorded values (`hired_employee`/
+  `date_hired` per detail line) then show read-only in each position card
+  and in the print layout's "FOR HR USE ONLY" section. One employee cannot
+  be selected for more than one position on the same request — checked
+  both client-side (`handleHireConfirm`, immediate feedback) and
+  server-side (`ManpowerRequestService::recordHires()`, the actual source
+  of truth). See the `manpower-request` skill for the full shape and two
+  real bugs this feature surfaced: an eager-loading gap (`edit()`/
+  `index()` each hand-roll their own `with()` chain instead of sharing
+  one), and a permission gap in `EmployeeMasterDataMaintenance` that
+  blocked the Approver role from `option_list` entirely (both fixed).
+- **Print layout** (`src/pages/manpower_request/request/ManpowerRequestPrint.jsx`
+  + `.css`, route `/manpower-requests/:id/print`, permission
+  `manpower-request-print`): follows the exact pattern already established
+  by `KpiEvaluationPrint.jsx` — a normal page route (still wrapped in
+  `MainLayout`), a `window.print()` button, and `@media print` CSS that
+  hides everything except `.mrf-print`. No backend change was needed
+  beyond seeding the new permission; the page reuses the existing
+  `getById`/`approvalHistory` calls. See the backend's `manpower-request`
+  skill Roadmap for full detail on what it renders and what's still
+  unverified (real paper/PDF pagination — no browser automation available
+  in this environment to check that).
+- **Not yet built**: in-app notifications, a "Pending My Approval"/"My
+  Requests" filtered view (the list is currently unfiltered).
 
 ## Important Rules for Modifying This Existing Project
 

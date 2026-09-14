@@ -1,0 +1,282 @@
+/* ── Screen styles ─────────────────────────────────────────────────────────── */
+.print-wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: Arial, sans-serif;
+}
+
+.mrf-print {
+  font-size: 11px;
+  color: #000;
+}
+
+/* Header */
+.mrf-header-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #000;
+  margin-bottom: 6px;
+}
+
+.mrf-header-table td {
+  padding: 8px;
+  vertical-align: top;
+}
+
+.header-logo {
+  width: 70px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.company-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
+.header-brand {
+  text-align: center;
+}
+
+.company-name {
+  font-size: 15px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.form-title {
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.header-mrf-no {
+  width: 180px;
+  border-left: 1px solid #000;
+  text-align: center;
+}
+
+.mrf-no-label {
+  font-size: 10px;
+  font-style: italic;
+}
+
+.mrf-no-value {
+  font-size: 13px;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+.mrf-status-value {
+  font-size: 11px;
+  margin-top: 4px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.section-title {
+  background-color: #d9d9d9;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 3px 6px;
+  border: 1px solid #000;
+  border-bottom: none;
+  font-size: 11px;
+}
+
+/* Info tables (label/value pairs) */
+.mrf-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #000;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.mrf-info-table td {
+  border: 1px solid #000;
+  padding: 3px 6px;
+}
+
+.info-label {
+  font-weight: bold;
+  white-space: nowrap;
+  width: 140px;
+  background-color: #fafafa;
+}
+
+.info-value {
+  min-width: 120px;
+}
+
+/* Data tables (position lines, approval history) */
+.mrf-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #000;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+.mrf-table th,
+.mrf-table td {
+  border: 1px solid #000;
+  padding: 4px 6px;
+  vertical-align: top;
+}
+
+.mrf-table th {
+  background-color: #d9d9d9;
+  text-align: center;
+  font-weight: bold;
+}
+
+.text-center { text-align: center; }
+
+/* Reason for Request — 3-column layout matching the paper form */
+.mrf-reason-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #000;
+  margin-bottom: 8px;
+  font-size: 10.5px;
+  table-layout: fixed;
+}
+
+.reason-col {
+  border: 1px solid #000;
+  padding: 6px;
+  vertical-align: top;
+  width: 33.33%;
+}
+
+.reason-col-heading {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.info-line {
+  margin-top: 2px;
+}
+
+.reason-item-heading {
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.reason-item-spaced {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed #999;
+}
+
+.na-text {
+  color: #666;
+  font-style: italic;
+}
+
+.line-block {
+  margin-bottom: 12px;
+}
+
+.line-block-heading {
+  font-weight: bold;
+  font-size: 11px;
+  margin: 6px 0 4px;
+  text-decoration: underline;
+}
+
+/* ── Print styles ──────────────────────────────────────────────────────────── */
+@media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  /* Hide EVERYTHING */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Show ONLY .mrf-print and everything inside it */
+  .mrf-print,
+  .mrf-print * {
+    visibility: visible !important;
+  }
+
+  /*
+   * Remove .mrf-print from the existing application layout.
+   * This is important if it is inside Ant Design Layout/Content/Sider.
+   */
+  .mrf-print {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+
+    width: 100% !important;
+    max-width: none !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    font-size: 10px !important;
+    color: #000 !important;
+
+    overflow: visible !important;
+  }
+
+  /* Hide print button */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Make sure wrapper doesn't constrain the print area */
+  .print-wrapper {
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .mrf-info-table,
+  .mrf-table,
+  .mrf-reason-table,
+  .mrf-header-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-collapse: collapse !important;
+  }
+
+  /* Allow tables to span pages, but never split a row mid-page */
+  .mrf-table {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  .mrf-table tr,
+  .line-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .mrf-table thead {
+    display: table-header-group !important;
+  }
+
+  /* Preserve background colors (browsers strip them by default) */
+  .section-title,
+  .mrf-table th,
+  .info-label {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

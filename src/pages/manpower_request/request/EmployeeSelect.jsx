@@ -5,7 +5,9 @@ import { Select, Spin } from 'antd';
 // Searchable, infinite-scroll employee picker for the "Replacement Employee"
 // field. Unlike KPI's employee picker, this intentionally includes inactive
 // employees, tagged in the label, since replacements are usually resigned.
-const EmployeeSelect = ({ value, onChange, placeholder = 'Search employee' }) => {
+// Pass activeOnly for a picker where that doesn't apply (e.g. selecting a
+// newly hired employee, who should always be active).
+const EmployeeSelect = ({ value, onChange, placeholder = 'Search employee', activeOnly = false, status }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading]     = useState(false);
   const [hasMore, setHasMore]     = useState(true);
@@ -16,10 +18,16 @@ const EmployeeSelect = ({ value, onChange, placeholder = 'Search employee' }) =>
     if (loading) return;
     setLoading(true);
     try {
-      const { data } = await employeeOptionApi.getAll({ search, page: pageNumber });
+      const fetchOptions = activeOnly ? employeeOptionApi.getActive : employeeOptionApi.getAll;
+      const { data } = await fetchOptions({ search, page: pageNumber });
       const options = data.employees.map((emp) => ({
         value: emp.id,
         label: `${emp.employee_code} - ${emp.full_name} (${emp.position_name || 'No position'})${emp.active ? '' : ' — Inactive'}`,
+        // Carried through so a consumer's onChange(value, option) can read
+        // it immediately on selection — used by the "Record Hires" date
+        // hired display (activeOnly usage), which is read-only and always
+        // this value, never entered by the user.
+        date_employed: emp.date_employed,
       }));
       setEmployees((prev) => append ? [...prev, ...options] : options);
       setHasMore(Boolean(data.next_page_url));
@@ -58,6 +66,8 @@ const EmployeeSelect = ({ value, onChange, placeholder = 'Search employee' }) =>
       options={employees}
       notFoundContent={loading ? <Spin size="small" /> : null}
       allowClear
+      status={status}
+      style={{ width: '100%' }}
     />
   );
 };

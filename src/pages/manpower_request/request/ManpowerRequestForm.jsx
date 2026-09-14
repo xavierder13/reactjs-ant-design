@@ -282,15 +282,16 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                       <Col span={8}>
                         <Form.Item
                           {...restField}
-                          label="Replacement / Additional"
+                          label="Replacement / Additional / New Position"
                           name={[name, 'replacement_or_additional']}
                         >
                           <Select
                             placeholder="Select"
                             allowClear
                             options={[
-                              { label: 'Replacement', value: 'Replacement' },
-                              { label: 'Additional',  value: 'Additional' },
+                              { label: 'Replacement',  value: 'Replacement' },
+                              { label: 'Additional',   value: 'Additional' },
+                              { label: 'New Position', value: 'New Position' },
                             ]}
                           />
                         </Form.Item>

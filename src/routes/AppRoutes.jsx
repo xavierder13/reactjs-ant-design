@@ -37,6 +37,7 @@ import ManpowerRequestIndex from '../pages/manpower_request/request/ManpowerRequ
 import CreateManpowerRequest from '../pages/manpower_request/request/CreateManpowerRequest';
 import EditManpowerRequest from '../pages/manpower_request/request/EditManpowerRequest';
 import ViewManpowerRequest from '../pages/manpower_request/request/ViewManpowerRequest';
+import ManpowerRequestPrint from '../pages/manpower_request/request/ManpowerRequestPrint';
 
 // Errors
 import UnauthorizePage from '../pages/errors/UnauthorizePage';
@@ -54,10 +55,11 @@ const permissionRoutes = [
   { permissions: ['careers-applicant-list'], path: '/recruitment/:url', element: <JobApplicantList /> },
 
   // Manpower Request Routes
-  { permissions: ['manpower-request-list'],   path: '/manpower-requests',        element: <ManpowerRequestIndex /> },
+  { permissions: ['manpower-request-list', 'manpower-request-list-all'],   path: '/manpower-requests',        element: <ManpowerRequestIndex /> },
   { permissions: ['manpower-request-create'], path: '/manpower-requests/create', element: <CreateManpowerRequest /> },
-  { permissions: ['manpower-request-list', 'manpower-request-edit', 'manpower-request-approve', 'manpower-request-disapprove', 'manpower-request-return'], path: '/manpower-requests/:id', element: <ViewManpowerRequest /> },
+  { permissions: ['manpower-request-list', 'manpower-request-list-all', 'manpower-request-edit', 'manpower-request-approve', 'manpower-request-disapprove', 'manpower-request-return'], path: '/manpower-requests/:id', element: <ViewManpowerRequest /> },
   { permissions: ['manpower-request-create', 'manpower-request-edit'], path: '/manpower-requests/:id/edit', element: <EditManpowerRequest /> },
+  { permissions: ['manpower-request-print'], path: '/manpower-requests/:id/print', element: <ManpowerRequestPrint /> },
 
   // KPI Template Routes
   { permissions: ['kpi-template-list'],         path: '/kpi-templates',        element: <KpiTemplateIndex /> },

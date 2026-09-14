@@ -13,6 +13,7 @@ const manpowerRequestApi = {
   cancel:      (id)              => axios.post(`/manpower_request/cancel/${id}`),
   delete:      (id)              => axios.post(`/manpower_request/delete/${id}`),
   approvalHistory: (id)          => axios.post(`/manpower_request/approval_history/${id}`),
+  recordHire:  (id, hires)       => axios.post(`/manpower_request/record_hire/${id}`, { hires }),
 };
 
 export default manpowerRequestApi;

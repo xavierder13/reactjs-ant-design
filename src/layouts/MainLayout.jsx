@@ -95,7 +95,7 @@ const menuData = [
         title: 'Manpower Request',
         icon: <FileTextOutlined />,
         children: [
-          { key: 'manpower-request-list',   title: 'All Requests',    link: '/manpower-requests',        permissions: ['manpower-request-list'] },
+          { key: 'manpower-request-list',   title: 'All Requests',    link: '/manpower-requests',        permissions: ['manpower-request-list', 'manpower-request-list-all'] },
           { key: 'manpower-request-create', title: 'Create Request',  link: '/manpower-requests/create',  permissions: ['manpower-request-create'] },
         ],
       },
@@ -224,6 +224,8 @@ const MainLayout = () => {
       return { title: 'Self Evaluation', breadcrumb: ['KPI Management', 'My Evaluations', 'Fill'] };
     if (/^\/manpower-requests\/\d+\/edit$/.test(pathname))
       return { title: 'Edit Manpower Request', breadcrumb: ['Manpower Request', 'Edit'] };
+    if (/^\/manpower-requests\/\d+\/print$/.test(pathname))
+      return { title: 'Print Manpower Request', breadcrumb: ['Manpower Request', 'Print'] };
     if (/^\/manpower-requests\/\d+$/.test(pathname))
       return { title: 'View Manpower Request', breadcrumb: ['Manpower Request', 'View'] };
     return { title: '', breadcrumb: ['Home'] };

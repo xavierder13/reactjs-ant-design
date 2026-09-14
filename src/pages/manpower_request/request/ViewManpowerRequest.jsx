@@ -6,13 +6,15 @@ import {
 } from 'antd';
 import {
   ArrowLeftOutlined, EditOutlined, SendOutlined, CloseCircleOutlined,
-  CheckCircleOutlined, FileTextOutlined, DeleteOutlined,
+  CheckCircleOutlined, FileTextOutlined, DeleteOutlined, PrinterOutlined,
+  UserAddOutlined, ReloadOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useAuth from '../../../hooks/useAuth';
 import useManpowerRequestStore from '../../../store/manpowerRequestStore';
 import manpowerRequestApi from '../../../services/manpower_request/manpowerRequestApi';
 import handleApiError from '../../../utils/handleApiError';
+import EmployeeSelect from './EmployeeSelect';
 
 const STATUS_COLORS = {
   Draft:              'default',
@@ -44,6 +46,7 @@ const ViewManpowerRequest = () => {
   const [approvalStatus, setApprovalStatus] = useState(null);
   const [loading, setLoading]               = useState(true);
   const [actionLoading, setActionLoading]   = useState(false);
+  const [refreshing, setRefreshing]         = useState(false);
 
   // Shared modal for Disapprove / Return for Revision — both just collect
   // required remarks and call a different endpoint.
@@ -54,6 +57,12 @@ const ViewManpowerRequest = () => {
   const [historyOpen, setHistoryOpen]       = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyEntries, setHistoryEntries] = useState([]);
+
+  // Record Hires modal — "FOR HR USE ONLY" step, only available once the
+  // request is Approved. One row per position line item.
+  const [hireModalOpen, setHireModalOpen]   = useState(false);
+  const [hireRows, setHireRows]             = useState([]);
+  const [hireSubmitting, setHireSubmitting] = useState(false);
 
   const loadRecord = useCallback(async () => {
     const result = await fetchById(id);
@@ -68,6 +77,17 @@ const ViewManpowerRequest = () => {
       setLoading(false);
     })();
   }, [loadRecord]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadRecord();
+    } catch (error) {
+      handleApiError(error, messageApi);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (loading) {
     return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />;
@@ -133,6 +153,14 @@ const ViewManpowerRequest = () => {
     hasPermission('manpower-request-return') &&
     record.status === 'Pending Approval' &&
     canActOnApproval;
+
+  // Recording hires is the "FOR HR USE ONLY" step — only meaningful once
+  // the request is fully Approved, gated by its own permission (not tied
+  // to ownership, since this is an HR/approver-side clerical step, not an
+  // approval decision).
+  const canRecordHire =
+    hasPermission('manpower-request-record-hire') &&
+    record.status === 'Approved';
 
   const totalManpower = (record.details || []).reduce((sum, d) => sum + (d.quantity || 0), 0);
 
@@ -230,6 +258,60 @@ const ViewManpowerRequest = () => {
     }
   };
 
+  const openHireModal = () => {
+    setHireRows((record.details || []).map((d) => ({
+      detail_id:            d.id,
+      position_name:        d.position?.name || '—',
+      type:                  d.replacement_or_additional,
+      hired_employee_id:    d.hired_employee_id || null,
+      hired_employee_label: d.hired_employee?.full_name || null,
+      // Read-only display only — Date Hired is always the selected
+      // employee's EmployeeMasterData.date_employed, derived and stored
+      // server-side (see recordHires()); never entered here.
+      date_hired: d.date_hired || null,
+    })));
+    setHireModalOpen(true);
+  };
+
+  const closeHireModal = () => setHireModalOpen(false);
+
+  const updateHireRow = (detailId, changes) => {
+    setHireRows((rows) => rows.map((r) => (r.detail_id === detailId ? { ...r, ...changes } : r)));
+  };
+
+  const handleHireConfirm = async () => {
+    // One employee can't be recorded as hired for more than one position
+    // on the same request — checked client-side first for immediate
+    // feedback; the backend re-checks this too (recordHires()).
+    const chosenIds = hireRows.map((r) => r.hired_employee_id).filter(Boolean);
+    const duplicateId = chosenIds.find((id, idx) => chosenIds.indexOf(id) !== idx);
+    if (duplicateId) {
+      const duplicateRow = hireRows.find((r) => r.hired_employee_id === duplicateId);
+      messageApi.error(
+        `${duplicateRow?.hired_employee_label || 'This employee'} is selected for more than one position. Please choose a different employee for each position.`
+      );
+      return;
+    }
+
+    setHireSubmitting(true);
+    try {
+      // date_hired is not sent — the backend always derives it from the
+      // selected employee's date_employed and ignores any client value.
+      const hires = hireRows.map((r) => ({
+        detail_id:          r.detail_id,
+        hired_employee_id:  r.hired_employee_id,
+      }));
+      const { data } = await manpowerRequestApi.recordHire(record.id, hires);
+      messageApi.success(data.message);
+      closeHireModal();
+      await loadRecord();
+    } catch (error) {
+      handleApiError(error, messageApi);
+    } finally {
+      setHireSubmitting(false);
+    }
+  };
+
   return (
     <>
       {contextHolder}
@@ -266,9 +348,27 @@ const ViewManpowerRequest = () => {
           </Row>
         }
         extra={
-          <Button icon={<FileTextOutlined />} onClick={openHistory}>
-            Approval History
-          </Button>
+          <Space>
+            <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={refreshing}>
+              Refresh
+            </Button>
+            {canRecordHire && (
+              <Button icon={<UserAddOutlined />} onClick={openHireModal}>
+                Record Hires
+              </Button>
+            )}
+            {hasPermission('manpower-request-print') && (
+              <Button
+                icon={<PrinterOutlined />}
+                onClick={() => window.open(`/manpower-requests/${record.id}/print`, '_blank')}
+              >
+                Print
+              </Button>
+            )}
+            <Button icon={<FileTextOutlined />} onClick={openHistory}>
+              Approval History
+            </Button>
+          </Space>
         }
       >
         {/* ── Request Details ───────────────────────────────────────────── */}
@@ -426,6 +526,23 @@ const ViewManpowerRequest = () => {
                 <div><Typography.Text strong>{d.existing_headcount ?? '—'}</Typography.Text></div>
               </Col>
             </Row>
+
+            {(d.hired_employee || d.date_hired) && (
+              <Row gutter={16} style={{ marginTop: 12 }}>
+                <Col xs={24} md={8}>
+                  <Typography.Text type="secondary">Hired Employee</Typography.Text>
+                  <div><Typography.Text strong>{d.hired_employee?.full_name || '—'}</Typography.Text></div>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Typography.Text type="secondary">Date Hired</Typography.Text>
+                  <div>
+                    <Typography.Text strong>
+                      {d.date_hired ? dayjs(d.date_hired).format('MM-DD-YYYY') : '—'}
+                    </Typography.Text>
+                  </div>
+                </Col>
+              </Row>
+            )}
 
             {(d.qualifications || d.experience || d.education) && (
               <Row gutter={16} style={{ marginTop: 12 }}>
@@ -656,6 +773,80 @@ const ViewManpowerRequest = () => {
               }))}
             />
           )}
+        </Modal>
+
+        {/* ── Record Hires Modal — "FOR HR USE ONLY" step ───────────────── */}
+        <Modal
+          title="Record Hires"
+          open={hireModalOpen}
+          onCancel={closeHireModal}
+          width={700}
+          footer={[
+            <Button key="cancel" onClick={closeHireModal}>
+              Cancel
+            </Button>,
+            <Button key="confirm" type="primary" loading={hireSubmitting} onClick={handleHireConfirm}>
+              Save
+            </Button>,
+          ]}
+        >
+          <Typography.Paragraph type="secondary">
+            Select the employee hired or placed for each position, if known.
+            Date Hired is read-only — it's the selected employee's actual
+            hire date on record, not something entered here.
+          </Typography.Paragraph>
+          {(() => {
+            // Recomputed on every render from current hireRows — cheap
+            // (a handful of position lines) and keeps the red highlight
+            // live as the user picks/changes employees, not just on Save.
+            const idCounts = {};
+            hireRows.forEach((r) => {
+              if (r.hired_employee_id) {
+                idCounts[r.hired_employee_id] = (idCounts[r.hired_employee_id] || 0) + 1;
+              }
+            });
+
+            return hireRows.map((row) => {
+              const isDuplicate = row.hired_employee_id && idCounts[row.hired_employee_id] > 1;
+              return (
+                <Card key={row.detail_id} size="small" style={{ marginBottom: 12, background: '#fafafa' }}>
+                  <Typography.Text strong>{row.position_name}</Typography.Text>
+                  {row.type && <Typography.Text type="secondary"> ({row.type})</Typography.Text>}
+                  <Row style={{ marginTop: 8 }}>
+                    <Col span={24}>
+                      <Typography.Text type="secondary">Hired Employee</Typography.Text>
+                      <EmployeeSelect
+                        activeOnly
+                        placeholder="Search hired employee"
+                        value={row.hired_employee_id}
+                        status={isDuplicate ? 'error' : undefined}
+                        onChange={(val, option) => updateHireRow(row.detail_id, {
+                          hired_employee_id: val,
+                          hired_employee_label: option?.label || null,
+                          date_hired: option?.date_employed || null,
+                        })}
+                      />
+                      {isDuplicate && (
+                        <Typography.Text type="danger" style={{ fontSize: 12 }}>
+                          This employee is already selected for another position.
+                        </Typography.Text>
+                      )}
+                    </Col>
+                  </Row>
+                  <Row style={{ marginTop: 8 }}>
+                    <Col span={24}>
+                      <Typography.Text type="secondary">Date Hired</Typography.Text>
+                      <div>
+                        <Typography.Text strong>
+                          {row.date_hired ? dayjs(row.date_hired).format('MM-DD-YYYY') : '—'}
+                        </Typography.Text>
+                      </div>
+                    </Col>
+                  </Row>
+                </Card>
+              );
+            });
+          })()}
         </Modal>
       </Card>
     </>

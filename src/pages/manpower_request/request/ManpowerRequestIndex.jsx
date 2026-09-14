@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Table, Tag, Button, Input, Select, DatePicker, Space, Popconfirm, Tooltip, message } from 'antd';
-import { PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, CloseCircleOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, CloseCircleOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useAuth from '../../../hooks/useAuth';
 import useManpowerRequests from '../../../hooks/useManpowerRequests';
@@ -223,15 +223,21 @@ const ManpowerRequestIndex = () => {
           <RangePicker onChange={setDateRange} />
         </Space>
 
-        {hasPermission('manpower-request-create') && (
-          <Link to="/manpower-requests/create">
-            <Button type="primary" icon={<PlusOutlined />}>Create MRF</Button>
-          </Link>
-        )}
+        <Space>
+          <Button icon={<ReloadOutlined />} onClick={refetch} loading={isLoading}>
+            Refresh
+          </Button>
+          {hasPermission('manpower-request-create') && (
+            <Link to="/manpower-requests/create">
+              <Button type="primary" icon={<PlusOutlined />}>Create MRF</Button>
+            </Link>
+          )}
+        </Space>
       </Space>
 
       <Table
         rowKey="id"
+        size="small"
         columns={columns}
         dataSource={filteredItems}
         loading={isLoading}

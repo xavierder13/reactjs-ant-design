@@ -1,13 +1,21 @@
 ---
 name: manpower-request
-description: Established architecture, files, and conventions for the Manpower Request (MRF) module in this HRIS app. Use for any task that adds, fixes, or extends Manpower Request pages, forms, approval workflow, or related state/API code.
+description: Established architecture, files, and conventions for the Manpower Request (MRF) module in this HRIS app. Use for any task that adds, fixes, or extends Manpower Request pages, forms, approval workflow, print layout, or related state/API code.
 ---
 
 # Manpower Request (MRF) Module
 
-Status: **in progress, not fully wired into the app.** Verify current state
-before assuming anything below still matches — this module is actively
-changing.
+Status (2026-09-14): **fully wired up and in active use**, including a
+working approval workflow and a print layout. This file was previously
+badly out of date (it described `ViewManpowerRequest.jsx` as an empty
+file and MRF routes as unregistered — neither has been true for a while).
+The root `CLAUDE.md`'s own "Manpower Request Conventions" section is kept
+in sync with real code and is the fastest place to check current state;
+this file adds detail beyond what's there. The backend's own
+`manpower-request` skill (in `vueportal`) is the canonical source for
+approval-workflow/status-machine/validation behavior — read that first
+for anything backend-shaped; this file only covers frontend-specific
+conventions.
 
 ## Architecture / File Map
 
@@ -17,8 +25,10 @@ src/pages/manpower_request/request/
   CreateManpowerRequest.jsx   thin wrapper → ManpowerRequestForm mode="create"
   EditManpowerRequest.jsx     fetches record, guards editability, → ManpowerRequestForm mode="edit"
   ManpowerRequestForm.jsx     shared create/edit form (Form.List for position line items)
-  EmployeeSelect.jsx          async searchable Select for "replacement employee"
-  ViewManpowerRequest.jsx     EMPTY FILE — detail/approval page not yet implemented
+  EmployeeSelect.jsx          async searchable Select, reused for both "replacement employee" and "hired employee" (activeOnly prop)
+  ViewManpowerRequest.jsx     detail page: full record + approve/disapprove/return/cancel/delete + Approval History + Record Hires modals
+  ManpowerRequestPrint.jsx    standalone print view (see "Print Layout" below)
+  ManpowerRequestPrint.css    companion stylesheet for the print view
 
 src/store/manpowerRequestStore.js          zustand store
 src/services/manpower_request/manpowerRequestApi.js  axios service
@@ -35,29 +45,31 @@ someone who already resigned. Do not "fix" this to filter to active-only.
 
 ## Routes
 
-**Not currently registered anywhere.** `AppRoutes.jsx` has no import or
-`permissionRoutes` entry for any MRF page, and `MainLayout.jsx` has no
-`menuData`/`titleMap` entry either. The pages internally link to and expect:
+Registered in both `AppRoutes.jsx` (`permissionRoutes`) and
+`MainLayout.jsx` (`menuData` + a `getPageMeta` regex case for the `:id`
+paths):
 
 ```
-/manpower-requests            → ManpowerRequestIndex
-/manpower-requests/create     → CreateManpowerRequest
-/manpower-requests/:id        → ViewManpowerRequest (not implemented)
-/manpower-requests/:id/edit   → EditManpowerRequest
+/manpower-requests            → ManpowerRequestIndex     (manpower-request-list)
+/manpower-requests/create     → CreateManpowerRequest    (manpower-request-create)
+/manpower-requests/:id        → ViewManpowerRequest      (manpower-request-list + several action perms)
+/manpower-requests/:id/edit   → EditManpowerRequest      (manpower-request-create/-edit)
+/manpower-requests/:id/print  → ManpowerRequestPrint     (manpower-request-print)
 ```
 
-Any task that should make MRF usable in the running app must add these to
-**both** `AppRoutes.jsx` (`permissionRoutes` array) and `MainLayout.jsx`
-(`menuData` entry + `titleMap` or a regex case in `getPageMeta` for the
-`:id` and `:id/edit` paths) — follow the same shape as the KPI Evaluations
-entries in those two files.
+`/manpower-requests/:id/print` follows `kpi-evaluations/:id/print`'s exact
+pattern: opened via `window.open(..., '_blank')` from a Print button (not
+sidebar nav), so it has no `menuData` entry, but — unlike the KPI
+precedent, which left this gap — it DOES have its own `getPageMeta` regex
+case so the breadcrumb/title are correct before print CSS hides the app
+chrome.
 
 ## API / Service Pattern
 
-`src/services/manpower_request/manpowerRequestApi.js` — **all endpoints are
-POST**, including reads (this module does not use REST verbs, unlike KPI's
-service). Keep new endpoints POST-based for consistency with this module's
-backend controller:
+`src/services/manpower_request/manpowerRequestApi.js` — **all endpoints
+are POST**, including reads (this module does not use REST verbs, unlike
+KPI's service). Keep new endpoints POST-based for consistency with this
+module's backend controller:
 
 ```js
 getAll:            () => axios.post('/manpower_request/index')
@@ -70,12 +82,21 @@ approve:            (id) => axios.post(`/manpower_request/approve/${id}`)
 reject:             (id, remarks) => axios.post(`/manpower_request/reject/${id}`, { remarks })
 returnForRevision:  (id, remarks) => axios.post(`/manpower_request/return/${id}`, { remarks })
 cancel:             (id) => axios.post(`/manpower_request/cancel/${id}`)
+delete:             (id) => axios.post(`/manpower_request/delete/${id}`)
 approvalHistory:    (id) => axios.post(`/manpower_request/approval_history/${id}`)
+recordHire:         (id, hires) => axios.post(`/manpower_request/record_hire/${id}`, { hires })
 ```
 
-`approve`, `reject`, `returnForRevision`, and `approvalHistory` exist in
-the service but have **no UI caller yet** — they're expected to be used by
-`ViewManpowerRequest.jsx` once built.
+Every one of these has a real UI caller now (`approve`/`reject`/
+`returnForRevision`/`approvalHistory`/`recordHire` are used from
+`ViewManpowerRequest.jsx`; `getById` + `approvalHistory` are also both
+used from `ManpowerRequestPrint.jsx`). `recordHire` (added 2026-09-14)
+takes `hires: [{ detail_id, hired_employee_id }]` — one entry per position
+line, only meaningful once the record's `status === 'Approved'` (the
+backend rejects it otherwise). **No `date_hired` field** — that's derived
+server-side from the selected employee's `EmployeeMasterData.date_employed`
+and is read-only (see Record Hires section below); don't add it back to
+this payload.
 
 ## State Management
 
@@ -93,6 +114,12 @@ the service but have **no UI caller yet** — they're expected to be used by
 `useManpowerRequests.js` hook wraps `items`/`isLoading`/`error` +
 auto-fetches `fetchItems()` on mount, returns `refetch`.
 
+`ManpowerRequestPrint.jsx` deliberately does **not** go through the store
+— it calls `manpowerRequestApi.getById`/`approvalHistory` directly in its
+own `useEffect`, since a print view opened in a new tab doesn't benefit
+from the store's shared state and this keeps it a fully standalone page
+(same reasoning `KpiEvaluationPrint.jsx` uses).
+
 ## Forms
 
 `ManpowerRequestForm.jsx` is shared between create and edit (`mode` prop).
@@ -102,9 +129,26 @@ auto-fetches `fetchItems()` on mount, returns `refetch`.
 - Each line-item row is its own small `Card` with `MinusCircleOutlined` to
   remove and a dashed `Button` + `PlusOutlined` to add another; `Form.List`
   has a `rules` validator requiring at least one item.
-- Conditional field: `replacement_employee_id` (via `EmployeeSelect`) only
-  renders/required when `replacement_or_additional === 'Replacement'` for
-  that row — implemented with `Form.Item shouldUpdate` + `getFieldValue`.
+- `replacement_or_additional` select has three options as of 2026-09-14:
+  `Replacement`, `Additional`, `New Position`. New Position reuses the
+  same position/quantity/Job Specifications fields as the other two — no
+  extra conditional fields exist for it (it does NOT mean an uncataloged
+  job title; `position_id` still selects from the existing Positions
+  list — see the backend `manpower-request` skill's Roadmap for the
+  reasoning).
+- Conditional fields per row (`shouldUpdate` + `getFieldValue`):
+  `replacement_employee_id` (via `EmployeeSelect`), `replacement_reason`/
+  `replacement_reason_other`/`last_working_day` when
+  `replacement_or_additional === 'Replacement'`; `experience_years` when
+  `experience_required` is true; `prc_license_type` when
+  `prc_license_status === 'Required'`; `drivers_license_code` when
+  `drivers_license_status` is Professional/Non-Professional. These option
+  constants (`REPLACEMENT_REASONS`, `DRIVERS_LICENSE_CODES`, etc.) must
+  stay in sync with the backend's
+  `ManpowerRequestController::REPLACEMENT_REASONS`/`DRIVERS_LICENSE_CODES`.
+- `required_plantilla`/`existing_headcount` are backend-computed and
+  read-only on this side — display only (in `ViewManpowerRequest.jsx` and
+  `ManpowerRequestPrint.jsx`), never sent from the form.
 - `buildPayload(values)` maps form values (including `dayjs` dates →
   `'YYYY-MM-DD'` strings) into the API payload shape — extend this
   function, don't build payloads ad hoc elsewhere.
@@ -115,61 +159,222 @@ auto-fetches `fetchItems()` on mount, returns `refetch`.
 
 - Client-side: AntD `rules={[{ required: true, message: '...' }]}` on
   required fields (branch, reason, position, quantity, and conditionally
-  replacement employee).
+  replacement employee / job-specification fields — see Forms above).
 - Server-side 422 errors are surfaced via the shared `handleApiError`
   util — no MRF-specific error handling exists or should be added.
 
 ## Permissions
 
-Strings currently used: `manpower-request-create`, `manpower-request-edit`,
-`manpower-request-cancel`. No `manpower-request-list`/`-approve`/`-print`
-etc. exist in the code yet — **do not assume a permission string exists**;
-grep for it first, and check with the user/backend before introducing a
-new one.
+Strings currently in use: `manpower-request-list`, `-create`, `-edit`,
+`-delete`, `-submit`, `-cancel`, `-approve`, `-disapprove`, `-reject`,
+`-return`, `-print`, `-record-hire` (added 2026-09-14, `Manpower Request
+Approver` role only — an HR/approver-side clerical step, not granted to
+`Manpower Requestor`), `-list-all` (added 2026-09-14 — see below). All
+seeded on the backend via `database/seeds/PermissionSeeder.php`;
+role/permission subsets seeded via
+`database/seeds/ManpowerRequestRoleSeeder.php`. Grep for a permission
+string before assuming it exists if you're introducing a new action —
+this list can still drift from the seeder.
 
-Checks are done with `useAuth()`'s `hasPermission`/`hasAnyPermission`,
-combined with status and ownership, e.g.:
+**`-list-all` and list/detail visibility, added 2026-09-14 (tightened +
+bug-fixed same day)**: without it, the backend now scopes both `index()`
+and `edit()` to a user's own requests, plus requests that are **both**
+`status = 'Pending Approval'` **and** at an approval level they
+themselves are mapped to, **plus** any request they have a real
+approval-log entry against (any level/action/status). That third clause
+fixes a real reported bug: approving a document advances `current_level`,
+and without it the approver who just approved immediately got a 404
+trying to view the same document they'd just acted on. A document at
+their level that they've genuinely never touched, and that's since moved
+on or reached a terminal status, is still excluded — this isn't a
+blanket relaxation (see the backend `manpower-request` skill's Roadmap
+for the exact rule and how it was verified). This is entirely server-side
+— no frontend
+code changed for it, since `ManpowerRequestIndex.jsx`/
+`ViewManpowerRequest.jsx` already just render whatever the API returns.
+The only frontend touches were adding `manpower-request-list-all` as an
+alternative permission (alongside plain `-list`) in `AppRoutes.jsx`'s
+`permissionRoutes` for `/manpower-requests` and `/manpower-requests/:id`,
+and in `MainLayout.jsx`'s `menuData` entry for "All Requests" — otherwise
+a role holding only `-list-all` (no plain `-list`) would be blocked from
+the page/menu client-side despite the backend granting it access. New
+role **`Manpower Request Administrator`** (`-list`, `-list-all`,
+`-record-hire`) bypasses the scoping entirely and can link a hired
+employee to any document, but has no approve/edit/delete authority.
+
+Checks are done with `useAuth()`'s `hasPermission`/`hasAnyPermission`/
+`hasRole`, combined with status and ownership — see
+`ViewManpowerRequest.jsx`'s `canEdit`/`canSubmit`/`canCancel`/`canDelete`
+for the exact repeating shape:
 
 ```js
-const canEdit = (record) =>
-  hasAnyPermission('manpower-request-create', 'manpower-request-edit') &&
-  ['Draft', 'Returned'].includes(record.status) &&
-  record.user_id === user.id;
+const canEdit =
+  ['Draft', 'Disapproved', 'Cancelled', 'Returned'].includes(record.status) &&
+  (hasRole('Administrator') ||
+    (hasAnyPermission('manpower-request-create', 'manpower-request-edit') && record.user_id === user.id));
 ```
 
-Ownership (`record.user_id === user.id`) is required in addition to the
-permission check for edit/submit/cancel — permission alone is not
-sufficient in this module's authorization logic.
+Administrators bypass the ownership check; everyone else needs both the
+permission AND to be the requestor. Approve/Disapprove/Return additionally
+require `approval_status.can_approve` from the backend, not just the
+permission string. The Print button only checks
+`hasPermission('manpower-request-print')` — no ownership/status gate,
+since anyone who can already see the record's detail page can print it.
 
 ## Approval Workflow / Status Handling
 
-Statuses seen in code: `Draft`, `Submitted`, `Pending Approval`, `Approved`,
-`Rejected`, `Returned`, `Cancelled`. Rendered via a `STATUS_COLORS` map →
-AntD `Tag` (`Draft`/`Cancelled` = default/grey, `Pending Approval` = gold,
-`Approved` = green, `Rejected` = red, `Returned` = orange).
+Reachable statuses: `Draft`, `Pending Approval`, `Approved`, `Disapproved`,
+`Returned`, `Cancelled`. (`Submitted` appears in code as dead/historical —
+see the backend skill.) Rendered via `STATUS_COLORS` in both
+`ManpowerRequestIndex.jsx` and `ViewManpowerRequest.jsx` → AntD `Tag`
+(`Draft`/`Cancelled` = default/grey, `Pending Approval` = gold, `Approved`
+= green, `Disapproved` = red, `Returned` = orange). Note the stored status
+string is `Disapproved`, not `Rejected`, even though the route/permission/
+button label still say "reject"/"disapprove" per the backend's naming.
 
-The record also carries a `current_level` field, implying a multi-level
-approval chain — the frontend does not compute approval eligibility
-itself; treat `approval_status`/level data returned by the API as the
-source of truth (mirrors how KPI's `can_approve` flag works — don't
-re-derive "can this user approve" from role/permission checks alone).
+The record also carries `current_level`; the frontend does not compute
+approval eligibility itself — `approval_status.can_approve` (from
+`fetchById`/`edit()`) is the source of truth for whether the current user
+can act, mirroring KPI's `can_approve` flag.
 
-Allowed transitions inferred from the Index page's guard functions:
-- Edit / Submit: only from `Draft` or `Returned`, owner only
-- Cancel: from `Draft`, `Submitted`, `Pending Approval`, or `Returned`,
-  owner only
-- Approve / Reject / Return: no UI yet; build against
-  `KpiEvaluationView.jsx`'s pattern (Popconfirm for approve, a Modal with
-  a required reason `Input.TextArea` for reject/return) when implementing
-  `ViewManpowerRequest.jsx`.
+Real transitions (from `ViewManpowerRequest.jsx`'s guard functions,
+matching the backend service exactly):
+- Edit / Submit: from `Draft`/`Disapproved`/`Cancelled`/`Returned`,
+  Administrator-or-owner.
+- Cancel: from `Draft`/`Pending Approval`/`Returned`, owner only (no
+  Administrator bypass — cancel is a strict ID comparison on the backend).
+- Delete: from `Draft`/`Cancelled` only, Administrator-or-owner.
+- Approve / Disapprove / Return: from `Pending Approval` only, gated by
+  `approval_status.can_approve` — implemented with `Popconfirm` for
+  Approve, a shared remarks `Modal` (`Input.TextArea`, required) for
+  Disapprove/Return.
+
+## Print Layout
+
+`ManpowerRequestPrint.jsx` + `ManpowerRequestPrint.css`, route
+`/manpower-requests/:id/print`, permission `manpower-request-print`.
+Follows `KpiEvaluationPrint.jsx`'s exact pattern — see that file before
+changing this one, and see the backend `manpower-request` skill's Roadmap
+for full rationale on what's rendered and why:
+
+- Real page route, still wrapped in `MainLayout`/`ProtectedRoute` like any
+  other page — NOT a layout-free route. `@media print` CSS does the work:
+  `body * { visibility: hidden }`, then reveal only `.mrf-print` and force
+  it to `position: absolute; top: 0; left: 0` so it escapes AntD's
+  `Layout`/`Sider`/`Content` positioning.
+- `.no-print` hides the on-screen Print button when printing.
+- Tables use `page-break-inside: avoid` per row so a row never splits
+  across a page, with `thead { display: table-header-group }` so headers
+  repeat if a table spans multiple pages — same technique as the KPI print
+  CSS, don't invent a different approach here.
+- The header includes the real Addessa Corporation logo
+  (`src/assets/addessa-logo.jpg`, extracted directly from the embedded
+  image in the backend's `public/pdf/MANPOWER-REQUISITION-FORM-MRF-REVISED.pdf`
+  — reuse this file, don't re-extract or substitute a different logo).
+- Content is a **filled record**, not the blank paper template: approval
+  signature lines are replaced with the real `approval_history` entries
+  (actual approver names/actions/remarks/timestamps). "Reason for Request"
+  prints once for the whole request, with each of the three columns
+  (Replacement/Additional/New Position — all three request types are
+  supported as of 2026-09-14) itemizing every line of that type, numbered
+  when there's more than one — NOT once per line item (an earlier version
+  of this did that and was corrected). "FOR HR USE ONLY" shows the real
+  `hired_employee`/`date_hired` per line once Record Hires (see below) has
+  been used, blank otherwise; a single-position MRF keeps the paper form's
+  plain single-row layout instead of a table.
+- Not verified: actual paginated/printed visual output on real paper or a
+  PDF export — no browser automation is available in this environment, so
+  only the CSS technique (proven working in the KPI feature) and the
+  underlying data (checked against live API responses) are confirmed.
+
+## Record Hires ("FOR HR USE ONLY")
+
+Added 2026-09-14. A "Record Hires" button on `ViewManpowerRequest.jsx`
+(header `extra`, next to Print), visible only when
+`hasPermission('manpower-request-record-hire') && record.status === 'Approved'`
+— no ownership check, since this is an HR/approver-side step, not tied to
+who created the request. Opens a `Modal` with one small `Card` per
+position line (`hireRows` local state, seeded from `record.details` on
+open), each with an `EmployeeSelect` (passed `activeOnly` — see below) for
+`hired_employee_id` and a **read-only** "Date Hired" display (a plain
+`Typography.Text`, not a `DatePicker` — see the next paragraph). Save
+calls `manpowerRequestApi.recordHire(record.id, hires)` with **every**
+row's current `{ detail_id, hired_employee_id }` (no `date_hired` — see
+below), then reloads the record. Each position card in the main detail
+view also shows "Hired Employee"/"Date Hired" read-only once either is
+set, mirroring how "Replacement Employee" is shown.
+
+**Date Hired is not user-entered — it's always the selected employee's
+`EmployeeMasterData.date_employed`, added 2026-09-14** (previously it was
+a `DatePicker` the user filled in; changed per instruction to be
+read-only and derived). `EmployeeSelect`'s option objects now carry
+`date_employed` (added to `employeeOptionApi`'s underlying
+`/employee_master_data/option_list` response) so the modal can show the
+correct date **immediately on selection**, before saving — the
+`onChange(val, option)` handler reads `option.date_employed` into
+`hireRows[i].date_hired` for display only. The actual persisted value is
+computed server-side in `ManpowerRequestService::recordHires()`
+regardless of what (if anything) the client sends — don't add a
+`DatePicker` back for this field, and don't send `date_hired` in the
+`recordHire` payload.
+
+**Layout, per instruction (2026-09-14): Hired Employee and Date Hired
+each get their own full-width row** (`<Col span={24}>` each, stacked),
+not side-by-side columns — the employee option label is long
+(`employee_code - full_name (position_name)`, plus an `— Inactive` suffix
+when applicable) and was getting cramped in a narrower column.
+`EmployeeSelect` also gained a `status` prop (forwarded straight to the
+underlying AntD `Select`) for this reason — see the next paragraph.
+
+**The same employee can't be selected for more than one position on the
+same request** — enforced two ways in `ViewManpowerRequest.jsx`:
+1. **Live, per-row visual feedback**: on every render, `hireRows` is
+   scanned for `hired_employee_id` values that appear more than once; any
+   row whose selection is part of a duplicate gets
+   `<EmployeeSelect status="error">` (renders the AntD `Select` with a red
+   border) plus a small red "This employee is already selected for
+   another position." line — this updates live as the user picks/changes
+   employees, not just on Save.
+2. **On Save**: `handleHireConfirm` still checks for a duplicate before
+   calling the API and shows a `messageApi.error` naming the duplicated
+   employee (via `hired_employee_label`, captured from `EmployeeSelect`'s
+   `onChange(val, option)` second argument — AntD `Select` passes the full
+   option object there), aborting the submit if found.
+
+Both of these are client-side convenience only; `ManpowerRequestService::recordHires()`
+enforces the same rule server-side (see the backend skill's Roadmap) and
+is the actual source of truth — don't rely on the frontend checks alone if
+extending this feature.
+
+`EmployeeSelect.jsx` gained an `activeOnly` prop (default `false`,
+preserving existing Replacement Employee behavior) — when true, it calls
+`employeeOptionApi.getActive` (status=1) instead of `getAll` (status=-1,
+all). Use `activeOnly` for any future employee picker where the person
+should always be currently active; the Replacement Employee field stays
+`activeOnly=false` on purpose (see "Important Business Rules" below). Its
+`options` array also now carries `date_employed` per employee (forwarded
+straight from `employeeOptionApi`'s response) so a consumer's
+`onChange(value, option)` can read `option.date_employed` — used by
+Record Hires above; not used by the Replacement Employee field.
+
+**Bug found and fixed while wiring this up**: `EmployeeMasterDataMaintenance`
+(backend, `vueportal`) only allowed `manpower-request-create`/`-edit` (plus
+some KPI permissions and two unseeded/phantom permission strings) through
+its `option_list` branch — **not** `manpower-request-record-hire`. Since
+the `Manpower Request Approver` role has `-record-hire` but not
+`-create`/`-edit`, an Approver got a 401 trying to search for a hired
+employee at all, before the backend fix. If a future permission is added
+that needs `EmployeeSelect`, check this middleware branch explicitly —
+don't assume having *some* manpower-request permission is enough.
 
 ## Reusable Components
 
 - `EmployeeSelect.jsx` — controlled async searchable/paginated employee
-  picker (`value`/`onChange`, `onSearch`, `onPopupScroll`). Reuse as-is for
-  any other employee-picking field in this module; don't build a new one.
-- Everything else (form, index, create/edit wrappers) is MRF-specific and
-  not designed for reuse elsewhere.
+  picker (`value`/`onChange`, `onSearch`, `onPopupScroll`, `activeOnly`).
+  Reuse as-is for any other employee-picking field in this module; don't
+  build a new one.
+- Everything else (form, index, view, print, create/edit wrappers) is
+  MRF-specific and not designed for reuse elsewhere.
 
 ## Existing Conventions To Match
 
@@ -179,45 +384,76 @@ Allowed transitions inferred from the Index page's guard functions:
   you're editing; don't mix patterns within one file.
 - All mutations go through `handleApiError(error, messageApi)` in the
   `catch` block.
-- Dates: `dayjs`, displayed as `MM-DD-YYYY`, sent to the API as
-  `YYYY-MM-DD`.
+- Dates: `dayjs`, displayed as `MM-DD-YYYY` (`MM/DD/YYYY` in the print
+  view, matching the paper form), sent to the API as `YYYY-MM-DD`.
 - Table page follows the shared list pattern: `rowKey="id"`, in-memory
   filtering over the store's `items` (search text / status / date range),
   `pagination={{ pageSize: 10, showSizeChanger: true }}`, permission- and
   status-gated row actions wrapped in `Popconfirm`.
+- **Manual Refresh buttons (added 2026-09-14)**: `ManpowerRequestIndex.jsx`
+  has one in the search/filter toolbar calling `refetch()` (from
+  `useManpowerRequests`), tied to the same `isLoading` the `Table` already
+  uses. `ViewManpowerRequest.jsx` has one in the header `extra` calling
+  `loadRecord()` again, with its own `refreshing` state (kept separate
+  from the initial-mount `loading` spinner). Relevant given the
+  server-side visibility scoping above — a document can leave an
+  approver's view (or a list can gain new entries) from another user's
+  action without any client-side signal, so a manual way to re-pull the
+  current state is useful. Use `<ReloadOutlined />` for this affordance if
+  adding it to another module's list/view page, for consistency.
 
 ## Important Business Rules Discovered From The Code
 
-1. A request is only editable by its **owner**, and only while
-   `Draft`/`Returned` — enforce both conditions, not just status.
+1. A request is editable/submittable by its owner (or an Administrator)
+   only while `Draft`/`Disapproved`/`Cancelled`/`Returned` — enforce both
+   the role-or-ownership condition and the status condition, not just one.
 2. `EmployeeSelect` must include inactive employees for the replacement
    field — this is intentional, not a bug.
-3. `replacement_employee_id` is required only when
-   `replacement_or_additional === 'Replacement'` for that line item —
-   it's per-row, not per-request.
-4. `fetchById` returns an object with **two** keys
-   (`manpower_request`, `approval_status`) — code that destructures it as
-   the record directly will break.
+3. `replacement_employee_id`/`replacement_reason`/`last_working_day` are
+   required only when `replacement_or_additional === 'Replacement'` for
+   that line item — it's per-row, not per-request.
+4. `fetchById` (store) / `getById` (api) return an object with **two**
+   keys (`manpower_request`, `approval_status`) — code that destructures
+   it as the record directly will break.
 5. Reference data (branches/positions) for the form is fetched via
    `manpowerRequestApi.getCreate()` / `store.fetchFormData()`, cached with
    `isFormDataLoaded` — do not call `positionStore`/`branchStore` inside
    MRF form code; that would fetch different/duplicate data through a
    different endpoint (`/position/get-all`, `/branch/index`) than what
    `manpower_request/create` returns.
+6. `required_plantilla`/`existing_headcount` are server-computed
+   snapshots, not live values — never send them from the client, and
+   don't expect them to update if headcount changes after the MRF was
+   saved.
 
 ## Common Mistakes To Avoid
 
-- Assuming MRF routes work without checking `AppRoutes.jsx` /
-  `MainLayout.jsx` first — they currently don't.
-- Treating `ViewManpowerRequest.jsx` as already implemented — it's empty.
+- Trusting this file's description of routes/permissions/statuses without
+  cross-checking the root `CLAUDE.md`'s "Manpower Request Conventions"
+  section and the backend's `manpower-request` skill first — this file
+  was badly stale once already (described `ViewManpowerRequest.jsx` as
+  empty and routes as unregistered well after both were built) and could
+  drift again.
 - Switching MRF's API calls from POST to REST verbs "for consistency" with
   KPI — the two modules intentionally differ because they hit different
   backend controllers.
 - Introducing a new `manpower-request-*` permission string without
-  confirming it's seeded on the backend.
+  confirming it's seeded on the backend (`PermissionSeeder.php` +
+  `ManpowerRequestRoleSeeder.php`).
 - Checking only `hasPermission(...)` and forgetting the ownership
   (`record.user_id === user.id`) and status checks that this module always
-  pairs with it.
+  pairs with it (Print is the one exception — permission-only, by design).
 - Using `positionStore`/`branchStore`/`usePositions`/`useBranches` inside
   MRF form code instead of `manpowerRequestStore`'s own
   `fetchFormData`/`branches`/`positions`.
+- Building a new print/export feature for another module by inventing a
+  new CSS technique instead of reusing the hide-all/show-one `@media
+  print` pattern both `KpiEvaluationPrint.css` and
+  `ManpowerRequestPrint.css` already use.
+- Assuming a field returned correctly by one backend endpoint (e.g.
+  `record_hire`'s response) will also come back correctly from `edit()`
+  or `index()` — the backend controller hand-rolls a **separate**
+  `with()` eager-load chain for each of those three methods instead of
+  sharing one, so a new relation has to be added to all of them
+  individually. This exact bug was hit and fixed when `hired_employee`
+  was added — see the backend `manpower-request` skill's Roadmap.
