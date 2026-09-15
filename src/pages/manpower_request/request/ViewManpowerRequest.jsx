@@ -406,6 +406,14 @@ const ViewManpowerRequest = () => {
             <div><Typography.Text strong>{record.current_level || '—'}</Typography.Text></div>
           </Col>
           <Col xs={24} md={6}>
+            <Typography.Text type="secondary">Approved Date</Typography.Text>
+            <div>
+              <Typography.Text strong>
+                {record.date_approved ? dayjs(record.date_approved).format('MM-DD-YYYY') : '—'}
+              </Typography.Text>
+            </div>
+          </Col>
+          <Col xs={24} md={6}>
             <Typography.Text type="secondary">Manpower Required</Typography.Text>
             <div><Typography.Text strong>{totalManpower}</Typography.Text></div>
           </Col>
@@ -538,6 +546,22 @@ const ViewManpowerRequest = () => {
                   <div>
                     <Typography.Text strong>
                       {d.date_hired ? dayjs(d.date_hired).format('MM-DD-YYYY') : '—'}
+                    </Typography.Text>
+                  </div>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Typography.Text type="secondary">Time to Fill</Typography.Text>
+                  <div>
+                    <Typography.Text strong>
+                      {/* Date Approved -> Date Hired. Date Hired is the
+                          employee's latest branch-assignment date (or
+                          date_employed if they have no assignment history
+                          — see ManpowerRequestService::resolveHireDate()),
+                          not necessarily their original hire date, since a
+                          filled position can be an internal transfer. */}
+                      {record.date_approved && d.date_hired
+                        ? `${dayjs(d.date_hired).diff(dayjs(record.date_approved), 'day')} day(s)`
+                        : '—'}
                     </Typography.Text>
                   </div>
                 </Col>

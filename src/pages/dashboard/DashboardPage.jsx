@@ -5,6 +5,7 @@ import {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
+import manpowerRequestApi from '../../services/manpower_request/manpowerRequestApi';
 import {
   Row, Col, Card, Divider, Typography,
   Input, Progress, Select, Button, Tag, Table, Tooltip, Spin,
@@ -589,6 +590,7 @@ const DashboardPage = () => {
   const [allApplicantRows,    setAllApplicantRows]     = useState([]);
   const [positions,           setPositions]            = useState([]);
   const [branches,            setBranches]             = useState([]);
+  const [mrfList,             setMrfList]              = useState([]);
 
   const [analyticsDateRange, setAnalyticsDateRange] = useState({
     from: getJanFirstThisYearIso(),
@@ -967,6 +969,32 @@ const DashboardPage = () => {
 
   useEffect(() => { fetchApplicants(); }, [fetchApplicants]);
 
+  // MRF list, used only for the Time to Fill section below. Kept as a
+  // separate fetch/state from the applicant data above (different backend
+  // module/endpoint). Deliberately does NOT navigate to /login on failure
+  // like fetchApplicants does — a 401 here is at least as likely to mean
+  // "this user has no manpower-request-* permission" (this repo's
+  // <Module>Maintenance middleware aborts 401 for a permission failure,
+  // not just an auth failure) as a genuinely expired session, and the rest
+  // of the dashboard should still render for a user without MRF access.
+  // /manpower_request/index is itself scoped server-side to what the
+  // current user can see (own requests, plus — without
+  // manpower-request-list-all — only what's pending at their approval
+  // level or that they've acted on), so this widget reflects the same
+  // per-user visibility as the Manpower Request module itself, not
+  // org-wide data, unless the viewer holds -list-all.
+  const fetchMrfList = useCallback(async () => {
+    try {
+      const response = await manpowerRequestApi.getAll();
+      setMrfList(response.data?.manpower_requests || []);
+    } catch (error) {
+      console.error('[DashboardPage] MRF fetch error:', error);
+      setMrfList([]);
+    }
+  }, []);
+
+  useEffect(() => { fetchMrfList(); }, [fetchMrfList]);
+
   // ── Chart data ──────────────────────────────────────────────────────────────
   const srcAppChartData = useMemo(() => {
     const entries = Object.entries(groupByKey(dateFilteredApplicants, 'applicationSource')).sort((a, b) => b[1].length - a[1].length);
@@ -1010,6 +1038,90 @@ const DashboardPage = () => {
       { label: 'Hired',   data: AGE_BAND_LABELS.map((b) => hiredApplicants.filter((a) => a.applicantAgeBand === b).length),        backgroundColor: 'rgba(56,158,13,0.75)' },
     ],
   }), [dateFilteredApplicants, hiredApplicants]);
+
+  // ── Manpower Request — Time to Fill ───────────────────────────────────────────
+  // Date Approved (MRF fully approved, ManpowerRequestService sets this
+  // when the request clears its last approval level) -> Date Hired (per
+  // position line, via Record Hires — see
+  // ManpowerRequestService::resolveHireDate() on the backend for how
+  // date_hired itself is derived: an internal transfer's line uses their
+  // latest branch-assignment date, not their original date_employed).
+  // Distinct from "Average time-to-hire" above, which is a Recruitment
+  // applicant-tracking metric (application -> Hired stage) — this one is
+  // Manpower Request-sourced and can include internal transfers/promotions,
+  // not just net-new external hires. MRFs without a date_approved (not yet
+  // fully approved) are excluded — Record Hires itself is only reachable
+  // once a request is Approved, so every row with a date_hired should have one.
+  const timeToFillRows = useMemo(() => {
+    const rows = [];
+    mrfList.forEach((mrf) => {
+      const approvedDate = parseDateValue(mrf.date_approved);
+      if (!approvedDate) return;
+      (mrf.details || []).forEach((d) => {
+        if (!d.date_hired) return;
+        const hiredDate = parseDateValue(d.date_hired);
+        const days = daysBetween(approvedDate, hiredDate);
+        if (days === null) return;
+        rows.push({
+          mrfId: mrf.id,
+          mrfNumber: mrf.mrf_number,
+          position: d.position?.name || 'Unknown',
+          hiredDate,
+          days,
+        });
+      });
+    });
+    return rows;
+  }, [mrfList]);
+
+  const avgTimeToFill = useMemo(() => (
+    timeToFillRows.length
+      ? Math.round(timeToFillRows.reduce((sum, r) => sum + r.days, 0) / timeToFillRows.length)
+      : null
+  ), [timeToFillRows]);
+
+  const timeToFillByPositionChartData = useMemo(() => {
+    const grouped = groupByKey(timeToFillRows, 'position');
+    const entries = Object.entries(grouped)
+      .map(([label, rows]) => [label, Math.round(rows.reduce((sum, r) => sum + r.days, 0) / rows.length)])
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
+    return {
+      labels: entries.map((e) => e[0]),
+      datasets: [{
+        label: 'Avg Days to Fill',
+        data: entries.map((e) => e[1]),
+        backgroundColor: STAGE_COLORS.slice(0, entries.length),
+        borderRadius: 4,
+      }],
+    };
+  }, [timeToFillRows]);
+
+  const timeToFillTrendChartData = useMemo(() => {
+    const byMonth = {};
+    timeToFillRows.forEach((r) => {
+      const mk = `${r.hiredDate.getFullYear()}-${String(r.hiredDate.getMonth() + 1).padStart(2, '0')}`;
+      (byMonth[mk] = byMonth[mk] || []).push(r.days);
+    });
+    const keys = Object.keys(byMonth).sort();
+    const labels = keys.map((mk) => {
+      const [y, m] = mk.split('-');
+      return new Date(+y, +m - 1).toLocaleDateString('en', { month: 'short', year: '2-digit' });
+    });
+    return {
+      labels,
+      datasets: [{
+        label: 'Avg Days to Fill',
+        data: keys.map((k) => Math.round(byMonth[k].reduce((sum, d) => sum + d, 0) / byMonth[k].length)),
+        borderColor: '#722ed1',
+        backgroundColor: 'rgba(114,46,209,0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        borderWidth: 2,
+      }],
+    };
+  }, [timeToFillRows]);
 
   const stageTimeChartData = useMemo(() => ({
     labels: avgDaysPerStage.labels,
@@ -1304,6 +1416,34 @@ const DashboardPage = () => {
           <Card size='small' title='Non-Compliant Trend by Month' style={{ borderRadius: 8 }}
             extra={<Text type='secondary' style={{ fontSize: 11 }}>Rising = process issue</Text>}>
             <ChartBox type='line' data={nonCompliantChartData} options={CHART_OPTS} height={240} />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* ── Manpower Request — Time to Fill ─────────────────────────────────── */}
+      <SectionLabel>Manpower Request — Time to Fill</SectionLabel>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} md={8}>
+          <Card size='small' title='Avg. Time to Fill' style={{ borderRadius: 8, height: '100%' }}
+            extra={<Text type='secondary' style={{ fontSize: 11 }}>Date Approved → Date Hired</Text>}>
+            <div style={{ textAlign: 'center', padding: '16px 0' }}>
+              <div style={{ fontSize: 36, fontWeight: 900, color: PRIMARY_GREEN }}>
+                {avgTimeToFill ?? '—'}
+              </div>
+              <Text type='secondary'>
+                day(s), across {timeToFillRows.length} filled position{timeToFillRows.length === 1 ? '' : 's'}
+              </Text>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} md={16}>
+          <Card size='small' title='Avg. Time to Fill by Position' style={{ borderRadius: 8, height: '100%' }}>
+            <ChartBox type='bar' data={timeToFillByPositionChartData} options={{ ...CHART_OPTS, indexAxis: 'y' }} height={220} />
+          </Card>
+        </Col>
+        <Col xs={24}>
+          <Card size='small' title='Time to Fill Trend (by Hire Month)' style={{ borderRadius: 8 }}>
+            <ChartBox type='line' data={timeToFillTrendChartData} options={CHART_OPTS} height={220} />
           </Card>
         </Col>
       </Row>

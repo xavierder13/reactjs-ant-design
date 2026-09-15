@@ -274,6 +274,24 @@ frontend-specific conventions.
   `index()` each hand-roll their own `with()` chain instead of sharing
   one), and a permission gap in `EmployeeMasterDataMaintenance` that
   blocked the Approver role from `option_list` entirely (both fixed).
+- **Time to Fill** (dashboard widget added pre-2026-09-15 as uncommitted
+  local work, start-date field changed 2026-09-15): `DashboardPage.jsx`'s
+  "Manpower Request — Time to Fill" section (avg. card, by-position chart,
+  by-hire-month trend) and `ViewManpowerRequest.jsx`'s per-line "Time to
+  Fill" field both measure `date_approved` (MRF's final-level approval
+  timestamp, stamped by `ManpowerRequestService` when status flips to
+  `Approved`) → `date_hired` (per position line, via Record Hires above),
+  not `request_date` → `date_hired` as originally implemented — start date
+  is when HR was actually cleared to hire, not when the request was first
+  raised. `date_approved` is a plain, always-present `ManpowerRequest`
+  column (no Resource/transformer hides it), so no backend change was
+  needed. Rows for an MRF with no `date_approved` are silently excluded
+  from the dashboard aggregate (this only affects MRFs that somehow have a
+  `date_hired` without ever having been `Approved`, which Record Hires'
+  own `status === 'Approved'` gate should prevent). `ViewManpowerRequest.jsx`'s
+  header grid also now shows a standalone **Approved Date** field
+  (`record.date_approved`, next to Current Level) — previously this value
+  was only visible inside the Approval History modal.
 - **Print layout** (`src/pages/manpower_request/request/ManpowerRequestPrint.jsx`
   + `.css`, route `/manpower-requests/:id/print`, permission
   `manpower-request-print`): follows the exact pattern already established
