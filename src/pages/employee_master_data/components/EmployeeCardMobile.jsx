@@ -1,24 +1,18 @@
 "use client";
 
 import { Card, Space, Button, Divider, Checkbox, Tooltip, Popconfirm, Typography } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import { useAuth } from "@/context/AuthContext";
-
-interface EmployeeCardMobileProps {
-  employees: any[];
-  selectedHeaders: any[];
-  selectedRowKeys: number[];
-  setSelectedRowKeys: (keys: number[]) => void;
-  onDelete: (id: number) => void;
-}
+import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import useAuth from "../../../hooks/useAuth";
 
 export default function EmployeeCardMobile({
   employees,
   selectedHeaders,
   selectedRowKeys,
   setSelectedRowKeys,
-  onDelete
-}: EmployeeCardMobileProps) {
+  onDelete,
+  onView,
+  editData
+}) {
 
   const { hasPermission } = useAuth();
 
@@ -49,22 +43,23 @@ export default function EmployeeCardMobile({
 
           <Divider />
           <Space>
-            {//if has permission
-              hasPermission('employee-master-data-edit') &&
+            <Tooltip title="View">
+              <Button icon={<EyeOutlined />} onClick={() => onView(emp)} />
+            </Tooltip>
+
+            {hasPermission('employee-master-data-edit') &&
               <Tooltip title="Edit">
-                <Button color="green" variant="outlined" icon={<EditOutlined />} />
+                <Button color="green" variant="outlined" icon={<EditOutlined />} onClick={() => editData(emp)} />
               </Tooltip>
             }
-            
-            {//if has permission
-              hasPermission('employee-master-data-delete') &&
+
+            {hasPermission('employee-master-data-delete') &&
               <Popconfirm title="Delete this employee?" onConfirm={() => onDelete(emp.id)}>
                 <Tooltip title="Delete">
                   <Button danger icon={<DeleteOutlined />} />
                 </Tooltip>
               </Popconfirm>
             }
-            
           </Space>
         </Card>
       ))}

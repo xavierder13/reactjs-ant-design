@@ -3,21 +3,20 @@
 import { Modal, Button } from "antd";
 import { CloseOutlined } from "@ant-design/icons";
 
-interface EmployeeModalProps {
-  visible: boolean;
-  title: string;
-  onCancel: () => void;
-  onSave: () => void;
-  children: React.ReactNode;
-}
-
+// Not currently wired into any page — Employee Master Data's Add/Edit/View
+// flow uses routed pages (CreateEmployee/EditEmployee/ViewEmployee) instead
+// of a modal, since vueportal has no single-employee "show/{id}" endpoint
+// to refresh a modal's data against reliably (see the employee-master-data
+// skill). Kept as reusable scaffolding for a future in-place quick-edit
+// modal if that's ever wanted; not deleted since it's still a reasonable
+// generic full-screen modal shell.
 export default function EmployeeModal({
   visible,
   title,
   onCancel,
   onSave,
   children
-}: EmployeeModalProps) {
+}) {
   return (
     <Modal
       open={visible}

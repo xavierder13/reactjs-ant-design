@@ -1,7 +1,6 @@
-
 import { Table, Space, Button, Popconfirm, Tooltip } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import useAuth  from "../../../hooks/useAuth";
+import { EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import useAuth from "../../../hooks/useAuth";
 
 export default function EmployeeTable({
   employees,
@@ -11,34 +10,36 @@ export default function EmployeeTable({
   selectedRowKeys,
   setSelectedRowKeys,
   onDelete,
+  onView,
   editData,
   onChangePagination
 }) {
 
   const { hasPermission } = useAuth();
-  
+
   const enhancedColumns = [
     ...columns,
     {
       title: "Actions",
-      render: () => (
+      render: (_, record) => (
         <Space>
-          {// if has permission
-            hasPermission('employee-master-data-edit') &&
+          <Tooltip title="View">
+            <Button icon={<EyeOutlined />} onClick={() => onView(record)} />
+          </Tooltip>
+
+          {hasPermission('employee-master-data-edit') &&
             <Tooltip title="Edit">
               <Button color="green" variant="outlined" icon={<EditOutlined />} onClick={() => editData(record)} />
             </Tooltip>
           }
 
-          {// if has permission
-            hasPermission('employee-master-data-delete') &&
+          {hasPermission('employee-master-data-delete') &&
             <Popconfirm title="Delete employee?" onConfirm={() => onDelete(record.id)}>
               <Tooltip title="Delete">
                 <Button danger icon={<DeleteOutlined />} />
               </Tooltip>
             </Popconfirm>
           }
-          
         </Space>
       )
     }

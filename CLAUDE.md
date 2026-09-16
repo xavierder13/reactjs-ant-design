@@ -25,9 +25,15 @@ and Manpower Request (in progress).
 
 **Ant Design v6 is recent enough that training data frequently reflects
 older (v4/v5) prop names that have since been renamed or deprecated** —
-e.g. `Divider`'s `orientation` prop was renamed to `titlePlacement`
-(confirmed by a runtime console warning that had to be reported back
-manually, since there's no browser access to observe it directly). Before
+e.g. `Divider`'s `orientation` prop was renamed to `titlePlacement`, and
+(confirmed 2026-09-16, same way — a runtime console warning reported back
+manually) `Alert`'s `message` prop is now `@deprecated please use `title`
+instead` in this installed version (6.4.3) — `<Alert message="...">` still
+renders but should be written `<Alert title="...">` in any new/touched
+code. Don't confuse this with the unrelated `message` from `App.useApp()`
+(the toast/notification API, e.g. `messageApi.success(...)`) — that one is
+not deprecated and shares nothing with `Alert`'s prop beyond the word.
+Before
 using an AntD prop/API from memory, especially anything touching
 placement, sizing, or a prop that existed in earlier major versions,
 check it against what's actually installed: grep
@@ -36,6 +42,16 @@ lists the real accepted values/prop names) or the adjacent `.d.ts`, rather
 than trusting recalled API shape. This app has no browser automation
 available in this environment — a console warning/error will not surface
 on its own; it has to be reported back and then verified this way.
+
+**2026-09-16**: every AntD component used in the Employee Master Data
+module (Card, Select, Modal, Table, Breadcrumb, Pagination, Space, Input,
+Tooltip, Spin, Tag, Empty, Tabs, Descriptions, DatePicker, Form, Switch,
+Checkbox, List, Upload, Typography, Popconfirm) was checked against
+`node_modules/antd/es/**/*.d.ts` for `@deprecated` props after the
+`Alert.message` finding — no other usages in that module hit a deprecated
+prop. Re-run the same check (`grep -A2 "@deprecated"` in each component's
+`.d.ts`) for any *new* component this module starts using, rather than
+assuming the audit still covers it.
 
 ## Project Architecture
 
@@ -174,6 +190,114 @@ npm run lint       # ESLint (flat config, react-hooks + react-refresh rules)
 ```
 No test framework/suite exists in this project. Do not assume Jest/Vitest
 are available; do not add one unless explicitly requested.
+
+## Employee Master Data Conventions
+
+Module status (2026-09-16): **core record wired up** (list with search/
+pagination/column picker/bulk delete/Excel import, create, view, edit,
+delete) using this repo's Zustand-per-resource + thin-service convention,
+plus two additions ported from a `vueportal` `master`-branch merge: a
+read-only **Referral Code** field (Employee Details tab) and a standalone
+**Employee Acknowledgment Report** feature (`/acknowledgment-reports`,
+submitted from the list's bulk-action bar — see the skill for why this is
+NOT the same thing as the Import feature despite vueportal's UI calling
+the submit action "Upload Employee Report"). The 4 sub-tabs that hang off
+a profile in the vueportal reference (Performance Management, Disciplinary
+Measures & Penalties, Offboarding, Attendance) are still placeholders, and
+Export/Template Download (Import's
+natural companions) haven't been added yet. A dedicated
+`.claude/skills/employee-master-data/SKILL.md` has the full detail
+(architecture, list toolbar layout, unconfirmed backend contracts,
+roadmap) — this section is the fast-reference summary, kept in sync with
+real code the way the Manpower Request section above is.
+
+- Files: `src/pages/employee_master_data/` — `EmployeeMasterData.jsx`
+  (list, with a title+actions row, a search+column-picker toolbar row, and
+  a bulk-action bar), `CreateEmployee.jsx`/`EditEmployee.jsx`/
+  `ViewEmployee.jsx` (thin wrappers around the shared
+  `components/EmployeeForm.jsx`), `components/EmployeeTabs.jsx` (6-tab
+  container), `components/tabs/*` (per-tab content),
+  `components/EmployeeTable.jsx`/`EmployeeCardMobile.jsx` (desktop/mobile
+  list rendering), `components/ColumnSelector.jsx`/`PaginationControls.jsx`,
+  `components/ImportEmployeesModal.jsx` (Excel/CSV bulk import).
+  `src/store/employeeStore.js`, `src/hooks/useEmployees.js`,
+  `src/services/employee/employeeApi.js` (CRUD + file attachments +
+  import) and the pre-existing `src/services/employee/employeeOptionApi.js`
+  (dropdown/typeahead lookups only — not the CRUD surface, reused by
+  Manpower Request's `EmployeeSelect.jsx`).
+- **Registered** in both `AppRoutes.jsx` and `MainLayout.jsx` — reachable
+  at `/employees`, `/employees/create`, `/employees/:id`,
+  `/employees/:id/edit` (this last one was previously an unregistered
+  page file despite existing — fixed).
+- **No single-employee "show/{id}" endpoint exists on the backend** for
+  this module (unlike Manpower Request's `/edit/{id}`) — only
+  `index`/`store`/`update/{id}`/`delete`. `EditEmployee.jsx`/
+  `ViewEmployee.jsx` therefore depend on the employee record being passed
+  via React Router state from the list (`navigate(path, { state:
+  { employee } })` in `EmployeeMasterData.jsx`), not a fetch. Opening
+  either page directly or after a refresh shows a "return to list" `Result`
+  instead of guessing at a fetch — this was a deliberate decision (see the
+  skill's Roadmap), not an oversight; revisit only if a `show/{id}`
+  endpoint is added backend-side.
+- All service endpoints are POST-only
+  (`/employee_master_data/index`, `/store`, `/update/{id}`, `/delete`,
+  `/file_upload/{id}`, `/file_delete`, `/file_download`), matching Manpower
+  Request's convention (this module's backend controller is POST-only
+  throughout, including reads) — do not switch to REST verbs.
+- **Server-side search + pagination**, not the client-side-filter
+  convention most other list pages use — `employeeStore.fetchItems(params)`
+  posts `{ page, items_per_page, search, table_headers }` and the backend
+  returns a paginated slice, because the employee count is too large for
+  in-memory filtering. `table_headers` (the currently-selected columns) is
+  sent as part of the request and triggers a re-fetch on change — it isn't
+  purely a client-side display concern here.
+- Civil Status options (`Single`, `Married`, `Widowed`, `Legally
+  Separated`) intentionally match `EmployeeMasterDataController`'s
+  server-side validator exactly, **not** the vueportal reference UI's
+  dropdown (which offers `Divorced`, a value the backend actually rejects
+  with a 422 — a pre-existing bug in the reference app). Don't restore
+  `Divorced`.
+- Several request/response field names (the create/update response's
+  resource key, the delete payload's id-list key, the file-upload response
+  shape) are inferred from convention, not confirmed against the live
+  `EmployeeMasterDataController` — the code defends against a couple of
+  likely shapes rather than assuming one. See the skill's "Unconfirmed
+  Backend Contracts" section before treating any of these as settled, and
+  simplify the defensive fallbacks once confirmed.
+- **Deferred** (placeholder `Empty` states in `EmployeeTabs.jsx`'s
+  Performance Management / Disciplinary / Offboarding / Attendance tabs):
+  each is its own CRUD module against its own vueportal route group
+  (`employee_master_data/key_performance`, `/classroom_performance_rating`,
+  `/ojt_performance_rating`, `/branch_assignment_position`,
+  `/merit_history`, `/training`, `/nte`, `/disciplinary`, `/offboarding`,
+  `/attendance`). Offboarding specifically needs a product decision before
+  it can be built at all — vueportal keeps offboarding data in two places
+  (columns on `employee_master_data` itself, and a separate
+  `employee_offboardings` table) and which is authoritative isn't
+  resolvable from the code. Excel Export/Template Download (Import's
+  natural companions) are also deferred. The Promodizer Brand **form**
+  field (conditional on Position = "Sales Specialist" in the Vue
+  reference) is deferred too — no lookup store/hook for it exists in this
+  repo yet; note the **list column** for it does exist and was bug-fixed
+  (see the skill's Decisions section) — don't confuse the two.
+- Permission strings in use: `employee-master-data-list`, `-create`,
+  `-edit`, `-delete`, `-import`. The vueportal reference also seeds one
+  permission per tab (`-personal-data`, `-employee-details`,
+  `-performance-management`, `-disciplinary-measures-penalties`,
+  `-offboarding`) plus many sub-module-specific ones — not yet checked
+  client-side here since those tabs are still placeholders; add the
+  per-tab gate when a tab goes from placeholder to real (see vueportal's
+  `EmployeeInformationTabs.vue` `tabItems` computed property for the exact
+  pattern to match).
+- Bulk delete: row selection (`selectedRowKeys`) drives an `Alert`-based
+  bulk-action bar shown only when something's selected — see the skill's
+  "List Page Toolbar / Bulk Actions" section for the full layout rationale
+  and why the header is split into two rows instead of one.
+- Use `App.useApp()` for any `message`/`notification` call in this module,
+  never the static `message`/`notification` import from `antd` directly —
+  the static API can't consume this app's `<AntApp>` `ConfigProvider`
+  context and raises a console warning. A real instance of this was found
+  and fixed in `ColumnSelector.jsx`.
 
 ## Manpower Request Conventions
 

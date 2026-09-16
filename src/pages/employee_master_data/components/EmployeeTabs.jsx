@@ -9,17 +9,24 @@ import DisciplinaryTab from "./tabs/DisciplinaryTab";
 import OffboardingTab from "./tabs/OffboardingTab";
 import AttendanceTab from "./tabs/AttendanceTab";
 
-export default function EmployeeTabs() {
+// mode: 'create' | 'edit' | 'view'. All tabs render inside EmployeeForm.jsx's
+// single shared <Form> — see PersonalInformation.jsx's header comment.
+// initialData is the employee record (from router state on edit/view,
+// undefined on create) — only used here for the read-only/derived display
+// bits (EmployeeDetailsTab) and for seeding Files & Requirements; the
+// editable field values themselves are set via form.setFieldsValue in
+// EmployeeForm.jsx, not passed as props.
+export default function EmployeeTabs({ mode = "create", initialData }) {
   const items = [
     {
       key: "personal",
       label: "Personal Data",
-      children: <PersonalDataTab />,
+      children: <PersonalDataTab employeeId={initialData?.id} initialFiles={initialData?.files} mode={mode} />,
     },
     {
       key: "details",
       label: "Employee Details",
-      children: <EmployeeDetailsTab />,
+      children: <EmployeeDetailsTab initialData={initialData} mode={mode} />,
     },
     {
       key: "performance",

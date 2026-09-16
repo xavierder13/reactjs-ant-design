@@ -1,5 +1,7 @@
-const EmployeeMasterData = () => {
-  return 'This is Employee Master Data';
-}
+import EmployeeForm from './components/EmployeeForm';
 
-export default EmployeeMasterData;
+const CreateEmployee = () => {
+  return <EmployeeForm mode="create" />;
+};
+
+export default CreateEmployee;

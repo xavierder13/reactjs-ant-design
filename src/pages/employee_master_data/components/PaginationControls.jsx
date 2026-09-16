@@ -2,19 +2,12 @@
 
 import { Pagination, Select, Space } from "antd";
 
-interface PaginationControlsProps {
-  pagination: any;
-  pageSizeOptions: number[];
-  isSmallScreen: boolean;
-  onChange: (page: number, pageSize: number) => void;
-}
-
 export default function PaginationControls({
   pagination,
   pageSizeOptions,
   isSmallScreen,
   onChange
-}: PaginationControlsProps) {
+}) {
   return (
     <div style={{ textAlign: "center", marginTop: 16 }}>
       {isSmallScreen && (

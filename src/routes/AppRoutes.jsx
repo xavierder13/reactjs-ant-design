@@ -32,6 +32,8 @@ import EmployeeMasterData from '../pages/employee_master_data/EmployeeMasterData
 import CreateEmployee from '../pages/employee_master_data/CreateEmployee';
 import EditEmployee from '../pages/employee_master_data/EditEmployee';
 import ViewEmployee from '../pages/employee_master_data/ViewEmployee';
+import AcknowledgmentReportIndex from '../pages/employee_master_data/acknowledgment_report/AcknowledgmentReportIndex';
+import AcknowledgmentReportView from '../pages/employee_master_data/acknowledgment_report/AcknowledgmentReportView';
 import JobApplicantList from '../pages/recruitment/JobApplicantList';
 import ManpowerRequestIndex from '../pages/manpower_request/request/ManpowerRequestIndex';
 import CreateManpowerRequest from '../pages/manpower_request/request/CreateManpowerRequest';
@@ -50,8 +52,11 @@ const permissionRoutes = [
   { permissions: ['role-list'],                 path: '/roles',       element: <RoleIndex /> },
   { permissions: ['permission-list'],           path: '/permissions', element: <PermissionIndex /> },
   { permissions: ['employee-master-data-list'], path: '/employees', element: <EmployeeMasterData /> },  
-  { permissions: ['employee-master-data-list'], path: '/employees/:id', element: <ViewEmployee /> }, 
+  { permissions: ['employee-master-data-list'], path: '/employees/:id', element: <ViewEmployee /> },
   { permissions: ['employee-master-data-create'], path: '/employees/create', element: <CreateEmployee /> },
+  { permissions: ['employee-master-data-create', 'employee-master-data-edit'], path: '/employees/:id/edit', element: <EditEmployee /> },
+  { permissions: ['employee-acknowledgment-reports'], path: '/acknowledgment-reports', element: <AcknowledgmentReportIndex /> },
+  { permissions: ['employee-acknowledgment-reports'], path: '/acknowledgment-reports/:id', element: <AcknowledgmentReportView /> },
   { permissions: ['careers-applicant-list'], path: '/recruitment/:url', element: <JobApplicantList /> },
 
   // Manpower Request Routes
