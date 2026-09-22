@@ -2,12 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Card, Row, Col, Typography, Tag, Divider, Button, Space,
-  Popconfirm, Spin, Result, Breadcrumb, Modal, Input, Timeline, message,
+  Popconfirm, Spin, Result, Breadcrumb, Modal, Input, Timeline, Upload, message,
 } from 'antd';
 import {
   ArrowLeftOutlined, EditOutlined, SendOutlined, CloseCircleOutlined,
   CheckCircleOutlined, FileTextOutlined, DeleteOutlined, PrinterOutlined,
-  UserAddOutlined, ReloadOutlined,
+  UserAddOutlined, ReloadOutlined, UploadOutlined, DownloadOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useAuth from '../../../hooks/useAuth';
@@ -63,6 +63,13 @@ const ViewManpowerRequest = () => {
   const [hireModalOpen, setHireModalOpen]   = useState(false);
   const [hireRows, setHireRows]             = useState([]);
   const [hireSubmitting, setHireSubmitting] = useState(false);
+
+  // Attachment — required for Additional/New Position lines before the
+  // request can be submitted (enforced server-side in
+  // ManpowerRequestService::submit()). Tracks which detail line is
+  // currently mid-upload/mid-delete so only that line's button shows a
+  // loading state.
+  const [attachmentBusyId, setAttachmentBusyId] = useState(null);
 
   const loadRecord = useCallback(async () => {
     const result = await fetchById(id);
@@ -258,48 +265,68 @@ const ViewManpowerRequest = () => {
     }
   };
 
+  // Each row now carries `quantity` employee slots (2026-09-21) instead of
+  // a single hire — an Additional/New Position line with quantity >= 2
+  // needs that many hires recorded against it (see
+  // ManpowerRequestDetailHire / ManpowerRequestService::recordHires()).
+  // Pre-fills from any hires already recorded; the remaining slots up to
+  // quantity start empty, same "may be left unfilled" allowance the old
+  // single-slot version had.
   const openHireModal = () => {
-    setHireRows((record.details || []).map((d) => ({
-      detail_id:            d.id,
-      position_name:        d.position?.name || '—',
-      type:                  d.replacement_or_additional,
-      hired_employee_id:    d.hired_employee_id || null,
-      hired_employee_label: d.hired_employee?.full_name || null,
-      // Read-only display only — Date Hired is always the selected
-      // employee's EmployeeMasterData.date_employed, derived and stored
-      // server-side (see recordHires()); never entered here.
-      date_hired: d.date_hired || null,
-    })));
+    setHireRows((record.details || []).map((d) => {
+      const existingHires = d.hires || [];
+      const quantity = d.quantity || 1;
+      const slots = Array.from({ length: quantity }, (_, i) => ({
+        hired_employee_id:    existingHires[i]?.hired_employee_id || null,
+        hired_employee_label: existingHires[i]?.employee?.full_name || null,
+        // Read-only display only — Date Hired is always server-derived
+        // (see resolveHireDate()); never entered here.
+        date_hired: existingHires[i]?.date_hired || null,
+      }));
+      return {
+        detail_id:     d.id,
+        position_id:   d.position_id,
+        position_name: d.position?.name || '—',
+        type:           d.replacement_or_additional,
+        slots,
+      };
+    }));
     setHireModalOpen(true);
   };
 
   const closeHireModal = () => setHireModalOpen(false);
 
-  const updateHireRow = (detailId, changes) => {
-    setHireRows((rows) => rows.map((r) => (r.detail_id === detailId ? { ...r, ...changes } : r)));
+  const updateHireSlot = (detailId, slotIndex, changes) => {
+    setHireRows((rows) => rows.map((r) => (
+      r.detail_id === detailId
+        ? { ...r, slots: r.slots.map((s, i) => (i === slotIndex ? { ...s, ...changes } : s)) }
+        : r
+    )));
   };
 
   const handleHireConfirm = async () => {
     // One employee can't be recorded as hired for more than one position
-    // on the same request — checked client-side first for immediate
-    // feedback; the backend re-checks this too (recordHires()).
-    const chosenIds = hireRows.map((r) => r.hired_employee_id).filter(Boolean);
+    // (or more than one slot within the same position) on the same
+    // request — checked client-side first for immediate feedback; the
+    // backend re-checks this too (recordHires()).
+    const chosenIds = hireRows.flatMap((r) => r.slots.map((s) => s.hired_employee_id)).filter(Boolean);
     const duplicateId = chosenIds.find((id, idx) => chosenIds.indexOf(id) !== idx);
     if (duplicateId) {
-      const duplicateRow = hireRows.find((r) => r.hired_employee_id === duplicateId);
+      const duplicateRow = hireRows.find((r) => r.slots.some((s) => s.hired_employee_id === duplicateId));
+      const duplicateLabel = duplicateRow?.slots.find((s) => s.hired_employee_id === duplicateId)?.hired_employee_label;
       messageApi.error(
-        `${duplicateRow?.hired_employee_label || 'This employee'} is selected for more than one position. Please choose a different employee for each position.`
+        `${duplicateLabel || 'This employee'} is selected for more than one position. Please choose a different employee for each position.`
       );
       return;
     }
 
     setHireSubmitting(true);
     try {
-      // date_hired is not sent — the backend always derives it from the
-      // selected employee's date_employed and ignores any client value.
+      // date_hired is not sent — the backend always derives it and ignores
+      // any client value.
       const hires = hireRows.map((r) => ({
-        detail_id:          r.detail_id,
-        hired_employee_id:  r.hired_employee_id,
+        detail_id:           r.detail_id,
+        hired_employee_ids:  r.slots.map((s) => s.hired_employee_id).filter(Boolean),
       }));
       const { data } = await manpowerRequestApi.recordHire(record.id, hires);
       messageApi.success(data.message);
@@ -309,6 +336,52 @@ const ViewManpowerRequest = () => {
       handleApiError(error, messageApi);
     } finally {
       setHireSubmitting(false);
+    }
+  };
+
+  const handleAttachmentUpload = async (detailId, file) => {
+    setAttachmentBusyId(detailId);
+    try {
+      const { data } = await manpowerRequestApi.detailFileUpload(detailId, file);
+      if (data.success) {
+        messageApi.success(data.message);
+        await loadRecord();
+      } else {
+        messageApi.error(data.message || 'Failed to attach file.');
+      }
+    } catch (error) {
+      handleApiError(error, messageApi);
+    } finally {
+      setAttachmentBusyId(null);
+    }
+  };
+
+  const handleAttachmentDownload = async (detail) => {
+    try {
+      const response = await manpowerRequestApi.detailFileDownload(detail.id);
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = detail.file_name || 'attachment';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      handleApiError(error, messageApi);
+    }
+  };
+
+  const handleAttachmentDelete = async (detailId) => {
+    setAttachmentBusyId(detailId);
+    try {
+      const { data } = await manpowerRequestApi.detailFileDelete(detailId);
+      messageApi.success(data.message);
+      await loadRecord();
+    } catch (error) {
+      handleApiError(error, messageApi);
+    } finally {
+      setAttachmentBusyId(null);
     }
   };
 
@@ -463,22 +536,105 @@ const ViewManpowerRequest = () => {
         {/* ── Position Requirements ─────────────────────────────────────── */}
         <Typography.Title level={5}>Position Requirements</Typography.Title>
 
-        {(record.details || []).map((d) => (
+        {(record.details || []).map((d) => {
+          // Frontend-only, derived — not a stored field. "Open" while no
+          // hire has been recorded against this line yet, "Closed" once at
+          // least one has (matches this line's own `hires`, not the
+          // quantity — a partially-filled line with quantity > 1 already
+          // shows Closed the moment its first hire lands). User-confirmed
+          // mapping (2026-09-22): the opposite direction reads more
+          // naturally but was explicitly checked against, not assumed.
+          const hiredCount = (d.hires || []).length;
+          const lineStatus = hiredCount > 0 ? 'Closed' : 'Open';
+
+          // Same concept as each hire's own "Time to Fill" below (Date
+          // Approved -> Date Hired), but for a line that isn't filled yet:
+          // Date Approved -> today. Only meaningful once the MRF itself has
+          // an approval date and only while the line is still Open — once
+          // a hire lands, Time to Fill (per hire, below) is the relevant
+          // number instead.
+          const agingDays = lineStatus === 'Open' && record.date_approved
+            ? dayjs().diff(dayjs(record.date_approved), 'day')
+            : null;
+
+          return (
           <Card key={d.id} size="small" style={{ marginBottom: 16, background: '#fafafa' }}>
             <Row gutter={16}>
-              <Col xs={24} md={8}>
+              <Col xs={24} md={6}>
                 <Typography.Text type="secondary">Position</Typography.Text>
                 <div><Typography.Text strong>{d.position?.name || '—'}</Typography.Text></div>
               </Col>
-              <Col xs={24} md={8}>
+              <Col xs={24} md={6}>
                 <Typography.Text type="secondary">Employment Type</Typography.Text>
                 <div><Typography.Text strong>{d.employment_type || '—'}</Typography.Text></div>
               </Col>
-              <Col xs={24} md={8}>
+              <Col xs={24} md={4}>
                 <Typography.Text type="secondary">Quantity</Typography.Text>
                 <div><Typography.Text strong>{d.quantity ?? '—'}</Typography.Text></div>
               </Col>
+              <Col xs={24} md={4}>
+                <Typography.Text type="secondary">Status</Typography.Text>
+                <div>
+                  <Tag color={lineStatus === 'Open' ? 'processing' : 'success'}>{lineStatus}</Tag>
+                </div>
+              </Col>
+              {agingDays !== null && (
+                <Col xs={24} md={4}>
+                  <Typography.Text type="secondary">Aging</Typography.Text>
+                  <div><Typography.Text strong>{agingDays} day(s)</Typography.Text></div>
+                </Col>
+              )}
             </Row>
+
+            {/* Required before the parent request can be submitted for
+                approval — enforced server-side in
+                ManpowerRequestService::submit(), not just a UI nudge.
+                Reuses `canEdit` (status + Administrator-or-owner +
+                permission) for upload/delete, same as every other
+                mutation on this line — download has no gate beyond being
+                able to view the page at all. */}
+            {['Additional', 'New Position'].includes(d.replacement_or_additional) && (
+              <Row gutter={16} style={{ marginTop: 12 }}>
+                <Col xs={24}>
+                  <Typography.Text type="secondary">Supporting Attachment</Typography.Text>
+                  <div style={{ marginTop: 4 }}>
+                    {d.file_name ? (
+                      <Space>
+                        <Typography.Text strong>{d.file_name}</Typography.Text>
+                        <Button size="small" icon={<DownloadOutlined />} onClick={() => handleAttachmentDownload(d)}>
+                          Download
+                        </Button>
+                        {canEdit && (
+                          <Popconfirm title="Delete this attachment?" onConfirm={() => handleAttachmentDelete(d.id)}>
+                            <Button size="small" danger icon={<DeleteOutlined />} loading={attachmentBusyId === d.id}>
+                              Delete
+                            </Button>
+                          </Popconfirm>
+                        )}
+                      </Space>
+                    ) : (
+                      <Space direction="vertical" size={4}>
+                        {canEdit && (
+                          <Upload
+                            accept=".jpeg,.jpg,.png,.docs,.docx,.pdf"
+                            showUploadList={false}
+                            beforeUpload={(file) => { handleAttachmentUpload(d.id, file); return false; }}
+                            disabled={attachmentBusyId === d.id}
+                          >
+                            <Button size="small" icon={<UploadOutlined />} loading={attachmentBusyId === d.id}>
+                              Attach File
+                            </Button>
+                          </Upload>
+                        )}
+                        <Typography.Text type="warning" style={{ fontSize: 12 }}>
+                          Required before this request can be submitted for approval.
+                        </Typography.Text>
+                      </Space>
+                    )}
+                  </div>
+                </Col>
+              </Row>
+            )}
 
             <Row gutter={16} style={{ marginTop: 12 }}>
               <Col xs={24} md={8}>
@@ -535,17 +691,20 @@ const ViewManpowerRequest = () => {
               </Col>
             </Row>
 
-            {(d.hired_employee || d.date_hired) && (
-              <Row gutter={16} style={{ marginTop: 12 }}>
+            {/* A line can now have more than one recorded hire (Additional/
+                New Position with quantity > 1) — one row per hire, since
+                each can have its own employee/date/time-to-fill. */}
+            {(d.hires || []).map((hire) => (
+              <Row gutter={16} style={{ marginTop: 12 }} key={hire.id}>
                 <Col xs={24} md={8}>
                   <Typography.Text type="secondary">Hired Employee</Typography.Text>
-                  <div><Typography.Text strong>{d.hired_employee?.full_name || '—'}</Typography.Text></div>
+                  <div><Typography.Text strong>{hire.employee?.full_name || '—'}</Typography.Text></div>
                 </Col>
                 <Col xs={24} md={8}>
                   <Typography.Text type="secondary">Date Hired</Typography.Text>
                   <div>
                     <Typography.Text strong>
-                      {d.date_hired ? dayjs(d.date_hired).format('MM-DD-YYYY') : '—'}
+                      {hire.date_hired ? dayjs(hire.date_hired).format('MM-DD-YYYY') : '—'}
                     </Typography.Text>
                   </div>
                 </Col>
@@ -559,14 +718,14 @@ const ViewManpowerRequest = () => {
                           — see ManpowerRequestService::resolveHireDate()),
                           not necessarily their original hire date, since a
                           filled position can be an internal transfer. */}
-                      {record.date_approved && d.date_hired
-                        ? `${dayjs(d.date_hired).diff(dayjs(record.date_approved), 'day')} day(s)`
+                      {record.date_approved && hire.date_hired
+                        ? `${dayjs(hire.date_hired).diff(dayjs(record.date_approved), 'day')} day(s)`
                         : '—'}
                     </Typography.Text>
                   </div>
                 </Col>
               </Row>
-            )}
+            ))}
 
             {(d.qualifications || d.experience || d.education) && (
               <Row gutter={16} style={{ marginTop: 12 }}>
@@ -638,7 +797,8 @@ const ViewManpowerRequest = () => {
               </>
             )}
           </Card>
-        ))}
+          );
+        })}
 
         <Divider style={{ borderColor: '#b7eb8f' }} />
 
@@ -817,59 +977,85 @@ const ViewManpowerRequest = () => {
           <Typography.Paragraph type="secondary">
             Select the employee hired or placed for each position, if known.
             Date Hired is read-only — it's the selected employee's actual
-            hire date on record, not something entered here.
+            hire/assign date on record, not something entered here.
           </Typography.Paragraph>
           {(() => {
             // Recomputed on every render from current hireRows — cheap
-            // (a handful of position lines) and keeps the red highlight
-            // live as the user picks/changes employees, not just on Save.
+            // (a handful of position lines/slots) and keeps the red
+            // highlight live as the user picks/changes employees, not
+            // just on Save.
             const idCounts = {};
             hireRows.forEach((r) => {
-              if (r.hired_employee_id) {
-                idCounts[r.hired_employee_id] = (idCounts[r.hired_employee_id] || 0) + 1;
-              }
+              r.slots.forEach((s) => {
+                if (s.hired_employee_id) {
+                  idCounts[s.hired_employee_id] = (idCounts[s.hired_employee_id] || 0) + 1;
+                }
+              });
             });
 
-            return hireRows.map((row) => {
-              const isDuplicate = row.hired_employee_id && idCounts[row.hired_employee_id] > 1;
-              return (
-                <Card key={row.detail_id} size="small" style={{ marginBottom: 12, background: '#fafafa' }}>
-                  <Typography.Text strong>{row.position_name}</Typography.Text>
-                  {row.type && <Typography.Text type="secondary"> ({row.type})</Typography.Text>}
-                  <Row style={{ marginTop: 8 }}>
-                    <Col span={24}>
-                      <Typography.Text type="secondary">Hired Employee</Typography.Text>
-                      <EmployeeSelect
-                        activeOnly
-                        placeholder="Search hired employee"
-                        value={row.hired_employee_id}
-                        status={isDuplicate ? 'error' : undefined}
-                        onChange={(val, option) => updateHireRow(row.detail_id, {
-                          hired_employee_id: val,
-                          hired_employee_label: option?.label || null,
-                          date_hired: option?.date_employed || null,
-                        })}
-                      />
-                      {isDuplicate && (
-                        <Typography.Text type="danger" style={{ fontSize: 12 }}>
-                          This employee is already selected for another position.
-                        </Typography.Text>
-                      )}
-                    </Col>
-                  </Row>
-                  <Row style={{ marginTop: 8 }}>
-                    <Col span={24}>
-                      <Typography.Text type="secondary">Date Hired</Typography.Text>
-                      <div>
-                        <Typography.Text strong>
-                          {row.date_hired ? dayjs(row.date_hired).format('MM-DD-YYYY') : '—'}
-                        </Typography.Text>
-                      </div>
-                    </Col>
-                  </Row>
-                </Card>
-              );
-            });
+            return hireRows.map((row) => (
+              <Card key={row.detail_id} size="small" style={{ marginBottom: 12, background: '#fafafa' }}>
+                <Typography.Text strong>{row.position_name}</Typography.Text>
+                {row.type && <Typography.Text type="secondary"> ({row.type})</Typography.Text>}
+                {row.slots.length > 1 && (
+                  <Typography.Text type="secondary"> — {row.slots.length} hires needed</Typography.Text>
+                )}
+                {row.slots.map((slot, slotIndex) => {
+                  const isDuplicate = slot.hired_employee_id && idCounts[slot.hired_employee_id] > 1;
+                  return (
+                    <div key={slotIndex}>
+                      <Row style={{ marginTop: 8 }}>
+                        <Col span={24}>
+                          <Typography.Text type="secondary">
+                            {row.slots.length > 1 ? `Hired Employee #${slotIndex + 1}` : 'Hired Employee'}
+                          </Typography.Text>
+                          <EmployeeSelect
+                            activeOnly
+                            placeholder="Search hired employee"
+                            value={slot.hired_employee_id}
+                            status={isDuplicate ? 'error' : undefined}
+                            branchId={record.branch_id}
+                            positionId={row.position_id}
+                            hiredOnOrAfter={record.date_approved}
+                            onChange={(val, option) => updateHireSlot(row.detail_id, slotIndex, {
+                              hired_employee_id: val,
+                              hired_employee_label: option?.label || null,
+                              // preview_hire_date already applies the same
+                              // branch-assignment-first priority the backend
+                              // persists on save (see EmployeeSelect.jsx) —
+                              // don't fall back to raw date_employed here,
+                              // that's what caused this preview to disagree
+                              // with the actual saved value.
+                              date_hired: option?.preview_hire_date || null,
+                            })}
+                          />
+                          {isDuplicate && (
+                            <Typography.Text type="danger" style={{ fontSize: 12 }}>
+                              This employee is already selected for another position.
+                            </Typography.Text>
+                          )}
+                        </Col>
+                      </Row>
+                      <Row style={{ marginTop: 8 }}>
+                        <Col span={24}>
+                          {/* Not just "Date Hired" — resolveHireDate() prioritizes
+                              the employee's Branch Assignment & Position history
+                              (an internal transfer's assignment date) over
+                              EmployeeMasterData.date_employed, falling back to the
+                              latter only when no assignment history exists. */}
+                          <Typography.Text type="secondary">Date Hired/Date Assigned</Typography.Text>
+                          <div>
+                            <Typography.Text strong>
+                              {slot.date_hired ? dayjs(slot.date_hired).format('MM-DD-YYYY') : '—'}
+                            </Typography.Text>
+                          </div>
+                        </Col>
+                      </Row>
+                    </div>
+                  );
+                })}
+              </Card>
+            ));
           })()}
         </Modal>
       </Card>

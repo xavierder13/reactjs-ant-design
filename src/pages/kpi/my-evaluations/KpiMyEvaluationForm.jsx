@@ -333,7 +333,7 @@ const KpiMyEvaluationForm = () => {
             </Col>
             <Col>
               <Typography.Title level={4} style={{ margin: 0 }}>
-                Self Evaluation
+               {evaluation.evaluation_type === 'self' ? 'Self Evaluation' : 'My Performance Evaluation'}
               </Typography.Title>
             </Col>
             <Col>

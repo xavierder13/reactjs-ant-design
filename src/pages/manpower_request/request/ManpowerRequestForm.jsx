@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Form, Input, Select, DatePicker, InputNumber, Button, Card,
-  Space, Divider, Row, Col, message,
+  Space, Divider, Row, Col, Upload, Typography, message,
 } from 'antd';
-import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, MinusCircleOutlined, UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useManpowerRequestStore from '../../../store/manpowerRequestStore';
 import manpowerRequestApi from '../../../services/manpower_request/manpowerRequestApi';
 import handleApiError from '../../../utils/handleApiError';
+import useAuth from '../../../hooks/useAuth';
 import EmployeeSelect from './EmployeeSelect';
 
 const PRIORITY_OPTIONS = [
@@ -69,11 +70,42 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
   // buttons can show their own loading state and disable each other
   const [saving, setSaving] = useState(false);
 
+  // Newly-picked attachment per line, keyed by the Form.List item's
+  // stable `key` (not `name`/index, which shifts when rows are added or
+  // removed) — kept outside AntD's own Form state, same as every other
+  // file-picker in this app, since a raw File object doesn't round-trip
+  // cleanly through Form.Item/fileList. An existing attachment (edit
+  // mode) lives in the form itself as plain file_name/file_path/file_type/
+  // file_date_upload values instead — see the pre-fill effect above and
+  // resolveLineFile() on the backend for why both paths exist.
+  const [detailFiles, setDetailFiles] = useState({});
+  // Synced from Form.List's own `fields` array on every render (see the
+  // render-prop body below) — the only place `field.key` <-> array index
+  // is known, needed at submit time to map `detailFiles` (keyed by
+  // `field.key`) onto `details[i][file]` (keyed by index) in the outgoing
+  // payload.
+  const fieldKeysRef = useRef([]);
+
   const branches   = useManpowerRequestStore((state) => state.branches);
   const positions  = useManpowerRequestStore((state) => state.positions);
   const fetchFormData = useManpowerRequestStore((state) => state.fetchFormData);
 
+  const { user, hasRole } = useAuth();
+  // Administrator always retains full control even if also a Manpower
+  // Requestor, matching the hasRole('Administrator')-bypasses pattern used
+  // elsewhere for this module (see ownership checks in
+  // ManpowerRequestIndex.jsx/ViewManpowerRequest.jsx).
+  const isBranchLocked = hasRole('Manpower Requestor') && !hasRole('Administrator');
+
   useEffect(() => { fetchFormData(); }, []);
+
+  // Requestors can only ever file for their own branch — auto-fill it on
+  // create so the (disabled) field still has a value to submit.
+  useEffect(() => {
+    if (mode === 'create' && isBranchLocked && user?.branch_id) {
+      form.setFieldsValue({ branch_id: user.branch_id });
+    }
+  }, [mode, isBranchLocked, user, form]);
 
   useEffect(() => {
     if (mode === 'edit' && initialData) {
@@ -106,6 +138,18 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
           prc_license_type:            d.prc_license_type,
           drivers_license_status:      d.drivers_license_status,
           drivers_license_code:        d.drivers_license_code,
+          // Carried forward as plain values (not re-uploaded) so an
+          // unchanged attachment survives update()'s delete-and-recreate
+          // of every line on every save — see
+          // ManpowerRequestService::resolveLineFile(). Cleared via
+          // form.setFieldValue when the user removes an attachment in
+          // this form; replaced outright when they pick a new file (the
+          // backend prioritizes a fresh upload over these carried-forward
+          // values regardless of what's still sitting in these fields).
+          file_name:                   d.file_name,
+          file_path:                   d.file_path,
+          file_type:                   d.file_type,
+          file_date_upload:            d.file_date_upload,
         })),
       });
     }
@@ -126,17 +170,56 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
     })),
   });
 
+  // Any line with a freshly-picked (not-yet-uploaded) file at all means
+  // the whole request needs to go out as multipart instead of JSON — see
+  // manpowerRequestApi.js's create/update for why plain-JSON stays the
+  // default otherwise.
+  const hasNewFiles = () => fieldKeysRef.current.some((key) => Boolean(detailFiles[key]));
+
+  const buildFormData = (payload) => {
+    const formData = new FormData();
+    const append = (key, value) => {
+      if (value === null || value === undefined) return;
+      formData.append(key, typeof value === 'boolean' ? (value ? '1' : '0') : value);
+    };
+
+    Object.entries(payload).forEach(([key, value]) => {
+      if (key !== 'details') append(key, value);
+    });
+
+    payload.details.forEach((detail, i) => {
+      Object.entries(detail).forEach(([key, value]) => append(`details[${i}][${key}]`, value));
+      const newFile = detailFiles[fieldKeysRef.current[i]];
+      if (newFile) formData.append(`details[${i}][file]`, newFile);
+    });
+
+    return formData;
+  };
+
   // Resubmit and Submit share the same backend action — only the label
   // differs, same convention as the Index/View pages.
   const isResubmit = mode === 'edit' && ['Disapproved', 'Cancelled', 'Returned'].includes(initialData?.status);
 
+  // Client-side mirror of ManpowerRequestService::submit()'s own check —
+  // immediate feedback without a round trip, but the backend remains the
+  // real enforcement (a direct API call could still skip this). Only
+  // called from handleSaveAndSubmit, never handleSaveDraft — a Draft can
+  // always be saved without the attachment yet, matching the
+  // user-confirmed rule (only *submitting* is blocked, not saving).
+  const findMissingAttachmentLines = (values) => (values.details || [])
+    .map((d, i) => ({ d, i }))
+    .filter(({ d }) => ['Additional', 'New Position'].includes(d.replacement_or_additional))
+    .filter(({ d, i }) => !detailFiles[fieldKeysRef.current[i]] && !d.file_name)
+    .map(({ i }) => i + 1);
+
   const saveRequest = async (values) => {
     const payload = buildPayload(values);
+    const body = hasNewFiles() ? buildFormData(payload) : payload;
     if (mode === 'create') {
-      const { data } = await manpowerRequestApi.create(payload);
+      const { data } = await manpowerRequestApi.create(body);
       return { id: data.manpower_request.id, message: data.message };
     }
-    const { data } = await manpowerRequestApi.update(initialData.id, payload);
+    const { data } = await manpowerRequestApi.update(initialData.id, body);
     return { id: initialData.id, message: data.message };
   };
 
@@ -157,17 +240,35 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
   const handleSaveAndSubmit = async () => {
     try {
       const values = await form.validateFields();
+
+      const missingLines = findMissingAttachmentLines(values);
+      if (missingLines.length) {
+        messageApi.error(
+          `Attach a supporting file for line ${missingLines.length > 1 ? 's' : ''} ${missingLines.join(', ')} before submitting (required for Additional/New Position).`
+        );
+        return;
+      }
+
       setSaving('submit');
       const { id } = await saveRequest(values);
 
       // the save already succeeded at this point — a failure here means
       // it's sitting as a Draft, not lost, so this gets its own message
-      // rather than falling into the generic error handler below
+      // rather than falling into the generic error handler below. Surfaces
+      // the backend's actual message (e.g. ManpowerRequestService::submit()'s
+      // missing-attachment error) rather than a generic fallback — the
+      // client-side check above should normally catch that case first,
+      // but a direct API call bypassing this form, or a race with another
+      // edit, could still reach it here.
       try {
         const { data } = await manpowerRequestApi.submit(id);
         messageApi.success(data.message);
       } catch (submitError) {
-        messageApi.warning('Saved, but could not submit for approval automatically — you can submit it from the request page.');
+        messageApi.warning(
+          submitError.response?.data?.message
+            ? `Saved, but could not submit for approval: ${submitError.response.data.message}`
+            : 'Saved, but could not submit for approval automatically — you can submit it from the request page.'
+        );
       }
 
       navigate(`/manpower-requests/${id}`);
@@ -191,16 +292,43 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                 name="branch_id"
                 rules={[{ required: true, message: 'Branch is required' }]}
               >
-                <Select placeholder="Select branch" options={branchOptions} showSearch optionFilterProp="label" />
+                <Select
+                  placeholder="Select branch"
+                  options={branchOptions}
+                  showSearch={!isBranchLocked}
+                  optionFilterProp="label"
+                  // Locked look without AntD's `disabled` gray-out: force the
+                  // dropdown closed, drop the arrow affordance, and block
+                  // pointer/keyboard interaction directly — the field stays
+                  // "enabled" so its normal (non-darkened) styling applies.
+                  {...(isBranchLocked ? {
+                    open: false,
+                    suffixIcon: null,
+                    tabIndex: -1,
+                    style: { pointerEvents: 'none' },
+                  } : {})}
+                />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="Request Date" name="request_date">
-                <DatePicker style={{ width: '100%' }} format="MM-DD-YYYY" />
+              <Form.Item
+                label="Request Date"
+                name="request_date"
+                rules={[{ required: true, message: 'Request date is required' }]}
+              >
+                <DatePicker
+                  style={{ width: '100%' }}
+                  format="MM-DD-YYYY"
+                  disabledDate={(current) => current && current > dayjs().endOf('day')}
+                />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="Priority" name="priority">
+              <Form.Item
+                label="Priority"
+                name="priority"
+                rules={[{ required: true, message: 'Priority is required' }]}
+              >
                 <Select placeholder="Select priority" options={PRIORITY_OPTIONS} allowClear />
               </Form.Item>
             </Col>
@@ -208,7 +336,11 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item label="Target Hiring Date" name="target_hiring_date">
+              <Form.Item
+                label="Target Hiring Date"
+                name="target_hiring_date"
+                rules={[{ required: true, message: 'Target hiring date is required' }]}
+              >
                 <DatePicker style={{ width: '100%' }} format="MM-DD-YYYY" />
               </Form.Item>
             </Col>
@@ -235,7 +367,13 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
               },
             }]}
           >
-            {(fields, { add, remove }, { errors }) => (
+            {(fields, { add, remove }, { errors }) => {
+              // Kept in sync every render — see fieldKeysRef's own comment
+              // above for why saveRequest/findMissingAttachmentLines need
+              // this key-to-index mapping at submit time.
+              fieldKeysRef.current = fields.map((f) => f.key);
+
+              return (
               <>
                 {fields.map(({ key, name, ...restField }) => (
                   <Card
@@ -262,38 +400,9 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                           {...restField}
                           label="Employment Type"
                           name={[name, 'employment_type']}
+                          rules={[{ required: true, message: 'Employment type is required' }]}
                         >
                           <Select placeholder="Select type" options={EMPLOYMENT_TYPE_OPTIONS} allowClear />
-                        </Form.Item>
-                      </Col>
-                      <Col span={8}>
-                        <Form.Item
-                          {...restField}
-                          label="Quantity"
-                          name={[name, 'quantity']}
-                          rules={[{ required: true, message: 'Quantity is required' }]}
-                        >
-                          <InputNumber min={1} style={{ width: '100%' }} />
-                        </Form.Item>
-                      </Col>
-                    </Row>
-
-                    <Row gutter={16}>
-                      <Col span={8}>
-                        <Form.Item
-                          {...restField}
-                          label="Replacement / Additional / New Position"
-                          name={[name, 'replacement_or_additional']}
-                        >
-                          <Select
-                            placeholder="Select"
-                            allowClear
-                            options={[
-                              { label: 'Replacement',  value: 'Replacement' },
-                              { label: 'Additional',   value: 'Additional' },
-                              { label: 'New Position', value: 'New Position' },
-                            ]}
-                          />
                         </Form.Item>
                       </Col>
                       <Col span={8}>
@@ -304,6 +413,65 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                             curr.details?.[name]?.replacement_or_additional
                           }
                         >
+                          {({ getFieldValue }) => {
+                            const isReplacement =
+                              getFieldValue(['details', name, 'replacement_or_additional']) === 'Replacement';
+                            return (
+                              <Form.Item
+                                {...restField}
+                                label="Quantity"
+                                name={[name, 'quantity']}
+                                rules={[{ required: true, message: 'Quantity is required' }]}
+                              >
+                                {/* A Replacement line is always for exactly the one
+                                    departing employee — locked to 1, matching the
+                                    Branch field's readOnly-not-disabled styling
+                                    (see the branch-lock note above). */}
+                                <InputNumber min={1} readOnly={isReplacement} style={{ width: '100%' }} />
+                              </Form.Item>
+                            );
+                          }}
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item
+                          {...restField}
+                          label="Replacement / Additional / New Position"
+                          name={[name, 'replacement_or_additional']}
+                          rules={[{ required: true, message: 'This field is required' }]}
+                        >
+                          <Select
+                            placeholder="Select"
+                            allowClear
+                            options={[
+                              { label: 'Replacement',  value: 'Replacement' },
+                              { label: 'Additional',   value: 'Additional' },
+                              { label: 'New Position', value: 'New Position' },
+                            ]}
+                            onChange={(val) => {
+                              // Force-reset to 1 the moment Replacement is chosen —
+                              // the InputNumber above only goes readOnly, it doesn't
+                              // clamp an existing higher value on its own.
+                              if (val === 'Replacement') {
+                                form.setFieldValue(['details', name, 'quantity'], 1);
+                              }
+                            }}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={8}>
+                        <Form.Item
+                          noStyle
+                          shouldUpdate={(prev, curr) =>
+                            prev.details?.[name]?.replacement_or_additional !==
+                              curr.details?.[name]?.replacement_or_additional ||
+                            prev.details?.[name]?.position_id !== curr.details?.[name]?.position_id ||
+                            prev.branch_id !== curr.branch_id
+                          }
+                        >
                           {({ getFieldValue }) =>
                             getFieldValue(['details', name, 'replacement_or_additional']) === 'Replacement' && (
                               <Form.Item
@@ -312,7 +480,11 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                                 name={[name, 'replacement_employee_id']}
                                 rules={[{ required: true, message: 'Select the employee being replaced' }]}
                               >
-                                <EmployeeSelect placeholder="Search employee to replace" />
+                                <EmployeeSelect
+                                  placeholder="Search employee to replace"
+                                  branchId={getFieldValue('branch_id')}
+                                  positionId={getFieldValue(['details', name, 'position_id'])}
+                                />
                               </Form.Item>
                             )
                           }
@@ -372,6 +544,7 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                                 {...restField}
                                 label="Last Working Day"
                                 name={[name, 'last_working_day']}
+                                rules={[{ required: true, message: 'Last working day is required' }]}
                               >
                                 <DatePicker style={{ width: '100%' }} format="MM-DD-YYYY" />
                               </Form.Item>
@@ -383,7 +556,12 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
 
                     <Row gutter={16}>
                       <Col span={8}>
-                        <Form.Item {...restField} label="Qualifications" name={[name, 'qualifications']}>
+                        <Form.Item
+                          {...restField}
+                          label="Qualifications"
+                          name={[name, 'qualifications']}
+                          rules={[{ required: true, message: 'Qualifications is required' }]}
+                        >
                           <Input.TextArea rows={2} />
                         </Form.Item>
                       </Col>
@@ -393,7 +571,12 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                         </Form.Item>
                       </Col>
                       <Col span={8}>
-                        <Form.Item {...restField} label="Education" name={[name, 'education']}>
+                        <Form.Item
+                          {...restField}
+                          label="Education"
+                          name={[name, 'education']}
+                          rules={[{ required: true, message: 'Education is required' }]}
+                        >
                           <Input.TextArea rows={2} />
                         </Form.Item>
                       </Col>
@@ -403,12 +586,22 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
 
                     <Row gutter={16}>
                       <Col span={8}>
-                        <Form.Item {...restField} label="Gender" name={[name, 'gender']}>
+                        <Form.Item
+                          {...restField}
+                          label="Gender"
+                          name={[name, 'gender']}
+                          rules={[{ required: true, message: 'Gender is required' }]}
+                        >
                           <Select placeholder="Select" options={GENDER_OPTIONS} allowClear />
                         </Form.Item>
                       </Col>
                       <Col span={8}>
-                        <Form.Item {...restField} label="Age Range (Min)" name={[name, 'age_min']}>
+                        <Form.Item
+                          {...restField}
+                          label="Age Range (Min)"
+                          name={[name, 'age_min']}
+                          rules={[{ required: true, message: 'Min age is required' }]}
+                        >
                           <InputNumber min={1} style={{ width: '100%' }} placeholder="Min age" />
                         </Form.Item>
                       </Col>
@@ -419,6 +612,7 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                           name={[name, 'age_max']}
                           dependencies={[['details', name, 'age_min']]}
                           rules={[
+                            { required: true, message: 'Max age is required' },
                             ({ getFieldValue }) => ({
                               validator(_, value) {
                                 const min = getFieldValue(['details', name, 'age_min']);
@@ -435,7 +629,12 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
 
                     <Row gutter={16}>
                       <Col span={8}>
-                        <Form.Item {...restField} label="Relevant Work Experience Required" name={[name, 'experience_required']}>
+                        <Form.Item
+                          {...restField}
+                          label="Relevant Work Experience Required"
+                          name={[name, 'experience_required']}
+                          rules={[{ required: true, message: 'This field is required' }]}
+                        >
                           <Select
                             placeholder="Select"
                             allowClear
@@ -468,7 +667,12 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
 
                     <Row gutter={16}>
                       <Col span={8}>
-                        <Form.Item {...restField} label="PRC License" name={[name, 'prc_license_status']}>
+                        <Form.Item
+                          {...restField}
+                          label="PRC License"
+                          name={[name, 'prc_license_status']}
+                          rules={[{ required: true, message: 'PRC license status is required' }]}
+                        >
                           <Select placeholder="Select" options={PRC_LICENSE_STATUS_OPTIONS} allowClear />
                         </Form.Item>
                       </Col>
@@ -497,7 +701,12 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
 
                     <Row gutter={16}>
                       <Col span={8}>
-                        <Form.Item {...restField} label="Driver's License" name={[name, 'drivers_license_status']}>
+                        <Form.Item
+                          {...restField}
+                          label="Driver's License"
+                          name={[name, 'drivers_license_status']}
+                          rules={[{ required: true, message: "Driver's license status is required" }]}
+                        >
                           <Select placeholder="Select" options={DRIVERS_LICENSE_STATUS_OPTIONS} allowClear />
                         </Form.Item>
                       </Col>
@@ -524,6 +733,73 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                         </Form.Item>
                       </Col>
                     </Row>
+
+                    {/* Always available regardless of type — required only
+                        for Additional/New Position before Submit (see
+                        findMissingAttachmentLines/ManpowerRequestService::submit()),
+                        optional for Replacement. `file_name` etc. carry an
+                        existing attachment forward across edits (see the
+                        pre-fill effect's own comment); picking a new file
+                        here takes priority over whatever's still in those
+                        fields, matching resolveLineFile() on the backend. */}
+                    <Form.Item
+                      noStyle
+                      shouldUpdate={(prev, curr) =>
+                        prev.details?.[name]?.replacement_or_additional !== curr.details?.[name]?.replacement_or_additional ||
+                        prev.details?.[name]?.file_name !== curr.details?.[name]?.file_name
+                      }
+                    >
+                      {({ getFieldValue }) => {
+                        const isAttachmentRequired = ['Additional', 'New Position'].includes(
+                          getFieldValue(['details', name, 'replacement_or_additional'])
+                        );
+                        const existingFileName = getFieldValue(['details', name, 'file_name']);
+                        const pendingFile = detailFiles[key];
+
+                        const clearAttachment = () => {
+                          form.setFieldValue(['details', name, 'file_name'], null);
+                          form.setFieldValue(['details', name, 'file_path'], null);
+                          form.setFieldValue(['details', name, 'file_type'], null);
+                          form.setFieldValue(['details', name, 'file_date_upload'], null);
+                          setDetailFiles((prev) => {
+                            const next = { ...prev };
+                            delete next[key];
+                            return next;
+                          });
+                        };
+
+                        return (
+                          <Row gutter={16} style={{ marginTop: 12 }}>
+                            <Col span={24}>
+                              <Typography.Text strong={isAttachmentRequired}>
+                                Supporting Attachment {isAttachmentRequired ? '(required before submitting)' : '(optional)'}
+                              </Typography.Text>
+                              <div style={{ marginTop: 4 }}>
+                                {pendingFile || existingFileName ? (
+                                  <Space>
+                                    <Typography.Text>{pendingFile?.name || existingFileName}</Typography.Text>
+                                    <Button size="small" danger icon={<DeleteOutlined />} onClick={clearAttachment}>
+                                      Remove
+                                    </Button>
+                                  </Space>
+                                ) : (
+                                  <Upload
+                                    accept=".jpeg,.jpg,.png,.docs,.docx,.pdf"
+                                    showUploadList={false}
+                                    beforeUpload={(file) => {
+                                      setDetailFiles((prev) => ({ ...prev, [key]: file }));
+                                      return false;
+                                    }}
+                                  >
+                                    <Button size="small" icon={<UploadOutlined />}>Attach File</Button>
+                                  </Upload>
+                                )}
+                              </div>
+                            </Col>
+                          </Row>
+                        );
+                      }}
+                    </Form.Item>
                   </Card>
                 ))}
 
@@ -535,7 +811,8 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
 
                 <Form.ErrorList errors={errors} />
               </>
-            )}
+              );
+            }}
           </Form.List>
         </Card>
 

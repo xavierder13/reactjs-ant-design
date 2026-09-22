@@ -1042,32 +1042,38 @@ const DashboardPage = () => {
   // ── Manpower Request — Time to Fill ───────────────────────────────────────────
   // Date Approved (MRF fully approved, ManpowerRequestService sets this
   // when the request clears its last approval level) -> Date Hired (per
-  // position line, via Record Hires — see
-  // ManpowerRequestService::resolveHireDate() on the backend for how
-  // date_hired itself is derived: an internal transfer's line uses their
-  // latest branch-assignment date, not their original date_employed).
-  // Distinct from "Average time-to-hire" above, which is a Recruitment
-  // applicant-tracking metric (application -> Hired stage) — this one is
-  // Manpower Request-sourced and can include internal transfers/promotions,
-  // not just net-new external hires. MRFs without a date_approved (not yet
-  // fully approved) are excluded — Record Hires itself is only reachable
-  // once a request is Approved, so every row with a date_hired should have one.
+  // hire, via Record Hires — see ManpowerRequestService::resolveHireDate()
+  // on the backend for how date_hired itself is derived: an internal
+  // transfer's hire uses their latest branch-assignment date, not their
+  // original date_employed). Distinct from "Average time-to-hire" above,
+  // which is a Recruitment applicant-tracking metric (application -> Hired
+  // stage) — this one is Manpower Request-sourced and can include internal
+  // transfers/promotions, not just net-new external hires. MRFs without a
+  // date_approved (not yet fully approved) are excluded — Record Hires
+  // itself is only reachable once a request is Approved, so every hire
+  // should have one. A position line can now have more than one hire
+  // (Additional/New Position with quantity > 1, see
+  // ManpowerRequestDetailHire) — one row per hire, not per line, so a
+  // multi-hire line contributes each of its hires to the average/trend
+  // individually instead of being undercounted.
   const timeToFillRows = useMemo(() => {
     const rows = [];
     mrfList.forEach((mrf) => {
       const approvedDate = parseDateValue(mrf.date_approved);
       if (!approvedDate) return;
       (mrf.details || []).forEach((d) => {
-        if (!d.date_hired) return;
-        const hiredDate = parseDateValue(d.date_hired);
-        const days = daysBetween(approvedDate, hiredDate);
-        if (days === null) return;
-        rows.push({
-          mrfId: mrf.id,
-          mrfNumber: mrf.mrf_number,
-          position: d.position?.name || 'Unknown',
-          hiredDate,
-          days,
+        (d.hires || []).forEach((hire) => {
+          if (!hire.date_hired) return;
+          const hiredDate = parseDateValue(hire.date_hired);
+          const days = daysBetween(approvedDate, hiredDate);
+          if (days === null) return;
+          rows.push({
+            mrfId: mrf.id,
+            mrfNumber: mrf.mrf_number,
+            position: d.position?.name || 'Unknown',
+            hiredDate,
+            days,
+          });
         });
       });
     });

@@ -305,13 +305,15 @@ const ManpowerRequestPrint = () => {
 
         {/* FOR HR USE ONLY — "MRF Received by" stays blank (a physical
             receiving stamp/signature has no system equivalent). "Name of
-            Hired Applicant"/"Date Hired" are populated from the real
-            hire data recorded via Record Hires on the view page (Approved
-            MRFs only) once set — blank until then. A single-position MRF
-            keeps the paper form's plain single-row layout; a multi-position
-            MRF (multiple Replacement/Additional/New Position items)
-            itemizes one hiring row per position instead of one row trying
-            to cover all of them. */}
+            Hired Applicant"/"Date Hired" are populated from the real hire
+            data recorded via Record Hires on the view page (Approved MRFs
+            only) once set — blank until then. Always the itemized table
+            (2026-09-21): a single position line can now have more than one
+            hire (Additional/New Position with quantity > 1), which the old
+            plain single-row layout for a single-position MRF couldn't
+            represent at all — one row per (position line, hire) pair, and
+            a line with no hire recorded yet still gets one blank row so it
+            stays visible. */}
         <div className='section-title'>FOR HR USE ONLY</div>
         <table className='mrf-info-table'>
           <tbody>
@@ -321,38 +323,31 @@ const ManpowerRequestPrint = () => {
               <td className='info-label'>Date:</td>
               <td className='info-value'>&nbsp;</td>
             </tr>
-            {details.length <= 1 && (
-              <tr>
-                <td className='info-label'>Name of Hired Applicant:</td>
-                <td className='info-value'>{details[0]?.hired_employee?.full_name || ' '}</td>
-                <td className='info-label'>Date Hired:</td>
-                <td className='info-value'>{formatDate(details[0]?.date_hired) || ' '}</td>
-              </tr>
-            )}
           </tbody>
         </table>
-        {details.length > 1 && (
-          <table className='mrf-table' style={{ marginTop: 4 }}>
-            <thead>
-              <tr>
-                <th>Position</th>
-                <th>Type</th>
-                <th>Name of Hired Applicant</th>
-                <th style={{ width: 120 }}>Date Hired</th>
-              </tr>
-            </thead>
-            <tbody>
-              {details.map((d) => (
-                <tr key={d.id}>
+        <table className='mrf-table' style={{ marginTop: 4 }}>
+          <thead>
+            <tr>
+              <th>Position</th>
+              <th>Type</th>
+              <th>Name of Hired Applicant</th>
+              <th style={{ width: 120 }}>Date Hired</th>
+            </tr>
+          </thead>
+          <tbody>
+            {details.flatMap((d) => {
+              const hires = d.hires && d.hires.length > 0 ? d.hires : [null];
+              return hires.map((hire, i) => (
+                <tr key={`${d.id}-${i}`}>
                   <td>{d.position?.name || '—'}</td>
                   <td className='text-center'>{d.replacement_or_additional || '—'}</td>
-                  <td>{d.hired_employee?.full_name || ' '}</td>
-                  <td>{formatDate(d.date_hired) || ' '}</td>
+                  <td>{hire?.employee?.full_name || ' '}</td>
+                  <td>{formatDate(hire?.date_hired) || ' '}</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              ));
+            })}
+          </tbody>
+        </table>
 
       </div>
     </div>

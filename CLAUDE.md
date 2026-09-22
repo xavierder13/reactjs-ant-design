@@ -485,37 +485,82 @@ frontend-specific conventions.
   not a free-text uncataloged job title.
 - **Record Hires** ("FOR HR USE ONLY" step, added 2026-09-14): a button on
   `ViewManpowerRequest.jsx` visible only when `status === 'Approved'` and
-  the user has `manpower-request-record-hire`, opening a modal with one
-  `EmployeeSelect`(`activeOnly`) + a **read-only** Date Hired display per
-  position line (not a `DatePicker` — Date Hired is always the selected
-  employee's `EmployeeMasterData.date_employed`, never user-entered),
-  saved via `manpowerRequestApi.recordHire(id, hires)` (payload has no
-  `date_hired` field at all). Recorded values (`hired_employee`/
-  `date_hired` per detail line) then show read-only in each position card
-  and in the print layout's "FOR HR USE ONLY" section. One employee cannot
-  be selected for more than one position on the same request — checked
-  both client-side (`handleHireConfirm`, immediate feedback) and
-  server-side (`ManpowerRequestService::recordHires()`, the actual source
-  of truth). See the `manpower-request` skill for the full shape and two
-  real bugs this feature surfaced: an eager-loading gap (`edit()`/
-  `index()` each hand-roll their own `with()` chain instead of sharing
-  one), and a permission gap in `EmployeeMasterDataMaintenance` that
-  blocked the Approver role from `option_list` entirely (both fixed).
+  the user has `manpower-request-record-hire`, opening a modal with
+  (2026-09-21) `quantity`-many `EmployeeSelect`(`activeOnly`) slots per
+  position line — not just one — each with its own **read-only** Date
+  Hired display (not a `DatePicker` — Date Hired is always
+  server-derived, never user-entered), saved via
+  `manpowerRequestApi.recordHire(id, hires)` where each entry is
+  `{ detail_id, hired_employee_ids }` (array; payload has no `date_hired`
+  field at all). Each slot's `EmployeeSelect` is filtered to that line's
+  own branch+position (see the branch/position filter bullet below) for
+  both Replacement and Additional/New Position lines. Recorded hires
+  (`d.hires`, one row per hire) then show read-only in each position card
+  and in the print layout's "FOR HR USE ONLY" section (always the
+  itemized table now — see the `manpower-request` skill). One employee
+  cannot be selected for more than one position/slot on the same
+  request — checked both client-side (`handleHireConfirm`, immediate
+  feedback) and server-side (`ManpowerRequestService::recordHires()`, the
+  actual source of truth, which also caps a line's hire count at its own
+  `quantity`). See the `manpower-request` skill for the full shape and the
+  real bugs/gaps this feature has surfaced over time (an eager-loading gap
+  across `edit()`/`index()`/`record_hire()`, a permission gap in
+  `EmployeeMasterDataMaintenance` that blocked the Approver role from
+  `option_list`, all fixed).
+- **Record Hires date preview bug fix (2026-09-21)**: the modal's before-save
+  Date Hired preview was reading raw `date_employed` regardless of branch
+  assignment history, disagreeing with what actually gets persisted for an
+  internal transfer/promotion — caught against a real record
+  (MRF-2026-000015). Fixed by extracting the priority logic into
+  `EmployeeMasterData::resolveEffectiveHireDate()` (`vueportal`, shared by
+  both `ManpowerRequestService::resolveHireDate()` and a new
+  `preview_hire_date` field on `employeeOptionList`, computed only for
+  Record Hires calls); `EmployeeSelect.jsx`/`ViewManpowerRequest.jsx` now
+  read `option.preview_hire_date` instead of `option.date_employed`.
+  Verified live end-to-end with a fresh candidate whose two dates
+  genuinely differ. Also relabeled "Date Hired" → **"Date Hired/Date
+  Assigned"** in the Record Hires modal only (not the main per-line
+  display or the print layout). See the `manpower-request` skill's
+  Roadmap for the full writeup.
+- **Multi-hire data model (2026-09-21)**: a position line's hires now live
+  in a separate `manpower_request_detail_hires` child table
+  (`ManpowerRequestDetail::hires()`, hasMany), **not** the old scalar
+  `hired_employee_id`/`date_hired` columns (dropped from
+  `manpower_request_details` in the same migration, after backfilling
+  existing data). Driven by the requirement that an Additional/New
+  Position line with `quantity` ≥ 2 needs that many hires recorded against
+  it. See the backend `manpower-request` skill's Roadmap for the full
+  change (new model, rewritten `recordHires()`, validation, eager-load
+  collapse) — every frontend consumer of hire data (`ViewManpowerRequest.jsx`'s
+  Record Hires modal and per-line display, `ManpowerRequestPrint.jsx`,
+  `DashboardPage.jsx`'s Time to Fill) was updated in the same pass, listed
+  individually below/above where each already had its own bullet.
+- **Replacement quantity lock (2026-09-21)**: a Replacement line's
+  Quantity field (`ManpowerRequestForm.jsx`) is locked to `1` and
+  auto-defaults to it the moment `replacement_or_additional` is set to
+  `Replacement` (`InputNumber`'s native `readOnly` prop — not `disabled`,
+  same darken-avoidance reasoning as the Branch field lock above; a
+  Replacement line is always for exactly the one departing employee).
+  Frontend-only — the backend's `quantity` validation has no `in:1`-style
+  constraint tying it to `replacement_or_additional`, so a direct API call
+  could still submit a Replacement line with `quantity` > 1 (the service's
+  per-line hire-count cap would then just allow more than one hire against
+  it). Not closed server-side, since it wasn't asked for.
 - **Time to Fill** (dashboard widget added pre-2026-09-15 as uncommitted
   local work, start-date field changed 2026-09-15): `DashboardPage.jsx`'s
   "Manpower Request — Time to Fill" section (avg. card, by-position chart,
   by-hire-month trend) and `ViewManpowerRequest.jsx`'s per-line "Time to
   Fill" field both measure `date_approved` (MRF's final-level approval
   timestamp, stamped by `ManpowerRequestService` when status flips to
-  `Approved`) → `date_hired` (per position line, via Record Hires above),
-  not `request_date` → `date_hired` as originally implemented — start date
-  is when HR was actually cleared to hire, not when the request was first
-  raised. `date_approved` is a plain, always-present `ManpowerRequest`
-  column (no Resource/transformer hides it), so no backend change was
-  needed. Rows for an MRF with no `date_approved` are silently excluded
-  from the dashboard aggregate (this only affects MRFs that somehow have a
-  `date_hired` without ever having been `Approved`, which Record Hires'
-  own `status === 'Approved'` gate should prevent). `ViewManpowerRequest.jsx`'s
+  `Approved`) → each individual hire's own `date_hired` (2026-09-21: one
+  row per **hire**, not per position line, now that a line can have more
+  than one — see the multi-hire bullet above), not `request_date` →
+  `date_hired` as originally implemented — start date is when HR was
+  actually cleared to hire, not when the request was first raised.
+  `date_approved` is a plain, always-present `ManpowerRequest` column (no
+  Resource/transformer hides it), so no backend change was needed for
+  that part. MRFs with no `date_approved`, or hires with no `date_hired`,
+  are silently excluded from the dashboard aggregate. `ViewManpowerRequest.jsx`'s
   header grid also now shows a standalone **Approved Date** field
   (`record.date_approved`, next to Current Level) — previously this value
   was only visible inside the Approval History modal.
@@ -530,8 +575,114 @@ frontend-specific conventions.
   skill Roadmap for full detail on what it renders and what's still
   unverified (real paper/PDF pagination — no browser automation available
   in this environment to check that).
+- **Branch field lock (2026-09-21)**: `ManpowerRequestForm.jsx`'s Branch
+  `Select` (Create and Edit both use this shared component) is locked
+  read-only and auto-filled to `user.branch_id` (from `/auth/init`'s
+  eager-loaded `branch` relation) whenever
+  `hasRole('Manpower Requestor') && !hasRole('Administrator')` — a Requestor
+  can only ever file for their own branch; the platform `Administrator` role
+  (the only other role with `manpower-request-create`, per
+  `ManpowerRequestRoleSeeder.php`) keeps full branch choice. Deliberately
+  **not** AntD's `disabled` prop (darkens the field) — instead `open={false}`
+  + no `suffixIcon` + `tabIndex={-1}` + `pointerEvents: 'none'`, which keeps
+  the field's normal enabled styling while still blocking interaction and
+  submitting its value normally. Frontend-only as implemented — the backend
+  does not independently enforce that a Requestor's submitted `branch_id`
+  matches their own, so a crafted direct API call could still bypass this;
+  revisit if that needs closing.
+- **Required fields (2026-09-21)**: every field on `ManpowerRequestForm.jsx`
+  is now client-side `required` (which also triggers AntD's default
+  red-asterisk label mark — no separate styling needed, matches how
+  `position_id`/`quantity`/`reason`/`branch_id` already behaved), in both
+  the top-level Request Details card (`request_date`, `priority`,
+  `target_hiring_date`, alongside the already-required `branch_id`/`reason`)
+  and each `details` line item, **except** `experience` (free-text
+  "Experience" field) and `salary_grade`, which stay optional per explicit
+  instruction. This includes conditionally-rendered line-item fields when
+  their trigger value makes them visible (e.g. `last_working_day` when
+  `replacement_or_additional` is `Replacement`). Frontend-only, stricter
+  than the backend: `request_date`, `priority`, `target_hiring_date`,
+  `age_min`, `age_max`, `gender`, `employment_type`, `qualifications`,
+  `education`, `experience_required`, `prc_license_status`,
+  `drivers_license_status`, and `replacement_or_additional` itself are all
+  still `nullable` in `ManpowerRequestController@store/update`
+  (`vueportal`) — a direct API call can still submit them empty. Revisit if
+  that gap needs closing. `request_date` additionally has a
+  `disabledDate={(current) => current > dayjs().endOf('day')}` on its
+  `DatePicker` blocking future dates in the UI — the backend's
+  `request_date` rule is still just `nullable|date_format:Y-m-d` (no
+  `before_or_equal:today`), same frontend-only gap.
+- **Branch/position/date-filtered employee pickers (2026-09-21)**:
+  `EmployeeSelect.jsx` gained optional `branchId`/`positionId`/
+  `hiredOnOrAfter` props. `branchId`/`positionId`, used by both the
+  Replacement Employee field (`ManpowerRequestForm.jsx`) and every slot in
+  the Record Hires modal (`ViewManpowerRequest.jsx`), scope candidates to
+  the relevant line's own `branch_id`/`position_id` via optional filters
+  on the backend's `option_list` endpoint — same filtering for Replacement
+  and Additional/New Position lines alike. `hiredOnOrAfter`, Record Hires
+  only (`record.date_approved`), additionally requires the candidate's
+  `date_employed` or branch-assignment `date_assigned` to be on/after the
+  MRF's own approval date — never passed for Replacement Employee, whose
+  candidate is the departing employee and has no such relationship to
+  those dates. See the `manpower-request` skill for the exact
+  undefined-vs-filtered-mode semantics — any other `EmployeeSelect`
+  consumer that doesn't pass these props is unaffected.
 - **Not yet built**: in-app notifications, a "Pending My Approval"/"My
   Requests" filtered view (the list is currently unfiltered).
+- **Position line Status/Aging (added 2026-09-22)**:
+  `ViewManpowerRequest.jsx` shows a frontend-only, derived `Status` Tag per
+  detail line — `Open` while it has no recorded hires, `Closed` once it
+  has at least one (user-confirmed direction; the intuitive-sounding
+  opposite was explicitly checked against). `Aging` (days from
+  `record.date_approved` to today) shows alongside it in the same row,
+  only while a line is still `Open` — once a hire lands, the existing
+  per-hire `Time to Fill` field is the relevant number instead, same
+  `date_approved` basis just measured to the actual hire date.
+- **Supporting Attachment (added 2026-09-22, revised same day)** — see
+  vueportal's own CLAUDE.md MRF reference section for the full backend
+  contract and why the design changed mid-build. User-requested revision:
+  the attachment field is **always available directly on the Create/Edit
+  form** (`ManpowerRequestForm.jsx`, inside each `Form.List` line item —
+  not gated on the line already having a saved id), required only for
+  `Additional`/`New Position` lines and only to *submit* (not to save a
+  Draft), optional for `Replacement`.
+  - A freshly-picked `File` object lives in local state
+    (`detailFiles`, keyed by the `Form.List` item's stable `field.key` —
+    not array index, which shifts when rows are added/removed — synced
+    every render via `fieldKeysRef`), not in AntD's own Form state, same
+    as every other file-picker in this app. An *existing* attachment
+    (edit mode) is carried in the form itself as plain `file_name`/
+    `file_path`/`file_type`/`file_date_upload` values instead — required
+    so it survives `update()`'s delete-and-recreate of every line on
+    every save (see the backend note) — cleared via `form.setFieldValue`
+    when the user clicks Remove.
+  - `saveRequest` sends plain JSON when no line has a newly-picked file
+    (the common case, unchanged from before), and switches to `FormData`
+    (`details[i][field]` bracket notation, matching PHP's nested-array
+    multipart parsing) only when at least one line does — `manpowerRequestApi.create`/
+    `update` now detect a `FormData` payload and set explicit multipart
+    headers, since `axiosInstance`'s own defaults hard-code
+    `Content-Type: application/json` and can't be relied on to
+    auto-override for a `FormData` body.
+  - `handleSaveAndSubmit` (not `handleSaveDraft`) runs a client-side
+    `findMissingAttachmentLines` check before ever calling the API — a
+    mirror of `ManpowerRequestService::submit()`'s own check, for
+    immediate feedback; the backend remains the real enforcement (a direct
+    API call could still skip this check). Its submit-failure fallback
+    message now also surfaces the backend's actual error text when
+    available, not just a generic "could not submit" message.
+  - `ViewManpowerRequest.jsx` additionally keeps a **post-save** attachment
+    control per line (attach/replace/remove/download without resubmitting
+    the whole form) — gated on the existing `canEdit` (status +
+    Administrator-or-owner + permission) for upload/delete, no extra gate
+    for download beyond viewing the page. Uses
+    `manpowerRequestApi.detailFileUpload/detailFileDownload/detailFileDelete`.
+  - **Not live-tested end-to-end** — same caveat as every feature built
+    this session (no browser automation available); the nested multipart
+    array design is implemented per how Laravel/PHP are documented to
+    parse `details[i][file]`-style fields, not verified against a real
+    submitted form. `npm run lint`/`npm run build` are real and clean,
+    that's the limit of what was actually executed.
 
 ## Important Rules for Modifying This Existing Project
 

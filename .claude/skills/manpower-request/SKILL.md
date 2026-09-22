@@ -43,6 +43,32 @@ Reference/lookup data used by the form comes from the store's own
 "— Inactive" in the label) because replacement-hire lookups often target
 someone who already resigned. Do not "fix" this to filter to active-only.
 
+`EmployeeSelect` also takes optional `branchId`/`positionId`/
+`hiredOnOrAfter` props (2026-09-21). `branchId`/`positionId` are passed by
+**both** the Replacement Employee field in `ManpowerRequestForm.jsx` (as
+`getFieldValue('branch_id')`/`getFieldValue(['details', name, 'position_id'])`,
+that line item's own Position) **and** every slot in the Record Hires
+modal in `ViewManpowerRequest.jsx` (as `record.branch_id`/
+`row.position_id`) — scopes the picker to a same-branch, same-position
+candidate via the backend's `option_list` `branch_id`/`position_id`
+filters (see the backend `manpower-request` skill). `hiredOnOrAfter` is
+passed **only** by Record Hires, as `record.date_approved` — additionally
+requires the candidate to have been hired or branch-assigned on/after the
+MRF's own approval date (backend's `hired_on_or_after` filter, same skill
+section); never passed for Replacement Employee, whose candidate is the
+departing employee and has no such relationship to this MRF's dates. Any
+of the three props left `undefined` (any other consumer) preserves the old
+unfiltered-on-mount behavior for that dimension exactly; passing one (even
+as `null`/unset) switches the component into filtered mode for that
+dimension — it shows disabled with a "Select a branch/position/approved
+date first" placeholder (naming whichever are still missing) and issues no
+fetch until every filter it was given has a value, resetting/reloading
+whenever any of them changes. Selecting a new branch or position does
+**not** clear an already-picked `replacement_employee_id` that may no
+longer match — not implemented, since it wasn't asked for; revisit if
+stale mismatched selections turn out
+to be a problem.
+
 ## Routes
 
 Registered in both `AppRoutes.jsx` (`permissionRoutes`) and
@@ -91,12 +117,14 @@ Every one of these has a real UI caller now (`approve`/`reject`/
 `returnForRevision`/`approvalHistory`/`recordHire` are used from
 `ViewManpowerRequest.jsx`; `getById` + `approvalHistory` are also both
 used from `ManpowerRequestPrint.jsx`). `recordHire` (added 2026-09-14)
-takes `hires: [{ detail_id, hired_employee_id }]` — one entry per position
-line, only meaningful once the record's `status === 'Approved'` (the
-backend rejects it otherwise). **No `date_hired` field** — that's derived
-server-side from the selected employee's `EmployeeMasterData.date_employed`
-and is read-only (see Record Hires section below); don't add it back to
-this payload.
+takes `hires: [{ detail_id, hired_employee_ids }]` — one entry per position
+line, `hired_employee_ids` a **plural array** (2026-09-21, replaces the old
+singular `hired_employee_id` — a line can now record more than one hire,
+up to its own `quantity`, see Record Hires section below), only meaningful
+once the record's `status === 'Approved'` (the backend rejects it
+otherwise). **No `date_hired` field** — that's always derived server-side
+(`ManpowerRequestService::resolveHireDate()`) and is read-only; don't add
+it back to this payload.
 
 ## State Management
 
@@ -279,9 +307,12 @@ for full rationale on what's rendered and why:
   supported as of 2026-09-14) itemizing every line of that type, numbered
   when there's more than one — NOT once per line item (an earlier version
   of this did that and was corrected). "FOR HR USE ONLY" shows the real
-  `hired_employee`/`date_hired` per line once Record Hires (see below) has
-  been used, blank otherwise; a single-position MRF keeps the paper form's
-  plain single-row layout instead of a table.
+  hired employee/date per hire once Record Hires (see below) has been
+  used, blank otherwise. Always the itemized table (2026-09-21) — one row
+  per (position line, hire) pair, a line with no hire yet still getting
+  one blank row; the earlier plain single-row layout for a single-position
+  MRF was removed since it could only ever show one hire and a line can
+  now have several.
 - Not verified: actual paginated/printed visual output on real paper or a
   PDF export — no browser automation is available in this environment, so
   only the CSS technique (proven working in the KPI feature) and the
@@ -296,27 +327,77 @@ Added 2026-09-14. A "Record Hires" button on `ViewManpowerRequest.jsx`
 who created the request. Opens a `Modal` with one small `Card` per
 position line (`hireRows` local state, seeded from `record.details` on
 open), each with an `EmployeeSelect` (passed `activeOnly` — see below) for
-`hired_employee_id` and a **read-only** "Date Hired" display (a plain
+the hired employee and a **read-only** "Date Hired" display (a plain
 `Typography.Text`, not a `DatePicker` — see the next paragraph). Save
-calls `manpowerRequestApi.recordHire(record.id, hires)` with **every**
-row's current `{ detail_id, hired_employee_id }` (no `date_hired` — see
-below), then reloads the record. Each position card in the main detail
-view also shows "Hired Employee"/"Date Hired" read-only once either is
-set, mirroring how "Replacement Employee" is shown.
+calls `manpowerRequestApi.recordHire(record.id, hires)`, then reloads the
+record. Each position card in the main detail view also shows "Hired
+Employee"/"Date Hired" read-only once set, mirroring how "Replacement
+Employee" is shown.
 
-**Date Hired is not user-entered — it's always the selected employee's
-`EmployeeMasterData.date_employed`, added 2026-09-14** (previously it was
-a `DatePicker` the user filled in; changed per instruction to be
-read-only and derived). `EmployeeSelect`'s option objects now carry
-`date_employed` (added to `employeeOptionApi`'s underlying
-`/employee_master_data/option_list` response) so the modal can show the
-correct date **immediately on selection**, before saving — the
-`onChange(val, option)` handler reads `option.date_employed` into
-`hireRows[i].date_hired` for display only. The actual persisted value is
-computed server-side in `ManpowerRequestService::recordHires()`
-regardless of what (if anything) the client sends — don't add a
-`DatePicker` back for this field, and don't send `date_hired` in the
-`recordHire` payload.
+**2026-09-21 — quantity-many hires per line, branch/position-filtered
+picker.** A line can now record more than one hire (backed by the new
+`manpower_request_detail_hires` table, see the backend skill's Roadmap
+entry of the same date). Each `hireRows[i]` gained a `slots` array —
+`Array.from({ length: d.quantity }, ...)`, pre-filled from `d.hires`,
+padded with empty slots up to `quantity` — instead of a single
+`hired_employee_id`/`hired_employee_label`/`date_hired` triple; the modal
+renders one `EmployeeSelect` + Date Hired pair per slot (labeled
+`Hired Employee #1`, `#2`, ... only when `slots.length > 1`, to avoid
+relabeling the common single-slot case). `updateHireRow` was replaced by
+`updateHireSlot(detailId, slotIndex, changes)`. The duplicate-employee
+check (below) and the Save payload builder both now flatten across every
+row's `slots` instead of reading one value per row; the payload itself
+changed from `{ detail_id, hired_employee_id }` to
+`{ detail_id, hired_employee_ids }` (array, empty entries filtered out —
+see the API section above). Each `EmployeeSelect` slot also now passes
+`branchId={record.branch_id}` and `positionId={row.position_id}` (that
+line's own `position_id`, captured in `hireRows` at `openHireModal` time)
+— same branch+position filtering as the Replacement Employee field (see
+"Selecting the employee to be replaced" below), plus
+`hiredOnOrAfter={record.date_approved}` (Record Hires only — a candidate
+must have been hired or branch-assigned on/after the MRF's own approval
+date; see the same backend section), so Record Hires candidates are scoped
+the same way for both Replacement and Additional/New Position
+lines. The per-line display in the main detail view (previously a single
+"Hired Employee"/"Date Hired"/"Time to Fill" row gated on
+`d.hired_employee || d.date_hired`) now maps over `d.hires`, one row per
+hire, each with its own Time to Fill.
+
+**Date Hired is not user-entered, added 2026-09-14** (previously it was a
+`DatePicker` the user filled in; changed per instruction to be read-only
+and derived). Labeled **"Date Hired/Date Assigned"** in the Record Hires
+modal (2026-09-21, was plain "Date Hired") because the value isn't always
+a hire date — see the priority order below.
+
+The value shown **immediately on selection**, before saving, comes from
+`option.preview_hire_date` (2026-09-21 — **not** `option.date_employed`,
+which is a real bug that shipped and was caught against a live record,
+see below). `EmployeeSelect`'s option objects carry both
+`date_employed` (kept for back-compat, unused by this modal now) and
+`preview_hire_date` (added to `employeeOptionApi`'s underlying
+`/employee_master_data/option_list` response, only populated when the
+request includes `hired_on_or_after` — i.e. only for Record Hires calls),
+and the modal's `onChange(val, option)` handler reads
+`option.preview_hire_date` into `hireRows[i].slots[j].date_hired`. This
+now matches the **actual persisted value**: both are computed via the
+same shared `EmployeeMasterData::resolveEffectiveHireDate()` model method
+(`ManpowerRequestService::resolveHireDate()`, called from `recordHires()`,
+now just delegates to it) — the employee's latest **Branch Assignment &
+Position** date (`EmployeeBranchAssignmentPosition.date_assigned`) first,
+falling back to `EmployeeMasterData.date_employed` only when no assignment
+history exists.
+
+**2026-09-21 — real bug found and fixed**: before this, the preview read
+raw `option.date_employed` unconditionally, so an internal
+transfer/promotion's preview and its actual saved value visibly
+disagreed — caught against a real record (MRF-2026-000015, employee
+125865311/Jomel Ventigan: `date_employed` 2021-01-16, but their persisted
+hire was 2025-08-01 from a branch assignment, while the picker's live
+preview for that same employee showed 2021-01-16). See the backend
+`manpower-request` skill's Roadmap for the full fix and verification
+(a genuinely different-dated fresh candidate was recorded live and the
+persisted value matched the new preview). Don't add a `DatePicker` back
+for this field, and don't send `date_hired` in the `recordHire` payload.
 
 **Layout, per instruction (2026-09-14): Hired Employee and Date Hired
 each get their own full-width row** (`<Col span={24}>` each, stacked),
@@ -326,20 +407,22 @@ when applicable) and was getting cramped in a narrower column.
 `EmployeeSelect` also gained a `status` prop (forwarded straight to the
 underlying AntD `Select`) for this reason — see the next paragraph.
 
-**The same employee can't be selected for more than one position on the
-same request** — enforced two ways in `ViewManpowerRequest.jsx`:
-1. **Live, per-row visual feedback**: on every render, `hireRows` is
-   scanned for `hired_employee_id` values that appear more than once; any
-   row whose selection is part of a duplicate gets
-   `<EmployeeSelect status="error">` (renders the AntD `Select` with a red
-   border) plus a small red "This employee is already selected for
+**The same employee can't be selected for more than one position (or more
+than one slot) on the same request** — enforced two ways in
+`ViewManpowerRequest.jsx`:
+1. **Live, per-slot visual feedback**: on every render, every row's
+   `slots` are scanned (flattened) for `hired_employee_id` values that
+   appear more than once; any slot whose selection is part of a duplicate
+   gets `<EmployeeSelect status="error">` (renders the AntD `Select` with
+   a red border) plus a small red "This employee is already selected for
    another position." line — this updates live as the user picks/changes
    employees, not just on Save.
-2. **On Save**: `handleHireConfirm` still checks for a duplicate before
-   calling the API and shows a `messageApi.error` naming the duplicated
-   employee (via `hired_employee_label`, captured from `EmployeeSelect`'s
-   `onChange(val, option)` second argument — AntD `Select` passes the full
-   option object there), aborting the submit if found.
+2. **On Save**: `handleHireConfirm` still checks for a duplicate (across
+   all rows' slots) before calling the API and shows a `messageApi.error`
+   naming the duplicated employee (via `hired_employee_label`, captured
+   from `EmployeeSelect`'s `onChange(val, option)` second argument — AntD
+   `Select` passes the full option object there), aborting the submit if
+   found.
 
 Both of these are client-side convenience only; `ManpowerRequestService::recordHires()`
 enforces the same rule server-side (see the backend skill's Roadmap) and
@@ -352,10 +435,12 @@ preserving existing Replacement Employee behavior) — when true, it calls
 all). Use `activeOnly` for any future employee picker where the person
 should always be currently active; the Replacement Employee field stays
 `activeOnly=false` on purpose (see "Important Business Rules" below). Its
-`options` array also now carries `date_employed` per employee (forwarded
-straight from `employeeOptionApi`'s response) so a consumer's
-`onChange(value, option)` can read `option.date_employed` — used by
-Record Hires above; not used by the Replacement Employee field.
+`options` array also carries `date_employed` and `preview_hire_date`
+(2026-09-21) per employee (forwarded straight from `employeeOptionApi`'s
+response) so a consumer's `onChange(value, option)` can read either —
+Record Hires above uses `option.preview_hire_date` (not `date_employed`,
+see the correctness note above); neither is used by the Replacement
+Employee field.
 
 **Bug found and fixed while wiring this up**: `EmployeeMasterDataMaintenance`
 (backend, `vueportal`) only allowed `manpower-request-create`/`-edit` (plus
@@ -450,10 +535,13 @@ don't assume having *some* manpower-request permission is enough.
   new CSS technique instead of reusing the hide-all/show-one `@media
   print` pattern both `KpiEvaluationPrint.css` and
   `ManpowerRequestPrint.css` already use.
-- Assuming a field returned correctly by one backend endpoint (e.g.
-  `record_hire`'s response) will also come back correctly from `edit()`
-  or `index()` — the backend controller hand-rolls a **separate**
-  `with()` eager-load chain for each of those three methods instead of
-  sharing one, so a new relation has to be added to all of them
-  individually. This exact bug was hit and fixed when `hired_employee`
-  was added — see the backend `manpower-request` skill's Roadmap.
+- Assuming a field returned correctly by one backend endpoint will also
+  come back correctly from the other two — `record_hire()`'s response,
+  `edit()`, and `index()` each used to hand-roll their own **separate**
+  `with()` eager-load chain, so a new relation had to be added to all
+  three individually (this exact bug was hit and fixed when
+  `hired_employee` was added). Fixed 2026-09-21: all three now share
+  `ManpowerRequestService::detailEagerLoads()` — see the backend
+  `manpower-request` skill's Roadmap — but don't reintroduce a
+  hand-rolled fourth copy for a new endpoint; extend that shared method
+  instead.
