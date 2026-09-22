@@ -197,15 +197,41 @@ Module status (2026-09-16): **core record wired up** (list with search/
 pagination/column picker/bulk delete/Excel import, create, view, edit,
 delete) using this repo's Zustand-per-resource + thin-service convention,
 plus two additions ported from a `vueportal` `master`-branch merge: a
-read-only **Referral Code** field (Employee Details tab) and a standalone
+read-only **Referral Code** field (Employee Details tab), a standalone
 **Employee Acknowledgment Report** feature (`/acknowledgment-reports`,
 submitted from the list's bulk-action bar — see the skill for why this is
 NOT the same thing as the Import feature despite vueportal's UI calling
-the submit action "Upload Employee Report"). The 4 sub-tabs that hang off
-a profile in the vueportal reference (Performance Management, Disciplinary
-Measures & Penalties, Offboarding, Attendance) are still placeholders, and
-Export/Template Download (Import's
-natural companions) haven't been added yet. A dedicated
+the submit action "Upload Employee Report"), and (2026-09-22) **Excel
+Export + Template Download** — scoped to just the core record's own
+report type/template (vueportal's actual `/export` endpoint is a 4-way
+report dispatcher and its template dialog covers 7 other sub-modules;
+only the Employee Master Data pieces are wired here — see the skill for
+the full scoping rationale and a real masked-200-JSON-error bug this
+surfaced and fixed via the new `src/utils/downloadBlobResponse.js`), and
+(2026-09-22) the **Performance Management tab** — all 7 sub-features
+(Evaluation & Regularization, Monthly Key Performance, Classroom/OJT
+Performance Rating, Branch Assignment & Positions, Merit History,
+Training). Built after discovering that `/employee_master_data/index`
+already eager-loads every one of these relations (and Disciplinary's and
+Offboarding's) onto every row server-side — no new fetch endpoint was
+needed, only UI. Also built (same session): the **Disciplinary Measures &
+Penalties tab** (Issued NTE, Disciplinary Actions) — not built on the same
+shared component as Performance Management since both sub-modules carry
+multipart file uploads — and the **Attendance tab** (read-only, joined
+server-side against a separate BioBridge system by `employee_code`, the
+only sub-tab that needs its own fetch rather than reusing
+`/employee_master_data/index`'s eager-loaded data; deliberately excludes
+3 pieces of dead/unfinished UI found in the Vue reference itself — see the
+skill), and the **Offboarding tab** — its "two data sources" question
+(columns on `employee_master_data` vs. the separate `employee_offboardings`
+table) is resolved, not just unbuilt: reading `Offboarding.vue`'s actual
+save calls confirmed `employee_offboardings` is the live, authoritative
+one. Every sub-tab vueportal's reference has is now built — nothing left
+in this module is blocked. Starting
+this session, changes are validated with real `npm run lint`/`npm run
+build` runs via this project's Docker dev container (`rbac-react-dev`,
+live bind-mounted) rather than manual review alone — see the skill for
+how. A dedicated
 `.claude/skills/employee-master-data/SKILL.md` has the full detail
 (architecture, list toolbar layout, unconfirmed backend contracts,
 roadmap) — this section is the fast-reference summary, kept in sync with
@@ -274,8 +300,12 @@ real code the way the Manpower Request section above is.
   it can be built at all — vueportal keeps offboarding data in two places
   (columns on `employee_master_data` itself, and a separate
   `employee_offboardings` table) and which is authoritative isn't
-  resolvable from the code. Excel Export/Template Download (Import's
-  natural companions) are also deferred. The Promodizer Brand **form**
+  resolvable from the code — the data itself (`initialData.offboardings`)
+  is already available, per the architecture note below. Excel
+  Export/Template Download for those sub-modules are also deferred (each
+  gets its own report/template wiring alongside its own tab, following the
+  pattern `ExportEmployeesModal.jsx` already established for the core
+  record — see the skill). The Promodizer Brand **form**
   field (conditional on Position = "Sales Specialist" in the Vue
   reference) is deferred too — no lookup store/hook for it exists in this
   repo yet; note the **list column** for it does exist and was bug-fixed

@@ -46,6 +46,7 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
         employment_type:   initialData.employment_type,
         date_employed:     initialData.date_employed ? dayjs(initialData.date_employed) : null,
         date_resigned:     initialData.date_resigned ? dayjs(initialData.date_resigned) : null,
+        regularization_date: initialData.regularization_date ? dayjs(initialData.regularization_date) : null,
         application_source: initialData.application_source,
         active:             Boolean(initialData.active),
       });
@@ -78,6 +79,7 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
     employment_type:     values.employment_type,
     date_employed:       values.date_employed ? values.date_employed.format('YYYY-MM-DD') : null,
     date_resigned:       values.date_resigned ? values.date_resigned.format('YYYY-MM-DD') : null,
+    regularization_date: values.regularization_date ? values.regularization_date.format('YYYY-MM-DD') : null,
     application_source:  values.application_source,
     active:              Boolean(values.active),
   });

@@ -42,6 +42,30 @@ const employeeApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+
+  // `/employee_master_data/export` is actually a multi-report dispatcher on
+  // the backend (report_type: 'Employee List' | 'Employee Attendance
+  // Report' | 'Branch Manpower Report' | 'Key Performance Index
+  // Monitoring') — this app only wires up 'Employee List' (the natural
+  // companion to Import/the core record), since the other three belong to
+  // modules not built here yet (Attendance tab, dashboard reports). Always
+  // pass `report_type: 'Employee List'`. See the employee-master-data skill.
+  export: (payload) => axios.post('/employee_master_data/export', payload, { responseType: 'blob' }),
+
+  // Single-purpose: downloads only the core Employee Master Data import
+  // template (no params). The vueportal reference's "Generate Template"
+  // dialog also lists template downloads for several other sub-modules
+  // (Branch Assignment Position, Monthly Key Performance, NTE, etc.) —
+  // none of those exist in this app yet, so they're intentionally not
+  // wired here. See the employee-master-data skill.
+  templateDownload: () => axios.post('/employee_master_data/template/download', {}, { responseType: 'blob' }),
+
+  // POST /employee_master_data/resign — body: { employee_id, date_resigned }.
+  // Confirmed from vueportal's Offboarding.vue: called automatically right
+  // after saving an offboarding record (not a separate manual action) —
+  // see OffboardingTab.jsx. Flips `active`/`date_resigned` on the core
+  // employee record; does not touch the offboarding record itself.
+  resign: (payload) => axios.post('/employee_master_data/resign', payload),
 };
 
 export default employeeApi;

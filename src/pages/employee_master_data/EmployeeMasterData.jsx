@@ -21,6 +21,8 @@ import {
   SearchOutlined,
   PlusOutlined,
   UploadOutlined,
+  DownloadOutlined,
+  ExportOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
@@ -30,12 +32,15 @@ import useDepartments from "../../hooks/useDepartments";
 import useEmployees from "../../hooks/useEmployees";
 import useAuth from "../../hooks/useAuth";
 import handleApiError from "../../utils/handleApiError";
+import downloadBlobResponse from "../../utils/downloadBlobResponse";
+import employeeApi from "../../services/employee/employeeApi";
 
 import ColumnSelector from "./components/ColumnSelector";
 import EmployeeTable from "./components/EmployeeTable";
 import EmployeeCardMobile from "./components/EmployeeCardMobile";
 import PaginationControls from "./components/PaginationControls";
 import ImportEmployeesModal from "./components/ImportEmployeesModal";
+import ExportEmployeesModal from "./components/ExportEmployeesModal";
 import SubmitAcknowledgmentReportModal from "./components/SubmitAcknowledgmentReportModal";
 
 const { useBreakpoint } = Grid;
@@ -149,6 +154,8 @@ export default function EmployeeMasterData() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedHeaders, setSelectedHeaders] = useState(defaultHeaders);
   const [importOpen, setImportOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [acknowledgmentReportOpen, setAcknowledgmentReportOpen] = useState(false);
 
@@ -170,6 +177,19 @@ export default function EmployeeMasterData() {
   useEffect(() => { fetchEmployees(1); }, [selectedHeaders]);
 
   const handleAdd = () => navigate('/employees/create');
+
+  const handleTemplateDownload = async () => {
+    setDownloadingTemplate(true);
+    try {
+      const response = await employeeApi.templateDownload();
+      const downloaded = await downloadBlobResponse(response, 'EmployeeMasterDataTemplate.xls', messageApi);
+      if (downloaded) messageApi.success('Template downloaded.');
+    } catch (error) {
+      handleApiError(error, messageApi);
+    } finally {
+      setDownloadingTemplate(false);
+    }
+  };
 
   const searchData = async () => {
     const values = await searchForm.getFieldsValue();
@@ -260,6 +280,22 @@ export default function EmployeeMasterData() {
                 {hasPermission('employee-master-data-import') && (
                   <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>
                     Import
+                  </Button>
+                )}
+
+                {hasPermission('employee-master-data-template-download') && (
+                  <Button
+                    icon={<DownloadOutlined />}
+                    loading={downloadingTemplate}
+                    onClick={handleTemplateDownload}
+                  >
+                    Template
+                  </Button>
+                )}
+
+                {hasPermission('employee-master-data-export') && (
+                  <Button icon={<ExportOutlined />} onClick={() => setExportOpen(true)}>
+                    Export
                   </Button>
                 )}
 
@@ -385,6 +421,11 @@ export default function EmployeeMasterData() {
         open={importOpen}
         onClose={() => setImportOpen(false)}
         onImported={() => fetchEmployees(1)}
+      />
+
+      <ExportEmployeesModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
       />
 
       <SubmitAcknowledgmentReportModal
