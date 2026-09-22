@@ -42,6 +42,7 @@ const titleMap = {
   '/users':                  { title: 'User Accounts',       breadcrumb: ['User Management', 'User Accounts'] },
   '/user/profile':           { title: 'My Profile',          breadcrumb: ['User Management', 'My Profile'] },
   '/roles':                  { title: 'Roles',               breadcrumb: ['Authorizations', 'Roles'] },
+  '/roles/create':           { title: 'Create Role',         breadcrumb: ['Authorizations', 'Roles', 'Create'] },
   '/permissions':            { title: 'Permissions',         breadcrumb: ['Authorizations', 'Permissions'] },
   '/employees':              { title: 'Employee Master Data', breadcrumb: ['Employee', 'Master Data'] },
   '/employees/create':       { title: 'Create Employee',     breadcrumb: ['Employee', 'Create'] },
@@ -216,6 +217,8 @@ const MainLayout = () => {
     if (titleMap[pathname]) return titleMap[pathname];
     if (/^\/kpi-templates\/\d+\/edit$/.test(pathname))
       return { title: 'Edit KPI Template', breadcrumb: ['KPI Management', 'KPI Templates', 'Edit'] };
+    if (/^\/roles\/\d+\/edit$/.test(pathname))
+      return { title: 'Edit Role', breadcrumb: ['Authorizations', 'Roles', 'Edit'] };
     if (/^\/employees\/\d+$/.test(pathname))
       return { title: 'View Employee', breadcrumb: ['Employee', 'View'] };
     if (/^\/employees\/\d+\/edit$/.test(pathname))

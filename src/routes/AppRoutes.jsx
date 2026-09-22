@@ -18,6 +18,8 @@ import DashboardPage from '../pages/dashboard/DashboardPage';
 import UserProfile from '../pages/user/UserProfile';
 import UserIndex from '../pages/user/UserIndex';
 import RoleIndex from '../pages/role/RoleIndex';
+import CreateRole from '../pages/role/CreateRole';
+import EditRole from '../pages/role/EditRole';
 import PermissionIndex from '../pages/permission/PermissionIndex';
 import KpiTemplateIndex  from '../pages/kpi/templates/KpiTemplateIndex';
 import CreateKpiTemplate from '../pages/kpi/templates/CreateKpiTemplate';
@@ -50,6 +52,8 @@ const permissionRoutes = [
   { permissions: ['hr-payroll-dashboard'],      path: '/dashboard',        element: <DashboardPage /> },
   { permissions: ['user-list'],                 path: '/users',       element: <UserIndex /> },
   { permissions: ['role-list'],                 path: '/roles',       element: <RoleIndex /> },
+  { permissions: ['role-create'],               path: '/roles/create', element: <CreateRole /> },
+  { permissions: ['role-edit'],                 path: '/roles/:id/edit', element: <EditRole /> },
   { permissions: ['permission-list'],           path: '/permissions', element: <PermissionIndex /> },
   { permissions: ['employee-master-data-list'], path: '/employees', element: <EmployeeMasterData /> },  
   { permissions: ['employee-master-data-list'], path: '/employees/:id', element: <ViewEmployee /> },
