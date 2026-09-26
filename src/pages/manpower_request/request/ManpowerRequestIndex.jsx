@@ -40,10 +40,12 @@ const ManpowerRequestIndex = () => {
   // Submit and Resubmit share the same backend permission/endpoint.
   // Resubmitting from Returned resumes approval at the same level instead
   // of restarting the chain — see ManpowerRequestService::submit().
+  // Same Administrator-or-owner rule as canEdit, matching the backend's
+  // ManpowerRequestService::submit().
   const canSubmit = (record) =>
-    hasPermission('manpower-request-submit') &&
     ['Draft', 'Disapproved', 'Cancelled', 'Returned'].includes(record.status) &&
-    record.user_id === user.id;
+    (hasRole('Administrator') ||
+      (hasPermission('manpower-request-submit') && record.user_id === user.id));
 
   const canCancel = (record) =>
     hasPermission('manpower-request-cancel') &&

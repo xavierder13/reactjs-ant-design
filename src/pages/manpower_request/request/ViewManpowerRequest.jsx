@@ -128,10 +128,12 @@ const ViewManpowerRequest = () => {
   // label differs. Backend allows this from Draft/Disapproved/Cancelled/
   // Returned; resubmitting from Returned resumes approval at the same level
   // instead of restarting the chain — see ManpowerRequestService::submit().
+  // Same Administrator-or-owner rule as canEdit, matching the backend's
+  // ManpowerRequestService::submit().
   const canSubmit =
-    hasPermission('manpower-request-submit') &&
     ['Draft', 'Disapproved', 'Cancelled', 'Returned'].includes(record.status) &&
-    record.user_id === user.id;
+    (hasRole('Administrator') ||
+      (hasPermission('manpower-request-submit') && record.user_id === user.id));
 
   const canCancel =
     hasPermission('manpower-request-cancel') &&
