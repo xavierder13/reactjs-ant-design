@@ -47,10 +47,11 @@ const ManpowerRequestIndex = () => {
     (hasRole('Administrator') ||
       (hasPermission('manpower-request-submit') && record.user_id === user.id));
 
+  // Administrator-or-owner, matching ManpowerRequestService::cancel().
   const canCancel = (record) =>
-    hasPermission('manpower-request-cancel') &&
     ['Draft', 'Pending Approval', 'Returned'].includes(record.status) &&
-    record.user_id === user.id;
+    (hasRole('Administrator') ||
+      (hasPermission('manpower-request-cancel') && record.user_id === user.id));
 
   // Delete is a permanent hard-delete, unlike Cancel (which just changes
   // status). Administrators can delete any Draft/Cancelled request
