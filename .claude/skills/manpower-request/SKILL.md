@@ -202,9 +202,9 @@ const canEdit =
   ownership, plus the status condition.
 - **Administrator can do everything in every feature** (product rule) —
   new gates must include the `hasRole('Administrator') ||` bypass.
-  Open gap: approve/disapprove/return need `can_approve` (AccessChart
-  level mapping) even for Administrator — undecided; don't "fix" one side
-  alone.
+  Approve/disapprove/return: the backend returns `can_approve: true` for
+  an Administrator at any level, and one Administrator approval completes
+  the level — the frontend needs no extra check beyond `can_approve`.
 - The editable-status list (`Draft`/`Disapproved`/`Cancelled`/`Returned`) is
   duplicated in `ManpowerRequestIndex.jsx`, `ViewManpowerRequest.jsx` and
   `EditManpowerRequest.jsx`'s route guard — keep all three in sync. The
