@@ -202,8 +202,10 @@ const canEdit =
   ownership, plus the status condition.
 - **Administrator can do everything in every feature** (product rule) —
   new gates must include the `hasRole('Administrator') ||` bypass.
-  Current exception: `canCancel` is owner-only, matching the backend's
-  owner-only `cancel()`.
+  Known gap: `canCancel` is owner-only in both repos (backend `cancel()`
+  too), and approve/disapprove/return need `can_approve` (AccessChart
+  level mapping) even for Administrator — open decision, don't "fix" one
+  side alone.
 - The editable-status list (`Draft`/`Disapproved`/`Cancelled`/`Returned`) is
   duplicated in `ManpowerRequestIndex.jsx`, `ViewManpowerRequest.jsx` and
   `EditManpowerRequest.jsx`'s route guard — keep all three in sync. The

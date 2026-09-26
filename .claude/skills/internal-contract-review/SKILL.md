@@ -41,8 +41,8 @@ probably expects X."
    in only one is unreachable or unreachable-with-no-menu-entry — check
    both, not just the router.
 6. **Cross-page consistency**: for a status/permission vocabulary shared
-   across an Index/View/Edit set of pages (this repo's own `CLAUDE.md`
-   flags this as a real prior incident in Manpower Request), confirm all
+   across an Index/View/Edit set of pages (Manpower Request's editable-
+   status list is duplicated in three files — see its skill), confirm all
    pages in the set use the same status strings/permission names, not a
    locally-diverged copy.
 

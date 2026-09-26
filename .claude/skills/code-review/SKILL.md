@@ -51,7 +51,9 @@ backed by a `src/store/*.js` Zustand store → wrapped by a
   page, and flag as CRITICAL any permission-gated action with no
   client-side check at all (the backend re-checks, per `useAuth.js`'s own
   documented assumption, but a missing client-side check is still a real
-  UX/consistency gap here).
+  UX/consistency gap here). Every gate must also include the
+  `hasRole('Administrator') ||` bypass (product rule in `CLAUDE.md`) — a
+  missing bypass is a finding.
 - **Forms**: AntD `Form layout="vertical"`, `Form.List` for repeatable line
   items (row in a `Card`, `MinusCircleOutlined`/dashed `+ Button`,
   list-level "at least one" rule), conditional fields via
@@ -60,17 +62,9 @@ backed by a `src/store/*.js` Zustand store → wrapped by a
 
 ## Ant Design v6 API currency
 
-**Training data skews toward older AntD major versions.** Confirmed
-renames/deprecations already found in this exact installed version
-(6.4.3): `Divider`'s `orientation` → `titlePlacement`; `Alert`'s `message`
-prop is `@deprecated`, use `title` instead (don't confuse with the
-unrelated `message` from `App.useApp()`, the toast API — same word,
-nothing else in common). Before relying on a prop from memory — especially
-anything touching placement, sizing, or a prop that existed in an older
-major version — check `node_modules/antd/es/<component>/index.js` or its
-adjacent `.d.ts` for `@deprecated` markers, don't trust recalled API shape.
-Check each new/touched component fresh rather than assuming an earlier
-audit covers it.
+Apply `CLAUDE.md`'s Ant Design v6 note to every new/touched component: check
+props against the installed source/`.d.ts` (`@deprecated` markers), not
+recalled v4/v5 API. A deprecated prop is MEDIUM.
 
 ## What this repo cannot confirm about itself
 

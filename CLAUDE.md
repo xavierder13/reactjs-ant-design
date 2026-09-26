@@ -106,6 +106,10 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
 - `src/hooks/useAuth.js` exposes `hasRole`, `hasAnyRole`, `hasPermission`,
   `hasAnyPermission` — always check permissions client-side with these
   helpers; the backend is the source of truth and re-checks server-side.
+- **Product rule: the platform `Administrator` role can do every action on
+  every feature.** Every action gate needs a `hasRole('Administrator') ||`
+  bypass (see MRF's `canEdit`/`canSubmit`); a gate without it is a
+  defect.
 - Tokens live in `localStorage` via `src/utils/tokenHelper.js`
   (`access_token`, `refresh_token`).
 - Note: the 401 handling in `axiosInstance`'s response interceptor is

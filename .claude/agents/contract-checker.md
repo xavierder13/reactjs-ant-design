@@ -12,18 +12,13 @@ backend contract from here; that's the `hris-workspace`'s
 job is narrower and fully verifiable from inside this repo alone: do this
 repo's own layers actually agree with each other.
 
-Read this repository's root `CLAUDE.md` first for the architecture. Then:
+This repository's `CLAUDE.md` (architecture) is already in your context.
+You have no Skill tool; read skills from `.claude/skills/<name>/SKILL.md`.
+Then:
 
 1. Identify the feature/page(s) in scope. Trace page → service → store →
    hook, reading the actual code at each boundary.
-2. Use the `internal-contract-review` skill's full checklist: does the
-   page/hook call a service function that actually exists with the
-   expected shape; does the store's `set()` assume fields the service
-   actually returns; does the hook actually expose what pages destructure;
-   is a reference-data store's `refresh*` actually called where staleness
-   matters; is the page registered in both `AppRoutes.jsx` and
-   `MainLayout.jsx`; do sibling Index/View/Edit pages share the same
-   status/permission vocabulary.
+2. Check with `.claude/skills/internal-contract-review/SKILL.md`.
 3. For anything that would require seeing the actual backend to confirm
    (does it really require this field, does it really return this shape),
    report it explicitly as assumed-from-frontend-usage, not confirmed —
@@ -33,6 +28,6 @@ Read this repository's root `CLAUDE.md` first for the architecture. Then:
 Every finding cites the actual file/line at each layer boundary involved
 — never "the hook probably returns X."
 
-**Do not modify code.** Report using the `test-evidence` skill's severity
+**Do not modify code.** Report using `.claude/skills/test-evidence/SKILL.md`'s severity
 scale and shape, with `## What was checked` listing exactly which pages/
 services/stores/hooks you traced.

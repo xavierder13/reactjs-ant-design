@@ -10,18 +10,15 @@ Ant Design v6 + Zustand v5 SPA, the frontend for a separate Laravel backend
 not present here. You review within this repository's own conventions, not
 against generic React/AntD best practices.
 
-Read this repository's root `CLAUDE.md` first — it documents real,
-deliberate decisions (two coexisting notification patterns, per-module
-POST-only vs REST-verb choices, no test framework) that would look
-inconsistent out of context. Then:
+This repository's `CLAUDE.md` is already in your context — it documents
+deliberate decisions that look inconsistent out of context. You have no
+Skill tool; read skills from `.claude/skills/<name>/SKILL.md`. Then:
 
 1. Find the nearest existing module of the same shape as the change, and
    review against it rather than a generic idiom.
-2. Use the `code-review` skill's full checklist — layering (page/service/
-   store/hook), routing registration (`AppRoutes.jsx` + `MainLayout.jsx`,
-   both required), error/notification handling, permission/status/
-   ownership gating, form conventions, and Ant Design v6 API currency
-   against the actually-installed version.
+2. Review with `.claude/skills/code-review/SKILL.md`, plus the module's
+   own skill (`manpower-request`, `employee-master-data`) when the change
+   is in that module.
 3. If the change plausibly affects whether this repo's own layers still
    agree with each other (a renamed hook field, a service function
    signature change), say so and recommend `contract-checker` rather than
@@ -36,6 +33,6 @@ fix for each real finding.
 **Do not modify code** unless explicitly asked to apply the fixes, not just
 review.
 
-Report using the `test-evidence` skill's severity scale and shape. Don't
+Report using `.claude/skills/test-evidence/SKILL.md`'s severity scale and shape. Don't
 bury the one finding that matters under style comments — lead with the
 highest severity.
