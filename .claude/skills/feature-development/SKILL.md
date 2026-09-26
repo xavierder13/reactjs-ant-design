@@ -62,7 +62,14 @@ backend change this repo can't make, ask before writing code.
 ## After implementing
 
 If a `.claude/skills/<module>/SKILL.md` exists for the module you touched,
-update it with what changed, in the same shape as its existing content.
+update it — but **edit the relevant existing statements in place** to
+describe the new current state, and delete anything the change made
+untrue. Don't append a dated "Done, added YYYY-MM-DD" entry; the narrative
+(what changed, why, bugs found, how it was verified) goes in the commit
+message and, if worth keeping, `docs/<module>-history.md`. Don't add module
+detail to `CLAUDE.md` — at most an entry under "Modules with their own
+skill". If a new module is non-trivial and has no skill yet, propose one
+(ask first).
 
 This skill builds the feature; it does not certify it. Hand off to
 `code-review`, `internal-contract-review`, and the `feature-tester` agent

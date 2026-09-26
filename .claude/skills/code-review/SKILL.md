@@ -69,9 +69,8 @@ nothing else in common). Before relying on a prop from memory — especially
 anything touching placement, sizing, or a prop that existed in an older
 major version — check `node_modules/antd/es/<component>/index.js` or its
 adjacent `.d.ts` for `@deprecated` markers, don't trust recalled API shape.
-If a new/touched component isn't in the list of ones already audited
-(`CLAUDE.md`'s 2026-09-16 note), check it fresh rather than assuming the
-prior audit covers it.
+Check each new/touched component fresh rather than assuming an earlier
+audit covers it.
 
 ## What this repo cannot confirm about itself
 
