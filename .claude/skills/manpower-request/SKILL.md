@@ -188,8 +188,8 @@ Administrator` (`-list`, `-list-all`, `-record-hire` only — no
 approve/edit/delete). **`-record-hire` is Administrator-only**, not on the
 Approver role. Confirm any new permission string is seeded before using it.
 
-Gate shape (repeat it for any new action — `ViewManpowerRequest.jsx`'s
-`canEdit`/`canSubmit`/`canDelete`, and `ManpowerRequestIndex.jsx`):
+Gate shape (`ViewManpowerRequest.jsx`'s `canEdit`/`canDelete`, and
+`ManpowerRequestIndex.jsx`) — the pattern to repeat for a new action:
 
 ```js
 const canEdit =
@@ -200,9 +200,17 @@ const canEdit =
 
 - Administrator bypasses ownership; everyone else needs permission **and**
   ownership, plus the status condition.
+- **Exceptions:** `canSubmit` is `hasPermission('manpower-request-submit')`
+  + editable status + **owner only — no Administrator bypass** (Index and
+  View both). This is stricter than the backend, whose `submit()` allows
+  Administrator-or-owner — an open frontend/backend mismatch (an
+  Administrator can edit but not submit someone else's request in the
+  UI). `canCancel` is also owner-only, which *does* match the backend.
 - The editable-status list (`Draft`/`Disapproved`/`Cancelled`/`Returned`) is
   duplicated in `ManpowerRequestIndex.jsx`, `ViewManpowerRequest.jsx` and
-  `EditManpowerRequest.jsx`'s route guard — keep all three in sync.
+  `EditManpowerRequest.jsx`'s route guard — keep all three in sync. The
+  route guard checks Administrator-or-owner + status but not the
+  create/edit permission; `AppRoutes.jsx`'s route permission covers that.
 - Approve/Disapprove/Return additionally require
   `approval_status.can_approve` (`canActOnApproval`) — the frontend never
   computes eligibility itself.
@@ -217,9 +225,11 @@ and View → `Tag`: Draft/Cancelled default, Pending Approval gold, Approved
 green, Disapproved red, Returned orange.
 
 Actions (from `ViewManpowerRequest.jsx`'s guards, matching the backend):
-- Edit / Submit: `Draft`/`Disapproved`/`Cancelled`/`Returned`,
-  Administrator-or-owner. Resubmitting from `Returned` resumes approval at
-  the same `current_level` server-side.
+- Edit: `Draft`/`Disapproved`/`Cancelled`/`Returned`,
+  Administrator-or-owner.
+- Submit: same statuses, `-submit` permission + owner only in the UI
+  (backend also allows Administrator — see Permissions). Resubmitting from
+  `Returned` resumes approval at the same `current_level` server-side.
 - Cancel: `Draft`/`Pending Approval`/`Returned`, **owner only** (no
   Administrator bypass).
 - Delete: `Draft`/`Cancelled`, Administrator-or-owner.
