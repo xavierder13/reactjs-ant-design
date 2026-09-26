@@ -285,8 +285,8 @@ permission `manpower-request-print`. Follow `KpiEvaluationPrint.jsx`'s
 pattern — don't invent a new print technique:
 - A normal page route inside `MainLayout`/`ProtectedRoute`. `@media print`:
   `body * { visibility: hidden }`, reveal only `.mrf-print`, force it to
-  `position: absolute; top: 0; left: 0`. `.no-print` hides the Print
-  button.
+  `position: absolute; top: 0; left: 0`. The on-screen Print button calls
+  `window.print()`; `.no-print` hides it when printing.
 - Rows use `page-break-inside: avoid`; `thead { display:
   table-header-group }` repeats headers.
 - Header logo: `src/assets/addessa-logo.jpg` (extracted from the backend's
