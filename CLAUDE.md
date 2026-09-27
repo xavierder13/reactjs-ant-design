@@ -24,12 +24,15 @@ and Manpower Request.
 - No test framework is configured in this project
 
 **Ant Design v6 (installed 6.4.3) — don't trust recalled v4/v5 prop
-names.** Known renames: `Divider` `orientation` → `titlePlacement`;
-`Alert` `message` → `title` (`message` is `@deprecated` — write
+names.** Known renames: `Divider` `type` → `orientation` (`titlePlacement`
+is a separate text-position prop, not a rename of `orientation`); `Space`
+`split` → `separator`, `direction` → `orientation`; `Alert` `message` → `title` (`message` is `@deprecated` — write
 `<Alert title="...">` in new/touched code). Don't confuse that with the
 unrelated, non-deprecated `message` from `App.useApp()`. Before using an
 AntD prop from memory, check the installed source: `node_modules/antd/es/
-<component>/index.js` or its `.d.ts` (`grep -A2 "@deprecated"`). There's no
+<component>/index.js` or its `.d.ts` (`grep -rn "@deprecated"` across every `.d.ts` in the component's folder,
+not just `index.d.ts`; whole-component deprecations like `List` only show
+in the runtime `.js`). There's no
 browser automation here, so console deprecation warnings won't surface on
 their own.
 

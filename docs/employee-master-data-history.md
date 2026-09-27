@@ -761,3 +761,442 @@ real code the way the Manpower Request section above is.
   the static API can't consume this app's `<AntApp>` `ConfigProvider`
   context and raises a console warning. A real instance of this was found
   and fixed in `ColumnSelector.jsx`.
+
+---
+
+## Merged 2026-09-27: uncommitted CLAUDE.md notes from a second machine (2026-09-23/24)
+
+Written on another machine into the *old* (pre-2026-09-26) CLAUDE.md layout and
+never committed; preserved here verbatim when pulling the slimmed CLAUDE.md.
+Each block is one added passage, with the section it was added under.
+Some of it (Modal afterOpenChange rule, 7-tab EmployeeTabs incl. Work
+Schedule, "Branch Report(s)" label) is current-state and may belong in
+`.claude/skills/employee-master-data/SKILL.md`.
+
+### (under `Tech Stack`)
+
+e.g. `Divider`'s `type` prop (used for horizontal/vertical) is
+`@deprecated please use `orientation`` in this installed version (6.4.3) —
+**correction, 2026-09-23**: an earlier version of this note said
+`orientation` itself was "renamed to `titlePlacement`" — that was wrong,
+confirmed by reading `divider/index.d.ts` directly: `orientation` is the
+current, non-deprecated replacement for `type` (still
+`'horizontal' | 'vertical'`); `titlePlacement` is a separate,
+never-deprecated prop for text position (`'left' | 'right' | 'center' |
+'start' | 'end'`) and was never a rename target for `orientation`. Don't
+repeat the old claim. Also
+
+### (under `Tech Stack`)
+
+**Gotcha found 2026-09-23**: a component's real prop types don't always
+live in its `index.d.ts` — some (e.g. `Alert`'s `message`/`title`, which
+are actually declared in `alert/Alert.d.ts`) are only re-exported from
+`index.d.ts`. Grepping just `index.d.ts` can miss real `@deprecated`
+markers; grep every `.d.ts` file in the component's whole folder (`grep
+-rn "@deprecated" node_modules/antd/es/<component>/`), not just the one
+file.
+
+**2026-09-16** (module-scoped, superseded by the 2026-09-23 sweep below):
+every AntD component used in the Employee Master Data module was checked
+against `node_modules/antd/es/**/*.d.ts` for `@deprecated` props after the
+
+### (under `Tech Stack`)
+
+prop **at the time**, but that check only grepped `index.d.ts` per
+component (see the gotcha above), so it wasn't as complete as it looked.
+
+**2026-09-23** (whole-app, prompted by real browser console warnings the
+user reported: `Space`'s `split` and `Divider`'s `type` both deprecated) —
+a scripted audit (Node, run via the `rbac-react-dev` container) covering
+**every** AntD component imported anywhere in `src/` (45 components, not
+just Employee Master Data), checking **every** `.d.ts` file in each
+component's folder (not just `index.d.ts`, per the gotcha above) for
+`@deprecated` props, then grepping actual JSX usage in files that import
+that component. Found and fixed 3 real instances: `EmployeeForm.jsx`'s
+card-title `<Space split={<Divider type="vertical" />}>` (→ `<Space
+separator={<Divider orientation="vertical" />}>`), and
+`ViewManpowerRequest.jsx`'s `<Space direction="vertical">` (→
+`orientation="vertical"`) — both real console warnings, confirmed against
+the pasted browser output for the first. One additional hit
+(`EmployeeModal.jsx`'s `destroyOnClose`) was a script false positive — it
+was matching a `// replaces destroyOnClose` comment, not a real prop; that
+file already correctly uses `destroyOnHidden`. **This is a real
+recurring gap, not a one-time fix**: this repo's `code-review` skill
+already has a "UI-library API currency" check (added after the original
+`Alert.message` finding) — but it only runs when `/review-code` or the
+code-reviewer agent is explicitly invoked, not automatically while new
+AntD JSX is being written from memory during normal feature/fix work,
+which is exactly how all 3 of these slipped in. Re-run the same
+whole-app scripted sweep (not just a manual per-file `grep -A2`, which
+already proved incomplete once) whenever a new console warning surfaces,
+and prefer invoking `/review-code` on any diff that adds new AntD props
+before calling a UI change done.
+
+**2026-09-24 — a whole component, not just a prop, can be deprecated**:
+`List` itself (not any specific prop on it) logs `The \`List\` component is
+deprecated. And will be removed in next major version.` on every render in
+this installed version — confirmed via
+`node_modules/antd/es/list/index.js`'s own unconditional `warning(false,
+'deprecated', ...)` call, not a `.d.ts` `@deprecated` tag (whole-component
+deprecations don't always show up that way, unlike the per-prop ones
+above — grep the runtime `.js` for `'deprecated'` too, not just the type
+defs, when auditing a component broadly). Found via a user-reported
+warning on Personal Data's Files & Requirements sub-tab; swept the whole
+app the same way as the 2026-09-23 prop sweep and found 2 more usages
+(`EmployeeBulkSelector.jsx`'s selected-employees panel,
+`KpiEvaluationCreate.jsx`'s bulk-create result summary) — all 3 fixed.
+No direct successor is named in AntD's own deprecation message, so the
+replacement was picked per call site rather than mechanically: `Table`
+(this repo's dominant list-rendering convention already, used everywhere
+else in Employee Master Data) for the 2 genuine data-table-shaped cases
+(`FilesRequirements.jsx`'s two file lists, `EmployeeBulkSelector.jsx`'s
+selected-employees panel — the latter via `showHeader={false}` to keep
+its original compact card look); plain `Space`/`Tag` (no
+list-like component at all) for `KpiEvaluationCreate.jsx`'s two result
+badges, since those were always purely decorative status tags, not real
+tabular data — forcing a `Table`'s column/pagination machinery onto two
+small transient badges would have been more code for a worse fit.
+
+### (under `Form and Validation Conventions`)
+
+- **A Modal-hosted `Form` must populate/reset via the Modal's
+  `afterOpenChange`, never synchronously inside the "open" button's click
+  handler** (confirmed real bug, 2026-09-23 — a live console warning: `AntD
+  Modal`s (this app's list→modal CRUD pattern: Offboarding, NTE,
+  Disciplinary, Performance Management sub-tabs, Work Schedule, Permission)
+  don't render their children until first opened, and with `destroyOnHidden`
+  (this app's standard) unmount them again on every close — so a `<Form>`
+  inside one doesn't exist in the tree at the exact synchronous moment an
+  `openCreate`/`openEdit` handler runs, before `setModalOpen(true)` has
+  been flushed to a render. Calling `form.resetFields()`/
+  `form.setFieldsValue()` there throws "Instance created by `useForm` is
+  not connected to any Form element." The fix, already used correctly by
+  `SubmitAcknowledgmentReportModal.jsx` from the start: `openCreate`/
+  `openEdit` only set which record is being edited and call
+  `setModalOpen(true)` — actual field population/reset happens in a
+  `handleAfterOpenChange(isOpen)` function passed as the Modal's
+  `afterOpenChange` prop, which only runs once the Form is actually
+  mounted. Check this pattern on every new list→modal CRUD tab/page before
+  calling it done, not just when a warning is reported — 7 files
+  (`WorkScheduleTab.jsx`, `OffboardingTab.jsx`, `DisciplinaryRecordsTab.jsx`,
+  `NteRecordsTab.jsx`, `PerformanceRecordTab.jsx` (shared by 4 sub-tabs),
+  `MonthlyKeyPerformanceTab.jsx`, `PermissionIndex.jsx`) all had this same
+  copy-pasted bug at once, found only because one instance got reported.
+
+### (under `Employee Master Data Conventions`)
+
+the submit action "Upload Employee Report"; user-facing label renamed to
+**"Branch Report(s)"** 2026-09-23 — menu entry, page titles, breadcrumbs,
+the submit button/modal — internal names (routes, permission strings,
+store/hook/API/component/file names, all still `*Acknowledgment*`) were
+deliberately left alone since those are the actual backend contract, not
+just a label), and (2026-09-22) **Excel
+
+### (under `Employee Master Data Conventions`)
+
+in this module is blocked. The Employee Details tab's **Active** field
+(2026-09-23) is now read-only in every mode — no visible `Switch`, just a
+"Status" label + `Tag` (`Active`/`Inactive`, green/default) next to it —
+it's set automatically by the backend `resign`/`rehire` endpoints
+(triggered from `OffboardingTab.jsx`'s save flow and, on the vueportal
+side, the scheduled `deactivateResignedEmployees()` job), never entered
+directly here. `active` is still a registered (hidden) `Form.Item` so it
+survives `EmployeeForm.jsx`'s `validateFields()`/`buildPayload` on save —
+dropping the field entirely (no `name="active"` anywhere) was tried and
+would have silently sent `active:false` on every save, since AntD's
+`validateFields()` only returns values for fields with a matching
+registered `Form.Item`, not just anything passed to `setFieldsValue`.
+`isActiveValue()` (now `src/utils/employeeStatus.js`, shared with
+`EmployeeForm.jsx`'s card title below) normalizes the status defensively
+since the backend `active` column has no cast and could in principle
+arrive as `0`/`"0"`/`"false"` rather than a clean boolean.
+
+**Live Status sync after Offboarding actions (2026-09-23)** — real bug,
+reported and confirmed: React showed a stale Status (e.g. "Inactive")
+while vueportal's Vue2 reference correctly showed "Active" for the same
+employee, right after using the Offboarding tab. Root cause: this module
+has no single-employee `show/{id}` endpoint, so `initialData` (router
+state) is frozen at page load — `OffboardingTab.jsx`'s save flow calls the
+`resign` endpoint, which flips `active` server-side, but nothing told the
+rest of the already-open page. Traced the Vue reference's own fix for the
+exact same problem before porting anything: `Offboarding.vue`'s
+`resignEmployee()` computes the resulting `active` **client-side**, using
+the identical date comparison `EmployeeMasterDataController@resign` uses
+server-side (a future-dated resignation stays Active; today-or-earlier
+goes Inactive), then `$emit('updateStatus', {active, date_resigned})` up
+to `EmployeeMasterData2.vue`, which patches the live `editedItem` object
+the whole dialog is reactively bound to. Ported exactly: `EmployeeForm.jsx`
+now holds a local, patchable `employee` state (seeded from `initialData`,
+kept in sync via React's "adjust state during render" pattern — not a
+`useEffect`, which would trip `react-hooks/set-state-in-effect`) plus a
+`patchEmployee(patch)` function that updates that state AND directly
+`form.setFieldsValue()`s only the patched fields (not a full re-seed,
+which would risk clobbering in-progress edits elsewhere on the form).
+`EmployeeTabs.jsx` threads this down as `onEmployeeChange`;
+`OffboardingTab.jsx`'s `resignEmployee()` now computes `active` the same
+way Vue does and calls it. Every display that used to read `initialData`
+directly (Card title, `EmployeeDetailsTab.jsx`'s Status `Tag`) now reads
+`employee` instead — `initialData` itself is untouched, still used for the
+save-payload flow.
+**Verified against the live backend, not just read**: created a throwaway
+test employee via `php artisan tinker`, drove it through the real
+`offboarding/store` → `resign` HTTP endpoints twice (a today-dated
+resignation, then a future-dated one) with a scoped Passport token, and
+confirmed the DB's actual resulting `active` value matched this
+client-side formula's prediction exactly in both directions (0 and 1).
+Test employee, its offboarding record, and the test token were all
+deleted afterward — nothing left behind.
+**Found and fixed separately, same session**: the future-dated resign call
+initially hit a genuinely separate backend bug — 3 foreign keys
+(`employee_referrals`, `kpi_evaluations`, `users`, all `employee_id`)
+still pointed at a dead `employee_master_data_old` table instead of the
+live `employee_master_data`. Confirmed dev-database-only (user verified
+production has no such table) and fixed directly against the local dev DB
+— no migration file, since one would fail on production. Full writeup in
+`docs/hris-modules.md` ("Fixed: 3 foreign keys pointed at a dev-only
+legacy table"). `employee_master_data_old` should be treated as fully
+dead going forward — never a real data source.
+**`EmployeeForm.jsx`'s Card title** (2026-09-23) also now follows
+`EmployeeMasterData2.vue`'s dialog `v-card-title` pattern for an existing
+record (edit/view, not Add): base title, divider, `"<employee_code> -
+<Last, First, Middle>"`, divider, Active/Inactive `Tag` — the Vue
+reference only shows this segment when `editedIndex > -1`; ported here as
+`mode !== 'create'`. Deliberately filters out an empty `middle_name`
+instead of the Vue reference's unconditional `.join(', ')` (which leaves a
+trailing ", " when there's no middle name).
+**Branch Reports table** (`AcknowledgmentReportIndex.jsx`, 2026-09-23):
+rebuilt from the previous flattened single table into a grouped-by-branch,
+expandable table matching vueportal's `DataTableGroup.vue` (`group-by`
+"name" + a `group.header` toggle) — one dense (`size="small"`) row per
+branch (Branch name, Report count `Tag`), `expandable.expandedRowRender`
+opening a nested dense table of that branch's `acknowledgment_reports`
+(Submitted By, Acknowledgment Date, Document Date, Actions). Deliberately
+disables the expand caret for a branch with zero reports
+(`rowExpandable`) rather than the Vue reference's always-expandable empty
+group — better UX, not a functional gap.
+**Work Schedule tab** (2026-09-23) — new module, no vueportal Vue
+reference to port (none exists; confirmed by grep before building).
+Records an employee's work-schedule *history* (Rest Day + Time In/Time
+Out, versioned by Effective Date) following the Offboarding/NTE
+sub-module precedent, originally minus files/import (template
+download/bulk import added same day — see below). Naming deliberately
+follows real-world HR/PH-labor vocabulary per explicit instruction: "Work
+Schedule" (not "Employee Schedule"), `rest_day` (the actual PH Labor Code
+term, not `day_off`), `time_in`/`time_out` (this app's existing DTR/
+BioBridge punch vocabulary). Full cross-repo detail — backend migration/
+model/controller/middleware/permissions, the deliberate fix of
+Offboarding's known seeder-vs-middleware permission mismatch (not
+replicated here), and what's intentionally NOT done yet (no role grants
+beyond Administrator, no wiring into `AttendanceService`/KPI Attendance)
+— is in the workspace root's `docs/hris-modules.md` "Cross-repo
+implementation notes", not duplicated here. Files: `WorkScheduleTab.jsx`
+(7th tab in `EmployeeTabs.jsx`, gated on `employee-master-data-work-schedule`
+per the existing `TAB_PERMISSIONS` pattern), `services/employee/workScheduleApi.js`.
+
+**Generate Template / Import Data dialogs** (2026-09-23) — ported from
+vueportal's `TemplateDownloadDialog.vue`/`ImportDialog.vue` reference
+exactly: one entry point per action (not one button per sub-module), each
+with a "Document Type" `Select` deciding which sub-module's template/
+import to use. Replaces `EmployeeMasterData.jsx`'s previous single-purpose
+"Template" button (core record only, no dialog) and
+`ImportEmployeesModal.jsx` (deleted — replaced by `ImportDataModal.jsx`).
+Two document types wired so far: **Employee Master Data** (core) and
+**Work Schedule** — deliberately not the other 7 types Vue's own dropdown
+lists (Branch Assignment Position, Monthly Key Performance, Classroom/OJT
+Performance Rating, NTE, Disciplinary, Offboarding), since none of those
+have an Import UI built in this app yet; listing a template with no way
+to use it back would be a dead end. Add a document type to
+`GenerateTemplateModal.jsx` and `ImportDataModal.jsx` together, not
+separately, when the next sub-module's import UI gets built.
+- **Real bug found and fixed while building this**: the previous
+  `ImportEmployeesModal.jsx` never checked the response body at all on a
+  200 — just showed a generic "Employees imported" success message
+  unconditionally. Confirmed live against `EmployeeMasterDataController@import()`/
+  `EmployeeOffboardingController@import()` (both, and now
+  `EmployeeWorkScheduleController@import()`): every import endpoint in
+  this codebase returns HTTP **200 even on validation failure** — never
+  422 — with `success` | `error_column` | `error_row_data`+`field_values`
+  | `error_empty` distinguishing the outcome. `ImportDataModal.jsx` now
+  checks all four explicitly (matching `ImportDialog.vue`'s own handling
+  exactly) and shows a proper "Error List" table (row/column/message/
+  value) instead of a false "imported" toast.
+- Files: `GenerateTemplateModal.jsx`, `ImportDataModal.jsx` (both in
+  `src/pages/employee_master_data/components/`), `workScheduleApi.js`
+  gained `templateDownload()`/`import()`.
+- **Verified against the live backend, not just read**: downloaded the
+  real template via the new endpoint and confirmed its column headers
+  with PhpSpreadsheet directly (not just a file-type check); built real
+  `.xls` files with PhpSpreadsheet and POSTed them to the real
+  `work_schedule/import` endpoint three times — a fully valid row
+  (created the DB row correctly, confirmed via `tinker`), an invalid
+  `rest_day`, and a nonexistent `employee_code` — all three produced
+  exactly the response shape the frontend expects. Test employee, its
+  work schedule row, and the test token deleted afterward.
+- Backend: `EmployeeWorkScheduleController::template_download()`/`import()`
+  added, matching `EmployeeOffboardingController`'s pattern verbatim
+  (including its role-scoped `employee_code` existence check, copied, not
+  reinvented) — `app/Exports/EmployeeWorkScheduleTemplate.php`,
+  `app/Imports/EmployeeWorkScheduleImport.php`, routes
+  `employee_master_data/work_schedule/{template/download,import}`,
+  middleware checks + 2 new permissions
+  (`employee-master-data-work-schedule-{import,template-download}`) —
+  seeded and granted to Administrator (seeder re-run same session).
+
+**Create mode no longer blocks on file/sub-record tabs** (2026-09-24) —
+user-reported: "Save the employee's Personal Data and Employee Details
+first — file attachments are uploaded against an existing employee
+record," with an explicit instruction to remove that restriction and
+match the Vue2+Vuetify2 concept instead. Investigated before changing
+anything: `EmployeeMasterDataController@store()` already accepts
+`employee_files[]`/`document_types[]`, `monthly_key_performances`,
+`classroom_performance_ratings`, `ojt_performance_ratings`,
+`branch_assignment_positions`, `merit_histories`, `trainings`,
+`explanations` (+ parallel `nte_files[${i}]`/`explanation_files[${i}]`),
+and `disciplinaries` (+ parallel `disciplinary_files[${i}]`) bundled into
+the SAME multipart request that creates the employee — confirmed by
+reading `store()` line by line, not assumed. `EmployeeMasterData2.vue`'s
+`save()` method stages every one of these **locally** in create mode
+(`editedIndex === -1`) instead of calling an API, then bundles them all
+into one `FormData` on submit — "save the employee first" was a
+frontend-only restriction on both sides, never a real backend one.
+**Offboarding is the one exception** — `store()` has no handling for it
+at all, so that tab still blocks on save (matches Vue exactly; Work
+Schedule, this app's own tab with no Vue equivalent, was left blocking
+too, same reasoning). Attendance's block is unrelated (it queries
+BioBridge by `employee_code`, which doesn't exist pre-save) and untouched.
+- **Architecture**: one `pendingCreateData` object + one
+  `onPendingCreateDataChange(key, value)` updater, owned by
+  `EmployeeForm.jsx`, threaded down through `EmployeeTabs.jsx` →
+  `PersonalDataTab.jsx`/`PerformanceManagementTab.jsx`/`DisciplinaryTab.jsx`
+  → each leaf tab (a single prop pair at every level, not one pair per
+  sub-tab — see `PerformanceManagementTab.jsx`'s header comment). Every
+  affected tab now has an `isCreateMode` branch: same Add/Edit modal UI,
+  but Save pushes into the local `pendingRecords` array
+  (`onPendingRecordsChange`) instead of calling its usual API, and Delete
+  filters it locally instead of calling `onDelete`. `PerformanceRecordTab.jsx`
+  (the shared component behind Classroom/OJT Performance Rating, Branch
+  Assignment & Positions, Merit History, Training) gained a
+  `formatPendingValues` prop specifically to convert a `dayjs` date field
+  to a plain string before staging — storing the raw `dayjs` instance
+  would have both crashed the Table's render (React can't render an
+  arbitrary object as a cell) and serialized wrong in the final JSON
+  payload.
+  `MonthlyKeyPerformanceTab.jsx` (not built on `PerformanceRecordTab.jsx`
+  — its own batch-per-year shape) got its own equivalent create-mode
+  branch, matching `MonthlyKeyPerformance.vue`'s own
+  `savePeriod()`/`removePeriod()`/`saveItem()` local-array behavior in
+  `editedIndex === -1` exactly.
+  `FilesRequirements.jsx` and `EvaluationRegularizationTab.jsx`'s 2 fixed
+  file slots (Performance for Regularization, Memo of Regularization)
+  share one `pendingCreateData.files` array (`{ file, document_type,
+  source }`, `source` scoping each UI to only its own entries) — matches
+  the backend, which puts regularization files through the exact same
+  `employee_files[]`/`document_types[]` mechanism as Files &
+  Requirements' generic uploads (confirmed by reading `save()` directly:
+  Vue's `regularization_file_input`/`regularization_memo_file_input` are
+  appended into the same `formData.append('employee_files[]', ...)` calls,
+  not a separate field). `NteRecordsTab.jsx`/`DisciplinaryRecordsTab.jsx`
+  keep their picked `File` objects directly on each staged row (not the
+  shared pool — these are per-row, not a shared file pool) and get
+  unpacked into the parallel indexed fields when the final request is built.
+- **The indexed-field detail matters**: `EmployeeForm.jsx`'s
+  `buildCreateRequestBody()` appends NTE/Disciplinary files as
+  `` `nte_files[${i}]` ``/`` `explanation_files[${i}]` ``/`` `disciplinary_files[${i}]` ``
+  — an explicit index per row, not a plain `[]` array-push — matching
+  `EmployeeMasterData2.vue`'s save() exactly (`formData.append('nte_files['+i+']', item.nte_file)`).
+  This is load-bearing, not stylistic: a plain `[]` push would silently
+  shift every later row's file onto the wrong row's index the moment any
+  earlier row has no file for that slot (a very likely case — not every
+  NTE record has both an NTE file and an explanation file).
+- **Two real pre-existing backend bugs found and fixed while verifying
+  this against the live backend, in `store()`** — both present in the
+  Vue-era code too, not introduced by this feature, and both block ANY
+  NTE/Disciplinary row with a partially-missing file (a normal case, not
+  an edge case): (1) `$nte_files = $request->nte_files;` /
+  `$explanations_files = $request->explanation_files;` /
+  `$disciplinary_files = $request->disciplinary_files;` crashed with a
+  fatal `ErrorException` ("Trying to access array offset on value of type
+  null") whenever a batch of explanations/disciplinaries had **no** row
+  with that particular file at all (the corresponding multipart field is
+  then entirely absent, not just empty) — fixed with the same
+  `is_array($request->X) ? $request->X : []` guard the file already uses
+  for `$employee_files`. (2) Even with that guard, `$nte_files[$key]` /
+  `$explanations_files[$key]` / `$disciplinary_files[$key]` still crashed
+  with a fatal "Undefined offset" the moment `$key` had **no** file for
+  that specific row while `explanations`/`disciplinaries` overall wasn't
+  empty (this environment's error handler turns that notice fatal too) —
+  fixed with `?? null` instead of plain array access. Confirmed live: the
+  first fix alone still crashed on the second bug; both together didn't.
+- **Also found, not a code bug**: this local dev environment's
+  `public/wysiwyg/` directory (the `webportal-vue` storage disk's root for
+  NTE/Disciplinary/Offboarding file uploads) didn't exist at all, so the
+  very first successful file write in this environment would have failed
+  regardless of any of the above. Created it locally
+  (`mkdir -p public/wysiwyg`, `chmod 777`) purely to complete this
+  verification, then removed it again afterward — not a permanent fix,
+  since this is environment setup, not application code; whoever
+  provisions this dev container long-term should create it properly
+  (matching whatever permissions the real deploy target uses).
+- **Verified against the live backend, not just read**: POSTed a real
+  multipart `employee_master_data/store` request with a core employee
+  plus one `employee_files` entry, one `merit_histories` row, and one
+  `explanations` (NTE) row with only an `nte_file` (deliberately no
+  `explanation_file`, to exercise the sparse-index bug above) — succeeded
+  and created all 4 rows correctly, confirmed via `tinker` reading each
+  one back (including the NTE row's `explanation_file_name` correctly
+  landing empty, not corrupted, for the slot that was never sent). All
+  test data (employee, files, merit history row, NTE row, uploaded files,
+  test token, the temporary `wysiwyg/` directory) deleted afterward.
+- Also fixed in passing: the old `ImportEmployeesModal.jsx`'s replacement
+  ended up mattering here too — see the "Generate Template / Import Data
+  dialogs" entry above for that separate, already-fixed bug (never
+  checking the create response's `success`/error shape). The SAME class
+  of gap existed in `handleSave()`'s create branch here (it unconditionally
+  treated any 200 response as success) — now checks for `data.employee`/
+  `data.employee_master_data` presence before navigating away, since
+  bundled files are a genuinely new way for `store()` to fail with a 200
+  that wasn't reachable before this feature.
+
+**Date Employed/Date Resigned validation, create mode only (2026-09-24)**
+— user-requested: neither date may be in the future (max = today), and
+Date Resigned must be on or after Date Employed. Scoped to `mode ===
+'create'` only, per explicit instruction — not edit mode, where Date
+Resigned is also set automatically by the Offboarding resign/rehire flow
+(`patchEmployee` in `EmployeeForm.jsx`), which doesn't route through this
+form's validation at all. `EmployeeDetailsTab.jsx` doesn't own a `<Form>`
+(it only ever renders bare `Form.Item`s inside `EmployeeForm.jsx`'s shared
+one, per this file's own header comment) — the Date Resigned ≥ Date
+Employed cross-field check needed the ambient form instance directly, so
+this pulled in `Form.useFormInstance()` rather than threading `form` down
+as a prop. Both fields also get `disabledDate` (blocks picking a future
+date in the calendar UI itself, matching `ManpowerRequestForm.jsx`'s
+`request_date` precedent) on top of the `rules` validator — the validator
+alone would still make the field visibly submittable-then-rejected; the
+picker restriction is what actually stops the user from getting there in
+the first place.
+
+**Tab order (2026-09-24, user-requested)**: Work Schedule (and Attendance
+alongside it — see below) moved from the end (after
+Performance/Disciplinary/Offboarding) to right after Employee Details.
+Final order in `EmployeeTabs.jsx`: Personal Data, Employee Details, Work
+Schedule, Attendance, Performance Management, Disciplinary Measures &
+Penalties, Offboarding. Reasoning: Work Schedule and Attendance are
+ongoing operational/setup data in the same vein as Employee Details
+(position/branch/employment type), not lifecycle events that happen to an
+employee over time the way Performance/Disciplinary/Offboarding are —
+grouping the "setup" tabs first reads more naturally. Attendance moved
+alongside Work Schedule, not left behind at the end, because separating
+them would undercut the reason for moving either: Work Schedule exists
+specifically to feed Attendance's late/absence calculation (see
+`WorkScheduleTab.jsx`'s own header comment) — only asked to relocate Work
+Schedule, but leaving 3 unrelated tabs between it and the thing it feeds
+would have been a half-measure. Purely a `TAB_PERMISSIONS` object /
+`allItems` array reordering in `EmployeeTabs.jsx` — tab keys are
+unchanged, so nothing else (the `isSaveVisible()` switch in
+`EmployeeForm.jsx`, permission strings, any of the tab components
+themselves) needed to change.
+Starting
+
+### (under `Employee Master Data Conventions`)
+
+  `components/EmployeeForm.jsx`), `components/EmployeeTabs.jsx` (7-tab
