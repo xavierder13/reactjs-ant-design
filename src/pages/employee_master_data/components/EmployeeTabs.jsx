@@ -100,7 +100,14 @@ export default function EmployeeTabs({ mode = "create", initialData, onEmployeeC
     {
       key: "workSchedule",
       label: "Work Schedule",
-      children: <WorkScheduleTab mode={mode} initialData={initialData} />,
+      children: (
+        <WorkScheduleTab
+          mode={mode}
+          initialData={initialData}
+          pendingRecords={pendingCreateData?.workSchedules || []}
+          onPendingRecordsChange={(rows) => onPendingCreateDataChange?.("workSchedules", rows)}
+        />
+      ),
     },
     {
       key: "attendance",

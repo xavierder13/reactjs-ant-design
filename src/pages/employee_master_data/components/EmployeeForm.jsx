@@ -81,6 +81,7 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
     trainings: [],
     explanations: [],                   // [{ ...fields, nte_file, explanation_file }] — NTE
     disciplinaries: [],                 // [{ ...fields, file }]
+    workSchedules: [],
   });
   const updatePendingCreateData = (key, value) => setPendingCreateData((prev) => ({ ...prev, [key]: value }));
 
@@ -117,6 +118,7 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
       ['branchAssignmentPositions', 'branch_assignment_positions'],
       ['meritHistories', 'merit_histories'],
       ['trainings', 'trainings'],
+      ['workSchedules', 'work_schedules'],
     ];
     jsonBundles.forEach(([stateKey, fieldName]) => {
       const rows = pendingCreateData[stateKey];
@@ -341,6 +343,12 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
         // without this check, they'd silently navigate away as if the
         // employee had actually been created.
         if (!data.employee && !data.employee_master_data) {
+          if (data.work_schedules_errors) {
+            const [rowErrors] = Object.values(data.work_schedules_errors);
+            const [firstMessage] = Object.values(rowErrors || {}).flat();
+            messageApi.error(`Work Schedule: ${firstMessage || 'Invalid work schedule.'}`);
+            return;
+          }
           const firstError = data.employee_files_errors
             ? Object.values(data.employee_files_errors)[0]
             : data;

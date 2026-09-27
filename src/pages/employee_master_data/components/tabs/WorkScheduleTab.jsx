@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   Table, Button, Modal, Form, Select, DatePicker, TimePicker, Input, Row, Col, Space,
-  Popconfirm, Tooltip, Empty, Tag, App,
+  Popconfirm, Tooltip, Tag, App,
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -27,7 +27,11 @@ const TIME_FORMAT = "HH:mm";
 // stubbed AttendanceService) by giving that computation a schedule to
 // compare the read-only Attendance tab's BioBridge punches against — that
 // comparison is NOT built here, this is just record management.
-export default function WorkScheduleTab({ mode = "create", initialData }) {
+//
+// Create mode: rows are staged locally (pendingRecords) and sent with the
+// Add Employee request as `work_schedules` — see EmployeeForm.jsx's
+// buildCreateRequestBody() and EmployeeMasterDataController@store().
+export default function WorkScheduleTab({ mode = "create", initialData, pendingRecords, onPendingRecordsChange }) {
   const { message: messageApi } = App.useApp();
   const { hasPermission } = useAuth();
   const employeeId = initialData?.id;
@@ -39,6 +43,7 @@ export default function WorkScheduleTab({ mode = "create", initialData }) {
   const [form] = Form.useForm();
 
   const readOnly = mode === "view";
+  const isCreateMode = mode === "create";
   // Tab-level gate matches this repo's own established pattern (see
   // EmployeeTabs.jsx's TAB_PERMISSIONS comment): a base permission string
   // gates the tab itself, separate -create/-edit/-delete gate row actions.
@@ -47,10 +52,11 @@ export default function WorkScheduleTab({ mode = "create", initialData }) {
   const canEdit = !readOnly && hasPermission("employee-master-data-work-schedule-edit");
   const canDelete = !readOnly && hasPermission("employee-master-data-work-schedule-delete");
 
-  if (mode === "create") {
-    return <Empty description="Save the employee first before adding records here." style={{ padding: "24px 0" }} />;
-  }
   if (!canView) return null;
+
+  const displayedRecords = isCreateMode
+    ? [...(pendingRecords || [])].sort((a, b) => b.effective_date.localeCompare(a.effective_date))
+    : records;
 
   const openCreate = () => {
     setEditing(null);
@@ -100,7 +106,33 @@ export default function WorkScheduleTab({ mode = "create", initialData }) {
     remarks: values.remarks || undefined,
   });
 
+  const handleSavePending = async () => {
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    // No employee_id yet — the backend assigns it when store() creates the
+    // employee. `id` is local-only; EmployeeForm strips it before sending.
+    const record = { ...buildPayload(values), remarks: values.remarks || null, id: editing?.id || `local-${Date.now()}` };
+    delete record.employee_id;
+    const updated = editing
+      ? (pendingRecords || []).map((r) => (r.id === editing.id ? record : r))
+      : [...(pendingRecords || []), record];
+    onPendingRecordsChange(updated);
+    messageApi.success(editing ? "Work schedule updated." : "Work schedule added.");
+    closeModal();
+  };
+
+  const handleDeletePending = (record) => {
+    onPendingRecordsChange((pendingRecords || []).filter((r) => r.id !== record.id));
+  };
+
   const handleSave = async () => {
+    if (isCreateMode) return handleSavePending();
+
     let values;
     try {
       values = await form.validateFields();
@@ -173,7 +205,7 @@ export default function WorkScheduleTab({ mode = "create", initialData }) {
             <Popconfirm
               title="Delete this work schedule?"
               description="This cannot be undone."
-              onConfirm={() => handleDelete(record)}
+              onConfirm={() => (isCreateMode ? handleDeletePending(record) : handleDelete(record))}
               okButtonProps={{ danger: true, loading: deletingId === record.id }}
               okText="Delete"
             >
@@ -197,7 +229,7 @@ export default function WorkScheduleTab({ mode = "create", initialData }) {
         </div>
       )}
 
-      <Table rowKey="id" size="small" dataSource={records} columns={columns} pagination={false} scroll={{ x: "max-content" }} />
+      <Table rowKey="id" size="small" dataSource={displayedRecords} columns={columns} pagination={false} scroll={{ x: "max-content" }} />
 
       <Modal
         title={editing ? "Edit Work Schedule" : "Add Work Schedule"}
