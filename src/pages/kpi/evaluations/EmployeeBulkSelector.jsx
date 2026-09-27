@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  Row, Col, Input, Table, List,
+  Row, Col, Input, Table,
   Button, Typography, Empty, Tag,
 } from 'antd';
 import { SearchOutlined, CloseOutlined, ClearOutlined } from '@ant-design/icons';
@@ -186,34 +186,44 @@ const EmployeeBulkSelector = ({ value = [], onChange }) => {
           {selected.length === 0 ? (
             <Empty description='No employees selected' />
           ) : (
-            <List
+            <Table
+              rowKey='id'
               size='small'
+              showHeader={false}
+              pagination={false}
               dataSource={selected}
-              renderItem={(item) => (
-                <List.Item
-                  style={{ padding: '8px 12px' }}
-                  actions={[
+              columns={[
+                {
+                  title: 'Employee',
+                  key: 'name',
+                  render: (_, item) => (
+                    <div>
+                      <Typography.Text strong style={{ fontSize: 13 }}>
+                        {item.full_name}
+                      </Typography.Text>
+                      <div>
+                        <Typography.Text type='secondary' style={{ fontSize: 11 }}>
+                          {item.employee_code} · {item.position_name || '-'}
+                        </Typography.Text>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  title: '',
+                  key: 'actions',
+                  width: 40,
+                  render: (_, item) => (
                     <Button
                       type='text'
                       danger
                       size='small'
                       icon={<CloseOutlined />}
                       onClick={() => removeSelected(item.id)}
-                    />,
-                  ]}
-                >
-                  <div>
-                    <Typography.Text strong style={{ fontSize: 13 }}>
-                      {item.full_name}
-                    </Typography.Text>
-                    <div>
-                      <Typography.Text type='secondary' style={{ fontSize: 11 }}>
-                        {item.employee_code} · {item.position_name || '-'}
-                      </Typography.Text>
-                    </div>
-                  </div>
-                </List.Item>
-              )}
+                    />
+                  ),
+                },
+              ]}
             />
           )}
         </div>

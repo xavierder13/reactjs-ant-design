@@ -117,11 +117,10 @@ const EmployeeSelect = ({
 
   return (
     <Select
-      showSearch
+      showSearch={!missingFilters}
       value={value}
       onChange={onChange}
       placeholder={missingFilters ? `Select ${missingLabel} first` : placeholder}
-      disabled={missingFilters}
       filterOption={false}
       onSearch={handleSearch}
       onPopupScroll={handlePopupScroll}
@@ -130,6 +129,18 @@ const EmployeeSelect = ({
       allowClear
       status={status}
       style={{ width: '100%' }}
+      // Locked look without AntD's `disabled` gray-out while a required
+      // filter (branch/position/date) hasn't been picked yet — matches
+      // ManpowerRequestForm.jsx's Branch field lock: force the dropdown
+      // closed, drop the arrow, block pointer/keyboard interaction
+      // directly, so the field keeps its normal styling; the placeholder
+      // text above still tells the user why it's inactive.
+      {...(missingFilters ? {
+        open: false,
+        suffixIcon: null,
+        tabIndex: -1,
+        style: { width: '100%', pointerEvents: 'none' },
+      } : {})}
     />
   );
 };

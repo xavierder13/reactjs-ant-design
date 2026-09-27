@@ -44,7 +44,6 @@ const PermissionIndex = () => {
 
   const openCreate = () => {
     setEditing(null);
-    form.resetFields();
     setModalOpen(true);
   };
 
@@ -52,14 +51,30 @@ const PermissionIndex = () => {
     // Matches the vueportal reference: no round-trip to /permission/edit,
     // the already-fetched list row is used to pre-fill the form.
     setEditing(record);
-    form.setFieldsValue({ name: record.name });
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
     setEditing(null);
-    form.resetFields();
+  };
+
+  // Populate/reset the form only after the Modal has actually opened, not
+  // in openCreate/openEdit above — this Modal has destroyOnHidden, so its
+  // <Form> doesn't exist in the tree yet at the moment those handlers run.
+  // Calling form.resetFields()/setFieldsValue() before that triggers
+  // AntD's "Instance created by useForm is not connected to any Form
+  // element" warning — confirmed live (reported against WorkScheduleTab.jsx,
+  // same copy-pasted pattern here). See
+  // employee_master_data/components/SubmitAcknowledgmentReportModal.jsx
+  // for the same afterOpenChange pattern, done correctly from the start.
+  const handleAfterOpenChange = (isOpen) => {
+    if (!isOpen) return;
+    if (editing) {
+      form.setFieldsValue({ name: editing.name });
+    } else {
+      form.resetFields();
+    }
   };
 
   const handleDelete = async (record) => {
@@ -213,6 +228,7 @@ const PermissionIndex = () => {
         open={modalOpen}
         onCancel={closeModal}
         onOk={handleSave}
+        afterOpenChange={handleAfterOpenChange}
         confirmLoading={saving}
         okText='Save'
         destroyOnHidden

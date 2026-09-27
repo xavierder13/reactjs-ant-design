@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Card, Row, Col, Typography, Button,
   Form, Select, DatePicker, Breadcrumb,
-  App, Spin, Radio, Divider, Result, List, Tag,
+  App, Spin, Radio, Divider, Result, Space, Tag,
 } from 'antd';
 import { SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
@@ -155,16 +155,13 @@ const KpiEvaluationCreate = () => {
               <Typography.Text strong style={{ color: '#389e0d' }}>
                 Created ({bulkResult.created.length})
               </Typography.Text>
-              <List
-                size='small'
-                dataSource={bulkResult.created}
-                renderItem={(item) => (
-                  <List.Item>
-                    <Tag color='success'>{item.name}</Tag>
-                  </List.Item>
-                )}
-                style={{ marginBottom: 16 }}
-              />
+              <div style={{ marginTop: 8, marginBottom: 16 }}>
+                <Space wrap>
+                  {bulkResult.created.map((item, i) => (
+                    <Tag color='success' key={item.id ?? i}>{item.name}</Tag>
+                  ))}
+                </Space>
+              </div>
             </>
           )}
 
@@ -173,16 +170,13 @@ const KpiEvaluationCreate = () => {
               <Typography.Text strong type='danger'>
                 Skipped ({bulkResult.skipped.length})
               </Typography.Text>
-              <List
-                size='small'
-                dataSource={bulkResult.skipped}
-                renderItem={(item) => (
-                  <List.Item>
+              <Space direction='vertical' size={4} style={{ display: 'flex', marginTop: 8, marginBottom: 16 }}>
+                {bulkResult.skipped.map((item, i) => (
+                  <div key={item.id ?? i}>
                     <Tag color='error'>{item.name}</Tag> — {item.reason}
-                  </List.Item>
-                )}
-                style={{ marginBottom: 16 }}
-              />
+                  </div>
+                ))}
+              </Space>
             </>
           )}
 

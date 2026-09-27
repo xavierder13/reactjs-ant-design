@@ -616,7 +616,7 @@ const ViewManpowerRequest = () => {
                         )}
                       </Space>
                     ) : (
-                      <Space direction="vertical" size={4}>
+                      <Space orientation="vertical" size={4}>
                         {canEdit && (
                           <Upload
                             accept=".jpeg,.jpg,.png,.docs,.docx,.pdf"
