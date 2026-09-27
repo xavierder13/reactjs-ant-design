@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Table, Button, Modal, Form, Select, InputNumber, Space, Tooltip, Empty, App } from "antd";
+import { Table, Button, Modal, Form, Select, InputNumber, Space, Tooltip, App } from "antd";
 import { PlusOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
 
 import useAuth from "../../../../../hooks/useAuth";
@@ -15,6 +15,10 @@ const currentYear = new Date().getFullYear();
 // Matches EmployeeKeyPerformanceController@store's own validation
 // (`between:2020, <current year>`) exactly.
 const ALL_YEARS = Array.from({ length: currentYear - 2020 + 1 }, (_, i) => 2020 + i);
+// Stable reference (not a fresh `[]` literal on every render) so the
+// yearsPresent useMemo below doesn't invalidate every render when
+// pendingRecords is undefined.
+const EMPTY_RECORDS = [];
 
 // Monthly Key Performance is NOT a single-row CRUD record like the other
 // Performance Management sub-tabs — vueportal's own reference
@@ -23,9 +27,20 @@ const ALL_YEARS = Array.from({ length: currentYear - 2020 + 1 }, (_, i) => 2020 
 // 12 rows for that year in one call, and only a row's `grade` is ever
 // individually editable. See keyPerformanceApi.js for the confirmed
 // backend contract.
-export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialRecords }) {
+//
+// Create mode (2026-09-24): matches MonthlyKeyPerformance.vue's own
+// savePeriod()/removePeriod()/saveItem() exactly — in create mode
+// (editedIndex === -1 there), those methods only ever mutate the local
+// `monthly_key_performances` array, never call an API; the whole array is
+// bundled as JSON into EmployeeMasterDataController@store()'s
+// `monthly_key_performances` field alongside the rest of the new
+// employee, confirmed by reading store() directly. Ported the same way:
+// pendingRecords/onPendingRecordsChange (lifted to EmployeeForm.jsx) take
+// over from `records`/the API calls whenever mode === 'create'.
+export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialRecords, pendingRecords, onPendingRecordsChange }) {
   const { message: messageApi } = App.useApp();
   const { hasPermission } = useAuth();
+  const isCreateMode = mode === "create";
   const [records, setRecords] = useState(initialRecords || []);
   const [filterYear, setFilterYear] = useState("all");
 
@@ -44,31 +59,38 @@ export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialReco
   const canEdit = !readOnly && hasPermission("employee-master-data-key-performance-edit");
   const canDelete = !readOnly && hasPermission("employee-master-data-key-performance-delete");
 
+  const displayedRecords = isCreateMode ? (pendingRecords || EMPTY_RECORDS) : records;
+
   const yearsPresent = useMemo(
-    () => [...new Set(records.map((r) => r.year))].sort(),
-    [records]
+    () => [...new Set(displayedRecords.map((r) => r.year))].sort(),
+    [displayedRecords]
   );
   const yearsAvailableToAdd = useMemo(
     () => ALL_YEARS.filter((y) => !yearsPresent.includes(y)),
     [yearsPresent]
   );
 
-  const filteredRecords = filterYear === "all" ? records : records.filter((r) => String(r.year) === String(filterYear));
-
-  if (mode === "create") {
-    return <Empty description="Save the employee first before adding records here." style={{ padding: "24px 0" }} />;
-  }
+  const filteredRecords = filterYear === "all" ? displayedRecords : displayedRecords.filter((r) => String(r.year) === String(filterYear));
 
   const openAddPeriod = () => {
     setPeriodModalMode("add");
-    periodForm.resetFields();
     setPeriodModalOpen(true);
   };
 
   const openDeletePeriod = () => {
     setPeriodModalMode("delete");
-    periodForm.resetFields();
     setPeriodModalOpen(true);
+  };
+
+  // Reset only after the Modal has actually opened, not in
+  // openAddPeriod/openDeletePeriod above — this Modal has destroyOnHidden,
+  // so its <Form> doesn't exist in the tree yet at the moment those
+  // handlers run. Calling periodForm.resetFields() before that triggers
+  // AntD's "Instance created by useForm is not connected to any Form
+  // element" warning — confirmed live (reported against
+  // WorkScheduleTab.jsx, same copy-pasted pattern here).
+  const handlePeriodModalAfterOpenChange = (isOpen) => {
+    if (isOpen) periodForm.resetFields();
   };
 
   const handlePeriodConfirm = async () => {
@@ -76,6 +98,19 @@ export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialReco
     try {
       values = await periodForm.validateFields();
     } catch {
+      return;
+    }
+
+    if (isCreateMode) {
+      if (periodModalMode === "add") {
+        const newRows = MONTHS.map((month) => ({ year: values.year, month, grade: null, id: `local-${values.year}-${month}` }));
+        onPendingRecordsChange([...(pendingRecords || []), ...newRows]);
+        messageApi.success("Period added.");
+      } else {
+        onPendingRecordsChange((pendingRecords || []).filter((r) => String(r.year) !== String(values.year)));
+        messageApi.success("Period removed.");
+      }
+      setPeriodModalOpen(false);
       return;
     }
 
@@ -113,8 +148,13 @@ export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialReco
 
   const openEditGrade = (record) => {
     setEditingRow(record);
-    gradeForm.setFieldsValue({ grade: record.grade });
     setGradeModalOpen(true);
+  };
+
+  // Same reasoning as handlePeriodModalAfterOpenChange above — this
+  // Modal also has destroyOnHidden.
+  const handleGradeModalAfterOpenChange = (isOpen) => {
+    if (isOpen) gradeForm.setFieldsValue({ grade: editingRow?.grade });
   };
 
   const handleGradeSave = async () => {
@@ -122,6 +162,13 @@ export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialReco
     try {
       values = await gradeForm.validateFields();
     } catch {
+      return;
+    }
+
+    if (isCreateMode) {
+      onPendingRecordsChange((pendingRecords || []).map((r) => (r.id === editingRow.id ? { ...r, grade: values.grade } : r)));
+      messageApi.success("Grade updated.");
+      setGradeModalOpen(false);
       return;
     }
 
@@ -169,7 +216,7 @@ export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialReco
         />
         <Space>
           {canDelete && (
-            <Button danger icon={<DeleteOutlined />} disabled={!records.length} onClick={openDeletePeriod}>
+            <Button danger icon={<DeleteOutlined />} disabled={!displayedRecords.length} onClick={openDeletePeriod}>
               Delete Period
             </Button>
           )}
@@ -195,6 +242,7 @@ export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialReco
         open={periodModalOpen}
         onCancel={() => setPeriodModalOpen(false)}
         onOk={handlePeriodConfirm}
+        afterOpenChange={handlePeriodModalAfterOpenChange}
         confirmLoading={periodSaving}
         okText={periodModalMode === "add" ? "Add" : "Delete"}
         okButtonProps={periodModalMode === "delete" ? { danger: true } : undefined}
@@ -215,6 +263,7 @@ export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialReco
         open={gradeModalOpen}
         onCancel={() => setGradeModalOpen(false)}
         onOk={handleGradeSave}
+        afterOpenChange={handleGradeModalAfterOpenChange}
         confirmLoading={gradeSaving}
         okText="Save"
         destroyOnHidden

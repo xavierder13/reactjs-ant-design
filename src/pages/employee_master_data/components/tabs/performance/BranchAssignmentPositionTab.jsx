@@ -12,7 +12,7 @@ const columns = [
   { title: "Remarks", dataIndex: "remarks", key: "remarks" },
 ];
 
-export default function BranchAssignmentPositionTab({ employeeId, mode, initialRecords }) {
+export default function BranchAssignmentPositionTab({ employeeId, mode, initialRecords, pendingRecords, onPendingRecordsChange }) {
   const { branchOptions } = useBranches();
   const { positionOptions } = usePositions();
   // The backend matches branch/position by NAME, not id (confirmed from
@@ -35,6 +35,9 @@ export default function BranchAssignmentPositionTab({ employeeId, mode, initialR
         title="Branch Assignment / Position"
         mode={mode}
         initialRecords={initialRecords}
+        pendingRecords={pendingRecords}
+        onPendingRecordsChange={onPendingRecordsChange}
+        formatPendingValues={(values) => ({ ...values, date_assigned: values.date_assigned.format("YYYY-MM-DD") })}
         permissionPrefix="employee-master-data-branch-assignment-position"
         columns={columns}
         getInitialFormValues={(record) => ({

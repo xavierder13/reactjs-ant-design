@@ -1,10 +1,12 @@
 "use client";
 
-import { Form, Input, Row, Col, DatePicker, Select, Switch, Descriptions, Button, Space, App } from "antd";
+import { Form, Input, Row, Col, DatePicker, Select, Descriptions, Button, Space, Tag, App } from "antd";
 import { CopyOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
 import useBranches from "../../../../hooks/useBranches";
 import useDepartments from "../../../../hooks/useDepartments";
 import usePositions from "../../../../hooks/usePositions";
+import { isActiveValue } from "../../../../utils/employeeStatus";
 
 // Matches vueportal's recruitment portal referral link format exactly
 // (EmployeeInformationTabs.vue's `referralLink` computed property) —
@@ -39,8 +41,21 @@ export default function EmployeeDetailsTab({ initialData, mode }) {
   const { branchOptions } = useBranches();
   const { departmentOptions } = useDepartments();
   const { positionOptions } = usePositions();
+  // Cross-field validation below (Date Resigned >= Date Employed) needs
+  // the shared ancestor Form instance directly — this component only ever
+  // renders bare Form.Item fields (see the header comment), it doesn't own
+  // a <Form> to read `form` off of a prop.
+  const form = Form.useFormInstance();
 
   const isEdit = mode === "edit" || mode === "view";
+  // User-requested, scoped to create mode only: neither date may be in
+  // the future, and Date Resigned can't be earlier than Date Employed.
+  // Not applied to edit mode — that wasn't asked for, and Date Resigned
+  // there is also set automatically by the Offboarding resign/rehire flow
+  // (see patchEmployee in EmployeeForm.jsx), which doesn't go through
+  // this form's own validation at all.
+  const isCreateMode = mode === "create";
+  const disableFutureDates = (current) => current && current.isAfter(dayjs(), "day");
   const referralCode = initialData?.referral?.referral_code;
 
   const copyReferralLink = () => {
@@ -100,14 +115,48 @@ export default function EmployeeDetailsTab({ initialData, mode }) {
           <Form.Item
             label="Date Employed"
             name="date_employed"
-            rules={[{ required: true, message: "Date employed is required" }]}
+            rules={[
+              { required: true, message: "Date employed is required" },
+              ...(isCreateMode ? [{
+                validator: (_, value) => (
+                  value && value.isAfter(dayjs(), "day")
+                    ? Promise.reject(new Error("Date Employed cannot be a future date."))
+                    : Promise.resolve()
+                ),
+              }] : []),
+            ]}
           >
-            <DatePicker style={{ width: "100%" }} format="MM-DD-YYYY" />
+            <DatePicker
+              style={{ width: "100%" }}
+              format="MM-DD-YYYY"
+              disabledDate={isCreateMode ? disableFutureDates : undefined}
+            />
           </Form.Item>
         </Col>
         <Col xs={24} md={8} lg={6}>
-          <Form.Item label="Date Resigned" name="date_resigned">
-            <DatePicker style={{ width: "100%" }} format="MM-DD-YYYY" />
+          <Form.Item
+            label="Date Resigned"
+            name="date_resigned"
+            dependencies={isCreateMode ? ["date_employed"] : []}
+            rules={isCreateMode ? [{
+              validator: (_, value) => {
+                if (!value) return Promise.resolve();
+                if (value.isAfter(dayjs(), "day")) {
+                  return Promise.reject(new Error("Date Resigned cannot be a future date."));
+                }
+                const dateEmployed = form.getFieldValue("date_employed");
+                if (dateEmployed && value.isBefore(dateEmployed, "day")) {
+                  return Promise.reject(new Error("Date Resigned must be on or after Date Employed."));
+                }
+                return Promise.resolve();
+              },
+            }] : []}
+          >
+            <DatePicker
+              style={{ width: "100%" }}
+              format="MM-DD-YYYY"
+              disabledDate={isCreateMode ? disableFutureDates : undefined}
+            />
           </Form.Item>
         </Col>
         <Col xs={24} md={8} lg={6}>
@@ -119,13 +168,28 @@ export default function EmployeeDetailsTab({ initialData, mode }) {
 
       <Row gutter={16}>
         <Col xs={24} md={8} lg={6}>
-          <Form.Item
-            label="Active"
-            name="active"
-            valuePropName="checked"
-            initialValue={mode === "create" ? true : undefined}
-          >
-            <Switch />
+          {/* Read-only: matches EmployeeInformationTabs.vue's v-switch
+              (readonly, with a status v-chip in its label slot) — Active is
+              set automatically by the offboarding save flow
+              (OffboardingTab.jsx -> employeeApi.resign) and the rehire flow,
+              never entered directly on this form. `active` still needs to be
+              a registered field (hidden, not just displayed) so it round-trips
+              through EmployeeForm.jsx's buildPayload on save — without it,
+              validateFields() drops the value and every save would silently
+              send active:false. */}
+          <Form.Item name="active" hidden initialValue={mode === "create" ? true : undefined}>
+            <Input type="hidden" />
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.active !== curr.active}>
+            {({ getFieldValue }) => {
+              const isActive = isActiveValue(getFieldValue("active"));
+              return (
+                <Space>
+                  Status
+                  <Tag color={isActive ? "success" : "default"}>{isActive ? "Active" : "Inactive"}</Tag>
+                </Space>
+              );
+            }}
           </Form.Item>
         </Col>
       </Row>

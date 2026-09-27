@@ -88,7 +88,7 @@ export default function PersonalInformation() {
             </Col>
             <Col xs={24} md={8} lg={6}>
               <Form.Item label="Age">
-                <Input value={age} readOnly disabled />
+                <Input value={age} readOnly />
               </Form.Item>
             </Col>
             <Col xs={24} md={8} lg={6}>
@@ -116,10 +116,7 @@ export default function PersonalInformation() {
               <Form.Item
                 label="Contact Number"
                 name="contact"
-                rules={[
-                  { required: true, message: "Contact number is required" },
-                  { pattern: /^[0-9]+$/, message: "Numbers only allowed" },
-                ]}
+                rules={[{ required: true, message: "Contact number is required" }]}
               >
                 <Input />
               </Form.Item>

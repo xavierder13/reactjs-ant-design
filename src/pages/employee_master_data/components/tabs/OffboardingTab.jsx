@@ -33,7 +33,7 @@ const ACCEPTED_FILE_TYPES = ".jpeg,.jpg,.png,.docs,.docx,.pdf";
 // resolved — see offboardingApi.js for the full evidence. It also carries
 // a confirmed seeder/middleware permission-string mismatch, documented
 // there too; this tab checks the middleware's real strings.
-export default function OffboardingTab({ mode = "create", initialData }) {
+export default function OffboardingTab({ mode = "create", initialData, onEmployeeChange }) {
   const { message: messageApi } = App.useApp();
   const { hasPermission } = useAuth();
   const employeeId = initialData?.id;
@@ -87,23 +87,12 @@ export default function OffboardingTab({ mode = "create", initialData }) {
   const openCreate = () => {
     setEditing(null);
     clearPendingFiles();
-    form.resetFields();
     setModalOpen(true);
   };
 
   const openEdit = (record) => {
     setEditing(record);
     clearPendingFiles();
-    form.setFieldsValue({
-      last_day_of_work: record.last_day_of_work ? dayjs(record.last_day_of_work) : null,
-      reason_of_resignation: record.reason_of_resignation || undefined,
-      resignation_date_filed: record.resignation_date_filed ? dayjs(record.resignation_date_filed) : null,
-      resignation_date_received: record.resignation_date_received ? dayjs(record.resignation_date_received) : null,
-      resignation_effectivity_date: record.resignation_effectivity_date ? dayjs(record.resignation_effectivity_date) : null,
-      coe_is_issued: Boolean(record.coe_is_issued),
-      last_pay_is_issued: Boolean(record.last_pay_is_issued),
-      compliance: record.compliance || undefined,
-    });
     setModalOpen(true);
   };
 
@@ -111,7 +100,32 @@ export default function OffboardingTab({ mode = "create", initialData }) {
     setModalOpen(false);
     setEditing(null);
     clearPendingFiles();
-    form.resetFields();
+  };
+
+  // Populate/reset the form only after the Modal has actually opened, not
+  // in openCreate/openEdit above — this Modal has destroyOnHidden, so its
+  // <Form> doesn't exist in the tree yet at the moment those handlers run.
+  // Calling form.resetFields()/setFieldsValue() before that triggers
+  // AntD's "Instance created by useForm is not connected to any Form
+  // element" warning — confirmed live (reported against WorkScheduleTab.jsx,
+  // same copy-pasted pattern here). See SubmitAcknowledgmentReportModal.jsx
+  // for the same afterOpenChange pattern, done correctly from the start.
+  const handleAfterOpenChange = (isOpen) => {
+    if (!isOpen) return;
+    if (editing) {
+      form.setFieldsValue({
+        last_day_of_work: editing.last_day_of_work ? dayjs(editing.last_day_of_work) : null,
+        reason_of_resignation: editing.reason_of_resignation || undefined,
+        resignation_date_filed: editing.resignation_date_filed ? dayjs(editing.resignation_date_filed) : null,
+        resignation_date_received: editing.resignation_date_received ? dayjs(editing.resignation_date_received) : null,
+        resignation_effectivity_date: editing.resignation_effectivity_date ? dayjs(editing.resignation_effectivity_date) : null,
+        coe_is_issued: Boolean(editing.coe_is_issued),
+        last_pay_is_issued: Boolean(editing.last_pay_is_issued),
+        compliance: editing.compliance || undefined,
+      });
+    } else {
+      form.resetFields();
+    }
   };
 
   const buildFormData = (values) => {
@@ -138,9 +152,27 @@ export default function OffboardingTab({ mode = "create", initialData }) {
   // time this runs, so a failure here is surfaced but doesn't roll back
   // the offboarding save (matching the Vue reference, which has no
   // rollback either).
+  //
+  // Real bug found 2026-09-23: the resign call flips `active` server-side,
+  // but nothing told the rest of this page (Card title, Employee Details
+  // Status) about it — they kept showing the value from when the page
+  // first loaded. Fixed to match Offboarding.vue's resignEmployee()
+  // exactly: compute the resulting `active` client-side with the SAME
+  // date comparison the backend's resign() endpoint uses
+  // (EmployeeMasterDataController@resign — a future-dated resignation
+  // stays Active, today-or-earlier goes Inactive), then hand it to
+  // EmployeeForm.jsx via onEmployeeChange (React's equivalent of Vue's
+  // `$emit('updateStatus', {active, date_resigned})`).
   const resignEmployee = async (lastDayOfWork) => {
     try {
       await employeeApi.resign({ employee_id: employeeId, date_resigned: lastDayOfWork });
+
+      let active = 1;
+      if (lastDayOfWork) {
+        const today = dayjs().startOf("day");
+        active = dayjs(lastDayOfWork).startOf("day").isAfter(today) ? 1 : 0;
+      }
+      onEmployeeChange?.({ active, date_resigned: lastDayOfWork });
     } catch (error) {
       handleApiError(error, messageApi);
     }
@@ -256,6 +288,7 @@ export default function OffboardingTab({ mode = "create", initialData }) {
         open={modalOpen}
         onCancel={closeModal}
         onOk={handleSave}
+        afterOpenChange={handleAfterOpenChange}
         confirmLoading={saving}
         okText="Save"
         width={720}

@@ -101,8 +101,55 @@ function FileSlot({ label, title, employeeId, initialFiles, readOnly }) {
   );
 }
 
-export default function EvaluationRegularizationTab({ employeeId, mode, initialFiles = [] }) {
+// Staged (not yet uploaded) version of FileSlot for create mode — matches
+// Offboarding.vue-style local staging, not an API call: picks a file
+// locally and reports it up via onPendingFilesChange, bundled into the
+// employee_files[]/document_types[] fields on the initial create request
+// (see EmployeeForm.jsx). Uses the SAME shared pendingFiles array
+// PersonalDataTab's Files & Requirements writes into — matches the
+// backend, which puts regularization files through that exact same
+// employee_files[]/document_types[] mechanism (confirmed by reading
+// EmployeeMasterDataController@store()'s save() call directly: Vue's own
+// regularization_file_input/regularization_memo_file_input are appended
+// into the same formData.append('employee_files[]', ...) calls as the
+// generic Files & Requirements ones, not a separate field). `source` tags
+// which UI staged an entry so each one only displays/edits its own.
+function PendingFileSlot({ label, documentType, pendingFiles, onPendingFilesChange, readOnly }) {
+  const entry = pendingFiles.find((f) => f.source === "regularization" && f.document_type === documentType);
+
+  const handlePick = (file) => {
+    const others = pendingFiles.filter((f) => !(f.source === "regularization" && f.document_type === documentType));
+    onPendingFilesChange([...others, { id: `regularization-${documentType}`, file, document_type: documentType, source: "regularization" }]);
+  };
+
+  const handleRemove = () => {
+    onPendingFilesChange(pendingFiles.filter((f) => !(f.source === "regularization" && f.document_type === documentType)));
+  };
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <Typography.Text strong style={{ display: "block", marginBottom: 8 }}>{label}</Typography.Text>
+      {entry ? (
+        <Space>
+          <Typography.Text>{entry.file.name}</Typography.Text>
+          {!readOnly && (
+            <Button type="link" danger icon={<DeleteOutlined />} onClick={handleRemove} />
+          )}
+        </Space>
+      ) : (
+        !readOnly && (
+          <Upload beforeUpload={(file) => { handlePick(file); return false; }} showUploadList={false}>
+            <Button icon={<UploadOutlined />}>Select File</Button>
+          </Upload>
+        )
+      )}
+    </div>
+  );
+}
+
+export default function EvaluationRegularizationTab({ employeeId, mode, initialFiles = [], pendingFiles = [], onPendingFilesChange }) {
   const readOnly = mode === "view";
+  const isCreateMode = mode === "create";
 
   return (
     <div>
@@ -123,6 +170,17 @@ export default function EvaluationRegularizationTab({ employeeId, mode, initialF
             title={slot.title}
             employeeId={employeeId}
             initialFiles={initialFiles}
+            readOnly={readOnly}
+          />
+        ))
+      ) : isCreateMode ? (
+        SLOTS.map((slot) => (
+          <PendingFileSlot
+            key={slot.key}
+            label={slot.title}
+            documentType={slot.title}
+            pendingFiles={pendingFiles}
+            onPendingFilesChange={onPendingFilesChange}
             readOnly={readOnly}
           />
         ))

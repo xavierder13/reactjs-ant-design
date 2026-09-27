@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Tabs } from "antd";
 
 import useAuth from "../../../../hooks/useAuth";
@@ -26,9 +27,25 @@ import TrainingTab from "./performance/TrainingTab";
 // Each sub-tab is hidden entirely (not just disabled) for a user without
 // its own `-list` permission, matching vueportal's own
 // EmployeeInformationTabs.vue `tabItems` computed property.
-export default function PerformanceManagementTab({ mode = "create", initialData }) {
+// onActiveSubTabChange: reports the active sub-tab key up to
+// EmployeeForm.jsx (via EmployeeTabs.jsx) — needed to decide Save-button
+// visibility, matching EmployeeInformationTabs.vue's
+// `currPerformanceTabText == 'Evaluation & Regularization'` check (Save
+// only shows on that one sub-tab, never the other 6). See EmployeeForm.jsx.
+// pendingCreateData/onPendingCreateDataChange (create mode only): one
+// object + one updater lifted all the way to EmployeeForm.jsx, holding
+// every sub-tab's staged-but-not-yet-saved rows — matches
+// EmployeeMasterDataController@store() bundling all of these (except
+// Offboarding, which store() has no handling for at all) into the SAME
+// request that creates the employee. Each sub-tab reads/writes only its
+// own named slice via a tiny (key) => value / (value) => update(key,
+// value) adapter, so this component stays a single prop pair instead of
+// threading 6 separate pairs.
+export default function PerformanceManagementTab({ mode = "create", initialData, onActiveSubTabChange, pendingCreateData, onPendingCreateDataChange }) {
   const { hasPermission } = useAuth();
   const employeeId = initialData?.id;
+  const pending = (key) => pendingCreateData?.[key] || [];
+  const setPending = (key) => (value) => onPendingCreateDataChange(key, value);
 
   const allItems = [
     {
@@ -40,6 +57,8 @@ export default function PerformanceManagementTab({ mode = "create", initialData 
           employeeId={employeeId}
           mode={mode}
           initialFiles={initialData?.files}
+          pendingFiles={pendingCreateData?.files || []}
+          onPendingFilesChange={setPending("files")}
         />
       ),
     },
@@ -52,6 +71,8 @@ export default function PerformanceManagementTab({ mode = "create", initialData 
           employeeId={employeeId}
           mode={mode}
           initialRecords={initialData?.monthly_key_performances}
+          pendingRecords={pending("monthlyKeyPerformances")}
+          onPendingRecordsChange={setPending("monthlyKeyPerformances")}
         />
       ),
     },
@@ -64,6 +85,8 @@ export default function PerformanceManagementTab({ mode = "create", initialData 
           employeeId={employeeId}
           mode={mode}
           initialRecords={initialData?.classroom_performance_ratings}
+          pendingRecords={pending("classroomPerformanceRatings")}
+          onPendingRecordsChange={setPending("classroomPerformanceRatings")}
         />
       ),
     },
@@ -76,6 +99,8 @@ export default function PerformanceManagementTab({ mode = "create", initialData 
           employeeId={employeeId}
           mode={mode}
           initialRecords={initialData?.ojt_performance_ratings}
+          pendingRecords={pending("ojtPerformanceRatings")}
+          onPendingRecordsChange={setPending("ojtPerformanceRatings")}
         />
       ),
     },
@@ -88,6 +113,8 @@ export default function PerformanceManagementTab({ mode = "create", initialData 
           employeeId={employeeId}
           mode={mode}
           initialRecords={initialData?.branch_assignment_positions}
+          pendingRecords={pending("branchAssignmentPositions")}
+          onPendingRecordsChange={setPending("branchAssignmentPositions")}
         />
       ),
     },
@@ -100,6 +127,8 @@ export default function PerformanceManagementTab({ mode = "create", initialData 
           employeeId={employeeId}
           mode={mode}
           initialRecords={initialData?.merit_histories}
+          pendingRecords={pending("meritHistories")}
+          onPendingRecordsChange={setPending("meritHistories")}
         />
       ),
     },
@@ -112,18 +141,28 @@ export default function PerformanceManagementTab({ mode = "create", initialData 
           employeeId={employeeId}
           mode={mode}
           initialRecords={initialData?.trainings}
+          pendingRecords={pending("trainings")}
+          onPendingRecordsChange={setPending("trainings")}
         />
       ),
     },
   ];
 
   // On create (no employeeId yet, permissions still apply): show every tab
-  // the user is permitted to eventually use, each rendering its own
-  // "save the employee first" Empty state — matches every sub-tab
-  // component's own create-mode guard.
+  // the user is permitted to eventually use — each now supports staging
+  // its own records locally (see pendingCreateData above) instead of
+  // blocking until the employee is saved.
   const items = allItems.filter((item) => hasPermission(item.permission));
+
+  const [activeKey, setActiveKey] = useState(items[0]?.key);
+  useEffect(() => { onActiveSubTabChange?.(activeKey); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!items.length) return null;
 
-  return <Tabs defaultActiveKey={items[0].key} items={items} />;
+  const handleChange = (key) => {
+    setActiveKey(key);
+    onActiveSubTabChange?.(key);
+  };
+
+  return <Tabs activeKey={activeKey} onChange={handleChange} items={items} />;
 }

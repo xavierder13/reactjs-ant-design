@@ -45,7 +45,7 @@ export default function SubmitAcknowledgmentReportModal({ open, employees, onClo
         branch_id: branchId,
         employees: employees.map((e) => ({ employee_id: e.id, is_active: statusById[e.id] ? 1 : 0 })),
       });
-      messageApi.success('Acknowledgment report submitted.');
+      messageApi.success('Branch report submitted.');
       onSubmitted?.();
       onClose();
     } catch (error) {
@@ -58,7 +58,7 @@ export default function SubmitAcknowledgmentReportModal({ open, employees, onClo
   return (
     <Modal
       open={open}
-      title="Submit Acknowledgment Report"
+      title="Submit Branch Report"
       onCancel={onClose}
       afterOpenChange={handleAfterOpenChange}
       destroyOnHidden

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Table, Button, Modal, Form, Space, Popconfirm, Tooltip, Empty, App } from "antd";
+import { Table, Button, Modal, Form, Space, Popconfirm, Tooltip, App } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 import useAuth from "../../../../../hooks/useAuth";
@@ -17,6 +17,18 @@ import handleApiError from "../../../../../utils/handleApiError";
 // NOT built on this component — it's a batch-per-year mutation, not
 // single-row CRUD; see MonthlyKeyPerformanceTab.jsx.
 //
+// Create mode (2026-09-24): matches EmployeeMasterData2.vue's save() —
+// `EmployeeMasterDataController@store()` accepts each of these 5 record
+// types as a JSON array field (`classroom_performance_ratings`,
+// `ojt_performance_ratings`, `branch_assignment_positions`,
+// `merit_histories`, `trainings`) bundled into the SAME multipart request
+// that creates the employee, confirmed by reading store() directly — so
+// "save the employee first" was a frontend-only restriction, not a real
+// backend one. In create mode this component now stages rows locally
+// (controlled via `pendingRecords`/`onPendingRecordsChange`, lifted all
+// the way to EmployeeForm.jsx) instead of calling onCreate/onUpdate/
+// onDelete, which all require a real employee id that doesn't exist yet.
+//
 // Props:
 //   title               section heading
 //   mode                'create' | 'edit' | 'view'
@@ -25,10 +37,12 @@ import handleApiError from "../../../../../utils/handleApiError";
 //   columns             AntD Table columns (Actions column is appended by this component)
 //   renderFields        (form) => JSX of the modal's Form.Item(s)
 //   getInitialFormValues (record | null) => values for form.setFieldsValue on open
-//   onCreate            async (values) => { success, records } | { success: false, errors }
-//   onUpdate            async (record, values) => { success, records } | { success: false, errors }
-//   onDelete            async (record) => fresh records array (delete failures are genuine HTTP
-//                        errors here, not a 200-with-errors-body, so this one just throws normally)
+//   onCreate            async (values) => { success, records } | { success: false, errors } — edit/view mode only
+//   onUpdate            async (record, values) => { success, records } | { success: false, errors } — edit/view mode only
+//   onDelete            async (record) => fresh records array — edit/view mode only (delete failures are
+//                        genuine HTTP errors here, not a 200-with-errors-body, so this one just throws normally)
+//   pendingRecords         create mode only — the staged (not yet saved) rows, owned by EmployeeForm.jsx
+//   onPendingRecordsChange create mode only — (updatedArray) => void
 //
 // onCreate/onUpdate's `{ success: false, errors }` shape matches every one
 // of these vueportal controllers' own quirk: `store`/`update` return HTTP
@@ -47,9 +61,19 @@ export default function PerformanceRecordTab({
   onCreate,
   onUpdate,
   onDelete,
+  pendingRecords,
+  onPendingRecordsChange,
+  // Converts raw form values (which may hold dayjs instances for date
+  // fields) into plain, JSON-safe values before staging into
+  // pendingRecords — without this, a dayjs instance would both crash the
+  // Table's render (React can't render an arbitrary object as a cell) and
+  // serialize wrong in EmployeeForm.jsx's final create payload. Defaults
+  // to identity for sub-modules with no date fields.
+  formatPendingValues = (values) => values,
 }) {
   const { message: messageApi } = App.useApp();
   const { hasPermission } = useAuth();
+  const isCreateMode = mode === "create";
   const [records, setRecords] = useState(initialRecords || []);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -62,30 +86,58 @@ export default function PerformanceRecordTab({
   const canEdit = !readOnly && hasPermission(`${permissionPrefix}-edit`);
   const canDelete = !readOnly && hasPermission(`${permissionPrefix}-delete`);
 
-  if (mode === "create") {
-    return <Empty description="Save the employee first before adding records here." style={{ padding: "24px 0" }} />;
-  }
+  const displayedRecords = isCreateMode ? (pendingRecords || []) : records;
 
   const openCreate = () => {
     setEditing(null);
-    form.resetFields();
-    form.setFieldsValue(getInitialFormValues(null));
     setModalOpen(true);
   };
 
   const openEdit = (record) => {
     setEditing(record);
-    form.setFieldsValue(getInitialFormValues(record));
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
     setEditing(null);
+  };
+
+  // Populate/reset the form only after the Modal has actually opened, not
+  // in openCreate/openEdit above — this Modal has destroyOnHidden, so its
+  // <Form> doesn't exist in the tree yet at the moment those handlers run.
+  // Calling form.resetFields()/setFieldsValue() before that triggers
+  // AntD's "Instance created by useForm is not connected to any Form
+  // element" warning — confirmed live (reported against WorkScheduleTab.jsx,
+  // same copy-pasted pattern here, fixed across all 4 consumers of this
+  // shared component in one place). See SubmitAcknowledgmentReportModal.jsx
+  // for the same afterOpenChange pattern, done correctly from the start.
+  const handleAfterOpenChange = (isOpen) => {
+    if (!isOpen) return;
     form.resetFields();
+    form.setFieldsValue(getInitialFormValues(editing));
+  };
+
+  const handleSavePending = async () => {
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    const formatted = formatPendingValues(values);
+    const updated = editing
+      ? (pendingRecords || []).map((r) => (r.id === editing.id ? { ...editing, ...formatted } : r))
+      : [...(pendingRecords || []), { ...formatted, id: `local-${Date.now()}` }];
+    onPendingRecordsChange(updated);
+    messageApi.success(editing ? "Record updated." : "Record added.");
+    closeModal();
   };
 
   const handleSave = async () => {
+    if (isCreateMode) return handleSavePending();
+
     let values;
     try {
       values = await form.validateFields();
@@ -113,6 +165,11 @@ export default function PerformanceRecordTab({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDeletePending = (record) => {
+    onPendingRecordsChange((pendingRecords || []).filter((r) => r.id !== record.id));
+    messageApi.success("Record removed.");
   };
 
   const handleDelete = async (record) => {
@@ -149,7 +206,7 @@ export default function PerformanceRecordTab({
           <Popconfirm
             title="Delete this record?"
             description="This cannot be undone."
-            onConfirm={() => handleDelete(record)}
+            onConfirm={() => (isCreateMode ? handleDeletePending(record) : handleDelete(record))}
             okButtonProps={{ danger: true, loading: deletingId === record.id }}
             okText="Delete"
           >
@@ -175,7 +232,7 @@ export default function PerformanceRecordTab({
       <Table
         rowKey="id"
         size="small"
-        dataSource={records}
+        dataSource={displayedRecords}
         columns={canEdit || canDelete ? [...columns, actionColumn] : columns}
         pagination={false}
         scroll={{ x: "max-content" }}
@@ -186,6 +243,7 @@ export default function PerformanceRecordTab({
         open={modalOpen}
         onCancel={closeModal}
         onOk={handleSave}
+        afterOpenChange={handleAfterOpenChange}
         confirmLoading={saving}
         okText="Save"
         destroyOnHidden

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Table, Button, Modal, Form, Input, Select, DatePicker, Space,
-  Popconfirm, Tooltip, Empty, Typography, Upload, App,
+  Popconfirm, Tooltip, Typography, Upload, App,
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, DownloadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -73,9 +73,21 @@ function FileSlotField({ label, documentType, record, pendingFile, onPendingFile
   );
 }
 
-export default function NteRecordsTab({ employeeId, mode, initialRecords }) {
+// Create mode (2026-09-24): matches EmployeeMasterDataController@store()'s
+// `explanations` field — a JSON array bundled into the SAME multipart
+// request that creates the employee, with each row's `nte_file`/
+// `explanation_file` sent as parallel-indexed `nte_files[]`/
+// `explanation_files[]` fields (confirmed by reading store() directly —
+// "save the employee first" was a frontend-only restriction). Each staged
+// row here keeps its picked File objects directly on the record (not the
+// shared pendingFiles array Files & Requirements/Evaluation &
+// Regularization use — these are per-row, not a shared pool), and
+// EmployeeForm.jsx unpacks them into the two parallel arrays when
+// building the final create request.
+export default function NteRecordsTab({ employeeId, mode, initialRecords, pendingRecords, onPendingRecordsChange }) {
   const { message: messageApi } = App.useApp();
   const { hasPermission } = useAuth();
+  const isCreateMode = mode === "create";
   const [records, setRecords] = useState(initialRecords || []);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -92,9 +104,7 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords }) {
   const canDownloadFile = hasPermission("employee-master-data-nte-file-download");
   const canDeleteFile = !readOnly && hasPermission("employee-master-data-nte-file-delete");
 
-  if (mode === "create") {
-    return <Empty description="Save the employee first before adding records here." style={{ padding: "24px 0" }} />;
-  }
+  const displayedRecords = isCreateMode ? (pendingRecords || []) : records;
 
   const updateEditingFromResponse = (fresh) => {
     setRecords(fresh);
@@ -105,8 +115,6 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords }) {
     setEditing(null);
     setPendingNteFile(null);
     setPendingExplanationFile(null);
-    form.resetFields();
-    form.setFieldsValue({ status: "Open" });
     setModalOpen(true);
   };
 
@@ -114,15 +122,6 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords }) {
     setEditing(record);
     setPendingNteFile(null);
     setPendingExplanationFile(null);
-    form.setFieldsValue({
-      date_issued: record.date_issued ? dayjs(record.date_issued) : null,
-      issued_by: record.issued_by,
-      nte_code: record.nte_code,
-      violation: record.violation,
-      explanation_date: record.explanation_date ? dayjs(record.explanation_date) : null,
-      remarks: record.remarks,
-      status: record.status,
-    });
     setModalOpen(true);
   };
 
@@ -131,7 +130,36 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords }) {
     setEditing(null);
     setPendingNteFile(null);
     setPendingExplanationFile(null);
-    form.resetFields();
+  };
+
+  // Populate/reset the form only after the Modal has actually opened, not
+  // in openCreate/openEdit above — this Modal has destroyOnHidden, so its
+  // <Form> doesn't exist in the tree yet at the moment those handlers run.
+  // Calling form.resetFields()/setFieldsValue() before that triggers
+  // AntD's "Instance created by useForm is not connected to any Form
+  // element" warning — confirmed live (reported against WorkScheduleTab.jsx,
+  // same copy-pasted pattern here). See SubmitAcknowledgmentReportModal.jsx
+  // for the same afterOpenChange pattern, done correctly from the start.
+  const handleAfterOpenChange = (isOpen) => {
+    if (!isOpen) return;
+    if (editing) {
+      form.setFieldsValue({
+        date_issued: editing.date_issued ? dayjs(editing.date_issued) : null,
+        issued_by: editing.issued_by,
+        nte_code: editing.nte_code,
+        violation: editing.violation,
+        explanation_date: editing.explanation_date ? dayjs(editing.explanation_date) : null,
+        remarks: editing.remarks,
+        status: editing.status,
+      });
+      if (isCreateMode) {
+        setPendingNteFile(editing.nte_file || null);
+        setPendingExplanationFile(editing.explanation_file || null);
+      }
+    } else {
+      form.resetFields();
+      form.setFieldsValue({ status: "Open" });
+    }
   };
 
   const buildFormData = (values) => {
@@ -149,7 +177,37 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords }) {
     return formData;
   };
 
+  const handleSavePending = async () => {
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    const record = {
+      id: editing?.id || `local-${Date.now()}`,
+      date_issued: values.date_issued.format("YYYY-MM-DD"),
+      issued_by: values.issued_by,
+      nte_code: values.nte_code,
+      violation: values.violation,
+      explanation_date: values.explanation_date ? values.explanation_date.format("YYYY-MM-DD") : null,
+      remarks: values.remarks || null,
+      status: values.status || "Open",
+      nte_file: pendingNteFile,
+      explanation_file: pendingExplanationFile,
+    };
+    const updated = editing
+      ? (pendingRecords || []).map((r) => (r.id === editing.id ? record : r))
+      : [...(pendingRecords || []), record];
+    onPendingRecordsChange(updated);
+    messageApi.success(editing ? "Record updated." : "Record added.");
+    closeModal();
+  };
+
   const handleSave = async () => {
+    if (isCreateMode) return handleSavePending();
+
     let values;
     try {
       values = await form.validateFields();
@@ -181,6 +239,11 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords }) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDeletePending = (record) => {
+    onPendingRecordsChange((pendingRecords || []).filter((r) => r.id !== record.id));
+    messageApi.success("Record removed.");
   };
 
   const handleDelete = async (record) => {
@@ -217,7 +280,7 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords }) {
             <Popconfirm
               title="Delete this record?"
               description="This cannot be undone."
-              onConfirm={() => handleDelete(record)}
+              onConfirm={() => (isCreateMode ? handleDeletePending(record) : handleDelete(record))}
               okButtonProps={{ danger: true, loading: deletingId === record.id }}
               okText="Delete"
             >
@@ -241,13 +304,14 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords }) {
         </div>
       )}
 
-      <Table rowKey="id" size="small" dataSource={records} columns={columns} pagination={false} scroll={{ x: "max-content" }} />
+      <Table rowKey="id" size="small" dataSource={displayedRecords} columns={columns} pagination={false} scroll={{ x: "max-content" }} />
 
       <Modal
         title={editing ? "Edit Issued NTE" : "Add Issued NTE"}
         open={modalOpen}
         onCancel={closeModal}
         onOk={handleSave}
+        afterOpenChange={handleAfterOpenChange}
         confirmLoading={saving}
         okText="Save"
         width={720}
@@ -278,10 +342,14 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords }) {
 
           {/* Same backend limitation as Disciplinary Actions: once a slot
               has a file, re-uploading is silently ignored — delete first
-              to replace. Only available once the record exists (edit),
-              matching how Vue's own file slots work — a brand-new record
-              has no id yet to scope a file_delete/file_download call to. */}
-          {editing ? (
+              to replace. Only available for a real, already-saved record
+              (edit mode), matching how Vue's own file slots work — a
+              brand-new record has no id yet to scope a
+              file_delete/file_download call to. Create mode always uses
+              the plain pending-file pickers below, even when "editing" a
+              locally-staged row — see handleAfterOpenChange, which seeds
+              them from that row's own nte_file/explanation_file. */}
+          {!isCreateMode && editing ? (
             <>
               <FileSlotField
                 label="NTE File"

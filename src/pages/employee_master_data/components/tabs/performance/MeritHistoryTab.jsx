@@ -8,12 +8,15 @@ const columns = [
   { title: "Salary", dataIndex: "salary", key: "salary", render: (v) => v ?? "-" },
 ];
 
-export default function MeritHistoryTab({ employeeId, mode, initialRecords }) {
+export default function MeritHistoryTab({ employeeId, mode, initialRecords, pendingRecords, onPendingRecordsChange }) {
   return (
     <PerformanceRecordTab
       title="Merit History"
       mode={mode}
       initialRecords={initialRecords}
+      pendingRecords={pendingRecords}
+      onPendingRecordsChange={onPendingRecordsChange}
+      formatPendingValues={(values) => ({ ...values, merit_date: values.merit_date.format("YYYY-MM-DD") })}
       permissionPrefix="employee-master-data-merit-history"
       columns={columns}
       getInitialFormValues={(record) => ({

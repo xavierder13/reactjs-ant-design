@@ -7,12 +7,14 @@ const columns = [
   { title: "Grade (%)", dataIndex: "grade", key: "grade", render: (v) => v ?? "-" },
 ];
 
-export default function ClassroomPerformanceRatingTab({ employeeId, mode, initialRecords }) {
+export default function ClassroomPerformanceRatingTab({ employeeId, mode, initialRecords, pendingRecords, onPendingRecordsChange }) {
   return (
     <PerformanceRecordTab
       title="Classroom Performance Rating"
       mode={mode}
       initialRecords={initialRecords}
+      pendingRecords={pendingRecords}
+      onPendingRecordsChange={onPendingRecordsChange}
       permissionPrefix="employee-master-data-classroom-performance-rating"
       columns={columns}
       getInitialFormValues={(record) => ({

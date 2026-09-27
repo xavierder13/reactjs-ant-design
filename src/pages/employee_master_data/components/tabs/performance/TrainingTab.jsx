@@ -9,12 +9,14 @@ const columns = [
   { title: "Remarks", dataIndex: "remarks", key: "remarks", render: (v) => v || "-" },
 ];
 
-export default function TrainingTab({ employeeId, mode, initialRecords }) {
+export default function TrainingTab({ employeeId, mode, initialRecords, pendingRecords, onPendingRecordsChange }) {
   return (
     <PerformanceRecordTab
       title="Training"
       mode={mode}
       initialRecords={initialRecords}
+      pendingRecords={pendingRecords}
+      onPendingRecordsChange={onPendingRecordsChange}
       permissionPrefix="employee-master-data-training"
       columns={columns}
       getInitialFormValues={(record) => ({

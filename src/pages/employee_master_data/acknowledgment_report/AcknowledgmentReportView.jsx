@@ -45,12 +45,12 @@ export default function AcknowledgmentReportView() {
         style={{ margin: "16px 0", marginTop: 0 }}
         items={[
           { title: <Link to="/">Home</Link> },
-          { title: <Link to="/acknowledgment-reports">Acknowledgment Reports</Link> },
+          { title: <Link to="/acknowledgment-reports">Branch Reports</Link> },
           { title: "View" },
         ]}
       />
       <Card
-        title="Acknowledgment Report"
+        title="Branch Report"
         extra={<Button onClick={handleExport}>Export</Button>}
       >
         <Descriptions

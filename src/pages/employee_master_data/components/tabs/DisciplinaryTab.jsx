@@ -21,9 +21,14 @@ import DisciplinaryRecordsTab from "./disciplinary/DisciplinaryRecordsTab";
 // Each sub-tab is hidden entirely (not just disabled) for a user without
 // its own `-list` permission, matching PerformanceManagementTab.jsx and
 // vueportal's own `EmployeeInformationTabs.vue` `tabItems` pattern.
-export default function DisciplinaryTab({ mode = "create", initialData }) {
+// pendingCreateData/onPendingCreateDataChange (create mode only): see
+// PerformanceManagementTab.jsx for why this is one object + one updater
+// rather than a prop pair per sub-tab.
+export default function DisciplinaryTab({ mode = "create", initialData, pendingCreateData, onPendingCreateDataChange }) {
   const { hasPermission } = useAuth();
   const employeeId = initialData?.id;
+  const pending = (key) => pendingCreateData?.[key] || [];
+  const setPending = (key) => (value) => onPendingCreateDataChange(key, value);
 
   const allItems = [
     {
@@ -35,6 +40,8 @@ export default function DisciplinaryTab({ mode = "create", initialData }) {
           employeeId={employeeId}
           mode={mode}
           initialRecords={initialData?.explanations}
+          pendingRecords={pending("explanations")}
+          onPendingRecordsChange={setPending("explanations")}
         />
       ),
     },
@@ -47,6 +54,8 @@ export default function DisciplinaryTab({ mode = "create", initialData }) {
           employeeId={employeeId}
           mode={mode}
           initialRecords={initialData?.disciplinaries}
+          pendingRecords={pending("disciplinaries")}
+          onPendingRecordsChange={setPending("disciplinaries")}
         />
       ),
     },

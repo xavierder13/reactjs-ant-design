@@ -13,7 +13,16 @@ import axios from '../../api/axiosInstance';
 // against a real request/response before treating them as settled.
 const employeeApi = {
   getAll:   (payload = {}) => axios.post('/employee_master_data/index', payload),
-  create:   (payload)      => axios.post('/employee_master_data/store', payload),
+  // `payload` is a FormData instance whenever EmployeeForm.jsx's create
+  // flow has pending files/sub-records staged (Files & Requirements,
+  // Evaluation & Regularization, NTE, Disciplinary, or any Performance
+  // Management sub-tab) — explicit multipart headers here rather than
+  // relying on axios to auto-detect FormData, since axiosInstance's own
+  // default headers already hard-code 'Content-Type: application/json'
+  // (same pattern as manpowerRequestApi.js's create/update). A plain
+  // object payload (no pending create-mode data) still goes out as
+  // ordinary JSON, unaffected.
+  create:   (payload)      => axios.post('/employee_master_data/store', payload, payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined),
   update:   (id, payload)  => axios.post(`/employee_master_data/update/${id}`, payload),
   // Payload key (`ids`) is inferred from the route accepting bulk-or-single
   // delete, not confirmed against the live controller — verify against a

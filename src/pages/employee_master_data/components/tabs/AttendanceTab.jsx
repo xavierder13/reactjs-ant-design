@@ -133,6 +133,8 @@ export default function AttendanceTab({ initialData }) {
     },
   ];
 
+  const isDateRangeLocked = rangeType !== "by_period";
+
   return (
     <div>
       <Space style={{ marginBottom: 12, flexWrap: "wrap" }}>
@@ -142,19 +144,34 @@ export default function AttendanceTab({ initialData }) {
           <Radio.Button value="by_period">By Period</Radio.Button>
         </Radio.Group>
 
+        {/* Locked look without AntD's `disabled` gray-out when a preset
+            range is selected — matches ManpowerRequestForm.jsx's Branch
+            field lock: force the picker closed, drop the arrow, block
+            pointer/keyboard interaction directly, so the field keeps its
+            normal (non-darkened) styling instead. */}
         <DatePicker
           value={dateFrom}
           onChange={setDateFrom}
-          disabled={rangeType !== "by_period"}
           format="YYYY-MM-DD"
           placeholder="Date From"
+          {...(isDateRangeLocked ? {
+            open: false,
+            suffixIcon: null,
+            tabIndex: -1,
+            style: { pointerEvents: 'none' },
+          } : {})}
         />
         <DatePicker
           value={dateTo}
           onChange={setDateTo}
-          disabled={rangeType !== "by_period"}
           format="YYYY-MM-DD"
           placeholder="Date To"
+          {...(isDateRangeLocked ? {
+            open: false,
+            suffixIcon: null,
+            tabIndex: -1,
+            style: { pointerEvents: 'none' },
+          } : {})}
         />
         {rangeType === "by_period" && (
           <Button icon={<SearchOutlined />} onClick={() => fetchAttendance(1, pagination.pageSize)}>

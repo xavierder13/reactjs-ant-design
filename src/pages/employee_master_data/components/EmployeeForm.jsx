@@ -1,10 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Button, Card, Space, Divider, App } from 'antd';
+import { Form, Button, Card, Space, Divider, Tag, App } from 'antd';
 import dayjs from 'dayjs';
 import employeeApi from '../../../services/employee/employeeApi';
 import handleApiError from '../../../utils/handleApiError';
+import { isActiveValue } from '../../../utils/employeeStatus';
+import useAuth from '../../../hooks/useAuth';
 import EmployeeTabs from './EmployeeTabs';
+
+// Fields belonging to each tab/sub-tab that the Save button's visibility
+// depends on — see isFieldGroupChanged() below. Matches each tab
+// component's own Form.Item `name`s exactly (EmployeeDetailsTab.jsx
+// excludes `active`: it's system-managed via the Offboarding resign/rehire
+// flow, never user-edited here, so it must never make this Save button
+// appear on its own).
+const PERSONAL_INFO_FIELDS = [
+  'employee_code', 'last_name', 'first_name', 'middle_name', 'birth_date',
+  'gender', 'civil_status', 'contact', 'email', 'address', 'tin_no',
+  'pagibig_no', 'philhealth_no', 'sss_no', 'educ_attain', 'school_year',
+  'school_attended', 'course',
+];
+const EMPLOYEE_DETAILS_FIELDS = [
+  'job_title_code', 'position_id', 'department_id', 'branch_id',
+  'employment_type', 'date_employed', 'date_resigned', 'application_source',
+];
+const EVALUATION_REGULARIZATION_FIELDS = ['regularization_date'];
+const DATE_FIELDS = new Set(['birth_date', 'date_employed', 'date_resigned', 'regularization_date']);
 
 // mode: 'create' | 'edit' | 'view'. Mirrors ManpowerRequestForm.jsx's
 // shape (single Form instance, buildPayload, Save/Cancel). initialData is
@@ -15,8 +36,226 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { message: messageApi } = App.useApp();
+  const { hasPermission, hasAnyPermission } = useAuth();
   const [saving, setSaving] = useState(false);
   const readOnly = mode === 'view';
+
+  // Which tab/sub-tab is active — reported up from EmployeeTabs.jsx.
+  // Personal Data and Performance Management get their own separate
+  // sub-tab slots (not one shared one) because AntD keeps every Tabs pane
+  // mounted at once, not just the active one — both sub-tab components
+  // mount together and would otherwise report into the same value,
+  // clobbering each other. Needed for the Save button's visibility below.
+  const [activeTab, setActiveTab] = useState(undefined);
+  const [personalSubTab, setPersonalSubTab] = useState(undefined);
+  const [performanceSubTab, setPerformanceSubTab] = useState(undefined);
+
+  // Bumped on every field change (including a cross-tab patch like
+  // patchEmployee's) so this component re-renders and re-reads current
+  // form values — AntD's internal field store doesn't itself trigger a
+  // re-render of an ancestor component.
+  const [, setFormVersion] = useState(0);
+  const handleValuesChange = () => setFormVersion((v) => v + 1);
+
+  // Create mode only — every sub-tab's staged-but-not-yet-saved rows/files,
+  // one object + one updater lifted down through EmployeeTabs.jsx (see
+  // that file and PerformanceManagementTab.jsx for why). Matches
+  // EmployeeMasterDataController@store() accepting each of these (except
+  // Offboarding, which store() has no handling for at all — confirmed by
+  // reading it directly) bundled into the SAME multipart request that
+  // creates the employee: real bug found 2026-09-24 — every one of these
+  // tabs blocked itself with "save the employee first," even though the
+  // backend never required that. See buildCreateRequestBody() below for
+  // the exact field-name mapping, ported from EmployeeMasterData2.vue's
+  // save() method field-for-field, including its indexed
+  // `nte_files[${i}]`/`explanation_files[${i}]`/`disciplinary_files[${i}]`
+  // convention (not a plain `[]` array push) — required so a row with no
+  // file doesn't shift a later row's file into the wrong array index.
+  const [pendingCreateData, setPendingCreateData] = useState({
+    files: [],                          // [{ file, document_type }] — Files & Requirements + Evaluation & Regularization's 2 slots, merged (same backend field)
+    monthlyKeyPerformances: [],
+    classroomPerformanceRatings: [],
+    ojtPerformanceRatings: [],
+    branchAssignmentPositions: [],
+    meritHistories: [],
+    trainings: [],
+    explanations: [],                   // [{ ...fields, nte_file, explanation_file }] — NTE
+    disciplinaries: [],                 // [{ ...fields, file }]
+  });
+  const updatePendingCreateData = (key, value) => setPendingCreateData((prev) => ({ ...prev, [key]: value }));
+
+  // Strips the local-only `id` (and, for NTE/Disciplinary, the raw File
+  // fields — those go into their own parallel indexed fields instead) each
+  // pending row carries, before JSON.stringify-ing it for the backend's
+  // plain JSON-array fields.
+  const stripLocalFields = (rows, extraKeys = []) => rows.map((row) => {
+    const clean = { ...row };
+    delete clean.id;
+    extraKeys.forEach((key) => delete clean[key]);
+    return clean;
+  });
+
+  const buildCreateRequestBody = (payload) => {
+    const hasPendingData = Object.values(pendingCreateData).some((rows) => rows.length > 0);
+    if (!hasPendingData) return payload;
+
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value == null) return;
+      formData.append(key, key === 'active' ? (value ? '1' : '0') : value);
+    });
+
+    pendingCreateData.files.forEach(({ file, document_type }) => {
+      formData.append('employee_files[]', file);
+      formData.append('document_types[]', document_type);
+    });
+
+    const jsonBundles = [
+      ['monthlyKeyPerformances', 'monthly_key_performances'],
+      ['classroomPerformanceRatings', 'classroom_performance_ratings'],
+      ['ojtPerformanceRatings', 'ojt_performance_ratings'],
+      ['branchAssignmentPositions', 'branch_assignment_positions'],
+      ['meritHistories', 'merit_histories'],
+      ['trainings', 'trainings'],
+    ];
+    jsonBundles.forEach(([stateKey, fieldName]) => {
+      const rows = pendingCreateData[stateKey];
+      if (rows.length) formData.append(fieldName, JSON.stringify(stripLocalFields(rows)));
+    });
+
+    if (pendingCreateData.explanations.length) {
+      formData.append('explanations', JSON.stringify(stripLocalFields(pendingCreateData.explanations, ['nte_file', 'explanation_file'])));
+      pendingCreateData.explanations.forEach((row, i) => {
+        if (row.nte_file) formData.append(`nte_files[${i}]`, row.nte_file);
+        if (row.explanation_file) formData.append(`explanation_files[${i}]`, row.explanation_file);
+      });
+    }
+
+    if (pendingCreateData.disciplinaries.length) {
+      formData.append('disciplinaries', JSON.stringify(stripLocalFields(pendingCreateData.disciplinaries, ['file'])));
+      pendingCreateData.disciplinaries.forEach((row, i) => {
+        if (row.file) formData.append(`disciplinary_files[${i}]`, row.file);
+      });
+    }
+
+    return formData;
+  };
+
+  // Live, patchable copy of the employee record — matches
+  // EmployeeMasterData2.vue's `editedItem`, which OffboardingTab's Vue
+  // equivalent (Offboarding.vue's resignEmployee()) patches directly via
+  // `$emit('updateStatus', {active, date_resigned})` so the dialog's
+  // status chip updates immediately after a save, without a page reload.
+  // This repo has no single-employee show/{id} endpoint, so `initialData`
+  // (router state, frozen at page load) never refreshes on its own —
+  // real bug found 2026-09-23: after adding/editing an Offboarding record
+  // (which flips `active` server-side via the `resign` endpoint), the
+  // Card title's and Employee Details tab's Status stayed stale for the
+  // rest of the page visit even though vueportal's Vue reference updated
+  // immediately. `employee` is what every *display* read below uses;
+  // `initialData` itself is left untouched for the save-payload flow.
+  const [employee, setEmployee] = useState(initialData);
+  // Adjust state during render (React's documented pattern for "reset
+  // derived state when a prop changes") rather than a useEffect — avoids
+  // react-hooks/set-state-in-effect's cascading-render warning, and
+  // initialData only actually changes if this same routed page instance
+  // is reused for a different employee (e.g. browser back/forward).
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
+    setEmployee(initialData);
+  }
+
+  // Patches only the given fields (matching Vue's updateStatus, which
+  // only ever sends {active, date_resigned}) — deliberately not a full
+  // form re-seed, which would risk clobbering in-progress edits on other
+  // Employee Details fields if the user is mid-edit on that tab when an
+  // Offboarding save happens.
+  const patchEmployee = (patch) => {
+    setEmployee((prev) => ({ ...prev, ...patch }));
+    if ('active' in patch) form.setFieldsValue({ active: Boolean(patch.active) });
+    if ('date_resigned' in patch) {
+      form.setFieldsValue({ date_resigned: patch.date_resigned ? dayjs(patch.date_resigned) : null });
+    }
+  };
+
+  // `employee` (the saved/live baseline — "currentData") vs the form's
+  // live values ("newData"), compared as normalized JSON strings — a
+  // straight JSON.stringify of the two objects as-is would false-positive
+  // on every date field (the form holds dayjs instances, `employee` holds
+  // plain "YYYY-MM-DD" strings) and on key ordering, so both sides are
+  // built through the same per-field normalizer, in the same fixed key
+  // order (iterating `fields` once), before stringifying.
+  const normalizeFieldValue = (field, rawValue) => {
+    if (DATE_FIELDS.has(field)) {
+      if (!rawValue) return null;
+      const value = typeof rawValue?.format === 'function' ? rawValue : dayjs(rawValue);
+      return value.isValid() ? value.format('YYYY-MM-DD') : null;
+    }
+    return rawValue === undefined ? null : rawValue;
+  };
+
+  const buildComparableSnapshot = (fields, getRawValue) => {
+    const snapshot = {};
+    fields.forEach((field) => { snapshot[field] = normalizeFieldValue(field, getRawValue(field)); });
+    return snapshot;
+  };
+
+  const isFieldGroupChanged = (fields) => {
+    // birth_date is stored as `birth_date` OR `dob` on the employee record
+    // depending on data source (see the field-seeding effect below, same
+    // fallback) — matched here so the comparison reads the right source field.
+    const currentSnapshot = buildComparableSnapshot(fields, (field) => (
+      field === 'birth_date' ? (employee?.birth_date ?? employee?.dob) : employee?.[field]
+    ));
+    const formValues = form.getFieldsValue(fields);
+    const newSnapshot = buildComparableSnapshot(fields, (field) => formValues[field]);
+    return JSON.stringify(currentSnapshot) !== JSON.stringify(newSnapshot);
+  };
+
+  // Ports EmployeeInformationTabs.vue's changeSaveBtnVisibility() exactly:
+  // Save only ever shows on 3 specific tab/sub-tab combinations (each also
+  // permission-gated the same way Vue checks it), never on Disciplinary,
+  // Offboarding, Attendance, or (new in this app, no Vue equivalent — same
+  // reasoning as those 3: it manages its own records via its own modal)
+  // Work Schedule. On top of Vue's own condition: once a tab/sub-tab is
+  // eligible, Save additionally stays hidden until something in that
+  // specific tab's fields actually differs from the saved record — Vue
+  // has no equivalent for this second part; it's this app's own addition.
+  // Create mode is untouched (Save always shows, matching Vue's own
+  // default `saveBtnIsVisible: true` before any tab-tracking engages) and
+  // so is view mode (the `!readOnly` check below already hides Save
+  // entirely there).
+  const isSaveVisible = () => {
+    if (mode !== 'edit') return true;
+
+    switch (activeTab) {
+      case 'personal':
+        return personalSubTab === 'info'
+          && hasPermission('employee-master-data-edit')
+          && isFieldGroupChanged(PERSONAL_INFO_FIELDS);
+      case 'details':
+        return hasPermission('employee-master-data-edit')
+          && isFieldGroupChanged(EMPLOYEE_DETAILS_FIELDS);
+      case 'performance':
+        return performanceSubTab === 'eval'
+          && hasAnyPermission(
+            'employee-master-data-evaluation-regularization-create',
+            'employee-master-data-evaluation-regularization-edit',
+          )
+          && isFieldGroupChanged(EVALUATION_REGULARIZATION_FIELDS);
+      case 'disciplinary':
+      case 'offboarding':
+      case 'workSchedule':
+      case 'attendance':
+        return false;
+      default:
+        // Any tab this switch doesn't know about (or before EmployeeTabs.jsx
+        // has reported an active tab yet, on the very first render) — show
+        // Save rather than surprise-hide it for an un-audited case.
+        return true;
+    }
+  };
 
   useEffect(() => {
     if ((mode === 'edit' || mode === 'view') && initialData) {
@@ -90,7 +329,27 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
       setSaving(true);
       const payload = buildPayload(values);
       if (mode === 'create') {
-        const { data } = await employeeApi.create(payload);
+        const requestBody = buildCreateRequestBody(payload);
+        const { data } = await employeeApi.create(requestBody);
+        // store() returns HTTP 200 even on a validation failure (never
+        // 422) — matches the same quirk documented on every sub-module
+        // controller in this app. Genuinely new failure mode as of the
+        // pending-files bundling above (a request with no files/pending
+        // rows never hit these paths before): `employee_files_errors` (bad
+        // file type/size) or the plain core-field validator errors object
+        // (no `success`/`employee` key at all) both land here with a 200 —
+        // without this check, they'd silently navigate away as if the
+        // employee had actually been created.
+        if (!data.employee && !data.employee_master_data) {
+          const firstError = data.employee_files_errors
+            ? Object.values(data.employee_files_errors)[0]
+            : data;
+          const message = typeof firstError === 'object'
+            ? Object.values(firstError)[0]?.[0] || Object.values(firstError)[0]
+            : firstError;
+          messageApi.error(typeof message === 'string' ? message : 'Failed to create employee.');
+          return;
+        }
         // Resource key on the response ("employee"? "employee_master_data"?
         // per this backend's {success, message, <resource_key>} envelope
         // convention) is not confirmed against the live controller — fall
@@ -125,17 +384,44 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
     }
   };
 
+  // Matches EmployeeMasterData2.vue's dialog v-card-title exactly: base
+  // title, then (only for an existing record, i.e. not Add) a
+  // "<employee_code> - <Last, First, Middle>" segment and a colored
+  // Active/Inactive chip, divider-separated. Vue joins last/first/middle
+  // unconditionally (leaving a trailing ", " when middle_name is empty);
+  // filtered here instead so a missing middle name doesn't dangle a comma.
+  const employeeFullName = [employee?.last_name, employee?.first_name, employee?.middle_name]
+    .filter(Boolean)
+    .join(', ');
+  const baseTitle = mode === 'create' ? 'Add Employee' : mode === 'edit' ? 'Edit Employee' : 'View Employee';
+  const cardTitle = mode === 'create' ? baseTitle : (
+    <Space separator={<Divider orientation="vertical" />} size="middle">
+      <span>{baseTitle}</span>
+      <span>{employee?.employee_code} - {employeeFullName}</span>
+      <Tag color={isActiveValue(employee?.active) ? 'success' : 'default'}>
+        {isActiveValue(employee?.active) ? 'Active' : 'Inactive'}
+      </Tag>
+    </Space>
+  );
+
   return (
-    <Card
-      title={mode === 'create' ? 'Add Employee' : mode === 'edit' ? 'Edit Employee' : 'View Employee'}
-    >
-      <Form form={form} layout="vertical" disabled={readOnly}>
-        <EmployeeTabs mode={mode} initialData={initialData} />
+    <Card title={cardTitle}>
+      <Form form={form} layout="vertical" disabled={readOnly} onValuesChange={handleValuesChange}>
+        <EmployeeTabs
+          mode={mode}
+          initialData={employee}
+          onEmployeeChange={patchEmployee}
+          onActiveTabChange={setActiveTab}
+          onPersonalSubTabChange={setPersonalSubTab}
+          onPerformanceSubTabChange={setPerformanceSubTab}
+          pendingCreateData={pendingCreateData}
+          onPendingCreateDataChange={updatePendingCreateData}
+        />
 
         <Divider />
 
         <Space>
-          {!readOnly && (
+          {!readOnly && isSaveVisible() && (
             <Button type="primary" onClick={handleSave} loading={saving}>
               Save
             </Button>

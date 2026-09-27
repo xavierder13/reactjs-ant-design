@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Table, Button, Modal, Form, Input, Select, DatePicker, Space,
-  Popconfirm, Tooltip, Empty, Typography, Upload, App,
+  Popconfirm, Tooltip, Typography, Upload, App,
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, DownloadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -36,9 +36,18 @@ const DISCIPLINARY_ACTIONS = [
 const OFFENSE_SERIES = ["First Offense", "Second Offense", "Third Offense", "Fourth Offense", "Fifth Offense"];
 const ACCEPTED_FILE_TYPES = ".jpeg,.jpg,.png,.docs,.docx,.pdf";
 
-export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecords }) {
+// Create mode (2026-09-24): matches EmployeeMasterDataController@store()'s
+// `disciplinaries` field — a JSON array bundled into the SAME multipart
+// request that creates the employee, with each row's `file` sent as a
+// parallel-indexed `disciplinary_files[]` field (confirmed by reading
+// store() directly — "save the employee first" was a frontend-only
+// restriction). Each staged row keeps its picked File object directly on
+// the record; EmployeeForm.jsx unpacks it into that parallel array when
+// building the final create request.
+export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecords, pendingRecords, onPendingRecordsChange }) {
   const { message: messageApi } = App.useApp();
   const { hasPermission } = useAuth();
+  const isCreateMode = mode === "create";
   const [records, setRecords] = useState(initialRecords || []);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -54,33 +63,17 @@ export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecord
   const canDownloadFile = hasPermission("employee-master-data-disciplinary-file-download");
   const canDeleteFile = !readOnly && hasPermission("employee-master-data-disciplinary-file-delete");
 
-  if (mode === "create") {
-    return <Empty description="Save the employee first before adding records here." style={{ padding: "24px 0" }} />;
-  }
+  const displayedRecords = isCreateMode ? (pendingRecords || []) : records;
 
   const openCreate = () => {
     setEditing(null);
     setPendingFile(null);
-    form.resetFields();
-    form.setFieldsValue({ status: "Open" });
     setModalOpen(true);
   };
 
   const openEdit = (record) => {
     setEditing(record);
     setPendingFile(null);
-    form.setFieldsValue({
-      date_issued: record.date_issued ? dayjs(record.date_issued) : null,
-      nte_code: record.nte_code,
-      offense_code: record.offense_code,
-      offense: record.offense,
-      offense_type: record.offense_type,
-      disciplinary_action: record.disciplinary_action,
-      series: record.series,
-      status: record.status,
-      transmit_date: record.transmit_date ? dayjs(record.transmit_date) : null,
-      return_date: record.return_date ? dayjs(record.return_date) : null,
-    });
     setModalOpen(true);
   };
 
@@ -88,7 +81,36 @@ export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecord
     setModalOpen(false);
     setEditing(null);
     setPendingFile(null);
-    form.resetFields();
+  };
+
+  // Populate/reset the form only after the Modal has actually opened, not
+  // in openCreate/openEdit above — this Modal has destroyOnHidden, so its
+  // <Form> doesn't exist in the tree yet at the moment those handlers run.
+  // Calling form.resetFields()/setFieldsValue() before that triggers
+  // AntD's "Instance created by useForm is not connected to any Form
+  // element" warning — confirmed live (reported against WorkScheduleTab.jsx,
+  // same copy-pasted pattern here). See SubmitAcknowledgmentReportModal.jsx
+  // for the same afterOpenChange pattern, done correctly from the start.
+  const handleAfterOpenChange = (isOpen) => {
+    if (!isOpen) return;
+    if (editing) {
+      form.setFieldsValue({
+        date_issued: editing.date_issued ? dayjs(editing.date_issued) : null,
+        nte_code: editing.nte_code,
+        offense_code: editing.offense_code,
+        offense: editing.offense,
+        offense_type: editing.offense_type,
+        disciplinary_action: editing.disciplinary_action,
+        series: editing.series,
+        status: editing.status,
+        transmit_date: editing.transmit_date ? dayjs(editing.transmit_date) : null,
+        return_date: editing.return_date ? dayjs(editing.return_date) : null,
+      });
+      if (isCreateMode) setPendingFile(editing.file || null);
+    } else {
+      form.resetFields();
+      form.setFieldsValue({ status: "Open" });
+    }
   };
 
   const buildFormData = (values) => {
@@ -108,7 +130,39 @@ export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecord
     return formData;
   };
 
+  const handleSavePending = async () => {
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    const record = {
+      id: editing?.id || `local-${Date.now()}`,
+      date_issued: values.date_issued.format("YYYY-MM-DD"),
+      nte_code: values.nte_code,
+      offense_code: values.offense_code,
+      offense: values.offense,
+      offense_type: values.offense_type,
+      disciplinary_action: values.disciplinary_action,
+      series: values.series,
+      status: values.status,
+      transmit_date: values.transmit_date ? values.transmit_date.format("YYYY-MM-DD") : null,
+      return_date: values.return_date ? values.return_date.format("YYYY-MM-DD") : null,
+      file: pendingFile,
+    };
+    const updated = editing
+      ? (pendingRecords || []).map((r) => (r.id === editing.id ? record : r))
+      : [...(pendingRecords || []), record];
+    onPendingRecordsChange(updated);
+    messageApi.success(editing ? "Record updated." : "Record added.");
+    closeModal();
+  };
+
   const handleSave = async () => {
+    if (isCreateMode) return handleSavePending();
+
     let values;
     try {
       values = await form.validateFields();
@@ -140,6 +194,11 @@ export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecord
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDeletePending = (record) => {
+    onPendingRecordsChange((pendingRecords || []).filter((r) => r.id !== record.id));
+    messageApi.success("Record removed.");
   };
 
   const handleDelete = async (record) => {
@@ -222,7 +281,7 @@ export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecord
             <Popconfirm
               title="Delete this record?"
               description="This cannot be undone."
-              onConfirm={() => handleDelete(record)}
+              onConfirm={() => (isCreateMode ? handleDeletePending(record) : handleDelete(record))}
               okButtonProps={{ danger: true, loading: deletingId === record.id }}
               okText="Delete"
             >
@@ -246,13 +305,14 @@ export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecord
         </div>
       )}
 
-      <Table rowKey="id" size="small" dataSource={records} columns={columns} pagination={false} scroll={{ x: "max-content" }} />
+      <Table rowKey="id" size="small" dataSource={displayedRecords} columns={columns} pagination={false} scroll={{ x: "max-content" }} />
 
       <Modal
         title={editing ? "Edit Disciplinary Action" : "Add Disciplinary Action"}
         open={modalOpen}
         onCancel={closeModal}
         onOk={handleSave}
+        afterOpenChange={handleAfterOpenChange}
         confirmLoading={saving}
         okText="Save"
         width={720}

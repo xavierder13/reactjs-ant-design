@@ -1,25 +1,34 @@
-import { Card, Table, Breadcrumb, Space, Button, Popconfirm, Tooltip, App } from "antd";
-import { EyeOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
+import { useState } from "react";
+import { Card, Table, Breadcrumb, Space, Button, Popconfirm, Tooltip, Tag, App } from "antd";
+import { EyeOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, DownOutlined, UpOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import useAcknowledgmentReports from "../../../hooks/useAcknowledgmentReports";
 import useAuth from "../../../hooks/useAuth";
 import employeeAcknowledgmentReportApi from "../../../services/employee/employeeAcknowledgmentReportApi";
 import handleApiError from "../../../utils/handleApiError";
 
-// Backend's index() returns branches with a nested acknowledgment_reports
-// array (branch-scoped visibility is enforced server-side via
-// employee-acknowledgment-reports-all) — flattened here into one table
-// with a Branch column, since this repo's table convention is a flat list
-// rather than Vue's grouped-by-branch DataTableGroup layout.
+// Backend's index() returns branches, each with a nested
+// acknowledgment_reports array (branch-scoped visibility enforced
+// server-side via employee-acknowledgment-reports-all). Grouped-by-branch,
+// expandable layout matches vueportal's DataTableGroup.vue (group-by
+// "name" + a group.header toggle, with the actual report rows rendered
+// inside each expanded group) rather than this page's previous flattened
+// single table.
 export default function AcknowledgmentReportIndex() {
   const { message: messageApi } = App.useApp();
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const { branches, isLoading, fetchBranches, deleteReport } = useAcknowledgmentReports();
 
-  const rows = branches.flatMap((branch) =>
-    (branch.acknowledgment_reports || []).map((report) => ({ ...report, branch }))
-  );
+  // Controlled expandedRowKeys (rather than letting the Table manage its
+  // own) so the "Expand All" toggle beside the Branch header can drive it.
+  const [expandedRowKeys, setExpandedRowKeys] = useState([]);
+  const expandableBranchIds = branches
+    .filter((branch) => (branch.acknowledgment_reports || []).length > 0)
+    .map((branch) => branch.id);
+  const allExpanded = expandableBranchIds.length > 0
+    && expandableBranchIds.every((id) => expandedRowKeys.includes(id));
+  const toggleExpandAll = () => setExpandedRowKeys(allExpanded ? [] : expandableBranchIds);
 
   const handleExport = async (report) => {
     try {
@@ -46,6 +55,46 @@ export default function AcknowledgmentReportIndex() {
     }
   };
 
+  const expandedRowRender = (branch) => (
+    <Table
+      rowKey="id"
+      size="small"
+      pagination={false}
+      dataSource={branch.acknowledgment_reports || []}
+      columns={[
+        // The submitting user's display field isn't confirmed against the
+        // User model from the frontend alone — falls back across a couple
+        // of likely shapes rather than assuming one.
+        { title: 'Submitted By', render: (_, r) => r.user?.name || r.user?.full_name || r.user?.email || '-' },
+        { title: 'Acknowledgment Date', dataIndex: 'date_uploaded' },
+        { title: 'Document Date', dataIndex: 'docdate' },
+        {
+          title: 'Actions',
+          width: 120,
+          render: (_, r) => (
+            <Space>
+              <Tooltip title="View">
+                <Button size="small" icon={<EyeOutlined />} onClick={() => navigate(`/acknowledgment-reports/${r.id}`, { state: { report: r } })} />
+              </Tooltip>
+              {hasPermission('employee-acknowledgment-reports-export') && (
+                <Tooltip title="Export">
+                  <Button size="small" icon={<DownloadOutlined />} onClick={() => handleExport(r)} />
+                </Tooltip>
+              )}
+              {hasPermission('employee-acknowledgment-reports-delete') && (
+                <Popconfirm title="Delete this report?" onConfirm={() => handleDelete(r)}>
+                  <Tooltip title="Delete">
+                    <Button size="small" danger icon={<DeleteOutlined />} />
+                  </Tooltip>
+                </Popconfirm>
+              )}
+            </Space>
+          ),
+        },
+      ]}
+    />
+  );
+
   return (
     <>
       <Breadcrumb
@@ -53,47 +102,53 @@ export default function AcknowledgmentReportIndex() {
         items={[
           { title: <Link to="/">Home</Link> },
           { title: <Link to="/employees">Employee</Link> },
-          { title: "Acknowledgment Reports" },
+          { title: "Branch Reports" },
         ]}
       />
       <Card
-        title="Employee Acknowledgment Reports"
+        title="Branch Reports"
         extra={<Button icon={<ReloadOutlined />} onClick={fetchBranches}>Refresh</Button>}
       >
         <Table
           rowKey="id"
+          size="small"
           loading={isLoading}
-          dataSource={rows}
+          dataSource={branches}
           pagination={{ pageSize: 10, showSizeChanger: true }}
+          expandable={{
+            expandedRowRender,
+            rowExpandable: (branch) => (branch.acknowledgment_reports || []).length > 0,
+            expandedRowKeys,
+            onExpandedRowsChange: (keys) => setExpandedRowKeys(keys),
+            // Matches DataTableGroup.vue's group.header toggle
+            // (mdi-chevron-up / mdi-chevron-down) instead of AntD's default
+            // plus/minus expand icon.
+            expandIcon: ({ expanded, onExpand, record }) =>
+              (record.acknowledgment_reports || []).length > 0 ? (
+                <Button
+                  type="text"
+                  size="small"
+                  icon={expanded ? <UpOutlined /> : <DownOutlined />}
+                  onClick={(e) => onExpand(record, e)}
+                />
+              ) : null,
+          }}
           columns={[
-            { title: 'Branch', render: (_, r) => r.branch?.name || '-' },
-            { title: 'Date', dataIndex: 'docdate' },
-            // The submitting user's display field isn't confirmed against
-            // the User model from the frontend alone — falls back across a
-            // couple of likely shapes rather than assuming one.
-            { title: 'Submitted By', render: (_, r) => r.user?.name || r.user?.full_name || r.user?.email || '-' },
-            { title: 'Submitted On', dataIndex: 'date_uploaded' },
             {
-              title: 'Actions',
-              render: (_, r) => (
+              title: (
                 <Space>
-                  <Tooltip title="View">
-                    <Button icon={<EyeOutlined />} onClick={() => navigate(`/acknowledgment-reports/${r.id}`, { state: { report: r } })} />
-                  </Tooltip>
-                  {hasPermission('employee-acknowledgment-reports-export') && (
-                    <Tooltip title="Export">
-                      <Button icon={<DownloadOutlined />} onClick={() => handleExport(r)} />
-                    </Tooltip>
-                  )}
-                  {hasPermission('employee-acknowledgment-reports-delete') && (
-                    <Popconfirm title="Delete this report?" onConfirm={() => handleDelete(r)}>
-                      <Tooltip title="Delete">
-                        <Button danger icon={<DeleteOutlined />} />
-                      </Tooltip>
-                    </Popconfirm>
-                  )}
+                  Branch
+                  <Button type="link" size="small" onClick={toggleExpandAll} disabled={expandableBranchIds.length === 0}>
+                    {allExpanded ? 'Collapse All' : 'Expand All'}
+                  </Button>
                 </Space>
               ),
+              dataIndex: 'name',
+            },
+            {
+              title: 'Reports',
+              width: 100,
+              render: (_, branch) => <Tag>{(branch.acknowledgment_reports || []).length}</Tag>,
             },
           ]}
         />

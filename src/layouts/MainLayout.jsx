@@ -46,7 +46,7 @@ const titleMap = {
   '/permissions':            { title: 'Permissions',         breadcrumb: ['Authorizations', 'Permissions'] },
   '/employees':              { title: 'Employee Master Data', breadcrumb: ['Employee', 'Master Data'] },
   '/employees/create':       { title: 'Create Employee',     breadcrumb: ['Employee', 'Create'] },
-  '/acknowledgment-reports': { title: 'Acknowledgment Reports', breadcrumb: ['Employee', 'Acknowledgment Reports'] },
+  '/acknowledgment-reports': { title: 'Branch Reports', breadcrumb: ['Employee', 'Branch Reports'] },
   '/recruitment/:url':       { title: 'Applicant List',      breadcrumb: ['Recruitment', 'Applicant List'] },
   '/kpi-templates':          { title: 'KPI Templates',       breadcrumb: ['KPI Management', 'KPI Templates'] },
   '/kpi-templates/create':   { title: 'Create KPI Template', breadcrumb: ['KPI Management', 'KPI Templates', 'Create'] },
@@ -76,7 +76,7 @@ const menuData = [
         children: [
           { key: 'master-data',    title: 'Master Data',    link: '/employees',         permissions: ['employee-master-data-list'] },
           { key: 'master-data-create',    title: 'Master Data Create',    link: '/employees/create',         permissions: ['employee-master-data-create'] },
-          { key: 'acknowledgment-reports', title: 'Acknowledgment Reports', link: '/acknowledgment-reports', permissions: ['employee-acknowledgment-reports'] },
+          { key: 'acknowledgment-reports', title: 'Branch Reports', link: '/acknowledgment-reports', permissions: ['employee-acknowledgment-reports'] },
         ]
       },
       {
@@ -224,7 +224,7 @@ const MainLayout = () => {
     if (/^\/employees\/\d+\/edit$/.test(pathname))
       return { title: 'Edit Employee', breadcrumb: ['Employee', 'Edit'] };
     if (/^\/acknowledgment-reports\/\d+$/.test(pathname))
-      return { title: 'View Acknowledgment Report', breadcrumb: ['Employee', 'Acknowledgment Reports', 'View'] };
+      return { title: 'View Branch Report', breadcrumb: ['Employee', 'Branch Reports', 'View'] };
     if (/^\/kpi-evaluations\/\d+$/.test(pathname))
       return { title: 'View Evaluation', breadcrumb: ['KPI Management', 'Evaluations', 'View'] };
     if (/^\/my-evaluations\/\d+$/.test(pathname))

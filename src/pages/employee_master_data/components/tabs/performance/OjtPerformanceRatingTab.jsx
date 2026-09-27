@@ -8,12 +8,14 @@ const columns = [
   { title: "KPI (%)", dataIndex: "kpi", key: "kpi", render: (v) => v ?? "-" },
 ];
 
-export default function OjtPerformanceRatingTab({ employeeId, mode, initialRecords }) {
+export default function OjtPerformanceRatingTab({ employeeId, mode, initialRecords, pendingRecords, onPendingRecordsChange }) {
   return (
     <PerformanceRecordTab
       title="OJT Performance Rating"
       mode={mode}
       initialRecords={initialRecords}
+      pendingRecords={pendingRecords}
+      onPendingRecordsChange={onPendingRecordsChange}
       permissionPrefix="employee-master-data-ojt-performance-rating"
       columns={columns}
       getInitialFormValues={(record) => ({
