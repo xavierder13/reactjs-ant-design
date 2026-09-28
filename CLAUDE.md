@@ -209,6 +209,11 @@ Dated change history for each lives in `docs/<module>-history.md`.
   Key traps: POST-only API; `fetchById` returns `{ manpower_request,
   approval_status }`; gates combine permission + ownership + status;
   existing attachments must be re-sent on every update.
+- **Record management pages / Area Assignment** (`src/pages/area/`, route
+  `/areas`) — `.claude/skills/record-management/SKILL.md`. Recipe for any
+  new admin CRUD master-data page (Area is the reference implementation).
+  Key traps: populate modal forms in `afterOpenChange`; reuse
+  `EmployeeSelect` for employee pickers; `Transfer` for picking many items.
 
 ## Role & Permission
 

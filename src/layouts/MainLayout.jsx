@@ -30,6 +30,7 @@ import {
   StarOutlined,
   BarChartOutlined,
   FileTextOutlined,
+  ApartmentOutlined,
 } from '@ant-design/icons';
 import useAuth from '../hooks/useAuth';
 
@@ -55,6 +56,7 @@ const titleMap = {
   '/my-evaluations':         { title: 'My Evaluations',        breadcrumb: ['KPI Management', 'My Evaluations'] },
   '/manpower-requests':        { title: 'Manpower Requests',       breadcrumb: ['Manpower Request', 'All Requests'] },
   '/manpower-requests/create': { title: 'Create Manpower Request', breadcrumb: ['Manpower Request', 'Create'] },
+  '/areas':                    { title: 'Area Assignment',         breadcrumb: ['Human Resource', 'Area Assignment'] },
 
 };
 
@@ -102,6 +104,7 @@ const menuData = [
           { key: 'manpower-request-create', title: 'Create Request',  link: '/manpower-requests/create',  permissions: ['manpower-request-create'] },
         ],
       },
+      { key: 'area-assignment', title: 'Area Assignment', icon: <ApartmentOutlined />, link: '/areas', permissions: ['area-list'] },
     ],
   },
 

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Table, Tag, Button, Input, Select, DatePicker, Space, Popconfirm, Tooltip, message } from 'antd';
-import { PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, CloseCircleOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Table, Tag, Button, Input, Select, DatePicker, Space, Popconfirm, Tooltip, Dropdown, message } from 'antd';
+import { PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, CloseCircleOutlined, DeleteOutlined, ReloadOutlined, FileExcelOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useAuth from '../../../hooks/useAuth';
 import useManpowerRequests from '../../../hooks/useManpowerRequests';
 import manpowerRequestApi from '../../../services/manpower_request/manpowerRequestApi';
 import handleApiError from '../../../utils/handleApiError';
+import downloadBlobResponse from '../../../utils/downloadBlobResponse';
 
 const { RangePicker } = DatePicker;
 
@@ -19,6 +20,11 @@ const STATUS_COLORS = {
   Cancelled:          'default',
 };
 
+const DATE_FIELDS = [
+  { label: 'Date Created',  value: 'created_at' },
+  { label: 'Approved Date', value: 'date_approved' },
+];
+
 const ManpowerRequestIndex = () => {
   const { hasPermission, hasAnyPermission, hasRole, user } = useAuth();
   const { items, isLoading, refetch } = useManpowerRequests();
@@ -27,6 +33,10 @@ const ManpowerRequestIndex = () => {
   const [searchText, setSearchText]   = useState('');
   const [statusFilter, setStatusFilter] = useState(null);
   const [dateRange, setDateRange]     = useState(null);
+  const [dateField, setDateField]     = useState('created_at');
+  const [exporting, setExporting]     = useState(false);
+
+  const canExport = hasRole('Administrator') || hasPermission('manpower-request-export');
 
   // Editing is Administrator-or-owner, same pattern as canDelete: Admin
   // bypasses ownership, everyone else needs the permission AND to be the
@@ -91,15 +101,59 @@ const ManpowerRequestIndex = () => {
     }
   };
 
+  // Menu keys are `<report>:<option>` — hiring:Open|Closed|Overall (Approved
+  // MRFs only) or status:<MRF status>|All. Both reuse the list's Date
+  // Filter + date range.
+  const handleExport = async ({ key }) => {
+    const [report, option] = key.split(':');
+    const dates = {
+      date_field: dateField,
+      date_from:  dateRange ? dateRange[0].format('YYYY-MM-DD') : null,
+      date_to:    dateRange ? dateRange[1].format('YYYY-MM-DD') : null,
+    };
+    const dateLabel = DATE_FIELDS.find((f) => f.value === dateField).label;
+    const period    = dateRange ? `${dateLabel} ${dates.date_from} to ${dates.date_to}` : dayjs().format('YYYY-MM-DD');
+
+    setExporting(true);
+    try {
+      const response = report === 'hiring'
+        ? await manpowerRequestApi.exportReport(option, dates)
+        : await manpowerRequestApi.exportStatusReport(option, dates);
+      const title = report === 'hiring' ? `MRF Report - ${option}` : `MRF Status Report - ${option}`;
+      await downloadBlobResponse(response, `${title} (${period}).xlsx`, messageApi);
+    } catch (error) {
+      handleApiError(error, messageApi);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exportMenuItems = [
+    {
+      type: 'group',
+      label: 'MRF Report (Approved only)',
+      children: ['Open', 'Closed', 'Overall'].map((type) => ({ key: `hiring:${type}`, label: `${type} MRFs` })),
+    },
+    { type: 'divider' },
+    {
+      type: 'group',
+      label: 'Status Report (per position line)',
+      children: ['All', ...Object.keys(STATUS_COLORS)].map((status) => ({ key: `status:${status}`, label: status })),
+    },
+  ];
+
   const filteredItems = items.filter((record) => {
     const matchesSearch = !searchText || (
       record.mrf_number.toLowerCase().includes(searchText.toLowerCase()) ||
       record.reason?.toLowerCase().includes(searchText.toLowerCase())
     );
     const matchesStatus = !statusFilter || record.status === statusFilter;
+    // Inclusive on both ends — date_approved is date-only (midnight), so a
+    // strict isAfter(startOf('day')) would drop the range's first day.
     const matchesDate = !dateRange || (
-      dayjs(record.created_at).isAfter(dateRange[0].startOf('day')) &&
-      dayjs(record.created_at).isBefore(dateRange[1].endOf('day'))
+      !!record[dateField] &&
+      !dayjs(record[dateField]).isBefore(dateRange[0].startOf('day')) &&
+      !dayjs(record[dateField]).isAfter(dateRange[1].endOf('day'))
     );
     return matchesSearch && matchesStatus && matchesDate;
   });
@@ -223,6 +277,12 @@ const ManpowerRequestIndex = () => {
             onChange={setStatusFilter}
             options={Object.keys(STATUS_COLORS).map((s) => ({ label: s, value: s }))}
           />
+          <Select
+            style={{ width: 150 }}
+            value={dateField}
+            onChange={setDateField}
+            options={DATE_FIELDS}
+          />
           <RangePicker onChange={setDateRange} />
         </Space>
 
@@ -230,6 +290,17 @@ const ManpowerRequestIndex = () => {
           <Button icon={<ReloadOutlined />} onClick={refetch} loading={isLoading}>
             Refresh
           </Button>
+          {canExport && (
+            <Dropdown
+              trigger={['click']}
+              menu={{
+                items: exportMenuItems,
+                onClick: handleExport,
+              }}
+            >
+              <Button icon={<FileExcelOutlined />} loading={exporting}>Export Report</Button>
+            </Dropdown>
+          )}
           {hasPermission('manpower-request-create') && (
             <Link to="/manpower-requests/create">
               <Button type="primary" icon={<PlusOutlined />}>Create MRF</Button>

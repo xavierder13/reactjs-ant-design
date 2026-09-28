@@ -40,6 +40,14 @@ const manpowerRequestApi = {
   },
   detailFileDownload: (detailId) => axios.post('/manpower_request/detail/file_download', { detail_id: detailId }, { responseType: 'blob' }),
   detailFileDelete:   (detailId) => axios.post('/manpower_request/detail/file_delete', { detail_id: detailId }),
+
+  // Excel reports — `dates` is { date_field: 'created_at' | 'date_approved',
+  // date_from, date_to } (YYYY-MM-DD, optional). Both return an .xlsx blob
+  // (Excel::download server-side).
+  // Hiring report, Approved MRFs only — reportType 'Open' | 'Closed' | 'Overall'.
+  exportReport:       (reportType, dates) => axios.post('/manpower_request/export', { report_type: reportType, ...dates }, { responseType: 'blob' }),
+  // Status report, one row per detail line — status is any MRF status or 'All'.
+  exportStatusReport: (status, dates)     => axios.post('/manpower_request/export_status', { status, ...dates }, { responseType: 'blob' }),
 };
 
 export default manpowerRequestApi;

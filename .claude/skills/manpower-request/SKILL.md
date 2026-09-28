@@ -77,6 +77,7 @@ recordHire:         (id, hires) => POST `/manpower_request/record_hire/${id}`, {
 detailFileUpload:   (detailId, file) => multipart POST `/manpower_request/detail/${detailId}/file_upload`
 detailFileDownload: (detailId) => POST '/manpower_request/detail/file_download' { detail_id } (blob)
 detailFileDelete:   (detailId) => POST '/manpower_request/detail/file_delete' { detail_id }
+exportReport:       (reportType, dateFrom, dateTo) => POST '/manpower_request/export' { report_type, date_from, date_to } (blob .xlsx)
 ```
 
 `create`/`update` detect a `FormData` payload and set explicit multipart
@@ -174,6 +175,8 @@ module; don't build a new one.
   fetch until every given filter has a value, reloading when any changes.
   Changing branch/position does **not** clear an already-picked
   `replacement_employee_id` (not implemented).
+- Also used outside MRF by Area Assignment (`src/pages/area/AssignAreasModal.jsx`,
+  single select, `activeOnly`).
 - `status` prop is forwarded to AntD `Select` (used for duplicate-hire
   errors). Options carry `date_employed` and `preview_hire_date`;
   `onChange(value, option)` passes the full option.
@@ -182,9 +185,9 @@ module; don't build a new one.
 
 `manpower-request-list`, `-list-all`, `-create`, `-edit`, `-delete`,
 `-submit`, `-cancel`, `-approve`, `-disapprove`, `-reject`, `-return`,
-`-print`, `-record-hire`. Roles (backend-seeded):
+`-print`, `-record-hire`, `-export`. Roles (backend-seeded):
 `Manpower Requestor`, `Manpower Request Approver`, `Manpower Request
-Administrator` (`-list`, `-list-all`, `-record-hire` only — no
+Administrator` (`-list`, `-list-all`, `-record-hire`, `-export` only — no
 approve/edit/delete). **`-record-hire` is Administrator-only**, not on the
 Approver role. Confirm any new permission string is seeded before using it.
 
@@ -214,6 +217,7 @@ const canEdit =
   `approval_status.can_approve` (`canActOnApproval`) — the frontend never
   computes eligibility itself.
 - Print checks only `hasPermission('manpower-request-print')`.
+- Export Report (Index page) checks `hasRole('Administrator') || hasPermission('manpower-request-export')` — no ownership/status part; the backend scopes rows itself.
 
 ## Approval Workflow / Status Handling
 
@@ -267,6 +271,15 @@ state) because visibility can change from other users' actions.
   authority; it also caps hires per line at `quantity`.
 - Main detail view maps over `d.hires` — one read-only row per hire with
   its own Time to Fill.
+
+## Excel reports + Date Filter (Index page)
+
+- **Date Filter** `Select` (`DATE_FIELDS`: Date Created → `created_at`, Approved Date → `date_approved`; default `created_at`) sits next to the `RangePicker` and decides which field the range filters on — for the on-screen list (client-side; a record with no value for that field is excluded while a range is set) **and** both exports (sent as `date_field`/`date_from`/`date_to`, applied server-side).
+- **Export Report** `Dropdown`, grouped menu, keys `<report>:<option>`:
+  - *MRF Report (Approved only)* — `hiring:Open|Closed|Overall` → `exportReport()`. Always Approved-only regardless of Date Filter.
+  - *Status Report (per position line)* — `status:All|<status>` → `exportStatusReport()`.
+  - Saved via `downloadBlobResponse()`. Rows/columns are built server-side (vueportal `reportRows()`/`statusReportRows()`); search/status list filters are not sent.
+- The hiring report's Status uses the same Open/Closed rule as below; its Aging counts from `date_approved` like the on-screen Aging.
 
 ## Per-line Status / Aging, Time to Fill
 

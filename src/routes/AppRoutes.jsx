@@ -42,6 +42,7 @@ import CreateManpowerRequest from '../pages/manpower_request/request/CreateManpo
 import EditManpowerRequest from '../pages/manpower_request/request/EditManpowerRequest';
 import ViewManpowerRequest from '../pages/manpower_request/request/ViewManpowerRequest';
 import ManpowerRequestPrint from '../pages/manpower_request/request/ManpowerRequestPrint';
+import AreaIndex from '../pages/area/AreaIndex';
 
 // Errors
 import UnauthorizePage from '../pages/errors/UnauthorizePage';
@@ -69,6 +70,7 @@ const permissionRoutes = [
   { permissions: ['manpower-request-list', 'manpower-request-list-all', 'manpower-request-edit', 'manpower-request-approve', 'manpower-request-disapprove', 'manpower-request-return'], path: '/manpower-requests/:id', element: <ViewManpowerRequest /> },
   { permissions: ['manpower-request-create', 'manpower-request-edit'], path: '/manpower-requests/:id/edit', element: <EditManpowerRequest /> },
   { permissions: ['manpower-request-print'], path: '/manpower-requests/:id/print', element: <ManpowerRequestPrint /> },
+  { permissions: ['area-list'],               path: '/areas',                      element: <AreaIndex /> },
 
   // KPI Template Routes
   { permissions: ['kpi-template-list'],         path: '/kpi-templates',        element: <KpiTemplateIndex /> },
