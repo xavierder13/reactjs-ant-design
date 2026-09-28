@@ -4,7 +4,7 @@ import {
   Table, Tag, Breadcrumb, App, Tabs,
   Space, Tooltip
 } from 'antd';
-import { EyeOutlined, ReloadOutlined, PrinterOutlined } from '@ant-design/icons';
+import { EyeOutlined, ReloadOutlined, PrinterOutlined, EditOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import kpiEvaluationApi from '../../../services/kpi/kpiEvaluationApi';
 import useAuth from '../../../hooks/useAuth';
@@ -106,18 +106,32 @@ const KpiMyEvaluationIndex = () => {
       key:    'actions',
       render: (_, record) => (
         <Space>
-          <Button
-            color='green'
-            variant='outlined'
-            icon={<EyeOutlined />}
-            size='small'
-            onClick={() => navigate(`/my-evaluations/${record.id}`)}
-          >
-            {record.status === 'draft' ? 'Fill Evaluation' : 'View'}
-          </Button>
+          {record.status === 'draft' ? (
+            <Tooltip title='Fill Evaluation'>
+              <Button
+                color='green'
+                variant='outlined'
+                icon={<EditOutlined />}
+                size='small'
+                onClick={() => navigate(`/my-evaluations/${record.id}`)}
+              />
+            </Tooltip>
+          ) : (
+            <Tooltip title='View'>
+              <Button
+                color='blue'
+                variant='outlined'
+                icon={<EyeOutlined />}
+                size='small'
+                onClick={() => navigate(`/my-evaluations/${record.id}`)}
+              />
+            </Tooltip>
+          )}
           {hasPermission('kpi-evaluation-print') && (
             <Tooltip title="Print">
               <Button
+                color="purple"
+                variant="outlined"
                 icon={<PrinterOutlined />}
                 size="small"
                 onClick={() =>
@@ -148,19 +162,21 @@ const KpiMyEvaluationIndex = () => {
       key:    'actions',
       render: (_, record) => (
         <Space>
-          <Button
-            color='green'
-            variant='outlined'
-            icon={<EyeOutlined />}
-            size='small'
-            onClick={() => navigate(`/my-evaluations/${record.id}`)}
-          >
-            View
-          </Button>
+          <Tooltip title='View'>
+            <Button
+              color='blue'
+              variant='outlined'
+              icon={<EyeOutlined />}
+              size='small'
+              onClick={() => navigate(`/my-evaluations/${record.id}`)}
+            />
+          </Tooltip>
           
           {hasPermission('kpi-evaluation-print') && (
             <Tooltip title="Print">
               <Button
+                color="purple"
+                variant="outlined"
                 icon={<PrinterOutlined />}
                 size="small"
                 onClick={() =>

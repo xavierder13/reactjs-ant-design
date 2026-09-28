@@ -24,19 +24,19 @@ export default function EmployeeTable({
       render: (_, record) => (
         <Space>
           <Tooltip title="View">
-            <Button icon={<EyeOutlined />} onClick={() => onView(record)} />
+            <Button color="blue" variant="outlined" icon={<EyeOutlined />} size="small" onClick={() => onView(record)} />
           </Tooltip>
 
           {hasPermission('employee-master-data-edit') &&
             <Tooltip title="Edit">
-              <Button color="green" variant="outlined" icon={<EditOutlined />} onClick={() => editData(record)} />
+              <Button color="green" variant="outlined" icon={<EditOutlined />} size="small" onClick={() => editData(record)} />
             </Tooltip>
           }
 
           {hasPermission('employee-master-data-delete') &&
             <Popconfirm title="Delete employee?" onConfirm={() => onDelete(record.id)}>
               <Tooltip title="Delete">
-                <Button danger icon={<DeleteOutlined />} />
+                <Button danger icon={<DeleteOutlined />} size="small" />
               </Tooltip>
             </Popconfirm>
           }

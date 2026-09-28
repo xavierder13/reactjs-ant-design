@@ -44,7 +44,7 @@ export default function EmployeeCardMobile({
           <Divider />
           <Space>
             <Tooltip title="View">
-              <Button icon={<EyeOutlined />} onClick={() => onView(emp)} />
+              <Button color="blue" variant="outlined" icon={<EyeOutlined />} onClick={() => onView(emp)} />
             </Tooltip>
 
             {hasPermission('employee-master-data-edit') &&

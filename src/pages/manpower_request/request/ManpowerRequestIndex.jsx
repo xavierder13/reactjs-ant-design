@@ -208,14 +208,14 @@ const ManpowerRequestIndex = () => {
         <Space>
           <Tooltip title="View">
             <Link to={`/manpower-requests/${record.id}`}>
-              <Button icon={<EyeOutlined />} size="small" />
+              <Button color="blue" variant="outlined" icon={<EyeOutlined />} size="small" />
             </Link>
           </Tooltip>
 
           {canEdit(record) && (
             <Tooltip title="Edit">
               <Link to={`/manpower-requests/${record.id}/edit`}>
-                <Button icon={<EditOutlined />} size="small" />
+                <Button color="green" variant="outlined" icon={<EditOutlined />} size="small" />
               </Link>
             </Tooltip>
           )}
@@ -226,7 +226,7 @@ const ManpowerRequestIndex = () => {
               onConfirm={() => handleSubmit(record.id)}
             >
               <Tooltip title={['Disapproved', 'Cancelled', 'Returned'].includes(record.status) ? 'Resubmit for Approval' : 'Submit for Approval'}>
-                <Button icon={<SendOutlined />} size="small" type="primary" />
+                <Button color="cyan" variant="outlined" icon={<SendOutlined />} size="small" />
               </Tooltip>
             </Popconfirm>
           )}
@@ -237,7 +237,7 @@ const ManpowerRequestIndex = () => {
               onConfirm={() => handleCancel(record.id)}
             >
               <Tooltip title="Cancel Request">
-                <Button icon={<CloseCircleOutlined />} size="small" danger />
+                <Button color="orange" variant="outlined" icon={<CloseCircleOutlined />} size="small" />
               </Tooltip>
             </Popconfirm>
           )}

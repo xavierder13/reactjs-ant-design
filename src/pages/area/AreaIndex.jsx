@@ -146,7 +146,7 @@ const AreaIndex = () => {
         <Space>
           {canEdit && (
             <Tooltip title='Edit'>
-              <Button icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
+              <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
             </Tooltip>
           )}
           {canDelete && (
@@ -190,7 +190,7 @@ const AreaIndex = () => {
       render: (_, row) => canEdit && (
         <Space>
           <Tooltip title='Edit Areas'>
-            <Button icon={<EditOutlined />} size='small' onClick={() => openAssign(row)} />
+            <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openAssign(row)} />
           </Tooltip>
           <Popconfirm
             title='Unassign from all areas?'

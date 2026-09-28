@@ -143,6 +143,31 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
   over the store's `items` array, not via server query params.
 - Status columns render an AntD `Tag` colored via a local
   `STATUS_COLORS`/`statusColors` map keyed by status string.
+- **Row action buttons — mandatory color coding** (reference:
+  `src/pages/role/RoleIndex.jsx`). Every table row action is an icon-only
+  `size="small"` `Button` wrapped in a `Tooltip` naming the action, inside a
+  `Space`:
+
+  | Action | Icon | Props |
+  |---|---|---|
+  | View / open details | `EyeOutlined` | `color="blue" variant="outlined"` (info blue) |
+  | Edit / assign / fill in | `EditOutlined` | `color="green" variant="outlined"` |
+  | Delete / remove data (incl. unassign, remove file) | `DeleteOutlined` | `danger` |
+  | Cancel / deactivate (status change, data kept) | `CloseCircleOutlined` / `StopOutlined` | `color="orange" variant="outlined"` |
+  | Submit / send forward | `SendOutlined` | `color="cyan" variant="outlined"` |
+  | Print / export / download | `PrinterOutlined` / `DownloadOutlined` | `color="purple" variant="outlined"` |
+
+  Use the fixed AntD **preset** colors above, never `color="primary"` for a
+  row action — this app's theme sets `colorPrimary` to green (`#389e0d`,
+  `src/App.jsx`), so `primary` renders green, not blue.
+  Red is only for removing data; don't use `type="primary"`, `type="link"`
+  or an uncolored default button for a row action. A new kind of action
+  gets a row added here before it ships. Toolbar buttons (Create =
+  `type="primary"`, Refresh/Export = default) and inline links inside a
+  form field (e.g. an attachment's download/delete in `NteRecordsTab.jsx`)
+  are outside this rule. Expandable rows use the chevron `expandIcon`
+  (`UpOutlined`/`DownOutlined` text button) from
+  `AcknowledgmentReportIndex.jsx` / `AreaIndex.jsx`.
 - Row actions are permission- and status-gated inline functions
   (e.g. `canEdit(record)`, `canSubmit(record)`, `canCancel(record)`)
   combining `hasPermission`/`hasAnyPermission`, allowed statuses, and

@@ -71,7 +71,7 @@ const RoleIndex = () => {
             {isAdministrator ? (
               <Tooltip title='View'>
                 <Button
-                  color='primary'
+                  color='blue'
                   variant='outlined'
                   icon={<EyeOutlined />}
                   size='small'

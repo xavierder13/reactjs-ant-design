@@ -255,12 +255,14 @@ export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecord
         <Space>
           {canDownloadFile && (
             <Tooltip title="Download">
-              <Button type="link" icon={<DownloadOutlined />} size="small" onClick={() => handleFileDownload(record)} />
+              <Button color="purple" variant="outlined" icon={<DownloadOutlined />} size="small" onClick={() => handleFileDownload(record)} />
             </Tooltip>
           )}
           {canDeleteFile && (
             <Popconfirm title="Delete this file?" onConfirm={() => handleFileDelete(record)}>
-              <Button type="link" danger icon={<DeleteOutlined />} size="small" />
+              <Tooltip title="Delete File">
+                <Button danger icon={<DeleteOutlined />} size="small" />
+              </Tooltip>
             </Popconfirm>
           )}
         </Space>

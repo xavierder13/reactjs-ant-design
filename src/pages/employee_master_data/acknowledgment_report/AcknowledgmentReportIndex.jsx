@@ -74,11 +74,11 @@ export default function AcknowledgmentReportIndex() {
           render: (_, r) => (
             <Space>
               <Tooltip title="View">
-                <Button size="small" icon={<EyeOutlined />} onClick={() => navigate(`/acknowledgment-reports/${r.id}`, { state: { report: r } })} />
+                <Button color="blue" variant="outlined" size="small" icon={<EyeOutlined />} onClick={() => navigate(`/acknowledgment-reports/${r.id}`, { state: { report: r } })} />
               </Tooltip>
               {hasPermission('employee-acknowledgment-reports-export') && (
                 <Tooltip title="Export">
-                  <Button size="small" icon={<DownloadOutlined />} onClick={() => handleExport(r)} />
+                  <Button color="purple" variant="outlined" size="small" icon={<DownloadOutlined />} onClick={() => handleExport(r)} />
                 </Tooltip>
               )}
               {hasPermission('employee-acknowledgment-reports-delete') && (

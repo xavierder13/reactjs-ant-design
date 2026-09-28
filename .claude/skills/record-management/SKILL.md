@@ -24,6 +24,12 @@ files.** The backend is vueportal (its own `record-management` skill).
 
 ### Patterns worth reusing verbatim
 
+- **Row action buttons**: follow the mandatory color coding table in
+  `CLAUDE.md` (Table/List Conventions) — View blue (`color="blue"`, not
+  `primary`: the theme's primary is green), Edit green, Delete red,
+  Cancel/Deactivate orange, Submit cyan, Print/Export purple; icon-only,
+  `size="small"`, `Tooltip`. Expand toggle = chevron `expandIcon`.
+
 - **Permission gates**: `const isAdmin = hasRole('Administrator');
   const canEdit = isAdmin || hasPermission('<module>-edit');` — the
   Administrator bypass is a product rule; a gate without it is a defect.

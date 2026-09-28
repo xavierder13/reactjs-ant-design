@@ -106,7 +106,7 @@ const KpiTemplateIndex = () => {
               okButtonProps={{ danger: true }}
             >
               <Tooltip title='Deactivate'>
-                <Button danger icon={<StopOutlined />} size='small' />
+                <Button color='orange' variant='outlined' icon={<StopOutlined />} size='small' />
               </Tooltip>
             </Popconfirm>
           )}

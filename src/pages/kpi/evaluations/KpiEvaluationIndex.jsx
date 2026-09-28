@@ -146,7 +146,7 @@ const KpiEvaluationIndex = () => {
         <Space>
           <Tooltip title='View'>
             <Button
-              color='green'
+              color='blue'
               variant='outlined'
               icon={<EyeOutlined />}
               size='small'
@@ -173,6 +173,8 @@ const KpiEvaluationIndex = () => {
           {hasPermission('kpi-evaluation-print') && (
             <Tooltip title='Print'>
               <Button
+                color='purple'
+                variant='outlined'
                 icon={<PrinterOutlined />}
                 size='small'
                 onClick={() => window.open(`/kpi-evaluations/${record.id}/print`, '_blank')}

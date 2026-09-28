@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Button, Select, Table, Popconfirm, Space, App } from "antd";
+import { Upload, Button, Select, Table, Popconfirm, Space, Tooltip, App } from "antd";
 import { UploadOutlined, DeleteOutlined, DownloadOutlined } from "@ant-design/icons";
 import employeeApi from "../../../../../services/employee/employeeApi";
 import handleApiError from "../../../../../utils/handleApiError";
@@ -142,7 +142,9 @@ export default function FilesRequirements({ employeeId, initialFiles = [], mode 
               key: 'actions',
               width: 80,
               render: (_, entry) => (
-                <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleRemovePending(entry.id)} />
+                <Tooltip title="Remove">
+                  <Button danger icon={<DeleteOutlined />} size="small" onClick={() => handleRemovePending(entry.id)} />
+                </Tooltip>
               ),
             }] : []),
           ]}
@@ -175,10 +177,14 @@ export default function FilesRequirements({ employeeId, initialFiles = [], mode 
             width: 100,
             render: (_, file) => (
               <Space>
-                <Button type="link" icon={<DownloadOutlined />} onClick={() => handleDownload(file)} />
+                <Tooltip title="Download">
+                  <Button color="purple" variant="outlined" icon={<DownloadOutlined />} size="small" onClick={() => handleDownload(file)} />
+                </Tooltip>
                 {!readOnly && (
                   <Popconfirm title="Delete this file?" onConfirm={() => handleDelete(file.id)}>
-                    <Button type="link" danger icon={<DeleteOutlined />} />
+                    <Tooltip title="Delete">
+                      <Button danger icon={<DeleteOutlined />} size="small" />
+                    </Tooltip>
                   </Popconfirm>
                 )}
               </Space>
