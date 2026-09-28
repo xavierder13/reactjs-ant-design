@@ -36,13 +36,22 @@ const useManpowerRequestStore = create((set, get) => ({
   // Reference/lookup data for the create/edit form
   branches:   [],
   positions:  [],
+  // A Branch Manager may only request branch-level positions (backend-enforced too).
+  branchLevelOnly: false,
+  branchLevelCostCenter: null,
   isFormDataLoaded: false,
 
   fetchFormData: async () => {
     if (get().isFormDataLoaded) return;
     try {
       const { data } = await manpowerRequestApi.getCreate();
-      set({ branches: data.branches, positions: data.positions, isFormDataLoaded: true });
+      set({
+        branches: data.branches,
+        positions: data.positions,
+        branchLevelOnly: !!data.branch_level_only,
+        branchLevelCostCenter: data.branch_level_cost_center,
+        isFormDataLoaded: true,
+      });
     } catch (error) {
       set({ error: error.response?.data?.message || 'Failed to load form data.' });
     }

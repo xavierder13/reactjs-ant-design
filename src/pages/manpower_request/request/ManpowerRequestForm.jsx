@@ -88,6 +88,8 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
 
   const branches   = useManpowerRequestStore((state) => state.branches);
   const positions  = useManpowerRequestStore((state) => state.positions);
+  const branchLevelOnly       = useManpowerRequestStore((state) => state.branchLevelOnly);
+  const branchLevelCostCenter = useManpowerRequestStore((state) => state.branchLevelCostCenter);
   const fetchFormData = useManpowerRequestStore((state) => state.fetchFormData);
 
   const { user, hasRole } = useAuth();
@@ -155,7 +157,10 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
     }
   }, [mode, initialData, form]);
 
-  const positionOptions = positions.map((p) => ({ label: p.name, value: p.id }));
+  // A Branch Manager can only request branch-level positions.
+  const positionOptions = positions
+    .filter((p) => !branchLevelOnly || p.cost_center === branchLevelCostCenter)
+    .map((p) => ({ label: p.name, value: p.id }));
   const branchOptions   = branches.map((b) => ({ label: b.name, value: b.id }));
 
   const buildPayload = (values) => ({
@@ -363,6 +368,12 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
               validator: async (_, details) => {
                 if (!details || details.length < 1) {
                   return Promise.reject(new Error('At least one position is required'));
+                }
+                // One MRF = one request type = one "MRF - <type>" approval
+                // procedure (the backend enforces the same).
+                const types = new Set(details.map((d) => d?.replacement_or_additional).filter(Boolean));
+                if (types.size > 1) {
+                  return Promise.reject(new Error('A request can only contain one type (Replacement, Additional or New Position). File a separate request for the other type.'));
                 }
               },
             }]}

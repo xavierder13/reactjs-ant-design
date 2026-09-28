@@ -77,7 +77,8 @@ recordHire:         (id, hires) => POST `/manpower_request/record_hire/${id}`, {
 detailFileUpload:   (detailId, file) => multipart POST `/manpower_request/detail/${detailId}/file_upload`
 detailFileDownload: (detailId) => POST '/manpower_request/detail/file_download' { detail_id } (blob)
 detailFileDelete:   (detailId) => POST '/manpower_request/detail/file_delete' { detail_id }
-exportReport:       (reportType, dateFrom, dateTo) => POST '/manpower_request/export' { report_type, date_from, date_to } (blob .xlsx)
+exportReport:       (reportType, dates) => POST '/manpower_request/export' { report_type, date_field, date_from, date_to } (blob .xlsx)
+exportStatusReport: (status, dates) => POST '/manpower_request/export_status' { status, date_field, date_from, date_to } (blob .xlsx)
 ```
 
 `create`/`update` detect a `FormData` payload and set explicit multipart
@@ -292,6 +293,24 @@ state) because visibility can change from other users' actions.
   `DashboardPage.jsx`'s section (average card, by-position chart,
   by-hire-month trend). MRFs without `date_approved` or hires without
   `date_hired` are excluded.
+
+## Approval procedures (backend-configured)
+
+Each MRF type has its own approval procedure — Access Charts `MRF -
+Replacement` / `MRF - Additional` / `MRF - New Position` (module Manpower
+Request), maintained on vueportal's existing Access Chart screen, not in
+this app. Level 1 of Additional/New Position is filtered by position
+hierarchy (approvers only get MRFs for positions under them).
+An MRF holds **one** request type — `ManpowerRequestForm.jsx`'s `details`
+list validator rejects mixed types (the backend does too). Full rules:
+vueportal `manpower-request` skill → "Approval procedure".
+
+- **Branch Manager requestor**: `create` returns `branch_level_only` +
+  `branch_level_cost_center` (stored in `manpowerRequestStore`);
+  `ManpowerRequestForm.jsx` then offers only positions with that
+  `cost_center`. The backend enforces it on store/update/submit.
+- `approval_status` also carries `procedure_type` and `max_level` (levels
+  this MRF needs); `levels` already lists only those.
 
 ## Line attachments (View page)
 
