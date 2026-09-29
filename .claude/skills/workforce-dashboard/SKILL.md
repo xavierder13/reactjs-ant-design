@@ -20,7 +20,10 @@ Same shape as the Recruitment Dashboard: a thin page + one component per section
 - `components/` — `WorkforceOverviewCards` (vueportal HR / Payroll dashboard
   cards + Resigned This Month; each calls the same endpoint as the Vue card,
   shown only with that endpoint's permission, Administrator always;
-  company-wide, neutral `table_headers: []`), `WorkforceFilters`,
+  company-wide, neutral `table_headers: []`; each card opens its list page —
+  /employees, /employees/hired-this-month, /for-regularization, /resigned, /nte,
+  /disciplinary, /vacancies — whose total matches the card; Total Employees is
+  clickable only with `employee-master-data-list`), `WorkforceFilters`,
   `HeadcountSummary`, `WorkforceMix`, `HeadcountBreakdown`, `AgeAndTenure`,
   `MovementSummary`, `MovementCharts` (+ `MonthlyFiguresTable`), `DataNotes`;
   shared `SectionLabel`, `StatTile`, `ChartCard`, `WorkforceSkeleton`.

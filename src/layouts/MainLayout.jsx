@@ -49,6 +49,12 @@ const titleMap = {
   '/employees':              { title: 'Employee Master Data', breadcrumb: ['Employee', 'Master Data'] },
   '/employees/create':       { title: 'Create Employee',     breadcrumb: ['Employee', 'Create'] },
   '/acknowledgment-reports': { title: 'Branch Reports', breadcrumb: ['Employee', 'Branch Reports'] },
+  '/employees/hired-this-month':    { title: 'Employees Hired This Month', breadcrumb: ['Employee', 'Hired This Month'] },
+  '/employees/for-regularization':  { title: 'For Regularization', breadcrumb: ['Employee', 'For Regularization'] },
+  '/employees/resigned':            { title: 'Resigned', breadcrumb: ['Employee', 'Resigned'] },
+  '/employees/nte':                 { title: 'Issued NTE (Open)', breadcrumb: ['Employee', 'Issued NTE'] },
+  '/employees/disciplinary':        { title: 'Disciplinary Actions (Open)', breadcrumb: ['Employee', 'Disciplinary Actions'] },
+  '/vacancies':                     { title: 'Vacancies', breadcrumb: ['Recruitment', 'Vacancies'] },
   '/recruitment/:url':       { title: 'Applicant List',      breadcrumb: ['Recruitment', 'Applicant List'] },
   '/kpi-templates':          { title: 'KPI Templates',       breadcrumb: ['KPI Management', 'KPI Templates'] },
   '/kpi-templates/create':   { title: 'Create KPI Template', breadcrumb: ['KPI Management', 'KPI Templates', 'Create'] },
@@ -91,6 +97,11 @@ const menuData = [
           { key: 'master-data',    title: 'Master Data',    link: '/employees',         permissions: ['employee-master-data-list'] },
           { key: 'master-data-create',    title: 'Master Data Create',    link: '/employees/create',         permissions: ['employee-master-data-create'] },
           { key: 'acknowledgment-reports', title: 'Branch Reports', link: '/acknowledgment-reports', permissions: ['employee-acknowledgment-reports'] },
+          { key: 'hired-this-month', title: 'Hired This Month', link: '/employees/hired-this-month', permissions: ['employee-master-data-for-regularization'] },
+          { key: 'for-regularization', title: 'For Regularization', link: '/employees/for-regularization', permissions: ['employee-master-data-for-regularization'] },
+          { key: 'resigned', title: 'Resigned', link: '/employees/resigned', permissions: ['employee-master-data-resigned-list'] },
+          { key: 'open-nte', title: 'Issued NTE', link: '/employees/nte', permissions: ['employee-master-data-nte-list'] },
+          { key: 'open-disciplinary', title: 'Disciplinary Actions', link: '/employees/disciplinary', permissions: ['employee-master-data-disciplinary-list'] },
         ]
       },
       {
@@ -105,6 +116,7 @@ const menuData = [
           { key: 'bi-basic-req',      title: 'B.I & Basic Req.',  link: '/recruitment/bi-list',                permissions: ['careers-bi-list'] },
           { key: 'final-interview',   title: 'Final Interview',   link: '/recruitment/final-interview-list',   permissions: ['careers-final-interview-list'] },
           { key: 'orientation',       title: 'Orientation',       link: '/recruitment/orientation-list',       permissions: ['careers-orientation-list'] },
+          { key: 'vacancies',         title: 'Vacancies',         link: '/vacancies',                          permissions: ['vacancy-list'] },
         ],
       },
       {

@@ -2,7 +2,8 @@
 
 import { Select, Space, Typography, App } from "antd";
 
-export default function ColumnSelector({ headers, selectedHeaders, onChange }) {
+// `maxColumns` caps the selection (default 8, the main list's limit).
+export default function ColumnSelector({ headers, selectedHeaders, onChange, maxColumns = 8 }) {
   // App.useApp(), not the static `message` import — the static function
   // API can't consume the ConfigProvider/dynamic-theme context this app
   // wraps itself in (src/App.jsx's <AntApp>), which AntD surfaces as a
@@ -30,8 +31,8 @@ export default function ColumnSelector({ headers, selectedHeaders, onChange }) {
             }))}
             onChange={(values) => {
 
-              if (values.length > 8) {
-                messageApi.warning("You can select up to 8 columns only.");
+              if (values.length > maxColumns) {
+                messageApi.warning(`You can select up to ${maxColumns} columns only.`);
                 return;
               }
 

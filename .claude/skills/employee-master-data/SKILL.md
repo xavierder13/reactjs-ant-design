@@ -36,19 +36,26 @@ src/pages/employee_master_data/
     EmployeeTabs.jsx              6-tab container, filters tabs by umbrella permission, threads mode/initialData
     EmployeeTable.jsx             desktop table + row actions (View/Edit/Delete)
     EmployeeCardMobile.jsx        mobile card list, same actions
-    ColumnSelector.jsx            up-to-8-column picker, part of the list request payload
+    employeeColumns.js            list columns (EMPLOYEE_COLUMNS / DEFAULT_EMPLOYEE_COLUMNS), shared with the segment lists
+    ColumnSelector.jsx            column picker (max 8 by default, `maxColumns` prop), part of the list request payload
     PaginationControls.jsx        mobile pagination UI
     EmployeeModal.jsx             UNUSED — see "Decisions" #3
     ImportEmployeesModal.jsx      Excel/CSV bulk import
-    ExportEmployeesModal.jsx      Excel export (core record "Employee List" report only)
+    ExportEmployeesModal.jsx      Excel export (core record "Employee List" report only); optional presetValues/extraPayload/title
     SubmitAcknowledgmentReportModal.jsx  opened from the bulk-action bar
     tabs/
       PersonalDataTab.jsx         nested: personal/PersonalInformation.jsx + personal/FilesRequirements.jsx
       EmployeeDetailsTab.jsx      position/department/branch/employment type/dates/referral code
       PerformanceManagementTab.jsx  7 sub-tabs in performance/ (see "Sub-tabs")
       DisciplinaryTab.jsx         disciplinary/NteRecordsTab.jsx + disciplinary/DisciplinaryRecordsTab.jsx
-      OffboardingTab.jsx          + offboarding/OffboardingFileSlot.jsx
+                                  (form fields: NteFormFields.jsx / DisciplinaryFormFields.jsx; NteFileSlot.jsx)
+      OffboardingTab.jsx          + offboarding/OffboardingFileSlot.jsx, offboarding/OffboardingFormFields.jsx
       AttendanceTab.jsx           read-only, own fetch
+  lists/                          segment / open-case list pages (see "Segment and Open-Case Lists")
+    EmployeeSegmentList.jsx       shared server-paginated list → HiredThisMonth.jsx, ForRegularization.jsx
+    ResignedEmployees.jsx         latest offboarding per employee, date-filtered, edit/delete offboarding
+    OpenCaseList.jsx              shared client-side queue list → OpenNteList.jsx, OpenDisciplinaryList.jsx
+    BranchFilter.jsx, useListAccess.js  branch-name filter; `can()` (Administrator bypass) + canFilterByBranch
   acknowledgment_report/
     AcknowledgmentReportIndex.jsx   /acknowledgment-reports
     AcknowledgmentReportView.jsx    /acknowledgment-reports/:id
@@ -81,6 +88,11 @@ Registered in both `AppRoutes.jsx` (`permissionRoutes`) and
 /employees/:id/edit        → EditEmployee               (employee-master-data-create, employee-master-data-edit)
 /acknowledgment-reports    → AcknowledgmentReportIndex  (employee-acknowledgment-reports)
 /acknowledgment-reports/:id → AcknowledgmentReportView  (employee-acknowledgment-reports)
+/employees/hired-this-month   → HiredThisMonth       (employee-master-data-for-regularization — the backend gates this list on it too)
+/employees/for-regularization → ForRegularization    (employee-master-data-for-regularization)
+/employees/resigned           → ResignedEmployees    (employee-master-data-resigned-list)
+/employees/nte                → OpenNteList          (employee-master-data-nte-list)
+/employees/disciplinary       → OpenDisciplinaryList (employee-master-data-disciplinary-list)
 ```
 
 ## API / Service Pattern
@@ -320,6 +332,35 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   toggles, hardcoded badge counts, Out Time/Work Hours/No Pay columns that
   are never populated) and its Download menu items.
 
+## Segment and Open-Case Lists
+
+React counterparts of vueportal's EmployeeHiredThisMonth / EmployeeForRegularization /
+EmployeeResigned / EmployeeNTEList / EmployeeDisciplinaryList pages; the Workforce
+Dashboard's cards open them (`/vacancies` is the recruitment page `src/pages/recruitment/Vacancies.jsx`).
+Each list's total matches its dashboard card.
+
+- **Hired This Month / For Regularization** (`EmployeeSegmentList`): same rows as the
+  main list (backend `getEmployees()` base), so the main list's columns, search,
+  View/Edit via router state, delete and bulk delete all apply. Branch filter
+  (`search_branch`, branch **name**) only for `canFilterByBranch`. Always sends
+  `include_sales_specialist: false` (vueportal's toggle is commented out). No status
+  filter — both endpoints are active-only.
+- **Export**: For Regularization → `for_regularization/export` with the list filters.
+  Hired This Month → the Employee List export **pre-filled** (Date Employed, 1st of
+  month → today, Active Only, `include_sales_specialist: false`); vueportal's Hired
+  page opens its dialog in "for regularization" mode and downloads the wrong list.
+- **Resigned**: rows are `employee_offboardings` (latest per employee) + employee
+  fields; column `title`s must equal `resignedQuery()`'s `$table_fields` names.
+  Date filter (`date_field_param` + range, default Resignation Date Filed this month =
+  the dashboard card). Edit reuses `OffboardingFormFields` + `OffboardingFileSlot`;
+  the backend re-syncs `active`/`date_resigned` on offboarding update/delete, so no
+  separate resign call here. Export → `resigned/export`.
+- **NTE / Disciplinary (Open)** (`OpenCaseList`): the backends' `index()` queues
+  (all open records in the caller's scope at once), so search, branch filter and
+  paging are client-side. Edit reuses the tabs' form fields; a record set to Closed
+  drops off on reload. Disciplinary actions are gated on `disciplinary-*` (what the
+  backend checks) — vueportal's page checks `nte-*` by mistake.
+
 ## Export / Template Download
 
 - Only the core-record pieces are wired: Export sends `report_type:
@@ -426,9 +467,9 @@ simplify the defensive code:
 ## Deferred (none of it blocking), rough priority order
 
 1. Profile picture upload/display.
-2. Resign/rehire quick actions, new-hire sync from Careers Portal,
-   dashboard counters (new-hired/for-regularization/NTE-open/
-   disciplinary-open).
+2. Resign/rehire quick actions, new-hire sync from Careers Portal, the
+   Employee Master Data index's mini cards (the lists exist and are reachable
+   from the sidebar and the Workforce Dashboard cards).
 3. Promodizer Brand form field (needs a lookup source — "Decisions" #4).
 4. "Length of Service" column (needs a vueportal whitelist fix first).
 5. Sub-module import/export/template tooling (Performance, NTE,

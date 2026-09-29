@@ -32,7 +32,12 @@ const DATE_FIELD_OPTIONS = [
   { label: "Date Resigned", value: "date_resigned" },
 ];
 
-export default function ExportEmployeesModal({ open, onClose }) {
+// `presetValues` pre-fills the form (e.g. the Hired This Month page opens it
+// on Date Employed / this month / Active Only); `extraPayload` is merged into
+// the request as-is (e.g. `include_sales_specialist: false`, so the export
+// matches a list that excludes Sales Specialists). `title` names the modal
+// and the downloaded file.
+export default function ExportEmployeesModal({ open, onClose, presetValues, extraPayload, title = "Employee List" }) {
   const { message: messageApi } = App.useApp();
   const { hasAnyRole } = useAuth();
   const { branchOptions } = useBranches();
@@ -50,6 +55,12 @@ export default function ExportEmployeesModal({ open, onClose }) {
     if (exporting) return;
     form.resetFields();
     onClose();
+  };
+
+  // Presets are applied once the modal (and its Form) is mounted —
+  // destroyOnHidden means the Form doesn't exist before that.
+  const handleAfterOpenChange = (isOpen) => {
+    if (isOpen && presetValues) form.setFieldsValue(presetValues);
   };
 
   const handleExport = async () => {
@@ -76,6 +87,7 @@ export default function ExportEmployeesModal({ open, onClose }) {
       // backend scopes them to their own branch/department/division
       // regardless of what's sent, so there's nothing meaningful to send.
       ...(branchId !== undefined && { branch_id: branchId }),
+      ...extraPayload,
     };
 
     setExporting(true);
@@ -85,7 +97,7 @@ export default function ExportEmployeesModal({ open, onClose }) {
         ? (branchOptions.find((b) => b.value === branchId)?.label || "ALL")
         : "My Branch";
       const statusSuffix = documentStatus === "Active Only" ? " (Active Employees)" : "";
-      const filename = `Employee List - ${branchLabel}${statusSuffix} (${dateFrom} to ${dateTo}).xls`;
+      const filename = `${title} - ${branchLabel}${statusSuffix} (${dateFrom} to ${dateTo}).xls`;
 
       const downloaded = await downloadBlobResponse(response, filename, messageApi);
       if (downloaded) {
@@ -103,8 +115,9 @@ export default function ExportEmployeesModal({ open, onClose }) {
   return (
     <Modal
       open={open}
-      title="Export Employee List"
+      title={`Export ${title}`}
       onCancel={handleClose}
+      afterOpenChange={handleAfterOpenChange}
       destroyOnHidden
       footer={[
         <Button key="cancel" onClick={handleClose} disabled={exporting}>Cancel</Button>,

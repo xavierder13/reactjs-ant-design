@@ -1,78 +1,19 @@
 import { useState } from "react";
 import {
-  Table, Button, Modal, Form, Input, Select, DatePicker, Space,
-  Popconfirm, Tooltip, Typography, Upload, App,
+  Table, Button, Modal, Form, Space,
+  Popconfirm, Tooltip, Upload, App,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, DownloadOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import useAuth from "../../../../../hooks/useAuth";
 import handleApiError from "../../../../../utils/handleApiError";
 import nteApi from "../../../../../services/employee/nteApi";
 import { formatDate } from "../../../../../utils/formatDate";
+import NteFormFields from "./NteFormFields";
+import NteFileSlot from "./NteFileSlot";
 
 const ACCEPTED_FILE_TYPES = ".jpeg,.jpg,.png,.docs,.docx,.pdf";
-
-// One file slot (NTE File or Explanation File) — download/delete when a
-// file already exists, otherwise a pending-upload picker. Matches
-// disciplinaryApi's single-file pattern, duplicated per slot since NTE
-// records carry two independent files (see nteApi.js).
-function FileSlotField({ label, documentType, record, pendingFile, onPendingFileChange, canDownload, canDeleteFile, onFileDeleted }) {
-  const { message: messageApi } = App.useApp();
-  const fileName = documentType === "nte_file" ? record?.nte_file_name : record?.explanation_file_name;
-
-  const handleDownload = async () => {
-    try {
-      const response = await nteApi.fileDownload(record.id, documentType);
-      const url = window.URL.createObjectURL(response.data);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName || "file";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      handleApiError(error, messageApi);
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      const { data } = await nteApi.fileDelete(record.id, documentType);
-      onFileDeleted(data.explanations);
-      messageApi.success("File deleted.");
-    } catch (error) {
-      handleApiError(error, messageApi);
-    }
-  };
-
-  return (
-    <Form.Item label={label}>
-      {fileName ? (
-        <Space>
-          <Typography.Text>{fileName}</Typography.Text>
-          {canDownload && <Button type="link" icon={<DownloadOutlined />} size="small" onClick={handleDownload} />}
-          {canDeleteFile && (
-            <Popconfirm title="Delete this file?" onConfirm={handleDelete}>
-              <Button type="link" danger icon={<DeleteOutlined />} size="small" />
-            </Popconfirm>
-          )}
-        </Space>
-      ) : (
-        <Upload
-          accept={ACCEPTED_FILE_TYPES}
-          beforeUpload={(file) => { onPendingFileChange(file); return false; }}
-          onRemove={() => onPendingFileChange(null)}
-          fileList={pendingFile ? [pendingFile] : []}
-          maxCount={1}
-        >
-          <Button icon={<UploadOutlined />}>Select File</Button>
-        </Upload>
-      )}
-    </Form.Item>
-  );
-}
 
 // Create mode (2026-09-24): matches EmployeeMasterDataController@store()'s
 // `explanations` field — a JSON array bundled into the SAME multipart
@@ -319,27 +260,7 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords, pendin
         destroyOnHidden
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="date_issued" label="Date Issued" rules={[{ required: true, message: "Please select a date." }]}>
-            <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
-          </Form.Item>
-          <Form.Item name="issued_by" label="Issued By" rules={[{ required: true, message: "Please enter who issued this." }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="nte_code" label="NTE Code" rules={[{ required: true, message: "Please enter the NTE code." }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="status" label="Status">
-            <Select options={[{ label: "Open", value: "Open" }, { label: "Closed", value: "Closed" }]} />
-          </Form.Item>
-          <Form.Item name="violation" label="Violation" rules={[{ required: true, message: "Please describe the violation." }]}>
-            <Input.TextArea rows={3} />
-          </Form.Item>
-          <Form.Item name="explanation_date" label="Explanation Date">
-            <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
-          </Form.Item>
-          <Form.Item name="remarks" label="Remarks">
-            <Input.TextArea rows={3} />
-          </Form.Item>
+          <NteFormFields />
 
           {/* Same backend limitation as Disciplinary Actions: once a slot
               has a file, re-uploading is silently ignored — delete first
@@ -352,7 +273,7 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords, pendin
               them from that row's own nte_file/explanation_file. */}
           {!isCreateMode && editing ? (
             <>
-              <FileSlotField
+              <NteFileSlot
                 label="NTE File"
                 documentType="nte_file"
                 record={editing}
@@ -362,7 +283,7 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords, pendin
                 canDeleteFile={canDeleteFile}
                 onFileDeleted={updateEditingFromResponse}
               />
-              <FileSlotField
+              <NteFileSlot
                 label="Explanation File"
                 documentType="explanation_file"
                 record={editing}

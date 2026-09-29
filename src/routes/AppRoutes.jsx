@@ -37,6 +37,12 @@ import EditEmployee from '../pages/employee_master_data/EditEmployee';
 import ViewEmployee from '../pages/employee_master_data/ViewEmployee';
 import AcknowledgmentReportIndex from '../pages/employee_master_data/acknowledgment_report/AcknowledgmentReportIndex';
 import AcknowledgmentReportView from '../pages/employee_master_data/acknowledgment_report/AcknowledgmentReportView';
+import HiredThisMonth from '../pages/employee_master_data/lists/HiredThisMonth';
+import ForRegularization from '../pages/employee_master_data/lists/ForRegularization';
+import ResignedEmployees from '../pages/employee_master_data/lists/ResignedEmployees';
+import OpenNteList from '../pages/employee_master_data/lists/OpenNteList';
+import OpenDisciplinaryList from '../pages/employee_master_data/lists/OpenDisciplinaryList';
+import Vacancies from '../pages/recruitment/Vacancies';
 import JobApplicantList from '../pages/recruitment/JobApplicantList';
 import ManpowerRequestIndex from '../pages/manpower_request/request/ManpowerRequestIndex';
 import CreateManpowerRequest from '../pages/manpower_request/request/CreateManpowerRequest';
@@ -59,12 +65,21 @@ const permissionRoutes = [
   { permissions: ['role-edit'],                 path: '/roles/:id/edit', element: <EditRole /> },
   { permissions: ['permission-list'],           path: '/permissions', element: <PermissionIndex /> },
   { permissions: ['employee-master-data-list'], path: '/employees', element: <EmployeeMasterData /> },  
+  // Segment / open-case lists (the HR dashboard cards link here). Gates match
+  // each list endpoint's middleware — Hired This Month is gated on
+  // -for-regularization server-side too.
+  { permissions: ['employee-master-data-for-regularization'], path: '/employees/hired-this-month', element: <HiredThisMonth /> },
+  { permissions: ['employee-master-data-for-regularization'], path: '/employees/for-regularization', element: <ForRegularization /> },
+  { permissions: ['employee-master-data-resigned-list'], path: '/employees/resigned', element: <ResignedEmployees /> },
+  { permissions: ['employee-master-data-nte-list'], path: '/employees/nte', element: <OpenNteList /> },
+  { permissions: ['employee-master-data-disciplinary-list'], path: '/employees/disciplinary', element: <OpenDisciplinaryList /> },
   { permissions: ['employee-master-data-list'], path: '/employees/:id', element: <ViewEmployee /> },
   { permissions: ['employee-master-data-create'], path: '/employees/create', element: <CreateEmployee /> },
   { permissions: ['employee-master-data-create', 'employee-master-data-edit'], path: '/employees/:id/edit', element: <EditEmployee /> },
   { permissions: ['employee-acknowledgment-reports'], path: '/acknowledgment-reports', element: <AcknowledgmentReportIndex /> },
   { permissions: ['employee-acknowledgment-reports'], path: '/acknowledgment-reports/:id', element: <AcknowledgmentReportView /> },
   { permissions: ['careers-applicant-list'], path: '/recruitment/:url', element: <JobApplicantList /> },
+  { permissions: ['vacancy-list'], path: '/vacancies', element: <Vacancies /> },
 
   // Manpower Request Routes
   { permissions: ['manpower-request-list', 'manpower-request-list-all'],   path: '/manpower-requests',        element: <ManpowerRequestIndex /> },

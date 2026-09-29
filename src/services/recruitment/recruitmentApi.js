@@ -10,6 +10,11 @@ const recruitmentApi = {
   // GET /recruitment/vacancies (vacancy-list) → { vacancies: [{ position, position_id,
   //   branch, branch_id, required, current }] } — only rows where required ≠ current.
   getVacancies: () => axios.get('/recruitment/vacancies'),
+
+  // POST /recruitment/export_vacancies (vacancy-export) — body { vacancies:
+  //   [{ position, branch, required, current, vacancy }] } → .xls blob of
+  //   exactly the rows sent (the page sends what it's showing).
+  exportVacancies: (vacancies) => axios.post('/recruitment/export_vacancies', { vacancies }, { responseType: 'blob' }),
 };
 
 export default recruitmentApi;

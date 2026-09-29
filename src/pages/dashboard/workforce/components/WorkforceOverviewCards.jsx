@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Row, Col, Card, Skeleton, Typography } from 'antd';
 import {
   TeamOutlined, UserAddOutlined, SafetyCertificateOutlined, UserDeleteOutlined,
@@ -24,20 +25,25 @@ const LIST_BODY = { items_per_page: 1, search: '', search_branch: '', table_head
 
 const CARD_DEFS = [
   {
+    // anyone sees the count; opening the list needs the list permission
     key: 'totalEmployees', label: 'Total Employees', icon: <TeamOutlined />, permission: null,
+    link: '/employees', linkPermission: 'employee-master-data-list',
     fetchCount: async () => (await recruitmentApi.getTotalActiveEmployees()).data.total_active_employees,
   },
   {
     // EmployeeMasterDataMaintenance gates hired_this_month on this permission
     key: 'hiredThisMonth', label: 'Hired This Month', icon: <UserAddOutlined />, permission: 'employee-master-data-for-regularization',
+    link: '/employees/hired-this-month',
     fetchCount: async () => (await employeeApi.getHiredThisMonth(LIST_BODY)).data.employees.total,
   },
   {
     key: 'forRegularization', label: 'For Regularization', icon: <SafetyCertificateOutlined />, permission: 'employee-master-data-for-regularization',
+    link: '/employees/for-regularization',
     fetchCount: async () => (await employeeApi.getForRegularization({ ...LIST_BODY, include_sales_specialist: false })).data.employees.total,
   },
   {
     key: 'resigned', label: 'Resigned This Month', icon: <UserDeleteOutlined />, permission: 'employee-master-data-resigned-list',
+    link: '/employees/resigned',
     fetchCount: async () => (await employeeApi.getResigned({
       ...LIST_BODY,
       date_field_param: 'resignation_date_filed',
@@ -47,26 +53,36 @@ const CARD_DEFS = [
   },
   {
     key: 'nte', label: 'NTE (Open)', icon: <FileTextOutlined />, permission: 'employee-master-data-nte-list',
+    link: '/employees/nte',
     fetchCount: async () => (await nteApi.getOpenQueue()).data.explanations.length,
   },
   {
     key: 'disciplinary', label: 'Disciplinary (Open)', icon: <WarningOutlined />, permission: 'employee-master-data-disciplinary-list',
+    link: '/employees/disciplinary',
     fetchCount: async () => (await disciplinaryApi.getOpenQueue()).data.disciplinaries.length,
   },
   {
     // same sum as DashboardHR's vacancyCount: open headcount where required > current
     key: 'vacancies', label: 'Total Vacancies', icon: <SolutionOutlined />, permission: 'vacancy-list',
+    link: '/vacancies',
     fetchCount: async () => (await recruitmentApi.getVacancies()).data.vacancies
       .reduce((sum, v) => sum + Math.max(v.required - v.current, 0), 0),
   },
 ];
 
 const WorkforceOverviewCards = ({ refreshKey }) => {
+  const navigate = useNavigate();
   const { roles, permissions } = useAuth();
 
+  // Each card opens its list page (same pages the vueportal HR / Payroll
+  // dashboard cards open); a card's link needs the same permission as its
+  // count, except Total Employees (see linkPermission).
   const visibleCards = useMemo(() => {
     const isAdmin = roles.includes('Administrator');
-    return CARD_DEFS.filter((c) => !c.permission || isAdmin || permissions.includes(c.permission));
+    const allowed = (p) => !p || isAdmin || permissions.includes(p);
+    return CARD_DEFS
+      .filter((c) => allowed(c.permission))
+      .map((c) => ({ ...c, clickable: allowed(c.linkPermission || c.permission) }));
   }, [roles, permissions]);
 
   const [counts, setCounts] = useState({});
@@ -92,7 +108,17 @@ const WorkforceOverviewCards = ({ refreshKey }) => {
     <Row gutter={[12, 12]}>
       {visibleCards.map((card) => (
         <Col key={card.key} flex='1 1 150px'>
-          <Card size='small' style={{ height: '100%', borderRadius: 8 }} styles={{ body: { padding: '12px 14px' } }}>
+          <Card
+            size='small'
+            hoverable={card.clickable}
+            onClick={card.clickable ? () => navigate(card.link) : undefined}
+            onKeyDown={card.clickable ? (e) => { if (e.key === 'Enter') navigate(card.link); } : undefined}
+            role={card.clickable ? 'link' : undefined}
+            tabIndex={card.clickable ? 0 : undefined}
+            aria-label={card.clickable ? `${card.label} — open list` : undefined}
+            style={{ height: '100%', borderRadius: 8, cursor: card.clickable ? 'pointer' : 'default' }}
+            styles={{ body: { padding: '12px 14px' } }}
+          >
             <Text type='secondary' style={{ fontSize: 12 }}>
               <span style={{ marginRight: 6 }}>{card.icon}</span>{card.label}
             </Text>

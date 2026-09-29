@@ -76,20 +76,25 @@ const employeeApi = {
   // employee record; does not touch the offboarding record itself.
   resign: (payload) => axios.post('/employee_master_data/resign', payload),
 
-  // Count endpoints behind the Workforce Dashboard cards (same calls the
-  // vueportal HR / Payroll dashboard makes). All paginated → read
-  // `employees.total`. `table_headers` must be headers this endpoint's own
-  // `$table_fields` whitelist understands — send [] when not searching.
-  // POST /employee_master_data/hired_this_month?page=1 — active, employed this
+  // Segment lists — the Hired This Month / For Regularization / Resigned
+  // pages, and the Workforce Dashboard's counts (read `employees.total`).
+  // All paginated via ?page=. `table_headers` must be headers this endpoint's
+  // own `$table_fields` whitelist understands — send [] when not searching.
+  // POST /employee_master_data/hired_this_month — active, employed this
   // month, Sales Specialists excluded unless include_sales_specialist.
-  getHiredThisMonth: (payload) => axios.post('/employee_master_data/hired_this_month?page=1', payload),
-  // POST /employee_master_data/for_regularization?page=1 — active Probationary,
+  getHiredThisMonth: (payload, page = 1) => axios.post(`/employee_master_data/hired_this_month?page=${page}`, payload),
+  // POST /employee_master_data/for_regularization — active Probationary,
   // employed 150+ days.
-  getForRegularization: (payload) => axios.post('/employee_master_data/for_regularization?page=1', payload),
-  // POST /employee_master_data/resigned?page=1 — latest offboarding per employee,
+  getForRegularization: (payload, page = 1) => axios.post(`/employee_master_data/for_regularization?page=${page}`, payload),
+  // POST /employee_master_data/for_regularization/export — same filters as the
+  // list (search, search_branch, table_headers, include_sales_specialist), .xls blob.
+  exportForRegularization: (payload) => axios.post('/employee_master_data/for_regularization/export', payload, { responseType: 'blob' }),
+  // POST /employee_master_data/resigned — latest offboarding per employee,
   // filtered by date_field_param ('resignation_date_filed' default) between
   // date_from and date_to.
-  getResigned: (payload) => axios.post('/employee_master_data/resigned?page=1', payload),
+  getResigned: (payload, page = 1) => axios.post(`/employee_master_data/resigned?page=${page}`, payload),
+  // POST /employee_master_data/resigned/export — same filters as the list, .xls blob.
+  exportResigned: (payload) => axios.post('/employee_master_data/resigned/export', payload, { responseType: 'blob' }),
 };
 
 export default employeeApi;
