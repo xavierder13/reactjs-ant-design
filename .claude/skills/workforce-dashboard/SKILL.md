@@ -114,6 +114,42 @@ Current headcount follows `active = 1`; the 12-month trend is rebuilt from
   staff there, which inflates Short and lowers Fill Rate. Check the flag
   before trusting those numbers on a copied DB.
 
+## Known issues — fix next
+
+Found by the phase 2–3 code review and integration test (all 5 integration
+checks passed; nothing blocking). Verify each against the code, fix, then
+delete it from this list.
+
+1. **MEDIUM — Regularization doesn't use the card's rule**
+   (`vueportal` `EmployeeDashboardService::regularization`, ~line 326–333).
+   The For Regularization card/list
+   (`EmployeeMasterDataController::forRegularizationQuery`, ~line 375) counts
+   `DATEDIFF(NOW(), date_employed) >= 150` and, via `f.name <> 'Sales
+   Specialist'` on a left join, drops employees with **no position**. The
+   service instead uses `employed + 6 months <= today + 30` (≈ 151–154 days)
+   and keeps null positions, so "overdue + due soon = card" only holds by
+   coincidence. Fix: due soon = not overdue and `diffInDays(today) >= 150`;
+   exclude null/blank positions; update the "Regularization" rule above and
+   the tile sub-text in `RegularizationStatus.jsx` ("Due within 30 days").
+2. **LOW — Month overflow**: `addMonths(self::PROBATION_MONTHS)` (service
+   ~lines 227 and 332) overflows for hires on the 29th–31st (Aug 31 → Mar 3).
+   Use `addMonthsNoOverflow(...)`.
+3. **LOW — Export label can mismatch the data**:
+   `WorkforceDashboardPage.jsx` `exportReport` builds the "Filter" label from
+   current `filters`, but after a failed refetch `dashboard` still holds the
+   previous filter's numbers. Store the filters used with the loaded
+   dashboard (set both on success) and label from those.
+4. **LOW — Numeric group labels break sorting**: PHP turns a numeric-string
+   `groupBy` key into an int, so `a.label.localeCompare` throws in
+   `TurnoverTable.jsx`, `StaffingVsPlan.jsx`, `EmployeeRelations.jsx`. Use
+   `String(a.label).localeCompare(String(b.label))`.
+5. **INFO — Contract comment**: `services/dashboard/workforceDashboardApi.js`
+   header doesn't list `relations`, `staffing`, `moments` — add them.
+
+Re-verify after fixing: overdue + due soon = For Regularization card for
+every branch and department (the integration test looped all 90 branches /
+28 departments via the API), lint, build, and a browser check.
+
 ## Phases
 
 1. Built: overview cards, headcount & composition, hires vs. separations.
