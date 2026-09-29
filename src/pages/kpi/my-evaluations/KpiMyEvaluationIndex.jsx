@@ -8,7 +8,7 @@ import { EyeOutlined, ReloadOutlined, PrinterOutlined, EditOutlined } from '@ant
 import { Link, useNavigate } from 'react-router-dom';
 import kpiEvaluationApi from '../../../services/kpi/kpiEvaluationApi';
 import useAuth from '../../../hooks/useAuth';
-import dayjs from 'dayjs';
+import { formatDate } from '../../../utils/formatDate';
 
 const statusColors = {
   draft:     'default',
@@ -51,12 +51,8 @@ const KpiMyEvaluationIndex = () => {
     title:  'Period',
     key:    'period',
     render: (_, record) => {
-      const start = record.period_start
-        ? dayjs(record.period_start).format('MM-DD-YYYY')
-        : '-';
-      const end = record.period_end
-        ? dayjs(record.period_end).format('MM-DD-YYYY')
-        : '-';
+      const start = formatDate(record.period_start);
+      const end = formatDate(record.period_end);
       return `${start} to ${end}`;
     },
   };

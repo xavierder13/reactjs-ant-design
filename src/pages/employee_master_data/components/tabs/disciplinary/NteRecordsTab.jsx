@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import useAuth from "../../../../../hooks/useAuth";
 import handleApiError from "../../../../../utils/handleApiError";
 import nteApi from "../../../../../services/employee/nteApi";
+import { formatDate } from "../../../../../utils/formatDate";
 
 const ACCEPTED_FILE_TYPES = ".jpeg,.jpg,.png,.docs,.docx,.pdf";
 
@@ -260,7 +261,7 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords, pendin
   };
 
   const columns = [
-    { title: "Date Issued", dataIndex: "date_issued", key: "date_issued" },
+    { title: "Date Issued", dataIndex: "date_issued", key: "date_issued", render: (v) => formatDate(v) },
     { title: "Issued By", dataIndex: "issued_by", key: "issued_by" },
     { title: "NTE Code", dataIndex: "nte_code", key: "nte_code" },
     { title: "Violation", dataIndex: "violation", key: "violation", ellipsis: true },

@@ -4,9 +4,10 @@ import PerformanceRecordTab from "./PerformanceRecordTab";
 import branchAssignmentPositionApi from "../../../../../services/employee/branchAssignmentPositionApi";
 import useBranches from "../../../../../hooks/useBranches";
 import usePositions from "../../../../../hooks/usePositions";
+import { formatDate } from "../../../../../utils/formatDate";
 
 const columns = [
-  { title: "Date Assigned", dataIndex: "date_assigned", key: "date_assigned" },
+  { title: "Date Assigned", dataIndex: "date_assigned", key: "date_assigned", render: (v) => formatDate(v) },
   { title: "Branch", dataIndex: "branch", key: "branch" },
   { title: "Position", dataIndex: "position", key: "position" },
   { title: "Remarks", dataIndex: "remarks", key: "remarks" },

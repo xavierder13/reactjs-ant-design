@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import useAuth from "../../../../../hooks/useAuth";
 import handleApiError from "../../../../../utils/handleApiError";
 import disciplinaryApi from "../../../../../services/employee/disciplinaryApi";
+import { formatDate } from "../../../../../utils/formatDate";
 
 // Matches DisciplinaryAction.vue's own hardcoded reference lists exactly
 // (real company policy categories, not invented) — see vueportal for the
@@ -241,7 +242,7 @@ export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecord
   };
 
   const columns = [
-    { title: "Date Issued", dataIndex: "date_issued", key: "date_issued" },
+    { title: "Date Issued", dataIndex: "date_issued", key: "date_issued", render: (v) => formatDate(v) },
     { title: "NTE Code", dataIndex: "nte_code", key: "nte_code" },
     { title: "Offense", dataIndex: "offense", key: "offense" },
     { title: "Offense Type", dataIndex: "offense_type", key: "offense_type" },

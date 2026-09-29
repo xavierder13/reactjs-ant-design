@@ -18,7 +18,7 @@ import useKpiEvaluationStore from '../../../store/kpiEvaluationStore';
 import useAuth               from '../../../hooks/useAuth';
 import handleApiError        from '../../../utils/handleApiError';
 
-import dayjs from 'dayjs';
+import { formatDate } from '../../../utils/formatDate';
 
 const statusColors = {
   draft:     'default',
@@ -102,13 +102,8 @@ const KpiEvaluationIndex = () => {
       title: 'Period',
       key: 'period',
       render: (_, record) => {
-          const start = record.period_start
-          ? dayjs(record.period_start).format('MM-DD-YYYY')
-          : '-';
-
-          const end = record.period_end
-          ? dayjs(record.period_end).format('MM-DD-YYYY')
-          : '-';
+          const start = formatDate(record.period_start);
+          const end = formatDate(record.period_end);
 
           return `${start} to ${end}`;
       },

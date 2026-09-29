@@ -8,6 +8,7 @@ import useManpowerRequests from '../../../hooks/useManpowerRequests';
 import manpowerRequestApi from '../../../services/manpower_request/manpowerRequestApi';
 import handleApiError from '../../../utils/handleApiError';
 import downloadBlobResponse from '../../../utils/downloadBlobResponse';
+import { formatDate } from '../../../utils/formatDate';
 
 const { RangePicker } = DatePicker;
 
@@ -167,7 +168,7 @@ const ManpowerRequestIndex = () => {
     {
       title: 'Request Date',
       dataIndex: 'request_date',
-      render: (date) => date ? dayjs(date).format('MM-DD-YYYY') : '—',
+      render: (date) => formatDate(date, '—'),
     },
     {
       title: 'Requestor',
@@ -200,7 +201,7 @@ const ManpowerRequestIndex = () => {
     {
       title: 'Created',
       dataIndex: 'created_at',
-      render: (date) => dayjs(date).format('MM-DD-YYYY'),
+      render: (date) => formatDate(date),
     },
     {
       title: 'Actions',

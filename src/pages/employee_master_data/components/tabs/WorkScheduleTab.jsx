@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 import useAuth from "../../../../hooks/useAuth";
 import handleApiError from "../../../../utils/handleApiError";
 import workScheduleApi from "../../../../services/employee/workScheduleApi";
+import { formatDate } from "../../../../utils/formatDate";
 
 // PH Labor Code rest-day vocabulary (Art. 91-93) — matches
 // EmployeeWorkScheduleController::REST_DAYS exactly (case must match).
@@ -180,7 +181,7 @@ export default function WorkScheduleTab({ mode = "create", initialData, pendingR
   };
 
   const columns = [
-    { title: "Effective Date", dataIndex: "effective_date", key: "effective_date" },
+    { title: "Effective Date", dataIndex: "effective_date", key: "effective_date", render: (v) => formatDate(v) },
     {
       title: "Rest Day",
       dataIndex: "rest_day",

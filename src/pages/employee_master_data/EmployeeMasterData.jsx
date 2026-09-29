@@ -41,6 +41,7 @@ import ImportDataModal from "./components/ImportDataModal";
 import GenerateTemplateModal from "./components/GenerateTemplateModal";
 import ExportEmployeesModal from "./components/ExportEmployeesModal";
 import SubmitAcknowledgmentReportModal from "./components/SubmitAcknowledgmentReportModal";
+import { formatDate } from "../../utils/formatDate";
 
 const { useBreakpoint } = Grid;
 
@@ -64,7 +65,7 @@ const headers = [
   { title: "Lastname", dataIndex: "last_name", value: "last_name" },
   { title: "Firstname", dataIndex: "first_name", value: "first_name" },
   { title: "Middlename", dataIndex: "middle_name", value: "middle_name" },
-  { title: "Birthday", dataIndex: "dob", value: "dob" },
+  { title: "Birthday", dataIndex: "dob", value: "dob", render: (v) => formatDate(v) },
   { title: "Address", dataIndex: "address", value: "address" },
   { title: "Contact #", dataIndex: "contact", value: "contact" },
   { title: "Email", dataIndex: "email", value: "email" },
@@ -95,7 +96,7 @@ const headers = [
     value: "department.division.name",
     render: (department) => department?.division?.name || "-"
   },
-  { title: "Date Employed", dataIndex: "date_employed", value: "date_employed" },
+  { title: "Date Employed", dataIndex: "date_employed", value: "date_employed", render: (v) => formatDate(v) },
   { title: "Gender", dataIndex: "gender", value: "gender" },
   { title: "Civil Status", dataIndex: "civil_status", value: "civil_status" },
   { title: "TIN #", dataIndex: "tin_no", value: "tin_no" },

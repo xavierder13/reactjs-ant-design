@@ -13,6 +13,7 @@ import handleApiError from "../../../../utils/handleApiError";
 import employeeApi from "../../../../services/employee/employeeApi";
 import offboardingApi from "../../../../services/employee/offboardingApi";
 import OffboardingFileSlot from "./offboarding/OffboardingFileSlot";
+import { formatDate } from "../../../../utils/formatDate";
 
 // Matches Offboarding.vue's own hardcoded reference lists exactly (real
 // company values, not invented) — see vueportal for the source.
@@ -227,7 +228,7 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
   };
 
   const columns = [
-    { title: "Last Day of Work", dataIndex: "last_day_of_work", key: "last_day_of_work" },
+    { title: "Last Day of Work", dataIndex: "last_day_of_work", key: "last_day_of_work", render: (v) => formatDate(v) },
     { title: "Reason", dataIndex: "reason_of_resignation", key: "reason_of_resignation" },
     { title: "Compliance", dataIndex: "compliance", key: "compliance" },
     {

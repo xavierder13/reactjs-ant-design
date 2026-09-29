@@ -2,9 +2,10 @@ import { Form, DatePicker, InputNumber } from "antd";
 import dayjs from "dayjs";
 import PerformanceRecordTab from "./PerformanceRecordTab";
 import meritHistoryApi from "../../../../../services/employee/meritHistoryApi";
+import { formatDate } from "../../../../../utils/formatDate";
 
 const columns = [
-  { title: "Merit Date", dataIndex: "merit_date", key: "merit_date" },
+  { title: "Merit Date", dataIndex: "merit_date", key: "merit_date", render: (v) => formatDate(v) },
   { title: "Salary", dataIndex: "salary", key: "salary", render: (v) => v ?? "-" },
 ];
 

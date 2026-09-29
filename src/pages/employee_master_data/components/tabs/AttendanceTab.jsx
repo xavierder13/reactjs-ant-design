@@ -8,6 +8,7 @@ import dayjs from "dayjs";
 import useAuth from "../../../../hooks/useAuth";
 import handleApiError from "../../../../utils/handleApiError";
 import attendanceApi from "../../../../services/employee/attendanceApi";
+import { formatDate } from "../../../../utils/formatDate";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200, 500];
 
@@ -95,10 +96,9 @@ export default function AttendanceTab({ initialData }) {
   if (!canView) return null;
 
   const breakStatusCount = (breakLogs, punch) => (breakLogs || []).filter((l) => l.punch === punch).length;
-  const formatDate = (date) => (date ? dayjs(date).format("MM/DD/YYYY") : "-");
 
   const columns = [
-    { title: "Date", dataIndex: "date", key: "date", render: formatDate },
+    { title: "Date", dataIndex: "date", key: "date", render: (v) => formatDate(v) },
     {
       title: "Time In",
       dataIndex: "time_in",
