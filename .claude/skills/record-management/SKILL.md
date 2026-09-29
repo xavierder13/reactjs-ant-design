@@ -75,6 +75,34 @@ errors) and `npm run build`. Grep `@deprecated` for every AntD component
 you used. Lint/build is not proof the page works — hand off to
 `/test-feature` / `/test-workflow`.
 
+## User Accounts (`/users`)
+
+- `src/pages/user/UserIndex.jsx` + `UserFormModal.jsx` + `RolePermissionsModal.jsx`, `userApi.js`,
+  `userStore.js`, `useUsers.js`; menu User Management → User Accounts
+  (`user-list`). Replaces vueportal's `user/UserIndex.vue`.
+- List: search (name/e-mail/branch/position/role), Status/Branch/Role
+  filters, role tags (first 2 + "+N more"), Last Login. Clicking the role
+  tags opens `RolePermissionsModal.jsx`: that user's permissions grouped by
+  role (collapsible panels, per-role count, unique-permission total,
+  search by role or permission) from the `/user/index` row — no fetch.
+  The Administrator account (id 1) has no Edit/Delete.
+- Modal (create/edit): name, e-mail (locked on edit — the backend ignores
+  it), password + confirm (edit: blank = keep; only sent when typed),
+  branch (required), position, Active switch (`'Y'`/`'N'`; login blocks
+  only `'N'`, legacy rows hold `''`/`'1'` = active), roles via `Transfer`
+  keyed by role **name** (Spatie `assignRole`); update replaces all roles.
+  Editing your own account re-applies `user_roles`/`user_permissions` to
+  the auth store.
+- Deviations from the Area recipe: form options come from `/user/index`
+  (roles, branches, positions) — `/user/create` needs `user-create`, which
+  an editor may lack. Validation errors are **HTTP 200** error bags (like
+  Role) → check `data.success`, map entries with `form.setFields`.
+- `handleAfterOpenChange` calls `form.resetFields()` first on every open:
+  the form store outlives `destroyOnHidden` content, and a password typed in
+  a cancelled Create otherwise rides into the next Edit and changes that
+  user's password.
+- Permissions: `user-list`, `user-create`, `user-edit`, `user-delete`.
+
 ## Area Assignment (reference page)
 
 - Route `/areas` (`area-list`), menu Human Resource → Area Assignment,

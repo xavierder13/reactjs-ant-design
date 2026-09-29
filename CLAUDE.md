@@ -267,8 +267,8 @@ separate routes), `roleApi.js`/`permissionApi.js`, `roleStore`/
   fields and hides Save. The backend 403 is the real enforcement.
 - Permissions: `role-list/-create/-edit/-delete`,
   `permission-list/-create/-edit/-delete`.
-- Not built: a separate view-role page; assigning users to roles (belongs
-  to the unbuilt User module).
+- Not built: a separate view-role page. Users are assigned roles on the
+  User Accounts page (`src/pages/user/`, see the `record-management` skill).
 
 ## Keeping Claude's docs current
 
