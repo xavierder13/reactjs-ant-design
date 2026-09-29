@@ -1,0 +1,8 @@
+[
+  {"name": "default range (Jan 1 → today)", "filters": {"branch":"","position":"","source":"","stage":"","gender":""}, "range": "default"},
+  {"name": "all time", "filters": {"branch":"","position":"","source":"","stage":"","gender":""}, "range": {"from":"","to":""}},
+  {"name": "branch AGOO, all time", "filters": {"branch":"AGOO","position":"","source":"","stage":"","gender":""}, "range": {"from":"","to":""}},
+  {"name": "stage Screening", "filters": {"branch":"","position":"","source":"","stage":"Screening","gender":""}, "range": {"from":"","to":""}},
+  {"name": "Female + Facebook, default range", "filters": {"branch":"","position":"","source":"Facebook","stage":"","gender":"Female"}, "range": "default"},
+  {"name": "narrow range Mar–Jun 2026 + position Cashier", "filters": {"branch":"","position":"Cashier","source":"","stage":"","gender":""}, "range": {"from":"2026-03-01","to":"2026-06-30"}}
+]

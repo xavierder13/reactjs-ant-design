@@ -234,6 +234,9 @@ Dated change history for each lives in `docs/<module>-history.md`.
   Key traps: POST-only API; `fetchById` returns `{ manpower_request,
   approval_status }`; gates combine permission + ownership + status;
   existing attachments must be re-sent on every update.
+- **Recruitment Dashboard** (`src/pages/dashboard/`, route `/dashboard`) —
+  `.claude/skills/recruitment-dashboard/SKILL.md`. Must match vueportal's
+  Dashboard.vue number-for-number; metrics module, component map, parity check.
 - **Record management pages / Area Assignment** (`src/pages/area/`, route
   `/areas`) — `.claude/skills/record-management/SKILL.md`. Recipe for any
   new admin CRUD master-data page (Area is the reference implementation).
