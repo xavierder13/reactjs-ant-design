@@ -51,7 +51,7 @@ const UserProfile = () => {
       const payload = {
         name: values.name,
         password: passwordChanged ? values.password : '',
-        confirm_passowrd: passwordChanged ? values.confirmPassword : ''
+        confirm_password: passwordChanged ? values.confirmPassword : ''
       };
 
       const { data } = await axiosInstance.post(`/user/update_profile/${user.id}`, payload);
