@@ -15,12 +15,18 @@ import AgeAndTenure from './components/AgeAndTenure';
 import MovementSummary from './components/MovementSummary';
 import MovementCharts from './components/MovementCharts';
 import DataNotes from './components/DataNotes';
+import AttritionSummary from './components/AttritionSummary';
+import AttritionCharts from './components/AttritionCharts';
+import TurnoverTable from './components/TurnoverTable';
+import RegularizationStatus from './components/RegularizationStatus';
 
 const { Text } = Typography;
 const NO_FILTERS = { branch_id: undefined, department_id: undefined };
 
-// Workforce Dashboard — HR analytics over Employee Master Data (Phase 1:
-// overview cards, headcount & composition, hires vs. separations). Loads
+// Workforce Dashboard — HR analytics over Employee Master Data. Current
+// state first (overview cards, headcount & composition, regularization
+// status), then the last 12 months (hires vs. separations, attrition: why /
+// how early / where). Loads
 // /employee_dashboard/summary, holds the filter state, and renders one
 // component per section (components/). The recruitment pipeline lives on
 // its own page (/dashboard).
@@ -64,7 +70,7 @@ const WorkforceDashboardPage = () => {
       : <WorkforceSkeleton />;
   }
 
-  const { headcount, composition, movement, filters: options } = dashboard;
+  const { headcount, composition, movement, attrition, regularization, filters: options } = dashboard;
   const unfiltered = !filters.branch_id && !filters.department_id;
   const lastMonth = movement.months[movement.months.length - 1];
   const staleActive = unfiltered ? headcount.active - lastMonth.headcount_end : 0;
@@ -91,10 +97,18 @@ const WorkforceDashboardPage = () => {
           <Col xs={24}><AgeAndTenure composition={composition} /></Col>
         </Row>
 
+        <SectionLabel extra={<Text type='secondary' style={{ fontSize: 12 }}>{regularization.probation_months}-month probation</Text>}>Regularization</SectionLabel>
+        <RegularizationStatus regularization={regularization} />
+
         <SectionLabel extra={<Text type='secondary' style={{ fontSize: 12 }}>Last 12 months</Text>}>Hires vs. Separations</SectionLabel>
         <MovementSummary totals={movement.totals} />
         <div style={{ marginTop: 16 }}><MovementCharts months={months} /></div>
         <DataNotes staleActive={staleActive} />
+
+        <SectionLabel extra={<Text type='secondary' style={{ fontSize: 12 }}>Last 12 months · by latest offboarding reason</Text>}>Attrition</SectionLabel>
+        <AttritionSummary attrition={attrition} />
+        <div style={{ marginTop: 16 }}><AttritionCharts attrition={attrition} /></div>
+        <div style={{ marginTop: 16 }}><TurnoverTable turnoverBy={attrition.turnover_by} /></div>
       </div>
     </div>
   );

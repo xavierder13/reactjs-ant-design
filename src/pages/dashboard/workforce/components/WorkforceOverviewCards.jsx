@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Row, Col, Card, Skeleton, Typography } from 'antd';
 import {
   TeamOutlined, UserAddOutlined, SafetyCertificateOutlined, UserDeleteOutlined,
-  FileTextOutlined, WarningOutlined, SolutionOutlined,
+  FileTextOutlined, WarningOutlined, SolutionOutlined, RightOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useAuth from '../../../../hooks/useAuth';
@@ -11,6 +11,8 @@ import employeeApi from '../../../../services/employee/employeeApi';
 import nteApi from '../../../../services/employee/nteApi';
 import disciplinaryApi from '../../../../services/employee/disciplinaryApi';
 import recruitmentApi from '../../../../services/recruitment/recruitmentApi';
+import { TONES } from './workforceTones';
+import { IconBadge } from './StatTile';
 
 const { Text } = Typography;
 
@@ -26,23 +28,23 @@ const LIST_BODY = { items_per_page: 1, search: '', search_branch: '', table_head
 const CARD_DEFS = [
   {
     // anyone sees the count; opening the list needs the list permission
-    key: 'totalEmployees', label: 'Total Employees', icon: <TeamOutlined />, permission: null,
+    key: 'totalEmployees', tone: TONES.people, label: 'Total Employees', icon: <TeamOutlined />, permission: null,
     link: '/employees', linkPermission: 'employee-master-data-list',
     fetchCount: async () => (await recruitmentApi.getTotalActiveEmployees()).data.total_active_employees,
   },
   {
     // EmployeeMasterDataMaintenance gates hired_this_month on this permission
-    key: 'hiredThisMonth', label: 'Hired This Month', icon: <UserAddOutlined />, permission: 'employee-master-data-for-regularization',
+    key: 'hiredThisMonth', tone: TONES.growth, label: 'Hired This Month', icon: <UserAddOutlined />, permission: 'employee-master-data-for-regularization',
     link: '/employees/hired-this-month',
     fetchCount: async () => (await employeeApi.getHiredThisMonth(LIST_BODY)).data.employees.total,
   },
   {
-    key: 'forRegularization', label: 'For Regularization', icon: <SafetyCertificateOutlined />, permission: 'employee-master-data-for-regularization',
+    key: 'forRegularization', tone: TONES.warning, label: 'For Regularization', icon: <SafetyCertificateOutlined />, permission: 'employee-master-data-for-regularization',
     link: '/employees/for-regularization',
     fetchCount: async () => (await employeeApi.getForRegularization({ ...LIST_BODY, include_sales_specialist: false })).data.employees.total,
   },
   {
-    key: 'resigned', label: 'Resigned This Month', icon: <UserDeleteOutlined />, permission: 'employee-master-data-resigned-list',
+    key: 'resigned', tone: TONES.serious, label: 'Resigned This Month', icon: <UserDeleteOutlined />, permission: 'employee-master-data-resigned-list',
     link: '/employees/resigned',
     fetchCount: async () => (await employeeApi.getResigned({
       ...LIST_BODY,
@@ -52,18 +54,18 @@ const CARD_DEFS = [
     })).data.employees.total,
   },
   {
-    key: 'nte', label: 'NTE (Open)', icon: <FileTextOutlined />, permission: 'employee-master-data-nte-list',
+    key: 'nte', tone: TONES.warning, label: 'NTE (Open)', icon: <FileTextOutlined />, permission: 'employee-master-data-nte-list',
     link: '/employees/nte',
     fetchCount: async () => (await nteApi.getOpenQueue()).data.explanations.length,
   },
   {
-    key: 'disciplinary', label: 'Disciplinary (Open)', icon: <WarningOutlined />, permission: 'employee-master-data-disciplinary-list',
+    key: 'disciplinary', tone: TONES.critical, label: 'Disciplinary (Open)', icon: <WarningOutlined />, permission: 'employee-master-data-disciplinary-list',
     link: '/employees/disciplinary',
     fetchCount: async () => (await disciplinaryApi.getOpenQueue()).data.disciplinaries.length,
   },
   {
     // same sum as DashboardHR's vacancyCount: open headcount where required > current
-    key: 'vacancies', label: 'Total Vacancies', icon: <SolutionOutlined />, permission: 'vacancy-list',
+    key: 'vacancies', tone: TONES.people, label: 'Total Vacancies', icon: <SolutionOutlined />, permission: 'vacancy-list',
     link: '/vacancies',
     fetchCount: async () => (await recruitmentApi.getVacancies()).data.vacancies
       .reduce((sum, v) => sum + Math.max(v.required - v.current, 0), 0),
@@ -116,20 +118,26 @@ const WorkforceOverviewCards = ({ refreshKey }) => {
             role={card.clickable ? 'link' : undefined}
             tabIndex={card.clickable ? 0 : undefined}
             aria-label={card.clickable ? `${card.label} — open list` : undefined}
-            style={{ height: '100%', borderRadius: 8, cursor: card.clickable ? 'pointer' : 'default' }}
-            styles={{ body: { padding: '12px 14px' } }}
+            style={{ height: '100%', borderRadius: 10, overflow: 'hidden', borderTop: `3px solid ${card.tone}`, cursor: card.clickable ? 'pointer' : 'default' }}
+            styles={{ body: { padding: '12px 14px', height: '100%', display: 'flex', flexDirection: 'column' } }}
           >
-            <Text type='secondary' style={{ fontSize: 12 }}>
-              <span style={{ marginRight: 6 }}>{card.icon}</span>{card.label}
-            </Text>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <IconBadge icon={card.icon} tone={card.tone} />
+              <Text type='secondary' style={{ fontSize: 12, lineHeight: 1.3 }}>{card.label}</Text>
+            </div>
             {card.key in counts ? (
-              <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.3, marginTop: 4 }}>
+              <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2, marginTop: 10, color: '#1f1f1d' }}>
                 {counts[card.key] != null
                   ? counts[card.key].toLocaleString()
                   : <Text type='secondary' style={{ fontSize: 16 }}>—</Text>}
               </div>
             ) : (
-              <Skeleton.Button active size='small' style={{ width: 56, marginTop: 8 }} />
+              <Skeleton.Button active size='small' style={{ width: 56, marginTop: 12 }} />
+            )}
+            {card.clickable && (
+              <Text type='secondary' style={{ fontSize: 11, marginTop: 'auto', paddingTop: 6 }}>
+                View list <RightOutlined style={{ fontSize: 9 }} />
+              </Text>
             )}
           </Card>
         </Col>

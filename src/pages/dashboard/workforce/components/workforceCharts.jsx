@@ -15,6 +15,7 @@ const { Text } = Typography;
 // surface, so every chart using them writes its values out (relief rule).
 const SERIES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100'];
 const NEUTRAL = '#b8b7b1';       // "Unassigned" / "Not specified"
+
 const INK_SECONDARY = '#52514e';
 const GRID = '#ecebe7';
 
@@ -59,7 +60,8 @@ const baseScales = (horizontal) => ({
 
 // One-hue bar chart (magnitude by category). Horizontal for many / long
 // labels; height grows with the row count so the axis band never clips.
-export function CountBarChart({ rows, horizontal = true, label = 'Employees', color = SERIES[0] }) {
+// `colorOf(row)` overrides the color per row (e.g. by separation type).
+export function CountBarChart({ rows, horizontal = true, label = 'Employees', color = SERIES[0], colorOf }) {
   const height = horizontal ? Math.max(160, rows.length * 26 + 40) : 240;
   return (
     <div style={{ height }}>
@@ -69,7 +71,7 @@ export function CountBarChart({ rows, horizontal = true, label = 'Employees', co
           datasets: [{
             label,
             data: rows.map((r) => r.count),
-            backgroundColor: rows.map((r) => (/^(Unassigned|Unknown|Not specified)$/.test(r.label) ? NEUTRAL : color)),
+            backgroundColor: rows.map((r) => (/^(Unassigned|Unknown|Not specified)$/.test(r.label) ? NEUTRAL : (colorOf?.(r) || color))),
             borderRadius: 4,
             borderSkipped: 'start',
             maxBarThickness: 18,
