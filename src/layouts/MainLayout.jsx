@@ -39,7 +39,8 @@ const { Title, Text } = Typography;
 
 // ─── Page title map ────────────────────────────────────────────────────────────
 const titleMap = {
-  '/dashboard':              { title: 'Dashboard',           breadcrumb: ['Dashboard'] },
+  '/dashboard':              { title: 'Recruitment Dashboard', breadcrumb: ['Dashboards', 'Recruitment Dashboard'] },
+  '/workforce-dashboard':    { title: 'Workforce Dashboard', breadcrumb: ['Dashboards', 'Workforce Dashboard'] },
   '/users':                  { title: 'User Accounts',       breadcrumb: ['User Management', 'User Accounts'] },
   '/user/profile':           { title: 'My Profile',          breadcrumb: ['User Management', 'My Profile'] },
   '/roles':                  { title: 'Roles',               breadcrumb: ['Authorizations', 'Roles'] },
@@ -62,7 +63,18 @@ const titleMap = {
 
 // ─── Menu data ─────────────────────────────────────────────────────────────────
 const menuData = [
-  { key: 'dashboard', title: 'Dashboard', link: '/dashboard', icon: <DashboardOutlined /> },
+  // Separate pages per audience (HR workforce vs. recruitment), not tabs —
+  // each has its own data load and URL. /dashboard stays the recruitment
+  // page because it's where login lands (GuestRoute).
+  {
+    key: 'dashboards',
+    title: 'Dashboards',
+    icon: <DashboardOutlined />,
+    children: [
+      { key: 'workforce-dashboard', title: 'Workforce Dashboard',   link: '/workforce-dashboard', permissions: ['hr-payroll-dashboard'] },
+      { key: 'dashboard',           title: 'Recruitment Dashboard', link: '/dashboard' },
+    ],
+  },
   { type: 'divider' },
 
   // ── Human Resource ──────────────────────────────────────────────────────────

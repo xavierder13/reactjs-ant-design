@@ -75,6 +75,21 @@ const employeeApi = {
   // see OffboardingTab.jsx. Flips `active`/`date_resigned` on the core
   // employee record; does not touch the offboarding record itself.
   resign: (payload) => axios.post('/employee_master_data/resign', payload),
+
+  // Count endpoints behind the Workforce Dashboard cards (same calls the
+  // vueportal HR / Payroll dashboard makes). All paginated → read
+  // `employees.total`. `table_headers` must be headers this endpoint's own
+  // `$table_fields` whitelist understands — send [] when not searching.
+  // POST /employee_master_data/hired_this_month?page=1 — active, employed this
+  // month, Sales Specialists excluded unless include_sales_specialist.
+  getHiredThisMonth: (payload) => axios.post('/employee_master_data/hired_this_month?page=1', payload),
+  // POST /employee_master_data/for_regularization?page=1 — active Probationary,
+  // employed 150+ days.
+  getForRegularization: (payload) => axios.post('/employee_master_data/for_regularization?page=1', payload),
+  // POST /employee_master_data/resigned?page=1 — latest offboarding per employee,
+  // filtered by date_field_param ('resignation_date_filed' default) between
+  // date_from and date_to.
+  getResigned: (payload) => axios.post('/employee_master_data/resigned?page=1', payload),
 };
 
 export default employeeApi;

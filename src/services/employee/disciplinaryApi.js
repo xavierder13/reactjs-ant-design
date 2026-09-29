@@ -10,8 +10,8 @@ import axios from "../../api/axiosInstance";
 // list — it backs a separate "Disciplinary Actions" queue view, not this
 // tab. This tab instead reads `disciplinaries` off the employee record
 // itself (eager-loaded on every `/employee_master_data/index` row), same
-// as the Performance Management sub-modules — `getAll` is intentionally
-// not exposed here.
+// as the Performance Management sub-modules. The queue is exposed only as
+// `getOpenQueue`, for the Workforce Dashboard's open-cases count.
 //
 // create/update are multipart (a `file` field rides alongside the other
 // fields, matching employeeApi.fileUpload's FormData pattern) — NOT
@@ -22,6 +22,10 @@ import axios from "../../api/axiosInstance";
 // existing file first (fileDelete) before a replacement will actually
 // take effect.
 const disciplinaryApi = {
+  // GET /api/employee_master_data/disciplinary/index — global open-cases queue
+  // (response key `disciplinaries`); used only for the dashboard count.
+  getOpenQueue: () => axios.get('/employee_master_data/disciplinary/index'),
+
   // POST /api/employee_master_data/disciplinary/store (multipart)
   // fields: employee_id, date_issued (YYYY-MM-DD), nte_code, offense_code,
   // offense, offense_type, disciplinary_action, series, status,

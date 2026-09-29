@@ -15,6 +15,7 @@ import LoginPage from '../pages/auth/LoginPage';
 
 // Pages
 import DashboardPage from '../pages/dashboard/DashboardPage';
+import WorkforceDashboardPage from '../pages/dashboard/workforce/WorkforceDashboardPage';
 import UserProfile from '../pages/user/UserProfile';
 import UserIndex from '../pages/user/UserIndex';
 import RoleIndex from '../pages/role/RoleIndex';
@@ -51,6 +52,7 @@ import NotFoundPage from '../pages/errors/NotFoundPage';
 // ─── Permission-based routes config ───────────────────────────────────────────
 const permissionRoutes = [
   { permissions: ['hr-payroll-dashboard'],      path: '/dashboard',        element: <DashboardPage /> },
+  { permissions: ['hr-payroll-dashboard'],      path: '/workforce-dashboard', element: <WorkforceDashboardPage /> },
   { permissions: ['user-list'],                 path: '/users',       element: <UserIndex /> },
   { permissions: ['role-list'],                 path: '/roles',       element: <RoleIndex /> },
   { permissions: ['role-create'],               path: '/roles/create', element: <CreateRole /> },

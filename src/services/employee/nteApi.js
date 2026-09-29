@@ -7,14 +7,19 @@ import axios from "../../api/axiosInstance";
 // `nte` — matches the model name, confirmed from the controller).
 //
 // Same shape/caveats as disciplinaryApi.js: `index()` is a global
-// cross-employee open-cases queue, not used here (this tab reads
-// `explanations` off the employee record itself); create/update are
+// cross-employee open-cases queue, exposed only as `getOpenQueue` for the
+// Workforce Dashboard's count (the NTE tab reads `explanations` off the
+// employee record itself); create/update are
 // multipart; a file already present is silently kept on update (delete it
 // first to replace it). NTE additionally carries **two independent
 // files** per record (`nte_file` and `explanation_file`) — every
 // file-scoped action needs `document_type: 'nte_file' | 'explanation_file'`
 // to say which one.
 const nteApi = {
+  // GET /api/employee_master_data/nte/index — global open-cases queue
+  // (response key `explanations`); used only for the dashboard count.
+  getOpenQueue: () => axios.get('/employee_master_data/nte/index'),
+
   // POST /api/employee_master_data/nte/store (multipart)
   // fields: employee_id, date_issued (YYYY-MM-DD), issued_by, nte_code,
   // violation, explanation_date?, remarks?, status?,

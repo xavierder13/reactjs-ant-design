@@ -234,6 +234,10 @@ Dated change history for each lives in `docs/<module>-history.md`.
   Key traps: POST-only API; `fetchById` returns `{ manpower_request,
   approval_status }`; gates combine permission + ownership + status;
   existing attachments must be re-sent on every update.
+- **Workforce Dashboard** (`src/pages/dashboard/workforce/`, route
+  `/workforce-dashboard`) — `.claude/skills/workforce-dashboard/SKILL.md`.
+  HR analytics over Employee Master Data; aggregated backend endpoint,
+  `hr-payroll-dashboard` gate, data caveats, phase plan.
 - **Recruitment Dashboard** (`src/pages/dashboard/`, route `/dashboard`) —
   `.claude/skills/recruitment-dashboard/SKILL.md`. Must match vueportal's
   Dashboard.vue number-for-number; metrics module, component map, parity check.
