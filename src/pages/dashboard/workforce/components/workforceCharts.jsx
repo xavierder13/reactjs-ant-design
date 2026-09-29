@@ -21,6 +21,8 @@ const GRID = '#ecebe7';
 
 const pct = (part, whole) => (whole ? Math.round((part / whole) * 1000) / 10 : 0);
 const fmt = (n) => n.toLocaleString();
+const MAX_LABEL = 28;
+const shorten = (label) => (label.length > MAX_LABEL ? `${label.slice(0, MAX_LABEL - 1)}…` : label);
 
 // Draws each bar's value just past its end — one label per bar, so no
 // value depends on hovering.
@@ -51,10 +53,11 @@ const endLabelsPlugin = {
 
 const baseScales = (horizontal) => ({
   x: horizontal
-    ? { beginAtZero: true, grid: { color: GRID }, border: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 } } }
+    ? { beginAtZero: true, grid: { color: GRID }, border: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 }, precision: 0 } }
     : { grid: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 } } },
+  // long category names are shortened on the axis; the tooltip keeps the full name
   y: horizontal
-    ? { grid: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 }, autoSkip: false } }
+    ? { grid: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 }, autoSkip: false, callback(value) { return shorten(this.getLabelForValue(value)); } } }
     : { beginAtZero: true, grid: { color: GRID }, border: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 }, precision: 0 } },
 });
 
@@ -178,6 +181,35 @@ export function TrendLineChart({ months, field, label, suffix = '', color = SERI
             y: { grid: { color: GRID }, border: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 }, callback: (v) => `${fmt(v)}${suffix}` } },
           },
         }}
+      />
+    </div>
+  );
+}
+
+// Counts per month for one or more series of the same unit (one axis;
+// legend only when there are two or more series).
+export function MonthlyCountChart({ months, series }) {
+  return (
+    <div style={{ height: 240 }}>
+      <Bar
+        data={{
+          labels: months.map((m) => m.label),
+          datasets: series.map((s, i) => ({
+            label: s.label, data: months.map((m) => m[s.field]), backgroundColor: SERIES[i],
+            borderRadius: 4, borderSkipped: 'start', maxBarThickness: 16,
+          })),
+        }}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          layout: { padding: { top: 18 } },
+          plugins: {
+            legend: { display: series.length > 1, position: 'top', align: 'end', labels: { boxWidth: 10, boxHeight: 10, font: { size: 11 } } },
+          },
+          scales: baseScales(false),
+        }}
+        plugins={series.length === 1 ? [endLabelsPlugin] : []}
       />
     </div>
   );

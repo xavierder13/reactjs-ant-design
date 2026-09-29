@@ -16,7 +16,12 @@ Same shape as the Recruitment Dashboard: a thin page + one component per section
 
 - `src/pages/dashboard/workforce/WorkforceDashboardPage.jsx` — loads
   `/employee_dashboard/summary`, holds the branch/department filter and
-  refresh state, marks the current month "(to date)", renders sections.
+  refresh state, marks the current month "(to date)", renders sections —
+  current state first (overview, headcount & composition, regularization,
+  staffing vs. plan, people moments), then the last 12 months (hires vs.
+  separations, attrition, employee relations). Export Report →
+  `src/utils/workforceReport.js` (SheetJS, one sheet per section, built from
+  the loaded summary so it follows the filters; people moments excluded).
 - `components/` — `WorkforceOverviewCards` (vueportal HR / Payroll dashboard
   cards + Resigned This Month; each calls the same endpoint as the Vue card,
   shown only with that endpoint's permission, Administrator always;
@@ -28,7 +33,10 @@ Same shape as the Recruitment Dashboard: a thin page + one component per section
   `MovementSummary`, `MovementCharts` (+ `MonthlyFiguresTable`), `DataNotes`,
   `AttritionSummary`, `AttritionCharts`, `TurnoverTable` (Branch /
   Department / Position switch), `RegularizationStatus` (links to
-  /employees/for-regularization with that permission); shared
+  /employees/for-regularization with that permission), `StaffingVsPlan`
+  (Branch / Position switch; links to /vacancies with `vacancy-list`),
+  `PeopleMoments`, `EmployeeRelations` (By offense / By action switch);
+  shared
   `SectionLabel`, `StatTile` (+ `IconBadge`), `ChartCard`, `WorkforceSkeleton`.
 - `components/workforceTones.js` — `TONES`: card/tile accent colors by
   meaning (people = series blue, growth = status good, warning, serious,
@@ -36,7 +44,9 @@ Same shape as the Recruitment Dashboard: a thin page + one component per section
   colors only the 3px top bar and the icon badge — values stay in ink, and
   every card has an icon + label, so color never carries meaning alone.
 - `components/workforceCharts.jsx` — `CountBarChart`, `ShareBar` (100% bar
-  instead of a pie), `MovementBarChart`, `TrendLineChart`. Palette = the
+  instead of a pie), `MovementBarChart`, `MonthlyCountChart` (generic
+  per-month series), `TrendLineChart`; horizontal-bar labels over 28
+  characters are shortened on the axis (full name in the tooltip). Palette = the
   dataviz skill's validated reference order (blue, orange, aqua, yellow),
   fixed per entity; grey for Unassigned/Unknown. No dual axes; values written
   on bars. `CountBarChart` takes `colorOf(row)` (reasons colored by type,
@@ -55,7 +65,8 @@ holding it see the page.
 
 `POST /api/employee_dashboard/summary` `{ branch_id?, department_id? }` —
 `EmployeeDashboardController` + `EmployeeDashboardService`,
-`EmployeeDashboardMaintenance`. Aggregates only; never returns employee rows.
+`EmployeeDashboardMaintenance`. Aggregates only, except `moments` (name,
+position, branch and upcoming date — never birth year or age).
 Current headcount follows `active = 1`; the 12-month trend is rebuilt from
 `date_employed` / `date_resigned` (every inactive employee has one).
 
@@ -75,6 +86,20 @@ Current headcount follows `active = 1`; the 12-month trend is rebuilt from
   For Regularization list/card population. Overdue = past 6 months; due
   soon = reaches 6 months within `REGULARIZATION_DUE_DAYS` (30). Overdue +
   due soon equals the For Regularization card (its ≥ 150-day rule).
+- **Relations**: NTEs (`employee_explanations`) and disciplinary cases
+  (`employee_disciplinaries`) by `date_issued` over the 12-month window;
+  by month, disciplinary by `offense` (category) / `disciplinary_action`,
+  by branch with NTEs per 100 (÷ date-based headcount today, like
+  turnover — not the `active` flag). Repeat case = 3+ NTEs. NTE
+  `violation` is free text, so it isn't broken down.
+- **Staffing vs. plan**: `required_employee_maps` (branch × position,
+  quantity > 0, inner-joined to positions like `RecruitmentController@vacancies`)
+  vs. active employees in the same branch × position. Short = Σ max(required
+  − current, 0) = the Total Vacancies card; fill rate = Σ min(current,
+  required) ÷ required. The plan has no department → only the branch
+  filter applies (the page says so).
+- **Moments**: active employees' birthdays / work anniversaries (1+ years)
+  in the next `MOMENTS_DAYS` (30); 29 Feb → 28 Feb in non-leap years.
 
 ## Data caveats (shown on the page where relevant)
 
@@ -84,11 +109,15 @@ Current headcount follows `active = 1`; the 12-month trend is rebuilt from
   last headcount is lower than the active count; the page reports how many.
 - Ages outside 15–80 are treated as unknown (bad birth dates).
 - Education is excluded: `educ_attain` is free text (130+ spellings).
+- Local dev DB (Sep 2026): only ~600 employees are `active = 1` while
+  ~2,300 have no `date_resigned` — the active flag looks wrong for most
+  staff there, which inflates Short and lowers Fill Rate. Check the flag
+  before trusting those numbers on a copied DB.
 
 ## Phases
 
 1. Built: overview cards, headcount & composition, hires vs. separations.
 2. Built: attrition by type/reason, early attrition, turnover by
    branch/department/position, regularization overdue/due soon by branch.
-3. Next: employee relations trends, staffing vs. plan
-   (`required_employee_maps`), people moments, Excel export.
+3. Built: employee relations trends, staffing vs. plan, people moments,
+   Excel export.
