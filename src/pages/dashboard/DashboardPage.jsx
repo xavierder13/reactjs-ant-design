@@ -6,14 +6,15 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
 import manpowerRequestApi from '../../services/manpower_request/manpowerRequestApi';
+import { downloadRecruitmentReport } from '../../utils/recruitmentReport';
 import {
   Row, Col, Card, Divider, Typography,
-  Input, Progress, Select, Button, Tag, Table, Tooltip, Spin,
-  Alert, DatePicker,
+  Progress, Select, Button, Tag, Table, Tooltip,
+  Alert, DatePicker, Skeleton, Space, App,
 } from 'antd';
 import {
   CheckCircleOutlined, InfoCircleOutlined, WarningOutlined,
-  AlertOutlined, ReloadOutlined,
+  AlertOutlined, ReloadOutlined, FileExcelOutlined,
 } from '@ant-design/icons';
 import {
   Chart as ChartJS,
@@ -170,7 +171,12 @@ const normalizeApiApplicantRow = (apiRow) => {
     branchPreference:       String(apiRow.branch_preference || ''),
     hiringOfficerName:      String(apiRow.hiring_officer_name || ''),
     hiringOfficerPosition:  String(apiRow.hiring_officer_position || ''),
-    iqStatus:               apiRow.iq_status,
+    screeningStatus:        apiRow.screening_status         ?? null,
+    initialInterviewStatus: apiRow.initial_interview_status ?? null,
+    iqStatus:               apiRow.iq_status                ?? null,
+    biStatus:               apiRow.bi_status                ?? null,
+    finalInterviewStatus:   apiRow.final_interview_status   ?? null,
+    orientationStatus:      apiRow.orientation_status       ?? null,
   };
 };
 
@@ -467,7 +473,6 @@ function RecruitmentFunnelChart({ funnelRows }) {
   const minW      = 120;          // ← min width at bottom (gradual narrowing)
   const centerX   = svgW / 2;
   const labelW    = 130;          // ← reserved width for left label
-  const convW     = 60;           // ← reserved width for right conversion %
 
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -570,6 +575,117 @@ function RecruitmentFunnelChart({ funnelRows }) {
   );
 }
 
+// ─── Qualified Candidates Per Vacancy ─────────────────────────────────────────
+const interviewsPerHireColor = (v) => (v >= 5 ? 'error' : v >= 3 ? 'warning' : 'success');
+
+const qualifiedColumns = [
+  { title: 'Position',          dataIndex: 'position',          sorter: (a, b) => a.position.localeCompare(b.position) },
+  { title: 'Total Interviewed', dataIndex: 'total',             align: 'right', sorter: (a, b) => a.total - b.total },
+  { title: 'Passed Interview',  dataIndex: 'passed',            align: 'right', sorter: (a, b) => a.passed - b.passed },
+  { title: 'Failed Interview',  dataIndex: 'failed',            align: 'right', sorter: (a, b) => a.failed - b.failed },
+  { title: 'Interviews / Hire', dataIndex: 'interviewsPerHire', align: 'right', sorter: (a, b) => a.interviewsPerHire - b.interviewsPerHire,
+    render: (v) => <Tag color={interviewsPerHireColor(v)} style={{ margin: 0 }}>{v}x</Tag> },
+  { title: 'Rejects / Hire',    dataIndex: 'rejectsPerHire',    align: 'right', sorter: (a, b) => a.rejectsPerHire - b.rejectsPerHire },
+  { title: 'Pass Rate',         dataIndex: 'passRate',          align: 'right', sorter: (a, b) => a.passRate - b.passRate,
+    render: (v) => <span style={{ color: v < 20 ? '#f5222d' : v < 40 ? '#faad14' : '#389e0d' }}>{v}%</span> },
+];
+
+function QualifiedCandidatesSection({ rows }) {
+  const avgOf = (key) => (rows.length ? (rows.reduce((s, r) => s + r[key], 0) / rows.length).toFixed(1) : '—');
+  const summary = [
+    { label: 'Avg Interviews Per Hire',   value: rows.length ? `${avgOf('interviewsPerHire')}x` : '—', color: PRIMARY_GREEN },
+    { label: 'Avg Rejects Before 1 Hire', value: avgOf('rejectsPerHire'),                             color: '#f5222d' },
+    { label: 'Positions Analyzed',        value: rows.length,                                         color: '#1677ff' },
+  ];
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+        {summary.map((s) => (
+          <Col key={s.label} xs={24} sm={8}>
+            <Card size='small' style={{ borderRadius: 8, textAlign: 'center' }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.value}</div>
+              <Text type='secondary' style={{ fontSize: 11 }}>{s.label}</Text>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+
+      <Card size='small' title='Interviews Needed Per Hire — by Position' style={{ borderRadius: 8, marginBottom: 16 }}>
+        <Text type='secondary' style={{ fontSize: 11, display: 'block', marginBottom: 8 }}>
+          How many final-interview candidates were seen before 1 successful hire. Lower = more selective pipeline.{' '}
+          <span style={{ color: PRIMARY_GREEN }}>■ passed</span> <span style={{ color: '#ff4d4f' }}>■ failed</span>
+        </Text>
+        <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+          {rows.map((row) => (
+            <Tooltip
+              key={row.position}
+              title={`${row.position}: ${row.passed} passed (${row.passRate}%), ${row.failed} failed, ${row.rejectsPerHire} rejects/hire`}
+            >
+              <div style={{
+                display: 'grid', gridTemplateColumns: 'minmax(90px, 200px) 1fr auto 56px',
+                alignItems: 'center', columnGap: 8, padding: '2px 0', borderBottom: '1px solid #f5f5f5',
+              }}>
+                <Text style={{ fontSize: 12, fontWeight: 500 }} ellipsis>{row.position}</Text>
+                <div style={{ height: 6, borderRadius: 3, background: '#f0f0f0', overflow: 'hidden', display: 'flex' }}>
+                  <div style={{ width: `${pct(row.passed, row.total)}%`, background: PRIMARY_GREEN }} />
+                  <div style={{ width: `${pct(row.failed, row.total)}%`, background: '#ff4d4f' }} />
+                </div>
+                <Tag color={interviewsPerHireColor(row.interviewsPerHire)} style={{ margin: 0, fontSize: 10 }}>
+                  {row.interviewsPerHire}x
+                </Tag>
+                <Text type='secondary' style={{ fontSize: 11, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  {row.passed}/{row.total}
+                </Text>
+              </div>
+            </Tooltip>
+          ))}
+        </div>
+      </Card>
+
+      <Card size='small' style={{ borderRadius: 8 }}>
+        <Table
+          size='small'
+          dataSource={rows}
+          columns={qualifiedColumns}
+          pagination={{ pageSize: 8, showSizeChanger: true, pageSizeOptions: [8, 15, 50] }}
+        />
+      </Card>
+    </div>
+  );
+}
+
+// ─── Loading skeleton (mirrors the top of the page layout) ────────────────────
+function DashboardSkeleton() {
+  const block = (key, rows, colProps) => (
+    <Col key={key} {...colProps}>
+      <Card size='small' style={{ borderRadius: 8, height: '100%' }}>
+        <Skeleton active title={false} paragraph={{ rows }} />
+      </Card>
+    </Col>
+  );
+  return (
+    <div>
+      <Row justify='space-between' align='middle' style={{ marginBottom: 20 }}>
+        <Skeleton.Button active size='small' style={{ width: 140 }} />
+        <Skeleton.Button active size='small' style={{ width: 90 }} />
+      </Row>
+      <Card size='small' style={{ marginBottom: 20, borderRadius: 8 }}>
+        <Skeleton active title={false} paragraph={{ rows: 2 }} />
+      </Card>
+      <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
+        {Array.from({ length: 6 }, (_, i) => block(`kpi-${i}`, 2, { xs: 12, sm: 8, md: 4 }))}
+      </Row>
+      <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
+        {Array.from({ length: 7 }, (_, i) => block(`stage-${i}`, 3, { xs: 24, sm: 12, md: 8, lg: 6, xl: 3, style: { flex: 1, minWidth: 150 } }))}
+      </Row>
+      <Row gutter={[16, 16]}>
+        {Array.from({ length: 3 }, (_, i) => block(`chart-${i}`, 8, { xs: 24, md: 8 }))}
+      </Row>
+    </div>
+  );
+}
+
 // ─── SECTION LABEL ─────────────────────────────────────────────────────────────
 const SectionLabel = ({ children }) => (
   <div style={{
@@ -585,6 +701,7 @@ const SectionLabel = ({ children }) => (
 // ─── MAIN COMPONENT ────────────────────────────────────────────────────────────
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { message } = App.useApp();
 
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [allApplicantRows,    setAllApplicantRows]     = useState([]);
@@ -697,7 +814,8 @@ const DashboardPage = () => {
     ];
   }, [dateFilteredApplicants]);
 
-  const recruitmentFunnelRows = useMemo(() => {
+  // Current position of every applicant, by progress_status keyword.
+  const recruitmentStageAnalysisRows = useMemo(() => {
     const countStage = (keyword) =>
       dateFilteredApplicants.filter((a) =>
         a.rawProgressStatus.toLowerCase().includes(keyword.toLowerCase())
@@ -712,6 +830,68 @@ const DashboardPage = () => {
       { label: 'Orientation',       count: countStage('Orientation') },
       { label: 'Hired',             count: dateFilteredApplicants.filter((a) => a.dateHired !== null).length },
     ];
+  }, [dateFilteredApplicants]);
+
+  const totalHiredAllTime = useMemo(
+    () => dateFilteredApplicants.filter((a) => Number(a.orientationStatus) === 1 && !!a.dateContract).length,
+    [dateFilteredApplicants],
+  );
+
+  // Pass-through funnel: each stage counts only applicants who passed
+  // (status 1) that stage AND every stage before it.
+  const recruitmentFunnelRows = useMemo(() => {
+    const passed = (rows, field) => rows.filter((r) => Number(r[field]) === 1);
+    const screening   = passed(dateFilteredApplicants, 'screeningStatus');
+    const initial     = passed(screening, 'initialInterviewStatus');
+    const iq          = passed(initial, 'iqStatus');
+    const bi          = passed(iq, 'biStatus');
+    const finalIv     = passed(bi, 'finalInterviewStatus');
+    const orientation = passed(finalIv, 'orientationStatus');
+    return [
+      { label: 'Total Applicants',  count: dateFilteredApplicants.length },
+      { label: 'Screening',         count: screening.length },
+      { label: 'Initial Interview', count: initial.length },
+      { label: 'Exam (IQ)',         count: iq.length },
+      { label: 'B.I & Basic Req',   count: bi.length },
+      { label: 'Final Interview',   count: finalIv.length },
+      { label: 'Orientation',       count: orientation.length },
+      { label: 'Hired',             count: totalHiredAllTime },
+    ];
+  }, [dateFilteredApplicants, totalHiredAllTime]);
+
+  // Hires per source, as a share of all hires in the period.
+  const sourcingChannelEfficiency = useMemo(() =>
+    Object.entries(groupByKey(hiredApplicants, 'applicationSource'))
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([source, rows]) => ({
+        source,
+        hiredCount: rows.length,
+        percentage: pct(rows.length, hiredApplicants.length),
+      })),
+  [hiredApplicants]);
+
+  // Final-interview outcomes per applied position: how many candidates were
+  // interviewed per successful hire.
+  const qualifiedCandidatesPerVacancy = useMemo(() => {
+    const finalInterviewApplicants = dateFilteredApplicants.filter((a) => a.finalInterviewStatus != null);
+    return Object.entries(groupByKey(finalInterviewApplicants, 'appliedPosition'))
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([position, rows]) => {
+        const passedCount = rows.filter((a) => Number(a.finalInterviewStatus) === 1).length;
+        const failedCount = rows.filter((a) => Number(a.finalInterviewStatus) === 2).length;
+        // on process (0) and non-compliant (3) weren't actually interviewed yet
+        const total = rows.filter((a) => ![0, 3].includes(Number(a.finalInterviewStatus))).length;
+        return {
+          key: position,
+          position,
+          total,
+          passed: passedCount,
+          failed: failedCount,
+          interviewsPerHire: passedCount > 0 ? +(total / passedCount).toFixed(1) : total,
+          rejectsPerHire:    passedCount > 0 ? +(failedCount / passedCount).toFixed(1) : failedCount,
+          passRate: pct(passedCount, total),
+        };
+      });
   }, [dateFilteredApplicants]);
 
   const genderBreakdownStats = useMemo(() => {
@@ -946,16 +1126,13 @@ const DashboardPage = () => {
   const fetchApplicants = useCallback(async () => {
     setIsLoadingApplicants(true);
     try {
+      // vueportal's RecruitmentController proxies recruitment_gateway/applicant_list:
+      // { job_applicants, branches, positions, branch_companies }
       const response = await axiosInstance.get('/recruitment/applicant_list');
-      let apiRows = [];
-      if (Array.isArray(response.data))                                          { apiRows = response.data; }
-      else if (response.data && Array.isArray(response.data.data))               { apiRows = response.data.data; }
-      else if (response.data && typeof response.data === 'object') {
-        const firstArray = Object.values(response.data).find((v) => Array.isArray(v));
-        if (firstArray) apiRows = firstArray;
-      }
-      setPositions(response.data?.positions || []);
-      setBranches(response.data?.branches   || []);
+      const data     = response.data || {};
+      const apiRows  = Array.isArray(data.job_applicants) ? data.job_applicants : [];
+      setPositions(data.positions || []);
+      setBranches(data.branches   || []);
       const normalized = apiRows.map(normalizeApiApplicantRow);
       const valid = normalized.filter((a) => a.applicantName || a.appliedPosition !== 'Unknown' || a.appliedBranch !== 'Unknown');
       setAllApplicantRows(valid.length ? valid : normalized);
@@ -967,7 +1144,10 @@ const DashboardPage = () => {
     }
   }, [navigate]);
 
-  useEffect(() => { fetchApplicants(); }, [fetchApplicants]);
+  useEffect(() => {
+    const load = async () => { await fetchApplicants(); };
+    load();
+  }, [fetchApplicants]);
 
   // MRF list, used only for the Time to Fill section below. Kept as a
   // separate fetch/state from the applicant data above (different backend
@@ -993,7 +1173,10 @@ const DashboardPage = () => {
     }
   }, []);
 
-  useEffect(() => { fetchMrfList(); }, [fetchMrfList]);
+  useEffect(() => {
+    const load = async () => { await fetchMrfList(); };
+    load();
+  }, [fetchMrfList]);
 
   // ── Chart data ──────────────────────────────────────────────────────────────
   const srcAppChartData = useMemo(() => {
@@ -1003,6 +1186,24 @@ const DashboardPage = () => {
       datasets: [{ label: 'Applicants', data: entries.map((e) => e[1].length), backgroundColor: CHART_COLORS.map((c) => c + 'bb'), borderColor: CHART_COLORS, borderWidth: 1 }],
     };
   }, [dateFilteredApplicants]);
+
+  const srcEfficiencyChartData = useMemo(() => ({
+    labels: sourcingChannelEfficiency.map((e) => e.source),
+    datasets: [{ label: 'Hired', data: sourcingChannelEfficiency.map((e) => e.hiredCount), backgroundColor: CHART_COLORS.map((c) => c + 'bb'), borderColor: CHART_COLORS, borderWidth: 1 }],
+  }), [sourcingChannelEfficiency]);
+
+  const srcEfficiencyChartOpts = useMemo(() => ({
+    ...CHART_OPTS,
+    indexAxis: 'y',
+    plugins: {
+      ...CHART_OPTS.plugins,
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.raw} hired (${sourcingChannelEfficiency[ctx.dataIndex]?.percentage ?? 0}%)`,
+        },
+      },
+    },
+  }), [sourcingChannelEfficiency]);
 
   const srcHireChartData = useMemo(() => {
     const entries = Object.entries(groupByKey(hiredApplicants, 'applicationSource')).sort((a, b) => b[1].length - a[1].length);
@@ -1196,6 +1397,30 @@ const DashboardPage = () => {
     { title: 'Hire Rate', dataIndex: 'hireRate',        align: 'right', render: (v) => <Tag color='success'>{v}%</Tag> },
   ];
 
+  const exportReport = () => {
+    try {
+      downloadRecruitmentReport({
+        kpiCards,
+        recruitmentStageCards,
+        recruitmentFunnelRows,
+        sourcingChannelEfficiency,
+        qualifiedCandidatesPerVacancy,
+        hiringOfficerStats,
+        reservedAgingRows,
+        educAttainStats,
+        civilStatusStats,
+        topPositionEntries,
+        branchBreakdownEntries,
+      }, analyticsDateRange);
+    } catch (error) {
+      console.error('[DashboardPage] export error:', error);
+      message.error(error.message || 'Failed to export the report.');
+    }
+  };
+
+  // ── Loading ─────────────────────────────────────────────────────────────────
+  if (isLoadingApplicants) return <DashboardSkeleton />;
+
   // ── Empty state ─────────────────────────────────────────────────────────────
   if (!allApplicantRows.length && !isLoadingApplicants) {
     return (
@@ -1215,16 +1440,19 @@ const DashboardPage = () => {
   // ── Main render ─────────────────────────────────────────────────────────────
   return (
     <div style={{ fontFamily: "'Segoe UI', sans-serif" }}>
-      <Spin spinning={isLoadingApplicants} size='large' style={{ position: 'fixed', top: '50%', left: '50%', zIndex: 999 }} />
-
       {/* ── Status bar ──────────────────────────────────────────────────────── */}
       <Row justify='space-between' align='middle' style={{ marginBottom: 20 }}>
         <Tag color='success' icon={<CheckCircleOutlined />}>
-          {allApplicantRows.length} records loaded
+          {dateFilteredApplicants.length} records loaded
         </Tag>
-        <Button size='small' icon={<ReloadOutlined />} onClick={fetchApplicants} loading={isLoadingApplicants}>
-          Refresh
-        </Button>
+        <Space>
+          <Button size='small' icon={<ReloadOutlined />} onClick={fetchApplicants}>
+            Refresh
+          </Button>
+          <Button size='small' type='primary' icon={<FileExcelOutlined />} onClick={exportReport}>
+            Export Report
+          </Button>
+        </Space>
       </Row>
 
       {/* ── Filters ─────────────────────────────────────────────────────────── */}
@@ -1325,26 +1553,26 @@ const DashboardPage = () => {
       <SectionLabel>Recruitment Funnel</SectionLabel>
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
 
-        {/* Existing Progress bar funnel */}
+        {/* Stage analysis — where applicants currently are */}
         <Col xs={24} md={8}>
-          <Card size='small' title='Recruitment Funnel' style={{ borderRadius: 8 }}
+          <Card size='small' title='Recruitment Stage Analysis' style={{ borderRadius: 8, height: '100%' }}
             extra={<Text type='secondary' style={{ fontSize: 11 }}>Drop-off &amp; conversion per stage</Text>}>
-            {recruitmentFunnelRows.map((row, i) => (
+            {recruitmentStageAnalysisRows.map((row, i) => (
               <div key={row.label} style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <Text style={{ fontSize: 12, color: '#666' }}>{row.label}</Text>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Text strong style={{ fontSize: 12 }}>{row.count}</Text>
-                    <Text type='secondary' style={{ fontSize: 11 }}>{pct(row.count, dateFilteredApplicants.length)}% of total</Text>
-                    {i > 0 && recruitmentFunnelRows[i - 1].count > 0 && (
-                      <Tag color={conversionColor(row.count, recruitmentFunnelRows[i - 1].count)} style={{ fontSize: 10, margin: 0 }}>
-                        {pct(row.count, recruitmentFunnelRows[i - 1].count)}% pass
+                    <Text type='secondary' style={{ fontSize: 11 }}>{pct(row.count, recruitmentStageAnalysisRows[0].count || 1)}% of total</Text>
+                    {i > 0 && recruitmentStageAnalysisRows[i - 1].count > 0 && (
+                      <Tag color={conversionColor(row.count, recruitmentStageAnalysisRows[i - 1].count)} style={{ fontSize: 10, margin: 0 }}>
+                        {pct(row.count, recruitmentStageAnalysisRows[i - 1].count)}% pass
                       </Tag>
                     )}
                   </div>
                 </div>
                 <Progress
-                  percent={pct(row.count, recruitmentFunnelRows[0].count || 1)}
+                  percent={pct(row.count, recruitmentStageAnalysisRows[0].count || 1)}
                   strokeColor={STAGE_COLORS[i % STAGE_COLORS.length]}
                   showInfo={false}
                   size='small'
@@ -1354,17 +1582,17 @@ const DashboardPage = () => {
           </Card>
         </Col>
 
-        {/* NEW — Embudo SVG funnel */}
+        {/* Pass-through funnel */}
         <Col xs={24} md={8}>
-          <Card size='small' title='Recruitment Funnel Chart' style={{ borderRadius: 8, height: '100%' }}
-            extra={<Text type='secondary' style={{ fontSize: 11 }}>Visual conversion flow</Text>}>
+          <Card size='small' title='Recruitment Funnel' style={{ borderRadius: 8, height: '100%' }}
+            extra={<Text type='secondary' style={{ fontSize: 11 }}>Pass-through per stage</Text>}>
             <RecruitmentFunnelChart funnelRows={recruitmentFunnelRows} />
           </Card>
         </Col>
 
         {/* Avg days per stage */}
         <Col xs={24} md={8}>
-          <Card size='small' title='Avg. Days per Stage' style={{ borderRadius: 8, height: '100%' }}>
+          <Card size='small' title='Avg. Days per Stage (real data)' style={{ borderRadius: 8, height: '100%' }}>
             <ChartBox type='bar' data={stageTimeChartData} options={CHART_OPTS} height={220} />
           </Card>
         </Col>
@@ -1374,12 +1602,18 @@ const DashboardPage = () => {
       {/* ── Sourcing Metrics ────────────────────────────────────────────────── */}
       <SectionLabel>Sourcing Metrics</SectionLabel>
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} md={12}>
+        <Col xs={24} md={8}>
           <Card size='small' title='Source of Application' style={{ borderRadius: 8 }}>
             <ChartBox type='bar' data={srcAppChartData} options={{ ...CHART_OPTS, indexAxis: 'y' }} height={260} />
           </Card>
         </Col>
-        <Col xs={24} md={12}>
+        <Col xs={24} md={8}>
+          <Card size='small' title='Sourcing Channel Efficiency' style={{ borderRadius: 8 }}
+            extra={<Text type='secondary' style={{ fontSize: 11 }}>Share of hires</Text>}>
+            <ChartBox type='bar' data={srcEfficiencyChartData} options={srcEfficiencyChartOpts} height={260} />
+          </Card>
+        </Col>
+        <Col xs={24} md={8}>
           <Card size='small' title='Hired by Source' style={{ borderRadius: 8 }}>
             <ChartBox type='doughnut' data={srcHireChartData} options={{ responsive: true, maintainAspectRatio: false, cutout: '58%', plugins: { legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 9, padding: 6 } } } }} height={260} />
           </Card>
@@ -1504,6 +1738,10 @@ const DashboardPage = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* ── Qualified Candidates Per Vacancy ────────────────────────────────── */}
+      <SectionLabel>Qualified Candidates Per Vacancy</SectionLabel>
+      <QualifiedCandidatesSection rows={qualifiedCandidatesPerVacancy} />
 
       {/* ── Deep Analysis ───────────────────────────────────────────────────── */}
       <SectionLabel>Deep Analysis</SectionLabel>
