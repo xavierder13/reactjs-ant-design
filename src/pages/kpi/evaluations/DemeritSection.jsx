@@ -5,6 +5,7 @@ import {
 } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import kpiEvaluationApi from '../../../services/kpi/kpiEvaluationApi';
+import { maxDeduction } from './kpiScore';
 
 const DemeritSection = ({
   ratings = [],
@@ -84,7 +85,7 @@ const DemeritSection = ({
       title:  'Max Deduction',
       key:    'max_deduction',
       width:  120,
-      render: (_, record) => `${record.demerit_item?.max_deduction || 0}%`,
+      render: (_, record) => `${maxDeduction(record)}%`,
     },
     // For supervisor evaluation type — show actual_deduction only (read-only)
     ...(evaluationType === 'supervisor' ? [
@@ -106,7 +107,7 @@ const DemeritSection = ({
           ? (
             <InputNumber
               min={0}
-              max={record.demerit_item?.max_deduction || 100}
+              max={maxDeduction(record) || 100}
               value={getDeduction(record)}
               onChange={(val) =>
                 setValues((prev) => ({

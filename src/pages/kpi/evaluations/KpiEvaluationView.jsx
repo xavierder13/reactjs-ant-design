@@ -46,6 +46,7 @@ const KpiEvaluationView = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [resubmitting,    setResubmitting]    = useState(false);
   const [canApproveEval, setCanApproveEval] = useState(false);
+  const [canViewApproverRating, setCanViewApproverRating] = useState(false);
   const [submitPopOpen, setSubmitPopOpen] = useState(false);
   const [template, setTemplate] = useState(null);
 
@@ -55,6 +56,7 @@ const KpiEvaluationView = () => {
         const { data } = await kpiEvaluationApi.getById(id);
         setEvaluation(data.evaluation);
         setCanApproveEval(data.can_approve);
+        setCanViewApproverRating(!!data.can_view_approver_rating);
         setTemplate(data.template);
         console.log(data);
         
@@ -97,6 +99,26 @@ const KpiEvaluationView = () => {
     )
   );
 
+  // Supervisor type: the approver rates Work Personality / Behavior while the
+  // evaluation is submitted, before approving (final = average with the
+  // evaluator's rating).
+  const canApproverRate = (
+    canApproveEval &&
+    evaluation.status === 'submitted' &&
+    evaluation.evaluation_type === 'supervisor'
+  );
+
+  const missingApproverRatings = (evaluation.behavior_ratings || [])
+    .filter((r) => !r.approver_rating).length;
+
+  // Viewers who can't see approver ratings get the stored final grade once
+  // approved (it includes the approver's ratings).
+  const useStoredFinal = (
+    !canViewApproverRating &&
+    evaluation.evaluation_type === 'supervisor' &&
+    evaluation.status === 'approved'
+  );
+
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     setSaving(true);
@@ -104,7 +126,7 @@ const KpiEvaluationView = () => {
       const { data } = await kpiEvaluationApi.submit(evaluation.id);
       if (data.success) {
         message.success(data.message);
-        setEvaluation((prev) => ({ ...prev, status: 'submitted' }));
+        setEvaluation(data.evaluation);
       } else {
         message.error(data.message);
       }
@@ -180,17 +202,16 @@ const KpiEvaluationView = () => {
   };
 
   const handleApprove = async () => {
+    if (evaluation.evaluation_type === 'supervisor' && missingApproverRatings > 0) {
+      message.warning(`Please save your Work Personality / Behavior rating for every criterion before approving. ${missingApproverRatings} rating(s) missing.`);
+      return;
+    }
     try {
       const { data } = await kpiEvaluationApi.approve(evaluation.id);
       if (data.success) {
         message.success(data.message);
-        setEvaluation((prev) => ({ 
-            ...prev, 
-            status: 'approved', 
-            approved_by: data.evaluation.approved_by, 
-            approved_at: data.evaluation.approved_at
-          })
-        );
+        // includes the final score recalculated with the approver's ratings
+        setEvaluation(data.evaluation);
       } else {
         message.error(data.message);
       }
@@ -235,7 +256,7 @@ const KpiEvaluationView = () => {
       const { data } = await kpiEvaluationApi.resubmit(evaluation.id);
       if (data.success) {
         message.success(data.message);
-        setEvaluation((prev) => ({ ...prev, status: 'submitted' }));
+        setEvaluation(data.evaluation);
       } else {
         message.error(data.message);
       }
@@ -369,6 +390,8 @@ const KpiEvaluationView = () => {
             ratings={evaluation.behavior_ratings}
             evaluationType={evaluation.evaluation_type}
             canEdit={canEdit}
+            canApproverRate={canApproverRate}
+            canViewApproverRating={canViewApproverRating}
             evaluationId={evaluation.id}
             onUpdated={(updated) => setEvaluation(updated)}
             viewMode='supervisor'
@@ -378,8 +401,8 @@ const KpiEvaluationView = () => {
 
           <ScoreSummary
             evaluation={evaluation}
-            evaluationType={evaluation.evaluation_type}
             viewMode='supervisor'
+            useStoredFinal={useStoredFinal}
           />
         </div>
       ),
@@ -654,7 +677,9 @@ const KpiEvaluationView = () => {
               <Space>
                 <Popconfirm
                   title='Approve this evaluation?'
-                  description='This will mark the evaluation as final and approved.'
+                  description={evaluation.evaluation_type === 'supervisor'
+                    ? 'The final grade will include your Work Personality / Behavior ratings, and the evaluation becomes final.'
+                    : 'This will mark the evaluation as final and approved.'}
                   onConfirm={handleApprove}
                   okText='Yes, Approve'
                   okButtonProps={{ type: 'primary' }}

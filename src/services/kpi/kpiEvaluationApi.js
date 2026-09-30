@@ -19,9 +19,6 @@ const kpiEvaluationApi = {
   // PUT /api/kpi/evaluations/:id/submit
   submit: (id) => axios.put(`/kpi/evaluations/${id}/submit`),
 
-  // PUT /api/kpi/evaluations/:id/approve
-  approve: (id) => axios.put(`/kpi/evaluations/${id}/approve`),
-
   // GET /api/kpi/employees (lightweight list)
   getEmployees: (params = {}) => axios.get('/kpi/employees', { params }),
 
@@ -41,6 +38,9 @@ const kpiEvaluationApi = {
   compute: (id) => axios.post(`/kpi/evaluations/${id}/compute`),
 
   approve:   (id) => axios.put(`/kpi/evaluations/${id}/approve`),
+
+  // PUT /api/kpi/evaluations/:id/approver-ratings (Supervisor type, while submitted)
+  saveApproverRatings: (id, payload) => axios.put(`/kpi/evaluations/${id}/approver-ratings`, payload),
 
   reject:    (id, payload) => axios.put(`/kpi/evaluations/${id}/reject`, payload),
   

@@ -5,6 +5,7 @@ import {
 } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import kpiEvaluationApi from '../../../services/kpi/kpiEvaluationApi';
+import { itemWeight } from './kpiScore';
 
 const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated, evaluationType, viewMode = 'supervisor' }) => {
   const { message }         = App.useApp();
@@ -21,19 +22,19 @@ const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated, e
 
   const getFinalScore = (item) => {
     const grade  = getGrade(item);
-    const weight = item.template_item?.weight || 0;
     if (grade === null || grade === undefined) return '-';
-    return ((grade * weight) / 100).toFixed(2) + '%';
+    return ((grade * itemWeight(item)) / 100).toFixed(2) + '%';
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      // A blank grade is sent as null and stays unfilled (the backend's
+      // submit check reports it); the backend applies the item's own weight.
       const payload = {
         items: items.map((item) => ({
           kpi_template_item_id: item.kpi_template_item_id,
-          actual_grade:         getGrade(item) ?? 0,
-          weight:               item.template_item?.weight || 0,
+          actual_grade:         getGrade(item) ?? null,
         })),
       };
 
@@ -49,13 +50,6 @@ const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated, e
     } finally {
       setSaving(false);
     }
-  };
-
-  const getSelfFinalScore = (item) => {
-    const grade  = item.self_grade;
-    const weight = item.template_item?.weight || 0;
-    if (grade === null || grade === undefined) return '-';
-    return ((grade * weight) / 100).toFixed(2);
   };
 
   const columns = [
@@ -74,7 +68,7 @@ const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated, e
       title:  'Weight',
       key:    'weight',
       width:  80,
-      render: (_, record) => `${record.template_item?.weight || 0}%`,
+      render: (_, record) => `${itemWeight(record)}%`,
     },
 
     // Self tab — show self_grade and self_final_score only
@@ -93,9 +87,8 @@ const JobPerformanceSection = ({ items = [], canEdit, evaluationId, onUpdated, e
         width:  130,
         render: (_, record) => {
           const grade  = record.self_grade;
-          const weight = record.template_item ? record.template_item.weight : 0;
           if (grade === null || grade === undefined) return '-';
-          return ((grade * weight) / 100).toFixed(2);
+          return ((grade * itemWeight(record)) / 100).toFixed(2);
         },
       },
     ] : [

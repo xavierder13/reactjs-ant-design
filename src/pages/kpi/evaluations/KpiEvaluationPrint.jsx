@@ -5,6 +5,7 @@ import { PrinterOutlined } from '@ant-design/icons';
 import kpiEvaluationApi from '../../../services/kpi/kpiEvaluationApi';
 import dayjs from 'dayjs';
 import './KpiEvaluationPrint.css';
+import { computeScores, itemWeight, maxDeduction, finalBehaviorRating } from './kpiScore';
 
 const ratingLabels = {
   1: 'Unsatisfactory',
@@ -27,6 +28,7 @@ const KpiEvaluationPrint = () => {
   const { id }                      = useParams();
   const [evaluation, setEvaluation] = useState(null);
   const [template,   setTemplate]   = useState(null);
+  const [canViewApproverRating, setCanViewApproverRating] = useState(false);
   const [loading,    setLoading]    = useState(true);
 
   useEffect(() => {
@@ -35,6 +37,7 @@ const KpiEvaluationPrint = () => {
         const { data } = await kpiEvaluationApi.getById(id);
         setEvaluation(data.evaluation);
         setTemplate(data.template);
+        setCanViewApproverRating(!!data.can_view_approver_rating);
       } finally {
         setLoading(false);
       }
@@ -56,27 +59,19 @@ const KpiEvaluationPrint = () => {
   const demeritRatings = evaluation.demerit_ratings || [];
   const hasDemerit    = template?.has_demerit && demeritRatings.length > 0;
 
-  // ── Calculations ───────────────────────────────────────────────────────────
-  const jobScore = items.reduce((sum, item) => {
-    const grade  = parseFloat(item.actual_grade) || 0;
-    const weight = parseFloat(item.template_item?.weight) || 0;
-    return sum + (grade * weight) / 100;
-  }, 0);
-
-  const totalWeight = items.reduce((sum, item) => {
-    return sum + (parseFloat(item.template_item?.weight) || 0);
-  }, 0);
-
-  const filledRatings = ratings.filter((r) => r.rating > 0);
-  const behaviorScore = filledRatings.length > 0
-    ? filledRatings.reduce((sum, r) => sum + r.rating, 0) / filledRatings.length
-    : 0;
-
-  const demeritTotal = demeritRatings.reduce((sum, r) => {
-    return sum + (parseFloat(r.actual_deduction) || 0);
-  }, 0);
-
-  const finalGrade = jobScore + behaviorScore - demeritTotal;
+  // ── Calculations (same formula as the backend — kpiScore.js) ──────────────
+  // Approver columns only for approvers / Administrator; others print the
+  // stored final grade (which includes the approver's ratings) once approved.
+  const withApprover  = evaluation.evaluation_type === 'supervisor' && canViewApproverRating;
+  const scores        = computeScores(evaluation, 'supervisor', {
+    useStoredFinal: evaluation.evaluation_type === 'supervisor' && !canViewApproverRating && evaluation.status === 'approved',
+  });
+  const jobScore      = scores.job;
+  const behaviorScore = scores.behavior;
+  const demeritTotal  = scores.demerit;
+  const finalGrade    = scores.final;
+  const totalWeight   = items.reduce((sum, item) => sum + itemWeight(item), 0);
+  const behaviorCols  = withApprover ? 5 : 3;
 
   return (
     <div className='print-wrapper'>
@@ -143,7 +138,7 @@ const KpiEvaluationPrint = () => {
           <tbody>
             {items.map((item, idx) => {
               const grade      = parseFloat(item.actual_grade) || 0;
-              const weight     = parseFloat(item.template_item?.weight) || 0;
+              const weight     = itemWeight(item);
               const finalScore = (grade * weight) / 100;
               return (
                 <tr key={item.id}>
@@ -179,7 +174,7 @@ const KpiEvaluationPrint = () => {
                   <td>
                     {String.fromCharCode(65 + idx)}. {rating.demerit_item?.component_name}
                   </td>
-                  <td className='text-center'>{rating.demerit_item?.max_deduction}% max</td>
+                  <td className='text-center'>{maxDeduction(rating)}% max</td>
                   <td></td>
                   <td className='text-center'>{parseFloat(rating.actual_deduction || 0).toFixed(2)}%</td>
                 </tr>
@@ -198,12 +193,12 @@ const KpiEvaluationPrint = () => {
         <table className='kpi-table' style={{ marginTop: 8 }}>
           <thead>
             <tr>
-              <th colSpan={3} className='section-header'>WORK PERSONALITY/BEHAVIOR</th>
+              <th colSpan={behaviorCols} className='section-header'>WORK PERSONALITY/BEHAVIOR</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td colSpan={3} className='rating-legend'>
+              <td colSpan={behaviorCols} className='rating-legend'>
                 <em>
                   Rate the person's work behavior on a scale of 1 to 5 using the rating description below:<br />
                   5 - Exemplary (Consistently models values and exceeds expectations.)<br />
@@ -217,20 +212,37 @@ const KpiEvaluationPrint = () => {
             <tr>
               <th style={{ width: 30 }}>#</th>
               <th>CRITERIA</th>
-              <th className='col-weight'>RATING</th>
+              {withApprover ? (
+                <>
+                  <th className='col-weight'>EVALUATOR</th>
+                  <th className='col-weight'>APPROVER</th>
+                  <th className='col-weight'>FINAL</th>
+                </>
+              ) : (
+                <th className='col-weight'>RATING</th>
+              )}
             </tr>
-            {ratings.map((rating) => (
-              <tr key={rating.id}>
-                <td className='text-center'>{rating.criteria?.sort_order}</td>
-                <td>
-                  <strong>{rating.criteria?.criteria_name}</strong><br />
-                  <span style={{ fontSize: 10 }}>{rating.criteria?.description}</span>
-                </td>
-                <td className='text-center'>{rating.rating || '-'}</td>
-              </tr>
-            ))}
+            {ratings.map((rating) => {
+              const final = finalBehaviorRating(rating, evaluation.evaluation_type);
+              return (
+                <tr key={rating.id}>
+                  <td className='text-center'>{rating.criteria?.sort_order}</td>
+                  <td>
+                    <strong>{rating.criteria?.criteria_name}</strong><br />
+                    <span style={{ fontSize: 10 }}>{rating.criteria?.description}</span>
+                  </td>
+                  <td className='text-center'>{rating.rating || '-'}</td>
+                  {withApprover && (
+                    <>
+                      <td className='text-center'>{rating.approver_rating || '-'}</td>
+                      <td className='text-center'>{final ? final.toFixed(1) : '-'}</td>
+                    </>
+                  )}
+                </tr>
+              );
+            })}
             <tr className='total-row'>
-              <td colSpan={2}><strong>TOTAL POINTS</strong></td>
+              <td colSpan={behaviorCols - 1}><strong>TOTAL POINTS</strong></td>
               <td className='text-center'><strong>{behaviorScore.toFixed(2)}%</strong></td>
             </tr>
           </tbody>
@@ -266,7 +278,7 @@ const KpiEvaluationPrint = () => {
               <tr>
                 <td className='text-center'>3</td>
                 <td>DEMERIT</td>
-                <td className='text-center'>{template?.max_demerit}%</td>
+                <td className='text-center'>{evaluation.max_demerit ?? template?.max_demerit}%</td>
                 <td className='text-center' style={{ color: 'red' }}>
                   {demeritTotal.toFixed(2)}%
                 </td>

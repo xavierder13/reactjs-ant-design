@@ -203,25 +203,8 @@ const KpiMyEvaluationForm = () => {
         render: (_, record) => getFinalScore(record),
       }
     ] : []),
-    // show supervisor grades only if status is past self
-    ...(['submitted', 'approved', 'rejected'].includes(evaluation.status) ? [
-      {
-        title:  'Supervisor Grade',
-        key:    'actual_grade',
-        width:  130,
-        render: (_, record) => record.actual_grade !== null
-          ? `${record.actual_grade}%`
-          : <Tag color='default'>Not graded</Tag>,
-      },
-      {
-        title:  'Final Score',
-        key:    'final_score',
-        width:  110,
-        render: (_, record) => record.final_score !== null
-          ? record.final_score
-          : '-',
-      },
-    ] : []),
+    // The employee sees only their own self grades — supervisor/approver
+    // grades aren't shown (nor sent by the backend); only the final grade is.
   ];
 
   const behaviorColumns = [
@@ -288,27 +271,11 @@ const KpiMyEvaluationForm = () => {
           ),
       },
     ] : []),
-    // show supervisor rating only if status is past self
-    ...(['submitted', 'approved', 'rejected'].includes(evaluation.status) ? [
-      {
-        title:  'Supervisor Rating',
-        key:    'rating',
-        width:  200,
-        render: (_, record) => record.rating
-          ? (
-            <div>
-              <Rate disabled value={record.rating} count={5} />
-              <div>
-                <Typography.Text type='secondary' style={{ fontSize: 11 }}>
-                  {ratingLabels[record.rating]}
-                </Typography.Text>
-              </div>
-            </div>
-          )
-          : <Tag color='default'>Not rated</Tag>,
-      },
-    ] : []),
   ];
+
+  const isSelfType           = evaluation.evaluation_type === 'self';
+  // With the supervisor / approver — the employee waits for the final grade
+  const isAwaitingSupervisor = evaluation.status !== 'approved' && !(isSelfType && evaluation.status === 'draft');
 
   return (
     <>
@@ -430,44 +397,8 @@ const KpiMyEvaluationForm = () => {
               </Col>
             </>
           )}
-          {/* Rejection Reason — visible to all if rejected */}
-          {evaluation.status === 'rejected' && evaluation.rejection_reason && (
-            <>
-              <Col xs={24} md={5}>
-                <Typography.Text type='secondary'>Rejected By</Typography.Text>
-                <div>
-                  <Typography.Text strong>
-                    {evaluation.rejected_by?.name}
-                  </Typography.Text>  
-                </div>
-              </Col>
-              <Col xs={24} md={5}>
-                <Typography.Text type='secondary'>Rejected At</Typography.Text>
-                <div>
-                  <Typography.Text strong>
-                    {dayjs(evaluation.rejected_at).format('MM-DD-YYYY')}
-                  </Typography.Text>
-                </div>
-              </Col>
-              <Col xs={24}>
-                <div style={{
-                  background:   '#fff2f0',
-                  border:       '1px solid #ffccc7',
-                  borderRadius: 8,
-                  padding:      '8px 12px',
-                  marginTop:    8,
-                }}>
-                  <Typography.Text type='danger' strong>
-                    Rejection Reason:
-                  </Typography.Text>
-                  <Typography.Text type='danger' style={{ marginLeft: 8 }}>
-                    {evaluation.rejection_reason}
-                  </Typography.Text>
-                </div>
-              </Col>
-            </>
-            
-          )}
+          {/* No rejection details for the employee — only the "Rejected"
+              status tag; who/when/why are never shown (nor sent). */}
         </Row>
 
         <Divider style={{ borderColor: '#b7eb8f' }} />
@@ -527,13 +458,11 @@ const KpiMyEvaluationForm = () => {
 
         {/* Score Preview */}
         <Typography.Text strong style={{ fontSize: 15 }}>
-          {['submitted', 'approved', 'rejected'].includes(evaluation.status)
-            ? 'Final Score Summary'
-            : 'Score Preview'
-          }
+          {isSelfType ? 'Score Preview' : 'Final Grade'}
         </Typography.Text>
 
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          {isSelfType && (
           <Col xs={24} md={8}>
             <Card size='small' style={{ borderColor: '#b7eb8f', textAlign: 'center' }}>
               <Typography.Text type='secondary'>Job Performance</Typography.Text>
@@ -547,7 +476,9 @@ const KpiMyEvaluationForm = () => {
               </Typography.Text>
             </Card>
           </Col>
+          )}
 
+          {isSelfType && (
           <Col xs={24} md={8}>
             <Card size='small' style={{ borderColor: '#b7eb8f', textAlign: 'center' }}>
               <Typography.Text type='secondary'>Work Personality</Typography.Text>
@@ -561,47 +492,37 @@ const KpiMyEvaluationForm = () => {
               </Typography.Text>
             </Card>
           </Col>
+          )}
 
+          {/* Final grade: shown once approved (the backend sends it only
+              then); until then an estimate from the employee's own grades
+              while filling, or "pending" once it's with the supervisor. */}
           <Col xs={24} md={8}>
             <Card
               size='small'
               style={{ borderColor: '#389e0d', background: '#f6ffed', textAlign: 'center' }}
             >
               <Typography.Text type='secondary'>
-                {['submitted', 'approved'].includes(evaluation.status)
-                  ? 'Final Grade'
-                  : 'Estimated Grade'
-                }
+                {evaluation.status === 'approved' ? 'Final Grade' : isAwaitingSupervisor ? 'Final Grade' : 'Estimated Grade'}
               </Typography.Text>
               <div>
-                <Typography.Title level={2} style={{ margin: 0, color: '#389e0d' }}>
-                  {['submitted', 'approved'].includes(evaluation.status) && evaluation.final_score
+                <Typography.Title level={2} style={{ margin: 0, color: evaluation.status === 'approved' ? '#389e0d' : '#8c8c8c' }}>
+                  {evaluation.status === 'approved' && evaluation.final_score != null
                     ? `${evaluation.final_score}%`
-                    : `${finalPreview.toFixed(2)}%`
+                    : isAwaitingSupervisor
+                      ? 'Pending'
+                      : `${finalPreview.toFixed(2)}%`
                   }
                 </Typography.Title>
               </div>
+              {isAwaitingSupervisor && (
+                <Typography.Text type='secondary' style={{ fontSize: 11 }}>
+                  Shown once the evaluation is approved
+                </Typography.Text>
+              )}
             </Card>
           </Col>
         </Row>
-
-        {/* Show rejection reason if rejected */}
-        {evaluation.status === 'rejected' && evaluation.rejection_reason && (
-          <div style={{
-            background:   '#fff2f0',
-            border:       '1px solid #ffccc7',
-            borderRadius: 8,
-            padding:      '8px 12px',
-            marginTop:    16,
-          }}>
-            <Typography.Text type='danger' strong>
-              Rejection Reason:
-            </Typography.Text>
-            <Typography.Text type='danger' style={{ marginLeft: 8 }}>
-              {evaluation.rejection_reason}
-            </Typography.Text>
-          </div>
-        )}
 
       </Card>
     </>

@@ -1,45 +1,16 @@
-import { Typography, Row, Col, Card, Divider, Tag } from 'antd';
+import { Typography, Row, Col, Card, Tag } from 'antd';
+import { computeScores } from './kpiScore';
 
-const ScoreSummary = ({ evaluation, evaluationType, viewMode = 'supervisor' }) => {
-  const items   = evaluation.evaluation_items || [];
-  const ratings = evaluation.behavior_ratings || [];
+// Same formula as the backend (see kpiScore.js): demerits capped at the
+// evaluation's max_demerit, final clamped to 0–100; on a Supervisor-type
+// evaluation each behavior rating averages the evaluator's and approver's.
+const ScoreSummary = ({ evaluation, viewMode = 'supervisor', useStoredFinal = false }) => {
   const demeritRatings = evaluation.demerit_ratings || [];
-
-  // demerit deduction
-  const demeritDeduction = demeritRatings.reduce((sum, r) => {
-    const val = viewMode === 'self'
-      ? r.self_deduction
-      : r.actual_deduction;
-    return sum + (parseFloat(val) || 0);
-  }, 0);
-
-  // Self tab scores
-  const selfJobScore = items.reduce((sum, item) => {
-    const grade  = item.self_grade || 0;
-    const weight = item.template_item ? item.template_item.weight : 0;
-    return sum + (grade * weight) / 100;
-  }, 0);
-
-  const filledSelfRatings = ratings.filter((r) => r.self_rating > 0);
-  const selfBehaviorScore = filledSelfRatings.length > 0
-    ? filledSelfRatings.reduce((sum, r) => sum + r.self_rating, 0) / filledSelfRatings.length
-    : 0;
-
-  const selfFinalScore = selfJobScore + selfBehaviorScore - demeritDeduction;
-
-  // Supervisor tab scores
-  const jobScore = items.reduce((sum, item) => {
-    const grade  = item.actual_grade || 0;
-    const weight = item.template_item ? item.template_item.weight : 0;
-    return sum + (grade * weight) / 100;
-  }, 0);
-
-  const filledRatings = ratings.filter((r) => r.rating > 0);
-  const behaviorScore = filledRatings.length > 0
-    ? filledRatings.reduce((sum, r) => sum + r.rating, 0) / filledRatings.length
-    : 0;
-
-  const finalScore = jobScore + behaviorScore - demeritDeduction;
+  const scores = computeScores(evaluation, viewMode, { useStoredFinal });
+  const jobScore         = scores.job;
+  const behaviorScore    = scores.behavior;
+  const demeritDeduction = scores.demerit;
+  const finalScore       = scores.final;
 
   return (
     <div>
@@ -53,9 +24,7 @@ const ScoreSummary = ({ evaluation, evaluationType, viewMode = 'supervisor' }) =
             <Typography.Text type='secondary'>Job Performance</Typography.Text>
             <div>
               <Typography.Title level={3} style={{ margin: 0, color: '#389e0d' }}>
-                {viewMode === 'self'
-                  ? selfJobScore.toFixed(2)
-                  : jobScore.toFixed(2)}%
+                {jobScore.toFixed(2)}%
               </Typography.Title>
             </div>
             <Typography.Text type='secondary' style={{ fontSize: 11 }}>
@@ -69,9 +38,7 @@ const ScoreSummary = ({ evaluation, evaluationType, viewMode = 'supervisor' }) =
             <Typography.Text type='secondary'>Work Personality</Typography.Text>
             <div>
               <Typography.Title level={3} style={{ margin: 0, color: '#389e0d' }}>
-                {viewMode === 'self'
-                  ? selfBehaviorScore.toFixed(2)
-                  : behaviorScore.toFixed(2)}
+                {behaviorScore.toFixed(2)}
               </Typography.Title>
             </div>
             <Typography.Text type='secondary' style={{ fontSize: 11 }}>
@@ -100,9 +67,7 @@ const ScoreSummary = ({ evaluation, evaluationType, viewMode = 'supervisor' }) =
                   color: viewMode === 'self' ? '#8c8c8c' : '#389e0d',
                 }}
               >
-                {viewMode === 'self'
-                  ? selfFinalScore.toFixed(2)
-                  : finalScore.toFixed(2)}%
+                {finalScore.toFixed(2)}%
               </Typography.Title>
             </div>
             {demeritRatings.length > 0 && demeritDeduction > 0 && (

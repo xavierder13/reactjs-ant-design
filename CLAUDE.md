@@ -241,6 +241,12 @@ Dated change history for each lives in `docs/<module>-history.md`.
 - **Recruitment Dashboard** (`src/pages/dashboard/`, route `/dashboard`) —
   `.claude/skills/recruitment-dashboard/SKILL.md`. Must match vueportal's
   Dashboard.vue number-for-number; metrics module, component map, parity check.
+- **KPI Management** (`src/pages/kpi/`, routes `/kpi-templates…`,
+  `/kpi-evaluations…`, `/my-evaluations…`) —
+  `.claude/skills/kpi-management/SKILL.md`. Key traps: REST verbs (not
+  POST-only); most actions are gated only in the UI (backend checks just
+  approve/reject); `KPI Self Evaluation` accounts are redirected to
+  `/my-evaluations` with a one-item menu.
 - **Record management pages / Area Assignment** (`src/pages/area/`, route
   `/areas`) — `.claude/skills/record-management/SKILL.md`. Recipe for any
   new admin CRUD master-data page (Area is the reference implementation).
