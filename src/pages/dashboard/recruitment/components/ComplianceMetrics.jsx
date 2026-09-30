@@ -1,6 +1,6 @@
 import { Row, Col, Card, Typography } from 'antd';
 import ChartBox from './ChartBox';
-import { CHART_OPTS } from '../chartSetup';
+import { LINE, lineScales } from '../../chartTheme';
 
 const { Text } = Typography;
 
@@ -13,8 +13,8 @@ export default function ComplianceMetrics({ nonCompliantByMonth }) {
           extra={<Text type='secondary' style={{ fontSize: 11 }}>Rising = process issue</Text>}>
           <ChartBox
             type='line'
-            options={CHART_OPTS}
-            data={{ labels: nonCompliantByMonth.labels, datasets: [{ label: 'Non-Compliant', data: nonCompliantByMonth.data, borderColor: '#f5222d', backgroundColor: 'rgba(245,34,45,0.1)', fill: true, tension: 0.4, pointRadius: 4, borderWidth: 2 }] }}
+            options={{ interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: lineScales('', true) }}
+            data={{ labels: nonCompliantByMonth.labels, datasets: [{ label: 'Non-Compliant', data: nonCompliantByMonth.data, borderColor: '#f5222d', backgroundColor: 'rgba(245,34,45,0.1)', fill: true, ...LINE }] }}
           />
         </Card>
       </Col>

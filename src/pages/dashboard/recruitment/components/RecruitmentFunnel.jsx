@@ -1,6 +1,7 @@
 import { Row, Col, Card, Progress, Tag, Typography } from 'antd';
 import ChartBox from './ChartBox';
-import { CHART_OPTS, STAGE_COLORS, conversionColor } from '../chartSetup';
+import { STAGE_COLORS, conversionColor } from '../chartSetup';
+import { BAR, INK_SECONDARY, endLabelsPlugin, baseScales, soften, textOn } from '../../chartTheme';
 import { pct, funnelChartRows } from '../recruitmentMetrics';
 
 const { Text } = Typography;
@@ -36,16 +37,18 @@ function FunnelChart({ rows }) {
           const bw = botW(i);
           const topX = centerX - tw / 2;
           const botX = centerX - bw / 2;
+          const fill = soften(STAGE_COLORS[i % STAGE_COLORS.length]);
+          const ink = textOn(fill);
           return (
             <g key={row.label}>
-              <polygon points={`${topX},${y} ${topX + tw},${y} ${botX + bw},${y + ROW_H - 4} ${botX},${y + ROW_H - 4}`} fill={STAGE_COLORS[i % STAGE_COLORS.length]} opacity={0.88} />
+              <polygon points={`${topX},${y} ${topX + tw},${y} ${botX + bw},${y + ROW_H - 4} ${botX},${y + ROW_H - 4}`} fill={fill} />
               <foreignObject x={0} y={y + ROW_H / 2 - 14} width={LABEL_W} height={28}>
                 <div xmlns='http://www.w3.org/1999/xhtml' style={{ fontSize: 10, fontWeight: 700, color: '#444', textAlign: 'right', paddingRight: 8, lineHeight: '14px', wordBreak: 'break-word', width: '100%' }}>
                   {row.label}
                 </div>
               </foreignObject>
-              <text x={centerX} y={y + ROW_H / 2 - 5} textAnchor='middle' dominantBaseline='middle' fontSize={13} fill='#fff' fontWeight={800}>{row.count}</text>
-              <text x={centerX} y={y + ROW_H / 2 + 9} textAnchor='middle' dominantBaseline='middle' fontSize={9} fill='rgba(255,255,255,0.85)' fontWeight={500}>{row.pctOfTotal}% of total</text>
+              <text x={centerX} y={y + ROW_H / 2 - 5} textAnchor='middle' dominantBaseline='middle' fontSize={13} fill={ink} fontWeight={800}>{row.count}</text>
+              <text x={centerX} y={y + ROW_H / 2 + 9} textAnchor='middle' dominantBaseline='middle' fontSize={9} fill={ink === '#fff' ? 'rgba(255,255,255,0.85)' : INK_SECONDARY} fontWeight={500}>{row.pctOfTotal}% of total</text>
               {i > 0 && embudo[i - 1].count > 0 && (
                 <text x={centerX + bw / 2 + 10} y={y + ROW_H / 2} textAnchor='start' dominantBaseline='middle' fontSize={10} fill={convFill(row.count, embudo[i - 1].count)} fontWeight={700}>
                   ↓{pct(row.count, embudo[i - 1].count)}%
@@ -81,7 +84,7 @@ export default function RecruitmentFunnel({ recruitmentStageAnalysisRows, recrui
                   )}
                 </div>
               </div>
-              <Progress percent={pct(row.count, base)} strokeColor={STAGE_COLORS[i % STAGE_COLORS.length]} showInfo={false} size='small' />
+              <Progress percent={pct(row.count, base)} strokeColor={soften(STAGE_COLORS[i % STAGE_COLORS.length])} showInfo={false} size='small' />
             </div>
           ))}
         </Card>
@@ -97,8 +100,9 @@ export default function RecruitmentFunnel({ recruitmentStageAnalysisRows, recrui
           <ChartBox
             type='bar'
             height={220}
-            options={CHART_OPTS}
-            data={{ labels: avgDaysPerStage.labels, datasets: [{ label: 'Avg Days', data: avgDaysPerStage.data, backgroundColor: STAGE_COLORS.slice(1, 7), borderRadius: 4 }] }}
+            options={{ layout: { padding: { top: 18 } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.raw} days` } } }, scales: baseScales(false) }}
+            data={{ labels: avgDaysPerStage.labels, datasets: [{ label: 'Avg Days', data: avgDaysPerStage.data, backgroundColor: STAGE_COLORS.slice(1, 7).map((c) => soften(c)), ...BAR, maxBarThickness: 18 }] }}
+            plugins={[endLabelsPlugin]}
           />
         </Card>
       </Col>

@@ -4,62 +4,13 @@ import {
   Legend, Tooltip, Filler,
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
+import { SERIES, GREEN, NEUTRAL, GRID, LINE, fmt, endLabelsPlugin, baseScales, lineScales } from '../../chartTheme';
 
 ChartJS.register(BarElement, LineElement, PointElement, CategoryScale, LinearScale, Legend, Tooltip, Filler);
 
 const { Text } = Typography;
 
-// Categorical palette — the dataviz skill's validated reference order
-// (blue, orange, aqua, yellow; adjacent CVD ΔE ≥ 9.1 on light). Assigned by
-// entity in a fixed order, never by rank; aqua/yellow sit below 3:1 on the
-// surface, so every chart using them writes its values out (relief rule).
-const SERIES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100'];
-const NEUTRAL = '#b8b7b1';       // "Unassigned" / "Not specified"
-
-const INK_SECONDARY = '#52514e';
-const GRID = '#ecebe7';
-
 const pct = (part, whole) => (whole ? Math.round((part / whole) * 1000) / 10 : 0);
-const fmt = (n) => n.toLocaleString();
-const MAX_LABEL = 28;
-const shorten = (label) => (label.length > MAX_LABEL ? `${label.slice(0, MAX_LABEL - 1)}…` : label);
-
-// Draws each bar's value just past its end — one label per bar, so no
-// value depends on hovering.
-const endLabelsPlugin = {
-  id: 'endLabels',
-  afterDatasetsDraw(chart) {
-    const { ctx } = chart;
-    const horizontal = chart.options.indexAxis === 'y';
-    ctx.save();
-    ctx.font = '11px sans-serif';
-    ctx.fillStyle = INK_SECONDARY;
-    chart.data.datasets.forEach((ds, di) => {
-      chart.getDatasetMeta(di).data.forEach((bar, i) => {
-        const value = ds.data[i];
-        if (!value) return;
-        if (horizontal) {
-          ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-          ctx.fillText(fmt(value), bar.x + 6, bar.y);
-        } else {
-          ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-          ctx.fillText(fmt(value), bar.x, bar.y - 4);
-        }
-      });
-    });
-    ctx.restore();
-  },
-};
-
-const baseScales = (horizontal) => ({
-  x: horizontal
-    ? { beginAtZero: true, grid: { color: GRID }, border: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 }, precision: 0 } }
-    : { grid: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 } } },
-  // long category names are shortened on the axis; the tooltip keeps the full name
-  y: horizontal
-    ? { grid: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 }, autoSkip: false, callback(value) { return shorten(this.getLabelForValue(value)); } } }
-    : { beginAtZero: true, grid: { color: GRID }, border: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 }, precision: 0 } },
-});
 
 // One-hue bar chart (magnitude by category). Horizontal for many / long
 // labels; height grows with the row count so the axis band never clips.
@@ -96,14 +47,15 @@ export function CountBarChart({ rows, horizontal = true, label = 'Employees', co
 
 // Part-to-whole as one horizontal 100% bar (not a pie): segments in fixed
 // entity order with a 2px surface gap, and a legend that writes out each
-// count and share. `order` pins colors to entities.
-export function ShareBar({ rows, order }) {
+// count and share. `order` pins colors to entities; `colors` swaps in the
+// caller's palette.
+export function ShareBar({ rows, order, colors = SERIES }) {
   const total = rows.reduce((s, r) => s + r.count, 0);
   const byLabel = Object.fromEntries(rows.map((r) => [r.label, r.count]));
   const known = order.filter((l) => byLabel[l]);
   const rest = rows.filter((r) => !order.includes(r.label) && r.count);
   const segments = [
-    ...known.map((l, i) => ({ label: l, count: byLabel[l], color: SERIES[i % SERIES.length] })),
+    ...known.map((l, i) => ({ label: l, count: byLabel[l], color: colors[i % colors.length] })),
     ...rest.map((r) => ({ label: r.label, count: r.count, color: NEUTRAL })),
   ];
 
@@ -137,7 +89,7 @@ export function MovementBarChart({ months }) {
         data={{
           labels: months.map((m) => m.label),
           datasets: [
-            { label: 'Hires', data: months.map((m) => m.hires), backgroundColor: SERIES[0], borderRadius: 4, borderSkipped: 'start', maxBarThickness: 14 },
+            { label: 'Hires', data: months.map((m) => m.hires), backgroundColor: GREEN, borderRadius: 4, borderSkipped: 'start', maxBarThickness: 14 },
             { label: 'Separations', data: months.map((m) => m.separations), backgroundColor: SERIES[1], borderRadius: 4, borderSkipped: 'start', maxBarThickness: 14 },
           ],
         }}
@@ -165,10 +117,7 @@ export function TrendLineChart({ months, field, label, suffix = '', color = SERI
             data: months.map((m) => m[field]),
             borderColor: color,
             backgroundColor: color,
-            borderWidth: 2,
-            pointRadius: 3,
-            pointHoverRadius: 5,
-            tension: 0.3,
+            ...LINE,
           }],
         }}
         options={{
@@ -176,10 +125,7 @@ export function TrendLineChart({ months, field, label, suffix = '', color = SERI
           maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
           plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${label}: ${fmt(c.raw)}${suffix}` } } },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 } } },
-            y: { grid: { color: GRID }, border: { display: false }, ticks: { color: INK_SECONDARY, font: { size: 11 }, callback: (v) => `${fmt(v)}${suffix}` } },
-          },
+          scales: lineScales(suffix),
         }}
       />
     </div>

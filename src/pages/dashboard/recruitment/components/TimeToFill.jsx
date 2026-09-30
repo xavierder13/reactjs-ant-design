@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { Row, Col, Card, Typography } from 'antd';
 import ChartBox from './ChartBox';
-import { CHART_OPTS, STAGE_COLORS, PRIMARY_GREEN } from '../chartSetup';
+import { STAGE_COLORS, PRIMARY_GREEN } from '../chartSetup';
+import { BAR, LINE, endLabelsPlugin, baseScales, lineScales, soften } from '../../chartTheme';
 import { groupByKey, parseDateValue, daysBetween } from '../recruitmentMetrics';
 
 const { Text } = Typography;
@@ -61,8 +62,9 @@ export default function TimeToFill({ mrfList }) {
           <ChartBox
             type='bar'
             height={220}
-            options={{ ...CHART_OPTS, indexAxis: 'y' }}
-            data={{ labels: byPosition.map((e) => e[0]), datasets: [{ label: 'Avg Days to Fill', data: byPosition.map((e) => e[1]), backgroundColor: STAGE_COLORS.slice(0, byPosition.length), borderRadius: 4 }] }}
+            options={{ indexAxis: 'y', layout: { padding: { right: 44 } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.raw} days` } } }, scales: baseScales(true) }}
+            data={{ labels: byPosition.map((e) => e[0]), datasets: [{ label: 'Avg Days to Fill', data: byPosition.map((e) => e[1]), backgroundColor: STAGE_COLORS.slice(0, byPosition.length).map((c) => soften(c)), ...BAR, maxBarThickness: 18 }] }}
+            plugins={[endLabelsPlugin]}
           />
         </Card>
       </Col>
@@ -71,10 +73,10 @@ export default function TimeToFill({ mrfList }) {
           <ChartBox
             type='line'
             height={220}
-            options={CHART_OPTS}
+            options={{ interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.raw} days` } } }, scales: lineScales('', true) }}
             data={{
               labels: monthKeys.map(monthLabel),
-              datasets: [{ label: 'Avg Days to Fill', data: monthKeys.map((k) => Math.round(byMonth[k].reduce((s, d) => s + d, 0) / byMonth[k].length)), borderColor: '#722ed1', backgroundColor: 'rgba(114,46,209,0.1)', fill: true, tension: 0.4, pointRadius: 4, borderWidth: 2 }],
+              datasets: [{ label: 'Avg Days to Fill', data: monthKeys.map((k) => Math.round(byMonth[k].reduce((s, d) => s + d, 0) / byMonth[k].length)), borderColor: '#722ed1', backgroundColor: 'rgba(114,46,209,0.1)', fill: true, ...LINE }],
             }}
           />
         </Card>

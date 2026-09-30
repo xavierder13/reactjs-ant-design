@@ -27,6 +27,22 @@ the two.
   app's own TimeToFill (Manpower Request). Components only render — any
   arithmetic in a template must copy vueportal's template (e.g. gender
   "% of total" is over `dateFilteredApplicants.length`).
+- Chart shape/axes follow the Workforce Dashboard (`src/pages/dashboard/chartTheme.js`:
+  rounded bars, stacked segments with in-segment values, trend-line style,
+  no pies — Civil Status is the Workforce `ShareBar`, Hired by Source a count
+  bar), but the **colors stay Recruitment's own** (`chartSetup.js`:
+  `CHART_COLORS`, `STAGE_COLORS`, `PRIMARY_GREEN` and the per-chart values).
+  Exception: Sourcing Metrics bars use the shared `BLUE` (one hue).
+  Every bar (chart bars, stacked segments, progress/share/mini bars) is its
+  color passed through `soften()` — same hue, lighter; lines, tags, tiles and
+  the heatmap keep full strength.
+  KPI and Applicant Pipeline cards keep their per-card colors, lightened with
+  `soften()` (65% on white, the same rule as `BLUE`/`ORANGE`) and drawn as the
+  Workforce `StatTile` (3px top bar, tinted icon badge, value in ink); text on a
+  colored fill picks ink or white via `textOn()`. Pipeline cards: stage color
+  on the top bar, main count in ink, then a split bar + dot legend for on
+  process (stage color) / failed (red) / reserved (navy).
+  Styling never touches `recruitmentMetrics.js`.
 - `src/pages/dashboard/DashboardPage.jsx` — loads data, holds filter state,
   calls `computeRecruitmentMetrics` once, renders sections in vueportal order.
 - Deliberate differences: Branch Breakdown and the Hiring Officer table page

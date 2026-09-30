@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Row, Col, Card, Table, Tag, Typography } from 'antd';
 
 const { Text } = Typography;
@@ -16,6 +17,9 @@ const columns = [
 
 // vueportal ReservedApplicantAging.vue
 export default function ReservedApplicantAging({ reservedAgingRows, reservedAgingBuckets }) {
+  // Rows carry no applicant id; key them by list position (AntD deprecated
+  // the `index` argument of a rowKey function).
+  const rows = useMemo(() => reservedAgingRows.map((r, i) => ({ ...r, rowId: i })), [reservedAgingRows]);
   return (
     <Card size='small' style={{ borderRadius: 8, marginBottom: 24 }}
       title='Reserved Applicants — Days Waiting'
@@ -30,7 +34,7 @@ export default function ReservedApplicantAging({ reservedAgingRows, reservedAgin
           </Col>
         ))}
       </Row>
-      <Table size='small' rowKey={(r, i) => `${r.applicantName}-${i}`} dataSource={reservedAgingRows} columns={columns} pagination={{ pageSize: 10 }} />
+      <Table size='small' rowKey='rowId' dataSource={rows} columns={columns} pagination={{ pageSize: 10 }} />
     </Card>
   );
 }

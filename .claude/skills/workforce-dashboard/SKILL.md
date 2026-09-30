@@ -49,8 +49,14 @@ Same shape as the Recruitment Dashboard: a thin page + one component per section
   characters are shortened on the axis (full name in the tooltip). Palette = the
   dataviz skill's validated reference order (blue, orange, aqua, yellow),
   fixed per entity; grey for Unassigned/Unknown. No dual axes; values written
-  on bars. `CountBarChart` takes `colorOf(row)` (reasons colored by type,
-  with a legend above).
+  on bars. Blue = `BLUE` (`#68a7ff`, the Recruitment Age Group bar blue),
+  used by `SERIES[0]` and the people/voluntary tones; orange = `ORANGE`
+  (`#f29d7b`, the same 65% lightening) for `SERIES[1]` and the involuntary tone;
+  aqua/yellow (`SERIES[2]`/`[3]`) get the same `soften()`. Hires in Hires and
+  Separations per Month = `GREEN` (`#7ec062`, the Recruitment hired green lightened). `CountBarChart` takes `colorOf(row)` (reasons colored by type,
+  with a legend above). The palette, bar/line styling, scales and value-label
+  plugins live in `src/pages/dashboard/chartTheme.js`, shared with the
+  Recruitment Dashboard — change the look there so both pages stay uniform.
 - Services: `services/dashboard/workforceDashboardApi.js` (contract in its
   header), `services/recruitment/recruitmentApi.js`, count helpers in
   `employeeApi.js` / `nteApi.js` / `disciplinaryApi.js`.

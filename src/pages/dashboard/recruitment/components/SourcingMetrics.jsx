@@ -1,6 +1,6 @@
 import { Row, Col, Card, Typography } from 'antd';
 import ChartBox from './ChartBox';
-import { CHART_OPTS, CHART_COLORS, DOUGHNUT_OPTS } from '../chartSetup';
+import { BLUE, BAR, baseScales } from '../../chartTheme';
 import { countBySource } from '../recruitmentMetrics';
 
 const { Text } = Typography;
@@ -30,8 +30,8 @@ function HorizontalCountChart({ labels, data, total, label }) {
     <ChartBox
       type='bar'
       height={heightFor(labels.length)}
-      data={{ labels, datasets: [{ label, data, backgroundColor: CHART_COLORS.map((c) => c + 'bb'), borderColor: CHART_COLORS, borderWidth: 1 }] }}
-      options={{ ...CHART_OPTS, indexAxis: 'y', layout: { padding: { right: 60 } } }}
+      data={{ labels, datasets: [{ label, data, backgroundColor: BLUE, ...BAR, maxBarThickness: 18 }] }}
+      options={{ indexAxis: 'y', layout: { padding: { right: 60 } }, plugins: { legend: { display: false } }, scales: baseScales(true) }}
       plugins={[valueLabels(total)]}
     />
   );
@@ -61,12 +61,7 @@ export default function SourcingMetrics({ dateFilteredApplicants, hiredApplicant
       </Col>
       <Col xs={24} md={8}>
         <Card size='small' title='Hired by Source' style={{ borderRadius: 8, height: '100%' }}>
-          <ChartBox
-            type='doughnut'
-            height={heightFor(srcHire.labels.length)}
-            data={{ labels: srcHire.labels, datasets: [{ data: srcHire.data, backgroundColor: CHART_COLORS.slice(0, srcHire.labels.length), borderWidth: 2, borderColor: '#fff' }] }}
-            options={{ ...DOUGHNUT_OPTS('58%'), layout: { padding: { right: 60 } } }}
-          />
+          <HorizontalCountChart labels={srcHire.labels} data={srcHire.data} total={srcHire.total} label='Hired' />
         </Card>
       </Col>
     </Row>

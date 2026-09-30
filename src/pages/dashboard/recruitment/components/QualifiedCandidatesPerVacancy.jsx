@@ -1,8 +1,12 @@
 import { Row, Col, Card, Table, Tag, Tooltip, Typography } from 'antd';
 import { PRIMARY_GREEN } from '../chartSetup';
 import { pct } from '../recruitmentMetrics';
+import { soften } from '../../chartTheme';
 
 const { Text } = Typography;
+
+const PASSED_BAR = soften(PRIMARY_GREEN);
+const FAILED_BAR = soften('#ff4d4f');
 
 const interviewsPerHireColor = (v) => (v >= 5 ? 'error' : v >= 3 ? 'warning' : 'success');
 
@@ -43,16 +47,16 @@ export default function QualifiedCandidatesPerVacancy({ rows }) {
       <Card size='small' title='Interviews Needed Per Hire — by Position' style={{ borderRadius: 8, marginBottom: 16 }}>
         <Text type='secondary' style={{ fontSize: 11, display: 'block', marginBottom: 8 }}>
           How many final-interview candidates were seen before 1 successful hire. Lower = more selective pipeline.{' '}
-          <span style={{ color: PRIMARY_GREEN }}>■ passed</span> <span style={{ color: '#ff4d4f' }}>■ failed</span>
+          <span style={{ color: PASSED_BAR }}>■ passed</span> <span style={{ color: FAILED_BAR }}>■ failed</span>
         </Text>
         <div style={{ maxHeight: 360, overflowY: 'auto' }}>
           {rows.map((row) => (
             <Tooltip key={row.position} title={`${row.position}: ${row.passed} passed (${row.passRate}%), ${row.failed} failed, ${row.rejectsPerHire} rejects/hire`}>
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(90px, 200px) 1fr auto 56px', alignItems: 'center', columnGap: 8, padding: '2px 0', borderBottom: '1px solid #f5f5f5' }}>
                 <Text style={{ fontSize: 12, fontWeight: 500 }} ellipsis>{row.position}</Text>
-                <div style={{ height: 6, borderRadius: 3, background: '#f0f0f0', overflow: 'hidden', display: 'flex' }}>
-                  <div style={{ width: `${pct(row.passed, row.total)}%`, background: PRIMARY_GREEN }} />
-                  <div style={{ width: `${pct(row.failed, row.total)}%`, background: '#ff4d4f' }} />
+                <div style={{ height: 10, borderRadius: 4, background: '#f0f0f0', overflow: 'hidden', display: 'flex', gap: 2 }}>
+                  <div style={{ width: `${pct(row.passed, row.total)}%`, borderRadius: 4, background: PASSED_BAR }} />
+                  <div style={{ width: `${pct(row.failed, row.total)}%`, borderRadius: 4, background: FAILED_BAR }} />
                 </div>
                 <Tag color={interviewsPerHireColor(row.interviewsPerHire)} style={{ margin: 0, fontSize: 10 }}>{row.interviewsPerHire}x</Tag>
                 <Text type='secondary' style={{ fontSize: 11, textAlign: 'right', whiteSpace: 'nowrap' }}>{row.passed}/{row.total}</Text>

@@ -1,6 +1,7 @@
 import { Row, Col, Card } from 'antd';
 import ChartBox from './ChartBox';
-import { CHART_OPTS_LEGEND, PRIMARY_GREEN } from '../chartSetup';
+import { PRIMARY_GREEN } from '../chartSetup';
+import { BAR, LINE, LEGEND, baseScales, lineScales, BLUE, soften } from '../../chartTheme';
 import { monthlyApplicationTrend, ageGroupDistribution } from '../recruitmentMetrics';
 
 // vueportal ApplicantDistribution.vue — Applications & Hires by Month | Age Group Distribution
@@ -13,12 +14,12 @@ export default function ApplicantDistribution({ dateFilteredApplicants, hiredApp
         <Card size='small' title='Applications & Hires by Month' style={{ borderRadius: 8 }}>
           <ChartBox
             type='line'
-            options={CHART_OPTS_LEGEND}
+            options={{ interaction: { mode: 'index', intersect: false }, plugins: { legend: LEGEND }, scales: lineScales('', true) }}
             data={{
               labels: trend.labels,
               datasets: [
-                { label: 'Applications', data: trend.applications, borderColor: '#1677ff', backgroundColor: 'rgba(22,119,255,0.1)', fill: true, tension: 0.4, pointRadius: 4, borderWidth: 2 },
-                { label: 'Hired', data: trend.hired, borderColor: PRIMARY_GREEN, backgroundColor: 'rgba(56,158,13,0.1)', fill: true, tension: 0.4, pointRadius: 4, borderWidth: 2 },
+                { label: 'Applications', data: trend.applications, borderColor: '#1677ff', backgroundColor: 'rgba(22,119,255,0.1)', fill: true, ...LINE },
+                { label: 'Hired', data: trend.hired, borderColor: PRIMARY_GREEN, backgroundColor: 'rgba(56,158,13,0.1)', fill: true, ...LINE },
               ],
             }}
           />
@@ -28,12 +29,12 @@ export default function ApplicantDistribution({ dateFilteredApplicants, hiredApp
         <Card size='small' title='Age Group Distribution' style={{ borderRadius: 8 }}>
           <ChartBox
             type='bar'
-            options={CHART_OPTS_LEGEND}
+            options={{ interaction: { mode: 'index', intersect: false }, plugins: { legend: LEGEND }, scales: baseScales(false) }}
             data={{
               labels: age.labels,
               datasets: [
-                { label: 'Applied', data: age.applied, backgroundColor: 'rgba(22,119,255,0.65)' },
-                { label: 'Hired', data: age.hired, backgroundColor: 'rgba(56,158,13,0.75)' },
+                { label: 'Applied', data: age.applied, backgroundColor: BLUE, ...BAR, maxBarThickness: 16 },
+                { label: 'Hired', data: age.hired, backgroundColor: soften(PRIMARY_GREEN), ...BAR, maxBarThickness: 16 },
               ],
             }}
           />
