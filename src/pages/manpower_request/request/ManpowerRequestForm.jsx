@@ -90,6 +90,7 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
   const positions  = useManpowerRequestStore((state) => state.positions);
   const branchLevelOnly       = useManpowerRequestStore((state) => state.branchLevelOnly);
   const branchLevelCostCenter = useManpowerRequestStore((state) => state.branchLevelCostCenter);
+  const hierarchyPositionIds  = useManpowerRequestStore((state) => state.hierarchyPositionIds);
   const fetchFormData = useManpowerRequestStore((state) => state.fetchFormData);
 
   const { user, hasRole } = useAuth();
@@ -161,6 +162,13 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
   const positionOptions = positions
     .filter((p) => !branchLevelOnly || p.cost_center === branchLevelCostCenter)
     .map((p) => ({ label: p.name, value: p.id }));
+  // A level-1 approver of Additional / New Position may only request positions
+  // within their hierarchy on lines of that type (backend-enforced too).
+  const allowedFor = (type) => hierarchyPositionIds?.[type];
+  const positionOptionsFor = (type) => {
+    const allowed = allowedFor(type);
+    return allowed ? positionOptions.filter((o) => allowed.includes(o.value)) : positionOptions;
+  };
   const branchOptions   = branches.map((b) => ({ label: b.name, value: b.id }));
 
   const buildPayload = (values) => ({
@@ -398,12 +406,36 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                     <Row gutter={16}>
                       <Col span={8}>
                         <Form.Item
-                          {...restField}
-                          label="Position"
-                          name={[name, 'position_id']}
-                          rules={[{ required: true, message: 'Position is required' }]}
+                          noStyle
+                          shouldUpdate={(prev, curr) =>
+                            prev.details?.[name]?.replacement_or_additional !==
+                            curr.details?.[name]?.replacement_or_additional
+                          }
                         >
-                          <Select placeholder="Select position" options={positionOptions} showSearch optionFilterProp="label" />
+                          {({ getFieldValue }) => {
+                            const type = getFieldValue(['details', name, 'replacement_or_additional']);
+                            return (
+                              <Form.Item
+                                {...restField}
+                                label="Position"
+                                name={[name, 'position_id']}
+                                dependencies={[['details', name, 'replacement_or_additional']]}
+                                rules={[
+                                  { required: true, message: 'Position is required' },
+                                  {
+                                    validator: async (_, value) => {
+                                      const allowed = allowedFor(type);
+                                      if (value && allowed && !allowed.includes(value)) {
+                                        throw new Error('Not within your position hierarchy for this request type');
+                                      }
+                                    },
+                                  },
+                                ]}
+                              >
+                                <Select placeholder="Select position" options={positionOptionsFor(type)} showSearch optionFilterProp="label" />
+                              </Form.Item>
+                            );
+                          }}
                         </Form.Item>
                       </Col>
                       <Col span={8}>

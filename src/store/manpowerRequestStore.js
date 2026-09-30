@@ -39,6 +39,9 @@ const useManpowerRequestStore = create((set, get) => ({
   // A Branch Manager may only request branch-level positions (backend-enforced too).
   branchLevelOnly: false,
   branchLevelCostCenter: null,
+  // A level-1 approver of Additional / New Position may only request positions
+  // within their hierarchy: { [type]: [positionId] }; a missing type = any.
+  hierarchyPositionIds: {},
   isFormDataLoaded: false,
 
   fetchFormData: async () => {
@@ -50,6 +53,7 @@ const useManpowerRequestStore = create((set, get) => ({
         positions: data.positions,
         branchLevelOnly: !!data.branch_level_only,
         branchLevelCostCenter: data.branch_level_cost_center,
+        hierarchyPositionIds: data.hierarchy_position_ids || {},
         isFormDataLoaded: true,
       });
     } catch (error) {

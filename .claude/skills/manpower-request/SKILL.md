@@ -309,6 +309,13 @@ vueportal `manpower-request` skill → "Approval procedure".
   `branch_level_cost_center` (stored in `manpowerRequestStore`);
   `ManpowerRequestForm.jsx` then offers only positions with that
   `cost_center`. The backend enforces it on store/update/submit.
+- **Level-1 approver requestor**: `create` returns `hierarchy_position_ids`
+  (`{ Additional: [ids], 'New Position': [ids] }` for the types whose level 1
+  the user approves; missing type = any position), stored as
+  `hierarchyPositionIds`. Each line's Position select re-filters when its
+  request type changes, and a validator flags a picked position outside the
+  list. The backend enforces it too, and auto-approves level 1 on submit for
+  such requestors (see vueportal's skill) — nothing to do on this side.
 - `approval_status` also carries `procedure_type` and `max_level` (levels
   this MRF needs); `levels` already lists only those.
 
