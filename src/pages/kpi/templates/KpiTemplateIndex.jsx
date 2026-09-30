@@ -18,7 +18,9 @@ import useAuth              from '../../../hooks/useAuth';
 const KpiTemplateIndex = () => {
   const navigate                              = useNavigate();
   const { message }                           = App.useApp();
-  const { hasPermission }                     = useAuth();
+  const { hasPermission, hasRole }            = useAuth();
+  // Product rule: the Administrator can do every action
+  const isAdmin = hasRole('Administrator');
   const { templates, fetchTemplates,
           refreshTemplates, isLoading }       = useKpiTemplateStore();
 
@@ -88,7 +90,7 @@ const KpiTemplateIndex = () => {
       key:    'actions',
       render: (_, record) => (
         <Space>
-          {hasPermission('kpi-template-edit') && (
+          {(isAdmin || hasPermission('kpi-template-edit')) && (
             <Tooltip title='Edit'>
               <Button
                 color='green'
@@ -99,7 +101,7 @@ const KpiTemplateIndex = () => {
               />
             </Tooltip>
           )}
-          {hasPermission('kpi-template-delete') && record.is_active && (
+          {(isAdmin || hasPermission('kpi-template-delete')) && record.is_active && (
             <Popconfirm
               title='Deactivate this template?'
               onConfirm={() => handleDeactivate(record.id)}
@@ -165,7 +167,7 @@ const KpiTemplateIndex = () => {
               </Space>
             </Col>
 
-            {hasPermission('kpi-template-create') && (
+            {(isAdmin || hasPermission('kpi-template-create')) && (
               <Col xs={24} md={4} style={{ textAlign: 'right' }}>
                 <Button
                   type='primary'

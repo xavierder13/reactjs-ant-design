@@ -32,16 +32,21 @@ const RatingDisplay = ({ value }) => (value
 // Supervisor-type evaluations also get the approver's rating per criterion;
 // the final rating is the average of the evaluator's and the approver's.
 const BehaviorRatingSection = ({
-  ratings = [], canEdit, canApproverRate = false, canViewApproverRating = false, evaluationId, onUpdated, evaluationType, viewMode = 'supervisor',
+  ratings = [], canEdit, canApproverRate = false, canViewApproverRating = false, evaluatorDone = false,
+  isAdmin = false, evaluationId, onUpdated, evaluationType, viewMode = 'supervisor',
 }) => {
   const { message }           = App.useApp();
   const [values,  setValues]  = useState({});
   const [approverValues, setApproverValues] = useState({});
   const [saving,  setSaving]  = useState(false);
   const [savingApprover, setSavingApprover] = useState(false);
-  // Approver + final columns: Supervisor type, and only for approvers and the
-  // Administrator (the backend hides approver ratings from everyone else)
-  const withApprover = viewMode !== 'self' && evaluationType === 'supervisor' && canViewApproverRating;
+  // Approver + final columns: Supervisor type, only for approvers and the
+  // Administrator (the backend hides approver ratings from everyone else),
+  // once the evaluator's rating is done (submitted / approved) — the
+  // Administrator also sees them before that, read-only.
+  const approverPending = !evaluatorDone && isAdmin;
+  const withApprover = viewMode !== 'self' && evaluationType === 'supervisor'
+    && canViewApproverRating && (evaluatorDone || approverPending);
 
   const getApproverRating = (rating) =>
     approverValues[rating.kpi_behavior_criteria_id] ?? rating.approver_rating ?? 0;
@@ -233,7 +238,16 @@ const BehaviorRatingSection = ({
                 )}
               </div>
             )
-            : <RatingDisplay value={record.approver_rating} />,
+            : approverPending
+              ? (
+                <div>
+                  <RatingDisplay value={record.approver_rating} />
+                  <Typography.Text type='secondary' style={{ fontSize: 11 }}>
+                    Available once the evaluator submits
+                  </Typography.Text>
+                </div>
+              )
+              : <RatingDisplay value={record.approver_rating} />,
         },
         {
           title:  'Final Rating',

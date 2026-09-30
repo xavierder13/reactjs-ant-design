@@ -31,6 +31,7 @@ import {
   BarChartOutlined,
   FileTextOutlined,
   ApartmentOutlined,
+  FundOutlined,
 } from '@ant-design/icons';
 import useAuth from '../hooks/useAuth';
 
@@ -61,6 +62,7 @@ const titleMap = {
   '/kpi-evaluations':        { title: 'KPI Evaluations',     breadcrumb: ['KPI Management', 'Evaluations'] },
   '/kpi-evaluations/create': { title: 'Create Evaluation',     breadcrumb: ['KPI Management', 'Evaluations', 'Create'] },
   '/my-evaluations':         { title: 'My Evaluations',        breadcrumb: ['KPI Management', 'My Evaluations'] },
+  '/kpi-reports/consolidated': { title: 'KPI Consolidated Report', breadcrumb: ['KPI Management', 'Reports', 'Consolidated Report'] },
   '/manpower-requests':        { title: 'Manpower Requests',       breadcrumb: ['Manpower Request', 'All Requests'] },
   '/manpower-requests/create': { title: 'Create Manpower Request', breadcrumb: ['Manpower Request', 'Create'] },
   '/areas':                    { title: 'Area Assignment',         breadcrumb: ['Human Resource', 'Area Assignment'] },
@@ -158,7 +160,15 @@ const menuData = [
           { key: 'kpi-evaluation-create', title: 'Create Evaluation', link: '/kpi-evaluations/create', permissions: ['kpi-evaluation-create'] },
           { key: 'kpi-my-evaluations',    title: 'My Evaluations',  link: '/my-evaluations',          permissions: ['kpi-self-evaluation-list'] },
         ],
-      },      
+      },
+      {
+        key: 'kpi-reports',
+        title: 'Reports',
+        icon: <FundOutlined />,
+        children: [
+          { key: 'kpi-report-consolidated', title: 'Consolidated Report', link: '/kpi-reports/consolidated', permissions: ['kpi-report-view'] },
+        ],
+      },
     ],
   },
 
@@ -301,8 +311,10 @@ const MainLayout = () => {
       };
     }
 
-    if (item.permission && !hasPermission(item.permission)) return null;
-    if (item.permissions && !item.permissions.some((p) => hasPermission(p))) return null;
+    // Product rule: the Administrator sees every menu entry
+    const isAdmin = hasRole('Administrator');
+    if (!isAdmin && item.permission && !hasPermission(item.permission)) return null;
+    if (!isAdmin && item.permissions && !item.permissions.some((p) => hasPermission(p))) return null;
 
     if (item.children) {
       const children = item.children.map(generateMenuItem).filter(Boolean);

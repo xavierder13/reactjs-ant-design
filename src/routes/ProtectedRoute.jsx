@@ -9,7 +9,7 @@ import { getToken } from '../utils/tokenHelper';
 
 const ProtectedRoute = ({ permissions = [] }) => {
   const token = getToken();
-  const { isLoaded, setAuth, setLoaded, hasAnyPermission } = useAuth();
+  const { isLoaded, setAuth, setLoaded, hasAnyPermission, hasRole } = useAuth();
   const [loading, setLoading] = useState(!isLoaded);
 
   useEffect(() => {
@@ -46,7 +46,8 @@ const ProtectedRoute = ({ permissions = [] }) => {
   }
 
   // Step 3: Has permissions to check → verify at least one matches
-  if (permissions.length > 0 && !hasAnyPermission(...permissions)) {
+  // (product rule: the Administrator can open every page)
+  if (permissions.length > 0 && !hasRole('Administrator') && !hasAnyPermission(...permissions)) {
     return <Navigate to='/unauthorize' replace />;
   }
 

@@ -1,0 +1,48 @@
+/* KPI Consolidated Report — print: only the report, one branch per page
+   when grouped by branch. */
+.kpi-report-print-header {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  .ant-layout-sider,
+  .ant-layout-header,
+  .ant-breadcrumb,
+  .no-print {
+    display: none !important;
+  }
+
+  .ant-layout,
+  .ant-layout-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .kpi-report-print-header {
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .kpi-report-branch + .kpi-report-branch {
+    break-before: page;
+  }
+
+  .kpi-report-position {
+    break-inside: avoid;
+  }
+
+  .kpi-report .ant-card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .kpi-report .ant-table {
+    font-size: 10px;
+  }
+}

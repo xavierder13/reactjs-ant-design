@@ -62,7 +62,9 @@ const KpiEvaluationPrint = () => {
   // ── Calculations (same formula as the backend — kpiScore.js) ──────────────
   // Approver columns only for approvers / Administrator; others print the
   // stored final grade (which includes the approver's ratings) once approved.
-  const withApprover  = evaluation.evaluation_type === 'supervisor' && canViewApproverRating;
+  // …and only once the evaluator's rating is done (submitted / approved)
+  const withApprover  = evaluation.evaluation_type === 'supervisor' && canViewApproverRating
+    && ['submitted', 'approved'].includes(evaluation.status);
   const scores        = computeScores(evaluation, 'supervisor', {
     useStoredFinal: evaluation.evaluation_type === 'supervisor' && !canViewApproverRating && evaluation.status === 'approved',
   });

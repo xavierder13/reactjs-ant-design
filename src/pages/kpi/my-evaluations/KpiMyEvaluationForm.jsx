@@ -38,6 +38,8 @@ const KpiMyEvaluationForm = () => {
   const { message }                         = App.useApp();
 
   const { hasRole, hasAnyRole, hasAnyPermission, hasPermission } = useAuth();
+  // Product rule: the Administrator can do every action
+  const isAdmin = hasRole('Administrator');
 
   const [evaluation,  setEvaluation]        = useState(null);
   const [loading,     setLoading]           = useState(true);
@@ -312,7 +314,7 @@ const KpiMyEvaluationForm = () => {
         }
         extra={
           <Space>
-            {hasPermission('kpi-evaluation-print') && (
+            {(isAdmin || hasPermission('kpi-evaluation-print')) && (
               <Button
                 icon={<PrinterOutlined />}
                 onClick={() => window.open(`/kpi-evaluations/${evaluation.id}/print`, '_blank')}

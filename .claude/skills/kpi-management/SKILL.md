@@ -45,6 +45,7 @@ Management", `titleMap`, regex cases for `:id` pages):
 | `/kpi-evaluations`, `/kpi-evaluations/:id` | `kpi-evaluation-list` |
 | `/kpi-evaluations/create` | `kpi-evaluation-create` |
 | `/kpi-evaluations/:id/print` | `kpi-evaluation-print` |
+| `/kpi-reports/consolidated` | `kpi-report-view` (menu KPI Management → Reports) |
 | `/my-evaluations` | `kpi-self-evaluation-list` |
 | `/my-evaluations/:id` | `kpi-self-evaluation-create` or `-edit` |
 
@@ -54,7 +55,39 @@ Management", `titleMap`, regex cases for `:id` pages):
   by the backend (`<employee_code>@hr_evaluation.ac`) when a `self`
   evaluation is created.
 
+## Consolidated Report (`src/pages/kpi/reports/`)
+
+- `KpiConsolidatedReport.jsx`: Generate by evaluation period
+  (`kpiReportApi.getConsolidated`, approved only); then, client-side:
+  positions (multi) and branch filters — options come from the report
+  data, not the positions/branches modules (a KPI-only user may lack their
+  permissions); layout Summary (per position) / Detailed (per position
+  table, one row per employee, Average row); per section Hide / Total /
+  Breakdown; **Group by branch** (one block per branch).
+- `kpiReportLayout.js`: pure builders (`buildSummary`, `buildDetailed`,
+  `summaryColumns`, `filterRows`, `formatValue`) shared by the page and
+  `src/utils/kpiConsolidatedReport.js` (SheetJS: Report Info sheet, then
+  Summary (+ component / demerit average sheets) or one sheet per
+  [branch –] position) — screen, print and Excel always match. Job /
+  demerit breakdowns differ per position, so in Summary they're an
+  expanded list per position (and extra sheets), not columns.
+- Print: `window.print()` with `KpiConsolidatedReport.css` — hides the app
+  chrome and controls (`.no-print`), A4 landscape, each branch block starts
+  a new page.
+
+## Evaluation list (`KpiEvaluationIndex.jsx`)
+
+Search, status, **position** and **branch** filters (in-memory; options
+from the loaded evaluations — the list endpoint includes
+`employee.branch`).
+
 ## Evaluation view — action gates (`KpiEvaluationView.jsx`)
+
+Every KPI permission check is written `isAdmin || hasPermission(...)`
+(`isAdmin = hasRole('Administrator')`) — the Administrator can do every
+action; the backend's `KpiMaintenance` and controllers bypass it too
+(verified with all KPI permissions removed from the Administrator role).
+
 
 - `canEdit` (grade inputs + **Compute Grades**): `kpi-evaluation-create` or
   `-edit`, and status `draft`/`rejected` (supervisor type) or
@@ -95,7 +128,10 @@ Each section saves via `PUT /kpi/evaluations/{id}` with only its own part
   (plus an "Estimated Final Grade" from self grades on the self tab).
 - Print: Supervisor type shows Evaluator / Approver / Final columns to
   approvers and the Administrator only.
-- Approver + Final Rating columns show only when `show()`'s
+- Approver + Final Rating columns show only once the evaluator's rating is
+  done (status `submitted`/`approved` — `evaluatorDone` prop; same on the
+  print page) — the Administrator also sees them before that, read-only
+  with "Available once the evaluator submits" — and only when `show()`'s
   `can_view_approver_rating` is true (the backend hides `approver_rating`
   from others). Those other viewers get the stored `final_score` on an
   approved Supervisor-type evaluation (`computeScores(…, { useStoredFinal })`),

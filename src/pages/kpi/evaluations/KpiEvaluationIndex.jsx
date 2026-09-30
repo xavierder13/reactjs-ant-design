@@ -32,7 +32,9 @@ const statusColors = {
 const KpiEvaluationIndex = () => {
   const navigate                                    = useNavigate();
   const { message }                                 = App.useApp();
-  const { hasPermission }                           = useAuth();
+  const { hasPermission, hasRole }                  = useAuth();
+  // Product rule: the Administrator can do every action
+  const isAdmin = hasRole('Administrator');
   const { evaluations, fetchEvaluations, refreshEvaluations, isLoading } = useKpiEvaluationStore();
 
   const [searchForm] = Form.useForm();
@@ -47,8 +49,15 @@ const KpiEvaluationIndex = () => {
     setFiltered(evaluations);
   }, [evaluations]);
 
+  // Position / branch filter options from the loaded evaluations
+  const uniqueOptions = (pairs) => [...new Map(pairs.filter(([id]) => id).map(([id, name]) => [id, name])).entries()]
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => String(a.label).localeCompare(String(b.label)));
+  const positionOptions = uniqueOptions(evaluations.map((e) => [e.position_id, e.position?.name]));
+  const branchOptions   = uniqueOptions(evaluations.map((e) => [e.employee?.branch?.id, e.employee?.branch?.name]));
+
   const handleSearch = () => {
-    const { search, status } = searchForm.getFieldsValue();
+    const { search, status, position_id, branch_id } = searchForm.getFieldsValue();
     let result = [...evaluations];
 
     if (search) {
@@ -61,6 +70,14 @@ const KpiEvaluationIndex = () => {
 
     if (status) {
       result = result.filter((e) => e.status === status);
+    }
+
+    if (position_id) {
+      result = result.filter((e) => e.position_id === position_id);
+    }
+
+    if (branch_id) {
+      result = result.filter((e) => e.employee?.branch?.id === branch_id);
     }
 
     setFiltered(result);
@@ -148,7 +165,7 @@ const KpiEvaluationIndex = () => {
               onClick={() => navigate(`/kpi-evaluations/${record.id}`)}
             />
           </Tooltip>
-          {record.status === 'draft' && hasPermission('kpi-evaluation-delete') && (
+          {record.status === 'draft' && (isAdmin || hasPermission('kpi-evaluation-delete')) && (
             <Popconfirm
               title='Delete this evaluation?'
               description='This action cannot be undone.'
@@ -165,7 +182,7 @@ const KpiEvaluationIndex = () => {
               </Tooltip>
             </Popconfirm>
           )}
-          {hasPermission('kpi-evaluation-print') && (
+          {(isAdmin || hasPermission('kpi-evaluation-print')) && (
             <Tooltip title='Print'>
               <Button
                 color='purple'
@@ -194,13 +211,13 @@ const KpiEvaluationIndex = () => {
       <Card
         title={
           <Row gutter={[8, 8]} align='middle'>
-            <Col xs={24} md={5}>
+            <Col xs={24} md={4}>
               <Typography.Title level={4} style={{ margin: 0 }}>
                 KPI Evaluations
               </Typography.Title>
             </Col>
 
-            <Col xs={24} md={6}>
+            <Col xs={24} md={5}>
               <Form form={searchForm}>
                 <Form.Item name='search' style={{ marginBottom: 0 }}>
                   <Input
@@ -212,7 +229,7 @@ const KpiEvaluationIndex = () => {
               </Form>
             </Col>
 
-            <Col xs={24} md={4}>
+            <Col xs={24} md={3}>
               <Form form={searchForm}>
                 <Form.Item name='status' style={{ marginBottom: 0 }}>
                   <Select
@@ -232,7 +249,39 @@ const KpiEvaluationIndex = () => {
               </Form>
             </Col>
 
-            <Col xs={24} md={5}>
+            <Col xs={24} md={4}>
+              <Form form={searchForm}>
+                <Form.Item name='position_id' style={{ marginBottom: 0 }}>
+                  <Select
+                    placeholder='Filter by position'
+                    allowClear
+                    showSearch
+                    optionFilterProp='label'
+                    style={{ width: '100%' }}
+                    options={positionOptions}
+                    onChange={handleSearch}
+                  />
+                </Form.Item>
+              </Form>
+            </Col>
+
+            <Col xs={24} md={4}>
+              <Form form={searchForm}>
+                <Form.Item name='branch_id' style={{ marginBottom: 0 }}>
+                  <Select
+                    placeholder='Filter by branch'
+                    allowClear
+                    showSearch
+                    optionFilterProp='label'
+                    style={{ width: '100%' }}
+                    options={branchOptions}
+                    onChange={handleSearch}
+                  />
+                </Form.Item>
+              </Form>
+            </Col>
+
+            <Col xs={24} md={4}>
               <Space wrap>
                 <Button
                   color='primary'
@@ -254,7 +303,7 @@ const KpiEvaluationIndex = () => {
               </Space>
             </Col>
 
-            {hasPermission('kpi-evaluation-create') && (
+            {(isAdmin || hasPermission('kpi-evaluation-create')) && (
               <Col xs={24} md={4} style={{ textAlign: 'right' }}>
                 <Button
                   type='primary'

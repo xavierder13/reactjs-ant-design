@@ -112,7 +112,10 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
 - **Product rule: the platform `Administrator` role can do every action on
   every feature.** Every action gate needs a `hasRole('Administrator') ||`
   bypass (see MRF's `canEdit`/`canSubmit`); a gate without it is a
-  defect.
+  defect. Page access (`ProtectedRoute`) and the sidebar menu
+  (`MainLayout` `generateMenuItem`) already let the Administrator role
+  through regardless of permissions — `hasPermission`/`hasAnyPermission`
+  themselves do **not**, so action gates still need the explicit bypass.
 - Tokens live in `localStorage` via `src/utils/tokenHelper.js`
   (`access_token`, `refresh_token`).
 - Note: the 401 handling in `axiosInstance`'s response interceptor is

@@ -35,6 +35,8 @@ const KpiEvaluationView = () => {
   const navigate                    = useNavigate();
   const { message }                 = App.useApp();
   const { hasRole, hasAnyRole, hasAnyPermission, hasPermission } = useAuth();
+  // Product rule: the Administrator can do every action
+  const isAdmin = hasRole('Administrator');
 
   const [evaluation,  setEvaluation] = useState(null);
   const [loading,     setLoading]    = useState(true);
@@ -81,7 +83,7 @@ const KpiEvaluationView = () => {
 
   // canEdit — rejected means grades are editable
   const canEdit = (
-    hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit') &&
+    (isAdmin || hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit')) &&
     (
       evaluation.evaluation_type === 'supervisor'
         ? ['draft', 'rejected'].includes(evaluation.status)
@@ -91,7 +93,7 @@ const KpiEvaluationView = () => {
 
   // canSubmit — only show Mark as Submitted for draft/self, NOT rejected
   const canSubmit = (
-    hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit') &&
+    (isAdmin || hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit')) &&
     (
       evaluation.evaluation_type === 'supervisor'
         ? evaluation.status === 'draft'
@@ -333,7 +335,7 @@ const KpiEvaluationView = () => {
       children: (
         <div>
           {/* Compute Grades button — top of supervisor tab */}
-          {canEdit && hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit') && (
+          {canEdit && (isAdmin || hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit')) && (
             <Row justify='end' style={{ marginBottom: 12 }}>
               <Col>
                 <Space>
@@ -392,6 +394,8 @@ const KpiEvaluationView = () => {
             canEdit={canEdit}
             canApproverRate={canApproverRate}
             canViewApproverRating={canViewApproverRating}
+            evaluatorDone={['submitted', 'approved'].includes(evaluation.status)}
+            isAdmin={isAdmin}
             evaluationId={evaluation.id}
             onUpdated={(updated) => setEvaluation(updated)}
             viewMode='supervisor'
@@ -445,7 +449,7 @@ const KpiEvaluationView = () => {
         }
         extra={
           <Space>
-            {hasPermission('kpi-evaluation-print') && (
+            {(isAdmin || hasPermission('kpi-evaluation-print')) && (
               <Button
                 icon={<PrinterOutlined />}
                 onClick={() => window.open(`/kpi-evaluations/${evaluation.id}/print`, '_blank')}
@@ -701,7 +705,7 @@ const KpiEvaluationView = () => {
           )}
 
           {/* Resubmit — for supervisor after rejection */}
-          {(evaluation.status === 'rejected' &&  hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit')) && (
+          {(evaluation.status === 'rejected' &&  (isAdmin || hasAnyPermission('kpi-evaluation-create', 'kpi-evaluation-edit'))) && (
             <Col>
               <Popconfirm
                 title='Resubmit this evaluation?'

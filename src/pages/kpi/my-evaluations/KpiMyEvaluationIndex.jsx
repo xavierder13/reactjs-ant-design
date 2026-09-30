@@ -23,6 +23,8 @@ const KpiMyEvaluationIndex = () => {
   const navigate                      = useNavigate();
   const { message }                   = App.useApp();
   const { hasRole, hasPermission }                   = useAuth();
+  // Product rule: the Administrator can do every action
+  const isAdmin = hasRole('Administrator');
   const [evaluations, setEvaluations] = useState([]);
   const [loading,     setLoading]     = useState(false);
 
@@ -123,7 +125,7 @@ const KpiMyEvaluationIndex = () => {
               />
             </Tooltip>
           )}
-          {hasPermission('kpi-evaluation-print') && (
+          {(isAdmin || hasPermission('kpi-evaluation-print')) && (
             <Tooltip title="Print">
               <Button
                 color="purple"
@@ -168,7 +170,7 @@ const KpiMyEvaluationIndex = () => {
             />
           </Tooltip>
           
-          {hasPermission('kpi-evaluation-print') && (
+          {(isAdmin || hasPermission('kpi-evaluation-print')) && (
             <Tooltip title="Print">
               <Button
                 color="purple"
