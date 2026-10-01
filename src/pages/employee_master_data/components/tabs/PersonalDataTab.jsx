@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Tabs } from "antd";
+import { IdcardOutlined, PaperClipOutlined } from "@ant-design/icons";
+import SubTabs from "../SubTabs";
 import PersonalInformation from "./personal/PersonalInformation";
 import FilesRequirements from "./personal/FilesRequirements";
 
@@ -21,11 +22,13 @@ export default function PersonalDataTab({ employeeId, initialFiles, mode, onActi
     {
       key: "info",
       label: "Personal Information",
+      icon: <IdcardOutlined />,
       children: <PersonalInformation />
     },
     {
       key: "files",
       label: "Files & Requirements",
+      icon: <PaperClipOutlined />,
       children: (
         <FilesRequirements
           employeeId={employeeId}
@@ -46,5 +49,5 @@ export default function PersonalDataTab({ employeeId, initialFiles, mode, onActi
     onActiveSubTabChange?.(key);
   };
 
-  return <Tabs activeKey={activeKey} onChange={handleChange} items={items} />;
+  return <SubTabs activeKey={activeKey} onChange={handleChange} items={items} />;
 }

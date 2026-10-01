@@ -229,7 +229,7 @@ Dated change history for each lives in `docs/<module>-history.md`.
 - **Employee Master Data** (`src/pages/employee_master_data/`, routes
   `/employees…`, `/acknowledgment-reports…`) —
   `.claude/skills/employee-master-data/SKILL.md`. Key traps: no
-  single-employee fetch endpoint (View/Edit use router state); server-side
+  single-employee fetch endpoint (View/Edit re-read via `useLatestEmployee`); server-side
   pagination; tabs render bare `Form.Item`s inside `EmployeeForm`'s single
   `<Form>`; new list columns must pass the backend `$table_fields` check.
 - **Manpower Request** (`src/pages/manpower_request/request/`, routes

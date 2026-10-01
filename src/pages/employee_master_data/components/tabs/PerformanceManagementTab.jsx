@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Tabs } from "antd";
+import {
+  AuditOutlined, BarChartOutlined, ReadOutlined, ToolOutlined,
+  ApartmentOutlined, TrophyOutlined, BookOutlined,
+} from "@ant-design/icons";
+import SubTabs from "../SubTabs";
 
 import useAuth from "../../../../hooks/useAuth";
 import EvaluationRegularizationTab from "./performance/EvaluationRegularizationTab";
@@ -51,6 +55,7 @@ export default function PerformanceManagementTab({ mode = "create", initialData,
     {
       key: "eval",
       label: "Evaluation & Regularization",
+      icon: <AuditOutlined />,
       permission: "employee-master-data-evaluation-regularization",
       children: (
         <EvaluationRegularizationTab
@@ -65,6 +70,7 @@ export default function PerformanceManagementTab({ mode = "create", initialData,
     {
       key: "kpi",
       label: "Monthly Key Performance",
+      icon: <BarChartOutlined />,
       permission: "employee-master-data-key-performance-list",
       children: (
         <MonthlyKeyPerformanceTab
@@ -79,6 +85,7 @@ export default function PerformanceManagementTab({ mode = "create", initialData,
     {
       key: "classroom",
       label: "Classroom Performance Rating",
+      icon: <ReadOutlined />,
       permission: "employee-master-data-classroom-performance-rating-list",
       children: (
         <ClassroomPerformanceRatingTab
@@ -93,6 +100,7 @@ export default function PerformanceManagementTab({ mode = "create", initialData,
     {
       key: "ojt",
       label: "OJT Performance Rating",
+      icon: <ToolOutlined />,
       permission: "employee-master-data-ojt-performance-rating-list",
       children: (
         <OjtPerformanceRatingTab
@@ -107,6 +115,7 @@ export default function PerformanceManagementTab({ mode = "create", initialData,
     {
       key: "branch_position",
       label: "Branch Assignment & Positions",
+      icon: <ApartmentOutlined />,
       permission: "employee-master-data-branch-assignment-position-list",
       children: (
         <BranchAssignmentPositionTab
@@ -121,6 +130,7 @@ export default function PerformanceManagementTab({ mode = "create", initialData,
     {
       key: "merit",
       label: "Merit History",
+      icon: <TrophyOutlined />,
       permission: "employee-master-data-merit-history-list",
       children: (
         <MeritHistoryTab
@@ -135,6 +145,7 @@ export default function PerformanceManagementTab({ mode = "create", initialData,
     {
       key: "training",
       label: "Training",
+      icon: <BookOutlined />,
       permission: "employee-master-data-training-list",
       children: (
         <TrainingTab
@@ -164,5 +175,5 @@ export default function PerformanceManagementTab({ mode = "create", initialData,
     onActiveSubTabChange?.(key);
   };
 
-  return <Tabs activeKey={activeKey} onChange={handleChange} items={items} />;
+  return <SubTabs activeKey={activeKey} onChange={handleChange} items={items} />;
 }

@@ -1,26 +1,58 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Result, Button } from 'antd';
-import EmployeeForm from './components/EmployeeForm';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Result, Button, Spin, Space } from 'antd';
+import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons';
+import EmployeeProfile from './profile/EmployeeProfile';
+import useLatestEmployee from '../../hooks/useLatestEmployee';
+import useAuth from '../../hooks/useAuth';
 
-// See EditEmployee.jsx for why this depends on router state instead of
-// fetching by id — vueportal has no single-employee "show/{id}" endpoint.
+// /employees/:id — the employee's profile (shared EmployeeProfile, HR
+// view). Loads the current record via useLatestEmployee (see
+// EditEmployee.jsx).
 const ViewEmployee = () => {
   const { state } = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const employee = state?.employee;
+  const { hasRole, hasPermission } = useAuth();
+  const { employee, isLoading } = useLatestEmployee(id, state?.employee);
+
+  if (isLoading) {
+    return <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>;
+  }
 
   if (!employee) {
     return (
       <Result
         status="info"
-        title="Open this employee from the list to view them"
-        subTitle="This page needs the employee record passed from the list — it can't be reached directly or after a refresh yet."
+        title="Employee not found"
+        subTitle="This employee couldn't be loaded. Open them again from the list."
         extra={<Button type="primary" onClick={() => navigate('/employees')}>Back to List</Button>}
       />
     );
   }
 
-  return <EmployeeForm mode="view" initialData={employee} />;
+  const canEdit = hasRole('Administrator') || hasPermission('employee-master-data-edit');
+
+  return (
+    <EmployeeProfile
+      key={employee.id}
+      employee={employee}
+      view="hr"
+      extra={(
+        <Space>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/employees')}>Back to List</Button>
+          {canEdit && (
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={() => navigate(`/employees/${employee.id}/edit`, { state: { employee } })}
+            >
+              Edit
+            </Button>
+          )}
+        </Space>
+      )}
+    />
+  );
 };
 
 export default ViewEmployee;

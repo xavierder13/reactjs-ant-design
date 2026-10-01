@@ -1,6 +1,7 @@
 "use client";
 
-import { Tabs } from "antd";
+import { FileTextOutlined, ExceptionOutlined } from "@ant-design/icons";
+import SubTabs from "../SubTabs";
 
 import useAuth from "../../../../hooks/useAuth";
 import NteRecordsTab from "./disciplinary/NteRecordsTab";
@@ -34,6 +35,7 @@ export default function DisciplinaryTab({ mode = "create", initialData, pendingC
     {
       key: "nte",
       label: "Issued NTE",
+      icon: <FileTextOutlined />,
       permission: "employee-master-data-nte-list",
       children: (
         <NteRecordsTab
@@ -48,6 +50,7 @@ export default function DisciplinaryTab({ mode = "create", initialData, pendingC
     {
       key: "disciplinary",
       label: "Disciplinary Actions",
+      icon: <ExceptionOutlined />,
       permission: "employee-master-data-disciplinary-list",
       children: (
         <DisciplinaryRecordsTab
@@ -65,5 +68,5 @@ export default function DisciplinaryTab({ mode = "create", initialData, pendingC
 
   if (!items.length) return null;
 
-  return <Tabs defaultActiveKey={items[0].key} items={items} />;
+  return <SubTabs defaultActiveKey={items[0].key} items={items} />;
 }

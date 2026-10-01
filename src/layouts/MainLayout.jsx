@@ -257,7 +257,7 @@ const MainLayout = () => {
     if (/^\/roles\/\d+\/edit$/.test(pathname))
       return { title: 'Edit Role', breadcrumb: ['Authorizations', 'Roles', 'Edit'] };
     if (/^\/employees\/\d+$/.test(pathname))
-      return { title: 'View Employee', breadcrumb: ['Employee', 'View'] };
+      return { title: 'Employee Profile', breadcrumb: ['Employee', 'Profile'] };
     if (/^\/employees\/\d+\/edit$/.test(pathname))
       return { title: 'Edit Employee', breadcrumb: ['Employee', 'Edit'] };
     if (/^\/acknowledgment-reports\/\d+$/.test(pathname))

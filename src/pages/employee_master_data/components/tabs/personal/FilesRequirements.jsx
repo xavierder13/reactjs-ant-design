@@ -5,14 +5,8 @@ import { Upload, Button, Select, Table, Popconfirm, Space, Tooltip, App } from "
 import { UploadOutlined, DeleteOutlined, DownloadOutlined } from "@ant-design/icons";
 import employeeApi from "../../../../../services/employee/employeeApi";
 import handleApiError from "../../../../../utils/handleApiError";
+import { DOCUMENT_TYPES } from "./documentTypes";
 
-// Matches AttachFileDialog.vue's own list exactly (real company document
-// types, not invented) — see vueportal for the source.
-const DOCUMENT_TYPES = [
-  "Application Form", "Resume", "Copy of Grades", "Background Investigation",
-  "Birth Certificate", "Exam", "Diploma", "Police Clearance",
-  "Health Declaration", "Contract of Employment", "Duties and Responsibilities",
-];
 
 // Upload/list/delete/download requirement attachments for an existing
 // employee. Immediate-upload mode (below) needs a real employee id (the

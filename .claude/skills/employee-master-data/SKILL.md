@@ -29,20 +29,23 @@ that backend and flags what's unconfirmed; don't guess beyond it.
 src/pages/employee_master_data/
   EmployeeMasterData.jsx          list page (title+actions row, search/status/column toolbar, bulk-action bar)
   CreateEmployee.jsx              thin wrapper → EmployeeForm mode="create"
-  EditEmployee.jsx                reads router state → EmployeeForm mode="edit" (or a "return to list" fallback)
-  ViewEmployee.jsx                reads router state → EmployeeForm mode="view" (read-only, same fallback)
+  EditEmployee.jsx                useLatestEmployee(id) → EmployeeForm mode="edit" (or a "not found" fallback)
+  ViewEmployee.jsx                useLatestEmployee(id) → profile/EmployeeProfile view="hr" (Back/Edit actions, same fallback)
+  profile/                        shared Employee Profile (see "Employee Profile"), also used by src/pages/user/UserProfile.jsx
   components/
-    EmployeeForm.jsx              shared create/edit/view form (owns the single Form instance, Save/Cancel)
-    EmployeeTabs.jsx              6-tab container, filters tabs by umbrella permission, threads mode/initialData
+    EmployeeForm.jsx              shared create/edit form (owns the single Form instance, Save/Cancel); its view mode is no longer routed
+    EmployeeTabs.jsx              tab container for EmployeeForm, filters tabs by umbrella permission
+    employeeTabItems.jsx          getEmployeeTabItems() + TAB_PERMISSIONS — tab definitions shared by EmployeeTabs and the profile
     EmployeeTable.jsx             desktop table + row actions (View/Edit/Delete)
     EmployeeCardMobile.jsx        mobile card list, same actions
-    employeeColumns.js            list columns (EMPLOYEE_COLUMNS / DEFAULT_EMPLOYEE_COLUMNS), shared with the segment lists
+    employeeColumns.jsx           list columns (EMPLOYEE_COLUMNS / DEFAULT_EMPLOYEE_COLUMNS), shared with the segment lists
     ColumnSelector.jsx            column picker (max 8 by default, `maxColumns` prop), part of the list request payload
     PaginationControls.jsx        mobile pagination UI
     EmployeeModal.jsx             UNUSED — see "Decisions" #3
     ImportEmployeesModal.jsx      Excel/CSV bulk import
     ExportEmployeesModal.jsx      Excel export (core record "Employee List" report only); optional presetValues/extraPayload/title
     SubmitAcknowledgmentReportModal.jsx  opened from the bulk-action bar
+    FileSlotCard.jsx              attachment card (status tag, drag-drop picker, download/delete) + FileSlots row wrapper; used by NTE and Disciplinary dialogs
     tabs/
       PersonalDataTab.jsx         nested: personal/PersonalInformation.jsx + personal/FilesRequirements.jsx
       EmployeeDetailsTab.jsx      position/department/branch/employment type/dates/referral code
@@ -84,7 +87,7 @@ Registered in both `AppRoutes.jsx` (`permissionRoutes`) and
 ```
 /employees                 → EmployeeMasterData         (employee-master-data-list)
 /employees/create          → CreateEmployee             (employee-master-data-create)
-/employees/:id             → ViewEmployee               (employee-master-data-list)
+/employees/:id             → ViewEmployee = profile     (employee-master-data-list); `?tab=` keeps the open tab
 /employees/:id/edit        → EditEmployee               (employee-master-data-create, employee-master-data-edit)
 /acknowledgment-reports    → AcknowledgmentReportIndex  (employee-acknowledgment-reports)
 /acknowledgment-reports/:id → AcknowledgmentReportView  (employee-acknowledgment-reports)
@@ -105,9 +108,9 @@ getAll:           (payload) => axios.post('/employee_master_data/index', payload
 create:           (payload) => axios.post('/employee_master_data/store', payload)
 update:           (id, payload) => axios.post(`/employee_master_data/update/${id}`, payload)
 delete:           (ids) => axios.post('/employee_master_data/delete', { ids })
-fileUpload:       (employeeId, file, meta) => axios.post(`/employee_master_data/file_upload/${employeeId}`, formData)
+fileUpload:       (employeeId, file, meta) => axios.post(`/employee_master_data/file_upload/${employeeId}`, formData)  // file + document_type
 fileDelete:       (fileId) => axios.post('/employee_master_data/file_delete', { id: fileId })
-fileDownload:     (fileId) => axios.post('/employee_master_data/file_download', { id: fileId }, { responseType: 'blob' })
+fileDownload:     (fileId) => axios.post('/employee_master_data/file_download', { file_id: fileId }, { responseType: 'blob' })
 import:           (file) => multipart POST '/employee_master_data/import'
 export:           (payload) => POST '/employee_master_data/export' (blob)
 templateDownload: () => POST '/employee_master_data/template/download' (blob)
@@ -116,8 +119,13 @@ resign:           ({ employee_id, date_resigned }) => POST '/employee_master_dat
 
 `getAll` (`{ page, items_per_page, search, search_status, table_headers }`
 in, `{ employees: { data, current_page, per_page, total } }` out) is
-**confirmed**. Create/update/delete/file_* shapes are inferred — see
-"Unconfirmed Backend Contracts".
+**confirmed**. file_* are **confirmed** against the controller:
+`file_upload` reads `file` + `document_type` (stored as `title`) and
+answers HTTP 200 with `{ success, file }` or `{ error }` (string or
+validator bag) — check `data.error`, a 200 isn't success;
+`file_download` reads `file_id`, `file_delete` reads `id`.
+Create/update/delete shapes are inferred — see "Unconfirmed Backend
+Contracts".
 
 `employeeOptionApi.js` is a **separate** lightweight dropdown service
 (`/employee_master_data/option_list`) reused by Manpower Request's
@@ -128,7 +136,7 @@ sub-module relation onto every row — `monthly_key_performances`,
 `classroom_performance_ratings`, `ojt_performance_ratings`,
 `branch_assignment_positions`, `merit_histories`, `trainings`,
 `explanations` (NTE), `disciplinaries`, `offboardings`. Since View/Edit
-receive the full row via router state, every sub-tab except Attendance
+load the full row (`useLatestEmployee`), every sub-tab except Attendance
 starts from `initialData.<relation>` with **no extra fetch**. Sub-module
 services therefore have no `getAll`.
 
@@ -199,6 +207,11 @@ columns once a permission hid a button):
   permission-gated). `Row justify="space-between" align="middle" wrap`.
 - **Toolbar row**: search (`Input` + `Button` in `Space.Compact`), Status
   filter `Select` (All/Active/Inactive), `ColumnSelector`.
+- **Default columns** (`DEFAULT_EMPLOYEE_COLUMNS`): Branch, Emp. Code, Job
+  Title Code, Lastname, Firstname, Middlename, Birthday, Status — kept in
+  `EMPLOYEE_COLUMNS` order, with Status last there so it stays last after
+  `ColumnSelector` changes. The Status column renders a green `success` /
+  grey `default` `Tag`, same as the View/Edit card header tag.
 - **Status filter** posts `search_status: 'Active' | 'Inactive'`; "All" is
   sent as `undefined` (key omitted) — the backend has no `'All'` case.
   Changing it re-fetches page 1, and it's included in delete refetch
@@ -286,7 +299,8 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   `regularization_date` (bare `Form.Item`, saved by the main Save) plus two
   files distinguished by `title` ("Performance for Regularization", "Memo
   of Regularization") on the core `file_upload`/`file_delete`/
-  `file_download` endpoints; files persist immediately.
+  `file_download` endpoints — the title is sent as `document_type`. Each is a
+  `FileSlotCard`; a picked file uploads immediately.
 
 **Disciplinary Measures & Penalties** (`tabs/disciplinary/`):
 - Standalone components (not `PerformanceRecordTab`) because create/update
@@ -297,7 +311,9 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   per-employee — this tab reads `explanations`/`disciplinaries` from
   `initialData`.
 - Backend ignores a re-upload once a file exists; the file must be deleted
-  first. UI: picker only when no file exists, otherwise Download/Delete.
+  first. UI: each file is a `FileSlotCard` (in the tab dialogs and the
+  Open NTE/Disciplinary list dialogs) — drag-drop picker only when no file
+  exists, otherwise Download/Delete; `NteFileSlot.jsx` wires it to `nteApi`.
 - Fixed lists from the reference: `offenses` (8), `disciplinary_measures`
   (6), `offense_series` (First–Fifth), as closed `Select`s; `status`
   `Open`/`Closed`. `offense_type` is free text.
@@ -407,7 +423,7 @@ Backend (`EmployeeAcknowledgmentReportController`):
   — `is_active` is a snapshot, doesn't change the employee.
 - `POST .../view` `{ acknowledgment_id }` → full report with nested
   employees — a real single-record fetch, so `AcknowledgmentReportView.jsx`
-  fetches by `:id` (works on refresh, unlike ViewEmployee).
+  fetches by `:id`.
 - `POST .../export` `{ acknowledgment_id }` → `.xlsx` blob.
 - `POST .../delete` `{ acknowledgment_id }`.
 
@@ -416,14 +432,45 @@ Permissions: `employee-acknowledgment-reports` (list/view/submit),
 `name`/`full_name`/`email`). The submit modal doesn't check selected
 employees belong to the branch (neither does the backend).
 
+## Employee Profile
+
+`profile/EmployeeProfile.jsx` (ports vueportal's `EmployeeProfile2.vue`),
+shared by `/employees/:id` (`view="hr"`) and `/user/profile`
+(`view="self"`, only when `employee_master_data/my_profile` returns the
+account's `users.employee_id` record; otherwise UserProfile shows just its
+account form with an info Alert). Parts:
+- `ProfileHeader.jsx` — photo (`profile_picture_upload/{id}`, gated
+  `employee-master-data-profile-picture-upload`; image from the public
+  web route via `utils/employeePhoto.js`), name, status/employment-type
+  tags, contact, hire date / length of service / regularization or
+  resigned date, Reports To (`reportingManager.js`, Vue's `manager` rule).
+- `ProfileOverview.jsx` (personal, contact, gov IDs masked with reveal,
+  education), `ProfileEmployment.jsx` (employment, job & org, assignment
+  history timeline), `ProfileDocuments.jsx` (all core files; upload needs a
+  document type → `document_type`; `-file-upload/-download/-delete`).
+- HR view only: the record tabs (work schedule, attendance, performance,
+  disciplinary, offboarding) from `getEmployeeTabItems({ mode: 'view' })`,
+  each in its own non-disabled `<Form>` (view mode hides mutations;
+  `disabled` would also kill downloads/attendance filters).
+- Gating: HR sections follow `TAB_PERMISSIONS` (Overview/Documents =
+  personal-data, Employment = employee-details); self view always shows
+  Overview/Employment/Documents but actions still need their permission.
+  Administrator passes every gate. `extraTabs` adds UserProfile's
+  "Account & Security" tab.
+
 ## Decisions (and why)
 
-1. **Router state, not a fetch, for View/Edit.** The backend has **no
-   `show/{id}` endpoint** (only `index`/`store`/`update/{id}`/`delete`).
-   The list passes the row via `navigate(path, { state: { employee } })`;
-   View/Edit fall back to a "return to list" `Result` when opened directly
-   or after refresh. User-confirmed; revisit only if a `show/{id}` endpoint
-   is added — never add a fetch-by-id call that doesn't exist.
+1. **View/Edit re-read the employee on every open.** The backend has **no
+   `show/{id}` endpoint** (only `index`/`store`/`update/{id}`/`delete`), so
+   `src/hooks/useLatestEmployee.js` calls `index` with
+   `table_headers: [{ text: 'ID', value: 'employee_master_data.id' }]`,
+   `search: id` and keeps the exact-id match (same `getEmployees()` row
+   shape). The list still passes the row in router state, but only as a
+   fallback (fetch failed, or an edit-only user lacking
+   `employee-master-data-list`): that snapshot survives a browser refresh
+   and goes stale after any immediate save (files, sub-records), which hid
+   just-uploaded files. User-requested. If a `show/{id}` endpoint is added,
+   switch the hook to it.
 2. **Civil Status matches the backend validator** (`Single`, `Married`,
    `Widowed`, `Legally Separated`), not Vue's dropdown (`Divorced`, which
    its own backend rejects). User-confirmed. Don't restore `Divorced`.

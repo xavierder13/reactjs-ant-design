@@ -1,13 +1,13 @@
 "use client";
 
-import { Form, Input, Row, Col, DatePicker, Select, Descriptions, Button, Space, Tag, App } from "antd";
+import { Form, Input, Row, Col, DatePicker, Select, Descriptions, Button, Space, App } from "antd";
 import { CopyOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import useBranches from "../../../../hooks/useBranches";
 import useDepartments from "../../../../hooks/useDepartments";
 import usePositions from "../../../../hooks/usePositions";
-import { isActiveValue } from "../../../../utils/employeeStatus";
 
+import { DISPLAY_DATE_FORMAT } from "../../../../utils/formatDate";
 // Matches vueportal's recruitment portal referral link format exactly
 // (EmployeeInformationTabs.vue's `referralLink` computed property) —
 // keep these in sync if the recruitment portal's URL/query param changes.
@@ -128,7 +128,7 @@ export default function EmployeeDetailsTab({ initialData, mode }) {
           >
             <DatePicker
               style={{ width: "100%" }}
-              format="MM-DD-YYYY"
+              format={DISPLAY_DATE_FORMAT}
               disabledDate={isCreateMode ? disableFutureDates : undefined}
             />
           </Form.Item>
@@ -154,7 +154,7 @@ export default function EmployeeDetailsTab({ initialData, mode }) {
           >
             <DatePicker
               style={{ width: "100%" }}
-              format="MM-DD-YYYY"
+              format={DISPLAY_DATE_FORMAT}
               disabledDate={isCreateMode ? disableFutureDates : undefined}
             />
           </Form.Item>
@@ -166,33 +166,16 @@ export default function EmployeeDetailsTab({ initialData, mode }) {
         </Col>
       </Row>
 
-      <Row gutter={16}>
-        <Col xs={24} md={8} lg={6}>
-          {/* Read-only: matches EmployeeInformationTabs.vue's v-switch
-              (readonly, with a status v-chip in its label slot) — Active is
-              set automatically by the offboarding save flow
-              (OffboardingTab.jsx -> employeeApi.resign) and the rehire flow,
-              never entered directly on this form. `active` still needs to be
-              a registered field (hidden, not just displayed) so it round-trips
-              through EmployeeForm.jsx's buildPayload on save — without it,
-              validateFields() drops the value and every save would silently
-              send active:false. */}
-          <Form.Item name="active" hidden initialValue={mode === "create" ? true : undefined}>
-            <Input type="hidden" />
-          </Form.Item>
-          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.active !== curr.active}>
-            {({ getFieldValue }) => {
-              const isActive = isActiveValue(getFieldValue("active"));
-              return (
-                <Space>
-                  Status
-                  <Tag color={isActive ? "success" : "default"}>{isActive ? "Active" : "Inactive"}</Tag>
-                </Space>
-              );
-            }}
-          </Form.Item>
-        </Col>
-      </Row>
+      {/* Status isn't shown here — it's always in the card title (edit) and
+          is always Active on create. Active is set by the offboarding resign
+          / rehire flow (OffboardingTab.jsx -> employeeApi.resign), never
+          entered on this form, but it must stay a registered field so it
+          round-trips through EmployeeForm.jsx's buildPayload on save —
+          without it, validateFields() drops the value and every save would
+          silently send active:false. */}
+      <Form.Item name="active" hidden initialValue={mode === "create" ? true : undefined}>
+        <Input type="hidden" />
+      </Form.Item>
 
       {isEdit && referralCode && (
         <Row gutter={16}>

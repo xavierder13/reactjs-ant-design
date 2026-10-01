@@ -6,13 +6,19 @@ import {
   Card,
   Typography,
   Divider,
+  Alert,
+  Spin,
   message
 } from 'antd';
 import axiosInstance from '../../api/axiosInstance';
+import employeeApi from '../../services/employee/employeeApi';
 import useAuth from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import EmployeeProfile from '../employee_master_data/profile/EmployeeProfile';
+import { LockOutlined } from '@ant-design/icons';
 
-const UserProfile = () => {
+// Name + change-password form (user/update_profile).
+const AccountSettings = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
@@ -80,7 +86,7 @@ const UserProfile = () => {
 return (
     <Card>
       <Typography.Title level={4} style={{ marginBottom: 0 }}>
-        My Profile
+        Account & Security
       </Typography.Title>
       <Divider />
 
@@ -162,6 +168,56 @@ return (
 
       </Form>
     </Card>
+  );
+};
+
+// /user/profile — when the account is linked to an employee record
+// (users.employee_id), shows that employee's profile (shared
+// EmployeeProfile, self view) with the account settings as its last tab;
+// otherwise just the account settings.
+const UserProfile = () => {
+  const [employee, setEmployee] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data } = await employeeApi.myProfile();
+        setEmployee(data?.employee || null);
+      } catch {
+        // fall back to account settings only
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  if (loading) {
+    return <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>;
+  }
+
+  if (employee) {
+    return (
+      <EmployeeProfile
+        key={employee.id}
+        employee={employee}
+        view='self'
+        extraTabs={[{ key: 'account', label: 'Account & Security', icon: <LockOutlined />, children: <AccountSettings /> }]}
+      />
+    );
+  }
+
+  return (
+    <>
+      <Alert
+        type='info'
+        showIcon
+        title='Your account is not linked to an employee record, so there is no employee profile to show.'
+        style={{ marginBottom: 16 }}
+      />
+      <AccountSettings />
+    </>
   );
 };
 

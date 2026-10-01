@@ -1,0 +1,172 @@
+/*
+ * Employee Master Data tab styling (EmployeeTabs, the profile, SubTabs).
+ * Restrained on purpose: neutral greys, with the theme green (#389e0d,
+ * App.jsx colorPrimary) only on the active / hovered tab. Selectors use
+ * `>` so the main-tab rules never reach the nested sub-tabs.
+ */
+
+/* ── Main tabs: icon in a soft rounded tile ─────────────────────────── */
+.emd-tabs > .ant-tabs-nav .ant-tabs-tab {
+  padding: 10px 4px;
+}
+
+.emd-tabs > .ant-tabs-nav .ant-tabs-tab .ant-tabs-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-inline-end: 8px;
+  border-radius: 6px;
+  background: #f5f5f5;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.emd-tabs > .ant-tabs-nav .ant-tabs-tab:hover .ant-tabs-tab-icon {
+  color: #389e0d;
+}
+
+.emd-tabs > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-icon {
+  background: #f6ffed;
+  color: #389e0d;
+  box-shadow: inset 0 0 0 1px #d9f7be;
+}
+
+.emd-tabs > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-btn {
+  font-weight: 600;
+}
+
+/* ── Sub-tabs, card style (Personal Data, Disciplinary) ─────────────── */
+.emd-subtabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  background: #fafafa;
+  border-color: #f0f0f0;
+}
+
+.emd-subtabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab .ant-tabs-tab-icon {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.emd-subtabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+  background: #fff;
+  box-shadow: inset 0 2px 0 #389e0d;
+}
+
+.emd-subtabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-icon,
+.emd-subtabs.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab:hover .ant-tabs-tab-icon {
+  color: #389e0d;
+}
+
+/* ── Sub-tabs, side menu (Performance Management on desktop) ────────── */
+.emd-subtabs.ant-tabs-left > .ant-tabs-nav .ant-tabs-tab {
+  margin: 2px 8px 2px 0 !important;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: rgba(0, 0, 0, 0.65);
+  transition: background 0.2s;
+}
+
+.emd-subtabs.ant-tabs-left > .ant-tabs-nav .ant-tabs-tab .ant-tabs-tab-icon {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.emd-subtabs.ant-tabs-left > .ant-tabs-nav .ant-tabs-tab:hover {
+  background: #fafafa;
+}
+
+.emd-subtabs.ant-tabs-left > .ant-tabs-nav .ant-tabs-tab-active {
+  background: #f6ffed;
+}
+
+.emd-subtabs.ant-tabs-left > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-icon,
+.emd-subtabs.ant-tabs-left > .ant-tabs-nav .ant-tabs-tab:hover .ant-tabs-tab-icon {
+  color: #389e0d;
+}
+
+.emd-subtabs.ant-tabs-left > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-btn {
+  font-weight: 500;
+}
+
+/* ── Main tabs, bordered variant (add `emd-tabs-bordered` next to
+ *    `emd-tabs`): each tab is an outlined box; the active one is tinted
+ *    green and the underline indicator is dropped. ───────────────────── */
+.emd-tabs.emd-tabs-bordered > .ant-tabs-nav .ant-tabs-tab {
+  padding: 6px 14px 6px 6px;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.emd-tabs.emd-tabs-bordered > .ant-tabs-nav .ant-tabs-tab + .ant-tabs-tab {
+  margin-inline-start: 8px;
+}
+
+.emd-tabs.emd-tabs-bordered > .ant-tabs-nav .ant-tabs-tab:hover {
+  border-color: #d9f7be;
+}
+
+.emd-tabs.emd-tabs-bordered > .ant-tabs-nav .ant-tabs-tab-active {
+  border-color: #b7eb8f;
+  background: #f6ffed;
+}
+
+.emd-tabs.emd-tabs-bordered > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-icon {
+  background: #fff;
+}
+
+.emd-tabs.emd-tabs-bordered > .ant-tabs-nav .ant-tabs-ink-bar {
+  display: none;
+}
+
+.emd-tabs.emd-tabs-bordered > .ant-tabs-nav {
+  padding-bottom: 12px;
+}
+
+/* ── Main tabs, block variant (`emd-tabs-block` next to `emd-tabs`): the
+ *    whole tab bar sits in one bordered, lightly shaded block; tabs are
+ *    borderless inside it and the active one is a raised white tile. ──── */
+.emd-tabs.emd-tabs-block > .ant-tabs-nav {
+  padding: 4px;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.emd-tabs.emd-tabs-block > .ant-tabs-nav::before {
+  display: none; /* AntD's full-width bottom rule under the tab bar */
+}
+
+.emd-tabs.emd-tabs-block > .ant-tabs-nav .ant-tabs-tab {
+  padding: 4px 12px 4px 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.emd-tabs.emd-tabs-block > .ant-tabs-nav .ant-tabs-tab + .ant-tabs-tab {
+  margin-inline-start: 4px;
+}
+
+.emd-tabs.emd-tabs-block > .ant-tabs-nav .ant-tabs-tab:hover {
+  background: #fff;
+}
+
+.emd-tabs.emd-tabs-block > .ant-tabs-nav .ant-tabs-tab-active {
+  background: #fff;
+  border-color: #d9f7be;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.emd-tabs.emd-tabs-block > .ant-tabs-nav .ant-tabs-tab .ant-tabs-tab-icon {
+  background: #fff;
+}
+
+.emd-tabs.emd-tabs-block > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-icon {
+  background: #f6ffed;
+}
+
+.emd-tabs.emd-tabs-block > .ant-tabs-nav .ant-tabs-ink-bar {
+  display: none;
+}
