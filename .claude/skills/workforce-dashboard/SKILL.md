@@ -79,9 +79,10 @@ Current headcount follows `active = 1`; the 12-month trend is rebuilt from
 - **Attrition** (same 12-month window and separation count as the trend):
   reason = the employee's latest `employee_offboardings` row (`MAX(id)`, as
   the Resigned list), "Back out" merged into "Back-out"; no record → "No
-  offboarding record". Type: **Involuntary** = End of Contract, AWOL,
-  Dismissal, Due to Suspension, Failed in Training Program, Excess
-  Collector; **Other / not specified** = Death, blank, no record;
+  offboarding record". Type: **Involuntary** = the Offboarding form's
+  Involuntary group (AWOL, Dismissal/Suspension, Death) plus older stored
+  values End of Contract, Dismissal, Due to Suspension, Failed in Training
+  Program, Excess Collector; **Other / not specified** = blank, no record;
   **Voluntary** = every other reason (incl. Back-out). Decided with the
   user — change the lists in `EmployeeDashboardService`, not the frontend.
 - **Early attrition** = left before `PROBATION_MONTHS` (6) after hire.
