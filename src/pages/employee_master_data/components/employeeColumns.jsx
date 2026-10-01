@@ -1,4 +1,6 @@
+import { Tag } from "antd";
 import { formatDate } from "../../../utils/formatDate";
+import { isActiveValue } from "../../../utils/employeeStatus";
 
 // Employee Master Data list columns — shared by the main list and the
 // segment lists (Hired This Month, For Regularization), which all read
@@ -80,7 +82,22 @@ export const EMPLOYEE_COLUMNS = [
     title: "Status",
     dataIndex: "active",
     value: "active",
-    render: (active) => (active ? "Active" : "Inactive"),
+    // Same colors as the View/Edit Employee card header tag (EmployeeForm.jsx).
+    render: (active) => (
+      <Tag color={isActiveValue(active) ? "success" : "default"}>{isActiveValue(active) ? "Active" : "Inactive"}</Tag>
+    ),
   },
 ];
-export const DEFAULT_EMPLOYEE_COLUMNS = EMPLOYEE_COLUMNS.slice(0, 8);
+// Kept in EMPLOYEE_COLUMNS order (Status is last there), matching the order
+// ColumnSelector produces when the user changes the selection.
+const DEFAULT_COLUMN_VALUES = [
+  "branch.name",
+  "employee_code",
+  "job_title_code",
+  "last_name",
+  "first_name",
+  "middle_name",
+  "dob",
+  "active",
+];
+export const DEFAULT_EMPLOYEE_COLUMNS = EMPLOYEE_COLUMNS.filter((c) => DEFAULT_COLUMN_VALUES.includes(c.value));
