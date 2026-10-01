@@ -80,8 +80,8 @@ you used. Lint/build is not proof the page works — hand off to
 - `src/pages/user/UserIndex.jsx` + `UserFormModal.jsx` + `RolePermissionsModal.jsx`, `userApi.js`,
   `userStore.js`, `useUsers.js`; menu User Management → User Accounts
   (`user-list`). Replaces vueportal's `user/UserIndex.vue`.
-- List: search (name/e-mail/branch/position/role), Status/Branch/Role
-  filters, role tags (first 2 + "+N more"), Last Login. Clicking the role
+- List: search (name/e-mail/branch/position/employee/role), Status/Branch/Role
+  filters, Employee column (linked record, Inactive tag), role tags (first 2 + "+N more"), Last Login. Clicking the role
   tags opens `RolePermissionsModal.jsx`: that user's permissions grouped by
   role (collapsible panels, per-role count, unique-permission total,
   search by role or permission) from the `/user/index` row — no fetch.
@@ -91,6 +91,14 @@ you used. Lint/build is not proof the page works — hand off to
   branch (required), position, Active switch (`'Y'`/`'N'`; login blocks
   only `'N'`, legacy rows hold `''`/`'1'` = active), roles via `Transfer`
   keyed by role **name** (Spatie `assignRole`); update replaces all roles.
+  Employee Record = `users.employee_id` via `EmployeeSelect` (all
+  employees, inactive tagged; `initialOption` labels the saved one). The
+  backend validates exists + one account per employee, and only changes the
+  link when `employee_id` is sent (vueportal's Vue form doesn't send it).
+  `/user/index`, store and update return `employee` ({ id, employee_code,
+  first_name, last_name, active } or null) — label via `userEmployee.js`.
+  The link drives `/user/profile` (see employee-master-data's Employee
+  Profile). `option_list` admits `user-create`/`user-edit` for the picker.
   Editing your own account re-applies `user_roles`/`user_permissions` to
   the auth store.
 - Deviations from the Area recipe: form options come from `/user/index`

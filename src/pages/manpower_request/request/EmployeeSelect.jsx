@@ -19,9 +19,13 @@ import { Select, Spin } from 'antd';
 // `position_id`/`hired_on_or_after` filters). Any prop left `undefined`
 // preserves the old unfiltered-on-mount behavior for that dimension
 // exactly.
+//
+// initialOption ({ value, label }, optional) labels an already-saved value
+// that may not be on the first loaded page (e.g. editing a user linked to an
+// employee) — without it the Select would show the bare id.
 const EmployeeSelect = ({
   value, onChange, placeholder = 'Search employee', activeOnly = false, status,
-  branchId, positionId, hiredOnOrAfter,
+  branchId, positionId, hiredOnOrAfter, initialOption,
 }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading]     = useState(false);
@@ -124,7 +128,9 @@ const EmployeeSelect = ({
       filterOption={false}
       onSearch={handleSearch}
       onPopupScroll={handlePopupScroll}
-      options={employees}
+      options={initialOption && !employees.some((o) => o.value === initialOption.value)
+        ? [initialOption, ...employees]
+        : employees}
       notFoundContent={loading ? <Spin size="small" /> : null}
       allowClear
       status={status}

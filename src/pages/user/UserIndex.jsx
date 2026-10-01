@@ -7,6 +7,7 @@ import useUsers from '../../hooks/useUsers';
 import userApi from '../../services/user/userApi';
 import handleApiError from '../../utils/handleApiError';
 import UserFormModal from './UserFormModal';
+import { employeeLabel } from './userEmployee';
 import RolePermissionsModal from './RolePermissionsModal';
 
 const { Text } = Typography;
@@ -52,7 +53,7 @@ const UserIndex = () => {
       if (statusFilter === 'inactive' && isActive(u)) return false;
       if (branchFilter && u.branch_id !== branchFilter) return false;
       if (roleFilter && !u.roles.some((r) => r.name === roleFilter)) return false;
-      return !search || [u.name, u.email, u.branch?.name, u.position?.name, ...u.roles.map((r) => r.name)]
+      return !search || [u.name, u.email, u.branch?.name, u.position?.name, employeeLabel(u.employee), ...u.roles.map((r) => r.name)]
         .some((v) => v && v.toLowerCase().includes(search));
     });
   }, [items, searchText, statusFilter, branchFilter, roleFilter]);
@@ -77,6 +78,13 @@ const UserIndex = () => {
     { title: 'E-mail', dataIndex: 'email' },
     { title: 'Branch', dataIndex: ['branch', 'name'], render: (v) => v || '—' },
     { title: 'Position', dataIndex: ['position', 'name'], render: (v) => v || '—' },
+    {
+      title: 'Employee',
+      dataIndex: 'employee',
+      render: (employee) => (employee
+        ? <span>{employeeLabel(employee)}{Number(employee.active) === 1 ? '' : <Tag style={{ marginInlineStart: 6 }}>Inactive</Tag>}</span>
+        : '—'),
+    },
     {
       title: 'Status',
       key: 'status',

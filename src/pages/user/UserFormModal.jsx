@@ -3,6 +3,8 @@ import { Modal, Form, Input, Select, Switch, Transfer, Row, Col, App } from 'ant
 import userApi from '../../services/user/userApi';
 import useAuthStore from '../../store/authStore';
 import handleApiError from '../../utils/handleApiError';
+import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
+import { employeeLabel } from './userEmployee';
 
 const PASSWORD_MIN = 8;
 
@@ -38,6 +40,7 @@ const UserFormModal = ({ open, user, roles, branches, positions, onClose, onSave
         position_id: user.position_id ?? undefined,
         active:      user.active !== 'N',
         roles:       (user.roles || []).map((r) => r.name),
+        employee_id: user.employee_id ?? undefined,
       });
     }
   };
@@ -56,6 +59,7 @@ const UserFormModal = ({ open, user, roles, branches, positions, onClose, onSave
       position_id: values.position_id ?? null,
       active:      values.active ? 'Y' : 'N',
       roles:       values.roles || [],
+      employee_id: values.employee_id ?? null,
     };
     if (!isEdit) payload.email = values.email;
     // On edit a blank password means "keep the current one"; the backend
@@ -170,6 +174,18 @@ const UserFormModal = ({ open, user, roles, branches, positions, onClose, onSave
                 showSearch={{ optionFilterProp: 'label' }}
                 allowClear
                 placeholder='Select position'
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24}>
+            <Form.Item
+              name='employee_id'
+              label='Employee Record'
+              extra='Links this account to an employee — their profile then shows on My Profile. One account per employee.'
+            >
+              <EmployeeSelect
+                placeholder='Search employee code or name'
+                initialOption={user?.employee ? { value: user.employee.id, label: employeeLabel(user.employee) } : undefined}
               />
             </Form.Item>
           </Col>
