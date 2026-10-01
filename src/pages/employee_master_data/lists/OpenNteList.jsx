@@ -6,7 +6,7 @@ import nteApi from "../../../services/employee/nteApi";
 import handleApiError from "../../../utils/handleApiError";
 import { formatDate } from "../../../utils/formatDate";
 import NteFormFields from "../components/tabs/disciplinary/NteFormFields";
-import NteFileSlot from "../components/tabs/disciplinary/NteFileSlot";
+import NteFileSlot, { NteFileSlots } from "../components/tabs/disciplinary/NteFileSlot";
 import OpenCaseList from "./OpenCaseList";
 import useListAccess from "./useListAccess";
 
@@ -117,10 +117,10 @@ function NteEditModal({ record, onClose, onSaved }) {
       <Form form={form} layout="vertical">
         <NteFormFields />
         {current && (
-          <>
+          <NteFileSlots>
             {slot("NTE File", "nte_file")}
             {slot("Explanation File", "explanation_file")}
-          </>
+          </NteFileSlots>
         )}
       </Form>
     </Modal>

@@ -1,15 +1,16 @@
-import { Form, Button, Space, Popconfirm, Typography, Upload, App } from "antd";
-import { DeleteOutlined, UploadOutlined, DownloadOutlined } from "@ant-design/icons";
+import { App } from "antd";
 
 import handleApiError from "../../../../../utils/handleApiError";
 import nteApi from "../../../../../services/employee/nteApi";
+import FileSlotCard, { FileSlots } from "../../FileSlotCard";
 
-const ACCEPTED_FILE_TYPES = ".jpeg,.jpg,.png,.docs,.docx,.pdf";
+// The NTE File / Explanation File cards, side by side (stacked on phones).
+export const NteFileSlots = FileSlots;
 
-// One file slot (NTE File or Explanation File) — download/delete when a
-// file already exists, otherwise a pending-upload picker. Matches
-// disciplinaryApi's single-file pattern, duplicated per slot since NTE
-// records carry two independent files (see nteApi.js).
+// One NTE file slot (NTE File or Explanation File) — FileSlotCard wired to
+// nteApi. `record` is null for a record that isn't saved yet (no id to
+// download/delete against). Duplicated per slot since NTE records carry two
+// independent files (see nteApi.js).
 export default function NteFileSlot({ label, documentType, record, pendingFile, onPendingFileChange, canDownload, canDeleteFile, onFileDeleted }) {
   const { message: messageApi } = App.useApp();
   const fileName = documentType === "nte_file" ? record?.nte_file_name : record?.explanation_file_name;
@@ -41,28 +42,13 @@ export default function NteFileSlot({ label, documentType, record, pendingFile, 
   };
 
   return (
-    <Form.Item label={label}>
-      {fileName ? (
-        <Space>
-          <Typography.Text>{fileName}</Typography.Text>
-          {canDownload && <Button type="link" icon={<DownloadOutlined />} size="small" onClick={handleDownload} />}
-          {canDeleteFile && (
-            <Popconfirm title="Delete this file?" onConfirm={handleDelete}>
-              <Button type="link" danger icon={<DeleteOutlined />} size="small" />
-            </Popconfirm>
-          )}
-        </Space>
-      ) : (
-        <Upload
-          accept={ACCEPTED_FILE_TYPES}
-          beforeUpload={(file) => { onPendingFileChange(file); return false; }}
-          onRemove={() => onPendingFileChange(null)}
-          fileList={pendingFile ? [pendingFile] : []}
-          maxCount={1}
-        >
-          <Button icon={<UploadOutlined />}>Select File</Button>
-        </Upload>
-      )}
-    </Form.Item>
+    <FileSlotCard
+      label={label}
+      fileName={fileName}
+      pendingFile={pendingFile}
+      onPendingFileChange={onPendingFileChange}
+      onDownload={canDownload ? handleDownload : undefined}
+      onDelete={canDeleteFile ? handleDelete : undefined}
+    />
   );
 }

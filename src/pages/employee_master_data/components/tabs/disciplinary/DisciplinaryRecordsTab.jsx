@@ -1,9 +1,9 @@
 import { useState } from "react";
 import {
   Table, Button, Modal, Form, Space,
-  Popconfirm, Tooltip, Typography, Upload, App,
+  Popconfirm, Tooltip, App,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, DownloadOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, DownloadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import useAuth from "../../../../../hooks/useAuth";
@@ -11,8 +11,7 @@ import handleApiError from "../../../../../utils/handleApiError";
 import disciplinaryApi from "../../../../../services/employee/disciplinaryApi";
 import { formatDate } from "../../../../../utils/formatDate";
 import DisciplinaryFormFields from "./DisciplinaryFormFields";
-
-const ACCEPTED_FILE_TYPES = ".jpeg,.jpg,.png,.docs,.docx,.pdf";
+import FileSlotCard, { FileSlots } from "../../FileSlotCard";
 
 // Create mode (2026-09-24): matches EmployeeMasterDataController@store()'s
 // `disciplinaries` field — a JSON array bundled into the SAME multipart
@@ -212,6 +211,8 @@ export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecord
     try {
       const { data } = await disciplinaryApi.fileDelete(record.id);
       setRecords(data.disciplinaries);
+      // Keep the open Edit dialog's card in step with the fresh row.
+      setEditing((prev) => (prev ? data.disciplinaries.find((r) => r.id === prev.id) || null : null));
       messageApi.success("File deleted.");
     } catch (error) {
       handleApiError(error, messageApi);
@@ -303,25 +304,17 @@ export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecord
 
           {/* Confirmed from EmployeeDisciplinaryController@update: once a
               record has a file, a re-uploaded one is silently ignored
-              server-side — so replacing a file isn't offered here; delete
-              the existing one first (outside this modal) to upload a new one. */}
-          <Form.Item label="Memo File">
-            {editing?.file_name ? (
-              <Typography.Text type="secondary">
-                {editing.file_name} — delete the existing file (in the table) before uploading a replacement.
-              </Typography.Text>
-            ) : (
-              <Upload
-                accept={ACCEPTED_FILE_TYPES}
-                beforeUpload={(file) => { setPendingFile(file); return false; }}
-                onRemove={() => setPendingFile(null)}
-                fileList={pendingFile ? [pendingFile] : []}
-                maxCount={1}
-              >
-                <Button icon={<UploadOutlined />}>Select File</Button>
-              </Upload>
-            )}
-          </Form.Item>
+              server-side — so the card offers delete, not replace. */}
+          <FileSlots>
+            <FileSlotCard
+              label="Memo File"
+              fileName={!isCreateMode ? editing?.file_name : null}
+              pendingFile={pendingFile}
+              onPendingFileChange={setPendingFile}
+              onDownload={canDownloadFile ? () => handleFileDownload(editing) : undefined}
+              onDelete={canDeleteFile ? () => handleFileDelete(editing) : undefined}
+            />
+          </FileSlots>
         </Form>
       </Modal>
     </div>

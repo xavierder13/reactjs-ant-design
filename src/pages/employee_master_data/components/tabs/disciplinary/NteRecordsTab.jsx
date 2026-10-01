@@ -1,9 +1,9 @@
 import { useState } from "react";
 import {
   Table, Button, Modal, Form, Space,
-  Popconfirm, Tooltip, Upload, App,
+  Popconfirm, Tooltip, App,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import useAuth from "../../../../../hooks/useAuth";
@@ -11,9 +11,7 @@ import handleApiError from "../../../../../utils/handleApiError";
 import nteApi from "../../../../../services/employee/nteApi";
 import { formatDate } from "../../../../../utils/formatDate";
 import NteFormFields from "./NteFormFields";
-import NteFileSlot from "./NteFileSlot";
-
-const ACCEPTED_FILE_TYPES = ".jpeg,.jpg,.png,.docs,.docx,.pdf";
+import NteFileSlot, { NteFileSlots } from "./NteFileSlot";
 
 // Create mode (2026-09-24): matches EmployeeMasterDataController@store()'s
 // `explanations` field — a JSON array bundled into the SAME multipart
@@ -264,62 +262,32 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords, pendin
 
           {/* Same backend limitation as Disciplinary Actions: once a slot
               has a file, re-uploading is silently ignored — delete first
-              to replace. Only available for a real, already-saved record
-              (edit mode), matching how Vue's own file slots work — a
-              brand-new record has no id yet to scope a
-              file_delete/file_download call to. Create mode always uses
-              the plain pending-file pickers below, even when "editing" a
-              locally-staged row — see handleAfterOpenChange, which seeds
-              them from that row's own nte_file/explanation_file. */}
-          {!isCreateMode && editing ? (
-            <>
-              <NteFileSlot
-                label="NTE File"
-                documentType="nte_file"
-                record={editing}
-                pendingFile={pendingNteFile}
-                onPendingFileChange={setPendingNteFile}
-                canDownload={canDownloadFile}
-                canDeleteFile={canDeleteFile}
-                onFileDeleted={updateEditingFromResponse}
-              />
-              <NteFileSlot
-                label="Explanation File"
-                documentType="explanation_file"
-                record={editing}
-                pendingFile={pendingExplanationFile}
-                onPendingFileChange={setPendingExplanationFile}
-                canDownload={canDownloadFile}
-                canDeleteFile={canDeleteFile}
-                onFileDeleted={updateEditingFromResponse}
-              />
-            </>
-          ) : (
-            <>
-              <Form.Item label="NTE File">
-                <Upload
-                  accept={ACCEPTED_FILE_TYPES}
-                  beforeUpload={(file) => { setPendingNteFile(file); return false; }}
-                  onRemove={() => setPendingNteFile(null)}
-                  fileList={pendingNteFile ? [pendingNteFile] : []}
-                  maxCount={1}
-                >
-                  <Button icon={<UploadOutlined />}>Select File</Button>
-                </Upload>
-              </Form.Item>
-              <Form.Item label="Explanation File">
-                <Upload
-                  accept={ACCEPTED_FILE_TYPES}
-                  beforeUpload={(file) => { setPendingExplanationFile(file); return false; }}
-                  onRemove={() => setPendingExplanationFile(null)}
-                  fileList={pendingExplanationFile ? [pendingExplanationFile] : []}
-                  maxCount={1}
-                >
-                  <Button icon={<UploadOutlined />}>Select File</Button>
-                </Upload>
-              </Form.Item>
-            </>
-          )}
+              to replace. Download/delete need a saved record id, so create
+              mode (and Add) passes record={null}: the slots then only pick
+              pending files — see handleAfterOpenChange, which seeds them
+              from a locally-staged row's own nte_file/explanation_file. */}
+          <NteFileSlots>
+            <NteFileSlot
+              label="NTE File"
+              documentType="nte_file"
+              record={!isCreateMode ? editing : null}
+              pendingFile={pendingNteFile}
+              onPendingFileChange={setPendingNteFile}
+              canDownload={canDownloadFile}
+              canDeleteFile={canDeleteFile}
+              onFileDeleted={updateEditingFromResponse}
+            />
+            <NteFileSlot
+              label="Explanation File"
+              documentType="explanation_file"
+              record={!isCreateMode ? editing : null}
+              pendingFile={pendingExplanationFile}
+              onPendingFileChange={setPendingExplanationFile}
+              canDownload={canDownloadFile}
+              canDeleteFile={canDeleteFile}
+              onFileDeleted={updateEditingFromResponse}
+            />
+          </NteFileSlots>
         </Form>
       </Modal>
     </div>

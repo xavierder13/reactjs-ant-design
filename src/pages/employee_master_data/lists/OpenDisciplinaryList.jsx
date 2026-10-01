@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Modal, Form, Upload, Button, Space, Typography, Popconfirm, App } from "antd";
-import { UploadOutlined, DownloadOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Modal, Form, App } from "antd";
 import dayjs from "dayjs";
 
 import disciplinaryApi from "../../../services/employee/disciplinaryApi";
@@ -8,10 +7,9 @@ import handleApiError from "../../../utils/handleApiError";
 import downloadBlobResponse from "../../../utils/downloadBlobResponse";
 import { formatDate } from "../../../utils/formatDate";
 import DisciplinaryFormFields from "../components/tabs/disciplinary/DisciplinaryFormFields";
+import FileSlotCard, { FileSlots } from "../components/FileSlotCard";
 import OpenCaseList from "./OpenCaseList";
 import useListAccess from "./useListAccess";
-
-const ACCEPTED_FILE_TYPES = ".jpeg,.jpg,.png,.docs,.docx,.pdf";
 
 const COLUMNS = [
   { title: "Date Issued", dataIndex: "date_issued", render: (v) => formatDate(v) },
@@ -127,31 +125,16 @@ function DisciplinaryEditModal({ record, onClose, onSaved }) {
     >
       <Form form={form} layout="vertical">
         <DisciplinaryFormFields />
-        <Form.Item label="Memo File">
-          {fileName ? (
-            <Space>
-              <Typography.Text>{fileName}</Typography.Text>
-              {can("employee-master-data-disciplinary-file-download") && (
-                <Button type="link" icon={<DownloadOutlined />} size="small" onClick={handleDownload} />
-              )}
-              {can("employee-master-data-disciplinary-file-delete") && (
-                <Popconfirm title="Delete this file?" onConfirm={handleFileDelete}>
-                  <Button type="link" danger icon={<DeleteOutlined />} size="small" />
-                </Popconfirm>
-              )}
-            </Space>
-          ) : (
-            <Upload
-              accept={ACCEPTED_FILE_TYPES}
-              beforeUpload={(file) => { setPendingFile(file); return false; }}
-              onRemove={() => setPendingFile(null)}
-              fileList={pendingFile ? [pendingFile] : []}
-              maxCount={1}
-            >
-              <Button icon={<UploadOutlined />}>Select File</Button>
-            </Upload>
-          )}
-        </Form.Item>
+        <FileSlots>
+          <FileSlotCard
+            label="Memo File"
+            fileName={fileName}
+            pendingFile={pendingFile}
+            onPendingFileChange={setPendingFile}
+            onDownload={can("employee-master-data-disciplinary-file-download") ? handleDownload : undefined}
+            onDelete={can("employee-master-data-disciplinary-file-delete") ? handleFileDelete : undefined}
+          />
+        </FileSlots>
       </Form>
     </Modal>
   );
