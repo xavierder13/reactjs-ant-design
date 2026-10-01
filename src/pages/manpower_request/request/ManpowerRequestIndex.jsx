@@ -8,7 +8,7 @@ import useManpowerRequests from '../../../hooks/useManpowerRequests';
 import manpowerRequestApi from '../../../services/manpower_request/manpowerRequestApi';
 import handleApiError from '../../../utils/handleApiError';
 import downloadBlobResponse from '../../../utils/downloadBlobResponse';
-import { formatDate } from '../../../utils/formatDate';
+import { formatDate, DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 
 const { RangePicker } = DatePicker;
 
@@ -284,7 +284,7 @@ const ManpowerRequestIndex = () => {
             onChange={setDateField}
             options={DATE_FIELDS}
           />
-          <RangePicker onChange={setDateRange} />
+          <RangePicker onChange={setDateRange} format={DISPLAY_DATE_FORMAT} />
         </Space>
 
         <Space>

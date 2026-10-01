@@ -3,6 +3,7 @@
 import { Form, Input, Row, Col, DatePicker, Select } from "antd";
 import dayjs from "dayjs";
 
+import { DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
 // Civil Status matches EmployeeMasterDataController's server-side validator
 // exactly (Single/Married/Widowed/Legally Separated) rather than the Vue
 // reference's dropdown, which offers "Divorced" — a value the vueportal
@@ -82,7 +83,7 @@ export default function PersonalInformation() {
               >
                 <DatePicker
                   style={{ width: "100%" }}
-                  format="MM-DD-YYYY"
+                  format={DISPLAY_DATE_FORMAT}
                 />
               </Form.Item>
             </Col>

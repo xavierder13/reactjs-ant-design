@@ -7,6 +7,7 @@ import useAuth from "../../../hooks/useAuth";
 import handleApiError from "../../../utils/handleApiError";
 import downloadBlobResponse from "../../../utils/downloadBlobResponse";
 
+import { DISPLAY_DATE_FORMAT } from "../../../utils/formatDate";
 // Scoped to the 'Employee List' report only — vueportal's /export endpoint
 // is actually a multi-report dispatcher (Attendance Report, Branch Manpower
 // Report, KPI Monitoring are the other report_type values), but those
@@ -165,7 +166,7 @@ export default function ExportEmployeesModal({ open, onClose, presetValues, extr
           label="Date Covered"
           rules={[{ required: true, message: "Please select a date range." }]}
         >
-          <DatePicker.RangePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+          <DatePicker.RangePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
         </Form.Item>
       </Form>
     </Modal>

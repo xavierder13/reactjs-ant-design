@@ -13,6 +13,7 @@ import {
   SECTIONS, DEFAULT_SECTIONS, formatValue, filterRows,
   buildDetailed, buildSummary, summaryColumns,
 } from './kpiReportLayout';
+import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import './KpiConsolidatedReport.css';
 
 const { RangePicker } = DatePicker;
@@ -202,7 +203,7 @@ const KpiConsolidatedReport = () => {
         <Row gutter={[16, 12]} align='bottom'>
           <Col xs={24} md={8}>
             <Typography.Text type='secondary'>Evaluation period</Typography.Text>
-            <RangePicker style={{ width: '100%' }} value={period} onChange={setPeriod} format='MM/DD/YYYY' />
+            <RangePicker style={{ width: '100%' }} value={period} onChange={setPeriod} format={DISPLAY_DATE_FORMAT} />
           </Col>
           <Col xs={24} md={4}>
             <Button type='primary' icon={<SearchOutlined />} loading={loading} onClick={generate} block>

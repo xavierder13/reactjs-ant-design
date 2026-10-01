@@ -21,6 +21,7 @@ import dayjs                 from 'dayjs';
 
 import DemeritSection from './DemeritSection';
 
+import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 const statusColors = {
   draft:     'default',
   self:      'processing',
@@ -482,9 +483,9 @@ const KpiEvaluationView = () => {
             <Typography.Text type='secondary'>Period</Typography.Text>
             <div>
               <Typography.Text strong>
-                {dayjs(evaluation.period_start).format('MM-DD-YYYY')}
+                {dayjs(evaluation.period_start).format(DISPLAY_DATE_FORMAT)}
                 {' to '}
-                {dayjs(evaluation.period_end).format('MM-DD-YYYY')}
+                {dayjs(evaluation.period_end).format(DISPLAY_DATE_FORMAT)}
               </Typography.Text>
             </div>
           </Col>
@@ -518,7 +519,7 @@ const KpiEvaluationView = () => {
                 <Typography.Text type='secondary'>Approved At</Typography.Text>
                 <div>
                   <Typography.Text strong>
-                    {dayjs(evaluation.approved_at).format('MM-DD-YYYY')}
+                    {dayjs(evaluation.approved_at).format(DISPLAY_DATE_FORMAT)}
                   </Typography.Text>
                 </div>
               </Col>
@@ -539,7 +540,7 @@ const KpiEvaluationView = () => {
                 <Typography.Text type='secondary'>Rejected At</Typography.Text>
                 <div>
                   <Typography.Text strong>
-                    {dayjs(evaluation.rejected_at).format('MM-DD-YYYY')}
+                    {dayjs(evaluation.rejected_at).format(DISPLAY_DATE_FORMAT)}
                   </Typography.Text>
                 </div>
               </Col>

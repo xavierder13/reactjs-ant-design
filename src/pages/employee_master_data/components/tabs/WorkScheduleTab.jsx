@@ -11,7 +11,7 @@ import dayjs from "dayjs";
 import useAuth from "../../../../hooks/useAuth";
 import handleApiError from "../../../../utils/handleApiError";
 import workScheduleApi from "../../../../services/employee/workScheduleApi";
-import { formatDate } from "../../../../utils/formatDate";
+import { formatDate, DISPLAY_DATE_FORMAT } from "../../../../utils/formatDate";
 
 // PH Labor Code rest-day vocabulary (Art. 91-93) — matches
 // EmployeeWorkScheduleController::REST_DAYS exactly (case must match).
@@ -245,7 +245,7 @@ export default function WorkScheduleTab({ mode = "create", initialData, pendingR
       >
         <Form form={form} layout="vertical">
           <Form.Item name="effective_date" label="Effective Date" rules={[{ required: true, message: "Please select an effective date." }]}>
-            <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+            <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
           </Form.Item>
           <Form.Item name="rest_day" label="Rest Day" rules={[{ required: true, message: "Please select a rest day." }]}>
             <Select options={REST_DAYS.map((d) => ({ label: d, value: d }))} />

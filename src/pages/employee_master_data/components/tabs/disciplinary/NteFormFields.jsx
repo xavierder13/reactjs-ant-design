@@ -1,5 +1,6 @@
 import { Form, Input, Select, DatePicker } from "antd";
 
+import { DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
 // An issued NTE's form fields (everything but the two file slots) — shared
 // by the employee record's Disciplinary > NTE tab and the open-cases NTE
 // list's edit modal. Render inside the caller's <Form>.
@@ -7,7 +8,7 @@ export default function NteFormFields() {
   return (
     <>
       <Form.Item name="date_issued" label="Date Issued" rules={[{ required: true, message: "Please select a date." }]}>
-        <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+        <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
       </Form.Item>
       <Form.Item name="issued_by" label="Issued By" rules={[{ required: true, message: "Please enter who issued this." }]}>
         <Input />
@@ -22,7 +23,7 @@ export default function NteFormFields() {
         <Input.TextArea rows={3} />
       </Form.Item>
       <Form.Item name="explanation_date" label="Explanation Date">
-        <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+        <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
       </Form.Item>
       <Form.Item name="remarks" label="Remarks">
         <Input.TextArea rows={3} />

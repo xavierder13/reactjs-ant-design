@@ -8,7 +8,7 @@ import dayjs from "dayjs";
 import useAuth from "../../../../hooks/useAuth";
 import handleApiError from "../../../../utils/handleApiError";
 import attendanceApi from "../../../../services/employee/attendanceApi";
-import { formatDate } from "../../../../utils/formatDate";
+import { formatDate, DISPLAY_DATE_FORMAT } from "../../../../utils/formatDate";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200, 500];
 
@@ -152,7 +152,7 @@ export default function AttendanceTab({ initialData }) {
         <DatePicker
           value={dateFrom}
           onChange={setDateFrom}
-          format="YYYY-MM-DD"
+          format={DISPLAY_DATE_FORMAT}
           placeholder="Date From"
           {...(isDateRangeLocked ? {
             open: false,
@@ -164,7 +164,7 @@ export default function AttendanceTab({ initialData }) {
         <DatePicker
           value={dateTo}
           onChange={setDateTo}
-          format="YYYY-MM-DD"
+          format={DISPLAY_DATE_FORMAT}
           placeholder="Date To"
           {...(isDateRangeLocked ? {
             open: false,

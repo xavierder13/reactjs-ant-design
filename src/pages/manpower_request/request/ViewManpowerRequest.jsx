@@ -16,6 +16,7 @@ import manpowerRequestApi from '../../../services/manpower_request/manpowerReque
 import handleApiError from '../../../utils/handleApiError';
 import EmployeeSelect from './EmployeeSelect';
 
+import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 const STATUS_COLORS = {
   Draft:              'default',
   // 'Submitted' is confirmed dead — submit() moves Draft straight to
@@ -461,7 +462,7 @@ const ViewManpowerRequest = () => {
             <Typography.Text type="secondary">Request Date</Typography.Text>
             <div>
               <Typography.Text strong>
-                {record.request_date ? dayjs(record.request_date).format('MM-DD-YYYY') : '—'}
+                {record.request_date ? dayjs(record.request_date).format(DISPLAY_DATE_FORMAT) : '—'}
               </Typography.Text>
             </div>
           </Col>
@@ -469,7 +470,7 @@ const ViewManpowerRequest = () => {
             <Typography.Text type="secondary">Target Hiring Date</Typography.Text>
             <div>
               <Typography.Text strong>
-                {record.target_hiring_date ? dayjs(record.target_hiring_date).format('MM-DD-YYYY') : '—'}
+                {record.target_hiring_date ? dayjs(record.target_hiring_date).format(DISPLAY_DATE_FORMAT) : '—'}
               </Typography.Text>
             </div>
           </Col>
@@ -485,7 +486,7 @@ const ViewManpowerRequest = () => {
             <Typography.Text type="secondary">Approved Date</Typography.Text>
             <div>
               <Typography.Text strong>
-                {record.date_approved ? dayjs(record.date_approved).format('MM-DD-YYYY') : '—'}
+                {record.date_approved ? dayjs(record.date_approved).format(DISPLAY_DATE_FORMAT) : '—'}
               </Typography.Text>
             </div>
           </Col>
@@ -497,7 +498,7 @@ const ViewManpowerRequest = () => {
             <Typography.Text type="secondary">Created</Typography.Text>
             <div>
               <Typography.Text strong>
-                {record.created_at ? dayjs(record.created_at).format('MM-DD-YYYY') : '—'}
+                {record.created_at ? dayjs(record.created_at).format(DISPLAY_DATE_FORMAT) : '—'}
               </Typography.Text>
             </div>
           </Col>
@@ -674,7 +675,7 @@ const ViewManpowerRequest = () => {
                   <Typography.Text type="secondary">Last Working Day</Typography.Text>
                   <div>
                     <Typography.Text strong>
-                      {d.last_working_day ? dayjs(d.last_working_day).format('MM-DD-YYYY') : '—'}
+                      {d.last_working_day ? dayjs(d.last_working_day).format(DISPLAY_DATE_FORMAT) : '—'}
                     </Typography.Text>
                   </div>
                 </Col>
@@ -707,7 +708,7 @@ const ViewManpowerRequest = () => {
                   <Typography.Text type="secondary">Date Hired</Typography.Text>
                   <div>
                     <Typography.Text strong>
-                      {hire.date_hired ? dayjs(hire.date_hired).format('MM-DD-YYYY') : '—'}
+                      {hire.date_hired ? dayjs(hire.date_hired).format(DISPLAY_DATE_FORMAT) : '—'}
                     </Typography.Text>
                   </div>
                 </Col>
@@ -951,7 +952,7 @@ const ViewManpowerRequest = () => {
                     {entry.created_at && (
                       <div>
                         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                          {dayjs(entry.created_at).format('MM-DD-YYYY HH:mm')}
+                          {dayjs(entry.created_at).format(`${DISPLAY_DATE_FORMAT} HH:mm`)}
                         </Typography.Text>
                       </div>
                     )}
@@ -1049,7 +1050,7 @@ const ViewManpowerRequest = () => {
                           <Typography.Text type="secondary">Date Hired/Date Assigned</Typography.Text>
                           <div>
                             <Typography.Text strong>
-                              {slot.date_hired ? dayjs(slot.date_hired).format('MM-DD-YYYY') : '—'}
+                              {slot.date_hired ? dayjs(slot.date_hired).format(DISPLAY_DATE_FORMAT) : '—'}
                             </Typography.Text>
                           </div>
                         </Col>

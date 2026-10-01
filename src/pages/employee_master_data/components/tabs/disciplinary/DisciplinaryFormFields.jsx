@@ -1,5 +1,6 @@
 import { Form, Input, Select, DatePicker } from "antd";
 
+import { DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
 // Matches DisciplinaryAction.vue's own hardcoded reference lists exactly
 // (real company policy categories, not invented) — see vueportal for the
 // source. Used as a closed Select rather than Vue's free-text-capable
@@ -32,7 +33,7 @@ export default function DisciplinaryFormFields() {
   return (
     <>
       <Form.Item name="date_issued" label="Date Issued" rules={[{ required: true, message: "Please select a date." }]}>
-        <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+        <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
       </Form.Item>
       <Form.Item name="nte_code" label="NTE Code" rules={[{ required: true, message: "Please enter the NTE code." }]}>
         <Input />
@@ -56,10 +57,10 @@ export default function DisciplinaryFormFields() {
         <Select options={[{ label: "Open", value: "Open" }, { label: "Closed", value: "Closed" }]} />
       </Form.Item>
       <Form.Item name="transmit_date" label="Transmit Date">
-        <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+        <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
       </Form.Item>
       <Form.Item name="return_date" label="Return Date">
-        <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+        <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
       </Form.Item>
     </>
   );

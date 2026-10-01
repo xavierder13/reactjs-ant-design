@@ -11,7 +11,7 @@ import employeeApi from "../../../services/employee/employeeApi";
 import offboardingApi from "../../../services/employee/offboardingApi";
 import handleApiError from "../../../utils/handleApiError";
 import downloadBlobResponse from "../../../utils/downloadBlobResponse";
-import { formatDate } from "../../../utils/formatDate";
+import { formatDate, DISPLAY_DATE_FORMAT } from "../../../utils/formatDate";
 import ColumnSelector from "../components/ColumnSelector";
 import OffboardingFormFields from "../components/tabs/offboarding/OffboardingFormFields";
 import OffboardingFileSlot from "../components/tabs/offboarding/OffboardingFileSlot";
@@ -301,7 +301,7 @@ export default function ResignedEmployees() {
           <DatePicker.RangePicker
             value={filters.date_range}
             onChange={(range) => setFilter("date_range", range)}
-            format="MM/DD/YYYY"
+            format={DISPLAY_DATE_FORMAT}
             allowEmpty={[true, true]}
           />
         </Space>

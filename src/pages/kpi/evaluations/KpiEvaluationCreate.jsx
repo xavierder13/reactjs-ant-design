@@ -15,6 +15,7 @@ import handleApiError        from '../../../utils/handleApiError';
 
 import EmployeeBulkSelector from './EmployeeBulkSelector';
 
+import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 const { RangePicker } = DatePicker;
 
 const KpiEvaluationCreate = () => {
@@ -280,7 +281,7 @@ const KpiEvaluationCreate = () => {
           >
             <RangePicker
               style={{ width: '100%' }}
-              format='YYYY-MM-DD'
+              format={DISPLAY_DATE_FORMAT}
               placeholder={['Period Start', 'Period End']}
             />
           </Form.Item>

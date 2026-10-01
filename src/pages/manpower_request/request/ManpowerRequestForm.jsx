@@ -12,6 +12,7 @@ import handleApiError from '../../../utils/handleApiError';
 import useAuth from '../../../hooks/useAuth';
 import EmployeeSelect from './EmployeeSelect';
 
+import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 const PRIORITY_OPTIONS = [
   { label: 'Low',    value: 'Low' },
   { label: 'Normal', value: 'Normal' },
@@ -331,7 +332,7 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
               >
                 <DatePicker
                   style={{ width: '100%' }}
-                  format="MM-DD-YYYY"
+                  format={DISPLAY_DATE_FORMAT}
                   disabledDate={(current) => current && current > dayjs().endOf('day')}
                 />
               </Form.Item>
@@ -354,7 +355,7 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                 name="target_hiring_date"
                 rules={[{ required: true, message: 'Target hiring date is required' }]}
               >
-                <DatePicker style={{ width: '100%' }} format="MM-DD-YYYY" />
+                <DatePicker style={{ width: '100%' }} format={DISPLAY_DATE_FORMAT} />
               </Form.Item>
             </Col>
           </Row>
@@ -589,7 +590,7 @@ const ManpowerRequestForm = ({ mode = 'create', initialData = null }) => {
                                 name={[name, 'last_working_day']}
                                 rules={[{ required: true, message: 'Last working day is required' }]}
                               >
-                                <DatePicker style={{ width: '100%' }} format="MM-DD-YYYY" />
+                                <DatePicker style={{ width: '100%' }} format={DISPLAY_DATE_FORMAT} />
                               </Form.Item>
                             </Col>
                           </Row>

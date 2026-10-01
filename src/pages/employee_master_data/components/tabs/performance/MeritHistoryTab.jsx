@@ -2,7 +2,7 @@ import { Form, DatePicker, InputNumber } from "antd";
 import dayjs from "dayjs";
 import PerformanceRecordTab from "./PerformanceRecordTab";
 import meritHistoryApi from "../../../../../services/employee/meritHistoryApi";
-import { formatDate } from "../../../../../utils/formatDate";
+import { formatDate, DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
 
 const columns = [
   { title: "Merit Date", dataIndex: "merit_date", key: "merit_date", render: (v) => formatDate(v) },
@@ -31,7 +31,7 @@ export default function MeritHistoryTab({ employeeId, mode, initialRecords, pend
             label="Merit Date"
             rules={[{ required: true, message: "Please select a date." }]}
           >
-            <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+            <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
           </Form.Item>
           <Form.Item
             name="salary"

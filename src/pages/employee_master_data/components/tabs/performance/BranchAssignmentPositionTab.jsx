@@ -4,7 +4,7 @@ import PerformanceRecordTab from "./PerformanceRecordTab";
 import branchAssignmentPositionApi from "../../../../../services/employee/branchAssignmentPositionApi";
 import useBranches from "../../../../../hooks/useBranches";
 import usePositions from "../../../../../hooks/usePositions";
-import { formatDate } from "../../../../../utils/formatDate";
+import { formatDate, DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
 
 const columns = [
   { title: "Date Assigned", dataIndex: "date_assigned", key: "date_assigned", render: (v) => formatDate(v) },
@@ -54,7 +54,7 @@ export default function BranchAssignmentPositionTab({ employeeId, mode, initialR
               label="Date Assigned"
               rules={[{ required: true, message: "Please select a date." }]}
             >
-              <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+              <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
             </Form.Item>
             <Form.Item
               name="branch"

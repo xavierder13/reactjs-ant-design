@@ -7,6 +7,7 @@ import useAuth from "../../../hooks/useAuth";
 import employeeAcknowledgmentReportApi from "../../../services/employee/employeeAcknowledgmentReportApi";
 import handleApiError from "../../../utils/handleApiError";
 
+import { formatDate } from "../../../utils/formatDate";
 // Backend's index() returns branches, each with a nested
 // acknowledgment_reports array (branch-scoped visibility enforced
 // server-side via employee-acknowledgment-reports-all). Grouped-by-branch,
@@ -66,8 +67,8 @@ export default function AcknowledgmentReportIndex() {
         // User model from the frontend alone — falls back across a couple
         // of likely shapes rather than assuming one.
         { title: 'Submitted By', render: (_, r) => r.user?.name || r.user?.full_name || r.user?.email || '-' },
-        { title: 'Acknowledgment Date', dataIndex: 'date_uploaded' },
-        { title: 'Document Date', dataIndex: 'docdate' },
+        { title: 'Acknowledgment Date', dataIndex: 'date_uploaded', render: (v) => formatDate(v) },
+        { title: 'Document Date', dataIndex: 'docdate', render: (v) => formatDate(v) },
         {
           title: 'Actions',
           width: 120,

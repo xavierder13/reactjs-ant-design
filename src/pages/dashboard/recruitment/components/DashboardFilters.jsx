@@ -2,6 +2,7 @@ import { Row, Col, Card, Select, Button, DatePicker, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
+import { DISPLAY_DATE_FORMAT } from '../../../../utils/formatDate';
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
@@ -57,7 +58,7 @@ export default function DashboardFilters({ filters, filterOptions, dateRange, on
           <Col>
             <RangePicker
               size='small'
-              format='MM/DD/YYYY'
+              format={DISPLAY_DATE_FORMAT}
               value={[dateRange.from ? dayjs(dateRange.from) : null, dateRange.to ? dayjs(dateRange.to) : null]}
               onChange={(dates) => onDateRangeChange({
                 from: dates?.[0] ? dates[0].format('YYYY-MM-DD') : '',
