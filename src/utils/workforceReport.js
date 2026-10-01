@@ -75,7 +75,7 @@ export const buildWorkforceReportWorkbook = (d, filterLabel) => {
   })));
   const turnover = (rows, labelHeader) => rows.map((r) => ({
     [labelHeader]: r.label, Headcount: r.headcount, Separations: r.separations,
-    Voluntary: r.voluntary, 'Left < 6 months': r.early, Turnover: pct(r.turnover_rate),
+    Voluntary: r.voluntary, Involuntary: r.involuntary, Others: r.other, 'Left < 6 months': r.early, Turnover: pct(r.turnover_rate),
   }));
   addSheet(wb, 'Turnover by Branch', turnover(d.attrition.turnover_by.branch, 'Branch'));
   addSheet(wb, 'Turnover by Department', turnover(d.attrition.turnover_by.department, 'Department'));

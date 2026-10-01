@@ -16,6 +16,8 @@ const columnsFor = (groupLabel) => [
   { title: 'Headcount', dataIndex: 'headcount', align: 'right', render: fmt, sorter: (a, b) => a.headcount - b.headcount },
   { title: 'Separations', dataIndex: 'separations', align: 'right', defaultSortOrder: 'descend', sorter: (a, b) => a.separations - b.separations },
   { title: 'Voluntary', dataIndex: 'voluntary', align: 'right', sorter: (a, b) => a.voluntary - b.voluntary },
+  { title: 'Involuntary', dataIndex: 'involuntary', align: 'right', sorter: (a, b) => a.involuntary - b.involuntary },
+  { title: 'Others', dataIndex: 'other', align: 'right', sorter: (a, b) => a.other - b.other },
   { title: 'Left < 6 months', dataIndex: 'early', align: 'right', sorter: (a, b) => a.early - b.early },
   {
     title: 'Turnover', dataIndex: 'turnover_rate', align: 'right',
