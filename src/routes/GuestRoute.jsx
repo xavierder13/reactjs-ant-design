@@ -7,7 +7,7 @@ const GuestRoute = () => {
   const token = getToken()
 
   // If user has token → redirect to dashboard
-  if (token) return <Navigate to="/dashboard" replace />
+  if (token) return <Navigate to="/" replace />
 
   // If no token → render guest page (login, etc.)
   return <Outlet />

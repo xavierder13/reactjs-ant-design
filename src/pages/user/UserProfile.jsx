@@ -161,7 +161,7 @@ return (
           >
             Save
           </Button>
-          <Button onClick={() => navigate('/dashboard')}>
+          <Button onClick={() => navigate('/')}>
             Cancel
           </Button>
         </Form.Item>

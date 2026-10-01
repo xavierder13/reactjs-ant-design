@@ -71,6 +71,20 @@ const titleMap = {
 };
 
 // ─── Menu data ─────────────────────────────────────────────────────────────────
+// Sections hidden by permission leave their dividers behind — a leading one
+// doubles the sidebar header's bottom border, and neighbours stack up. Keep
+// a divider only between two visible items.
+const tidyDividers = (items) => {
+  const out = [];
+  items.forEach((item) => {
+    const last = out[out.length - 1];
+    if (item.type === 'divider' && (!last || last.type === 'divider')) return;
+    out.push(item);
+  });
+  if (out[out.length - 1]?.type === 'divider') out.pop();
+  return out;
+};
+
 const menuData = [
   // Separate pages per audience (HR workforce vs. recruitment), not tabs —
   // each has its own data load and URL. /dashboard stays the recruitment
@@ -81,7 +95,7 @@ const menuData = [
     icon: <DashboardOutlined />,
     children: [
       { key: 'workforce-dashboard', title: 'Workforce Dashboard',   link: '/workforce-dashboard', permissions: ['hr-payroll-dashboard'] },
-      { key: 'dashboard',           title: 'Recruitment Dashboard', link: '/dashboard' },
+      { key: 'dashboard',           title: 'Recruitment Dashboard', link: '/dashboard',           permissions: ['hr-payroll-dashboard'] },
     ],
   },
   { type: 'divider' },
@@ -150,7 +164,7 @@ const menuData = [
         icon: <BarChartOutlined />,
         children: [
           { key: 'kpi-template-list',  title: 'Template List',    link: '/kpi-templates',        permissions: ['kpi-template-list'] },
-          { key: 'kpi-template-create',  title: 'Template Create',         link: '/kpi-templates/create',  permissions: ['kpi-template-create', 'kpi-template-edit'] },
+          { key: 'kpi-template-create',  title: 'Template Create',         link: '/kpi-templates/create',  permissions: ['kpi-template-create'] },
         ],
       },
       {
@@ -355,7 +369,7 @@ const MainLayout = () => {
           label: <Link to='/my-evaluations' style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>My Evaluations</Link>,
         },
       ]
-    : menuData.map(generateMenuItem).filter(Boolean);
+    : tidyDividers(menuData.map(generateMenuItem).filter(Boolean));
 
   // ─── Avatar dropdown ──────────────────────────────────────────────────────────
   const avatarMenu = {
