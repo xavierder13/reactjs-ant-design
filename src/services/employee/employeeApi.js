@@ -7,10 +7,10 @@ import axios from '../../api/axiosInstance';
 // module (unlike Manpower Request's `/edit/{id}`) — View/Edit pages get
 // their record from the list row via router state, not a fetch here.
 //
-// file_upload/file_delete/file_download payload/response shapes below are
-// inferred from this repo's own multipart-upload conventions, not confirmed
-// against the live EmployeeMasterDataController implementation — verify
-// against a real request/response before treating them as settled.
+// file_upload/file_delete/file_download confirmed against
+// EmployeeMasterDataController: file_upload reads `file` + `document_type`
+// (saved as the file's `title`) and answers HTTP 200 with `{ success, file }`
+// or `{ error }` — callers must check `data.error`.
 const employeeApi = {
   getAll:   (payload = {}) => axios.post('/employee_master_data/index', payload),
   // `payload` is a FormData instance whenever EmployeeForm.jsx's create
@@ -38,7 +38,24 @@ const employeeApi = {
     });
   },
   fileDelete:   (fileId)   => axios.post('/employee_master_data/file_delete', { id: fileId }),
-  fileDownload: (fileId)   => axios.post('/employee_master_data/file_download', { id: fileId }, { responseType: 'blob' }),
+  // The signed-in user's own record via users.employee_id → `{ success,
+  // employee }` (employee null when the account isn't linked). Any
+  // authenticated user may call it.
+  myProfile:    ()         => axios.post('/employee_master_data/my_profile'),
+  // `profile_picture` (jpg/jpeg/png here) → HTTP 200 `{ success,
+  // profile_picture: { profile_file_name, profile_file_path,
+  // profile_file_type } }` or `{ error }`. The image itself is served by
+  // the public web route — see utils/employeePhoto.js.
+  profilePictureUpload: (employeeId, file) => {
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+    return axios.post(`/employee_master_data/profile_picture_upload/${employeeId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  // file_download reads `file_id` (file_delete reads `id`) — confirmed in
+  // EmployeeMasterDataController and vueportal's EmployeeInformationTabs.vue.
+  fileDownload: (fileId)   => axios.post('/employee_master_data/file_download', { file_id: fileId }, { responseType: 'blob' }),
 
   // Bulk import — payload field name ("file") and the shape of a
   // per-row-validation-failure response are inferred (this backend action

@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Form, DatePicker, Upload, Button, Typography, Space, Popconfirm, App } from "antd";
-import { UploadOutlined, DeleteOutlined, DownloadOutlined } from "@ant-design/icons";
+import { Form, DatePicker, Typography, Card, Tag, Spin, App } from "antd";
 
 import employeeApi from "../../../../../services/employee/employeeApi";
 import handleApiError from "../../../../../utils/handleApiError";
+import downloadBlobResponse from "../../../../../utils/downloadBlobResponse";
+import { DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
+import FileSlotCard, { FileSlots } from "../../FileSlotCard";
 
 // vueportal's "Evaluation & Regularization" sub-tab (EmployeeInformationTabs.vue)
 // is not its own CRUD module like the other 6 Performance Management
@@ -26,27 +28,41 @@ const SLOTS = [
   { key: "memo", title: "Memo of Regularization" },
 ];
 
-function FileSlot({ label, title, employeeId, initialFiles, readOnly }) {
+// file_upload answers HTTP 200 with `{ error }` on failure — a string, or a
+// validator bag like `{ file_ext: ["..."] }`. Pull out the first message.
+const uploadErrorMessage = (error) => {
+  if (typeof error === "string") return error;
+  const first = Object.values(error || {})[0];
+  return [].concat(first)[0] || "Failed to upload file.";
+};
+
+// One saved slot: uploads as soon as a file is picked (like Files &
+// Requirements), so the card's "pending" state only lasts while uploading.
+function FileSlot({ title, employeeId, initialFiles, readOnly }) {
   const { message: messageApi } = App.useApp();
   // Matches the Vue reference's own `.find()` semantics — at most one
   // current file per title is shown; the most recently uploaded one wins.
   const initial = [...initialFiles].reverse().find((f) => f.title === title) || null;
   const [file, setFile] = useState(initial);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(null);
 
-  const handleUpload = async ({ file: uploadFile, onSuccess, onError }) => {
-    setUploading(true);
+  const handleUpload = async (uploadFile) => {
+    if (!uploadFile) return;
+    setUploading(uploadFile);
     try {
-      const { data } = await employeeApi.fileUpload(employeeId, uploadFile, { title });
-      const uploaded = data?.file || data?.employee_master_data_file || { id: `local-${Date.now()}`, file_name: uploadFile.name, title };
-      setFile(uploaded);
+      // The backend stores `document_type` as the file's `title`, which is
+      // how this slot finds its file again after a reload.
+      const { data } = await employeeApi.fileUpload(employeeId, uploadFile, { document_type: title });
+      if (data?.error || !data?.file) {
+        messageApi.error(uploadErrorMessage(data?.error));
+        return;
+      }
+      setFile(data.file);
       messageApi.success("File uploaded.");
-      onSuccess?.(data);
     } catch (error) {
       handleApiError(error, messageApi);
-      onError?.(error);
     } finally {
-      setUploading(false);
+      setUploading(null);
     }
   };
 
@@ -63,41 +79,31 @@ function FileSlot({ label, title, employeeId, initialFiles, readOnly }) {
   const handleDownload = async () => {
     try {
       const response = await employeeApi.fileDownload(file.id);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = file.file_name || file.name || label;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      await downloadBlobResponse(response, file.file_name || title, messageApi);
     } catch (error) {
       handleApiError(error, messageApi);
     }
   };
 
+  if (readOnly && !file) {
+    return (
+      <Card size="small" title={title} extra={<Tag>No file</Tag>} style={{ height: "100%" }}>
+        <Typography.Text type="secondary">Not uploaded.</Typography.Text>
+      </Card>
+    );
+  }
+
   return (
-    <div style={{ marginBottom: 16 }}>
-      <Typography.Text strong style={{ display: "block", marginBottom: 8 }}>{label}</Typography.Text>
-      {file ? (
-        <Space>
-          <Typography.Text>{file.file_name || file.name}</Typography.Text>
-          <Button type="link" icon={<DownloadOutlined />} onClick={handleDownload} />
-          {!readOnly && (
-            <Popconfirm title="Delete this file?" onConfirm={handleDelete}>
-              <Button type="link" danger icon={<DeleteOutlined />} />
-            </Popconfirm>
-          )}
-        </Space>
-      ) : (
-        !readOnly && (
-          <Upload customRequest={handleUpload} showUploadList={false} disabled={uploading}>
-            <Button icon={<UploadOutlined />} loading={uploading}>Upload</Button>
-          </Upload>
-        )
-      )}
-      {!file && readOnly && <Typography.Text type="secondary">Not uploaded.</Typography.Text>}
-    </div>
+    <Spin spinning={Boolean(uploading)} description="Uploading…">
+      <FileSlotCard
+        label={title}
+        fileName={file?.file_name}
+        pendingFile={uploading}
+        onPendingFileChange={handleUpload}
+        onDownload={handleDownload}
+        onDelete={readOnly ? undefined : handleDelete}
+      />
+    </Spin>
   );
 }
 
@@ -114,36 +120,23 @@ function FileSlot({ label, title, employeeId, initialFiles, readOnly }) {
 // into the same formData.append('employee_files[]', ...) calls as the
 // generic Files & Requirements ones, not a separate field). `source` tags
 // which UI staged an entry so each one only displays/edits its own.
-function PendingFileSlot({ label, documentType, pendingFiles, onPendingFilesChange, readOnly }) {
-  const entry = pendingFiles.find((f) => f.source === "regularization" && f.document_type === documentType);
+function PendingFileSlot({ label, documentType, pendingFiles, onPendingFilesChange }) {
+  const isOwn = (f) => f.source === "regularization" && f.document_type === documentType;
+  const entry = pendingFiles.find(isOwn);
 
-  const handlePick = (file) => {
-    const others = pendingFiles.filter((f) => !(f.source === "regularization" && f.document_type === documentType));
-    onPendingFilesChange([...others, { id: `regularization-${documentType}`, file, document_type: documentType, source: "regularization" }]);
-  };
-
-  const handleRemove = () => {
-    onPendingFilesChange(pendingFiles.filter((f) => !(f.source === "regularization" && f.document_type === documentType)));
+  const handleChange = (file) => {
+    const others = pendingFiles.filter((f) => !isOwn(f));
+    onPendingFilesChange(file
+      ? [...others, { id: `regularization-${documentType}`, file, document_type: documentType, source: "regularization" }]
+      : others);
   };
 
   return (
-    <div style={{ marginBottom: 16 }}>
-      <Typography.Text strong style={{ display: "block", marginBottom: 8 }}>{label}</Typography.Text>
-      {entry ? (
-        <Space>
-          <Typography.Text>{entry.file.name}</Typography.Text>
-          {!readOnly && (
-            <Button type="link" danger icon={<DeleteOutlined />} onClick={handleRemove} />
-          )}
-        </Space>
-      ) : (
-        !readOnly && (
-          <Upload beforeUpload={(file) => { handlePick(file); return false; }} showUploadList={false}>
-            <Button icon={<UploadOutlined />}>Select File</Button>
-          </Upload>
-        )
-      )}
-    </div>
+    <FileSlotCard
+      label={label}
+      pendingFile={entry?.file || null}
+      onPendingFileChange={handleChange}
+    />
   );
 }
 
@@ -159,31 +152,33 @@ export default function EvaluationRegularizationTab({ employeeId, mode, initialF
         labelCol={{ span: 24 }}
         style={{ maxWidth: 320 }}
       >
-        <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+        <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} disabled={readOnly} />
       </Form.Item>
 
       {employeeId ? (
-        SLOTS.map((slot) => (
-          <FileSlot
-            key={slot.key}
-            label={slot.title}
-            title={slot.title}
-            employeeId={employeeId}
-            initialFiles={initialFiles}
-            readOnly={readOnly}
-          />
-        ))
+        <FileSlots>
+          {SLOTS.map((slot) => (
+            <FileSlot
+              key={slot.key}
+              title={slot.title}
+              employeeId={employeeId}
+              initialFiles={initialFiles}
+              readOnly={readOnly}
+            />
+          ))}
+        </FileSlots>
       ) : isCreateMode ? (
-        SLOTS.map((slot) => (
-          <PendingFileSlot
-            key={slot.key}
-            label={slot.title}
-            documentType={slot.title}
-            pendingFiles={pendingFiles}
-            onPendingFilesChange={onPendingFilesChange}
-            readOnly={readOnly}
-          />
-        ))
+        <FileSlots>
+          {SLOTS.map((slot) => (
+            <PendingFileSlot
+              key={slot.key}
+              label={slot.title}
+              documentType={slot.title}
+              pendingFiles={pendingFiles}
+              onPendingFilesChange={onPendingFilesChange}
+            />
+          ))}
+        </FileSlots>
       ) : (
         <Typography.Text type="secondary">
           Save the employee first before attaching regularization documents.

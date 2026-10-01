@@ -1,32 +1,35 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Result, Button } from 'antd';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Result, Button, Spin } from 'antd';
 import EmployeeForm from './components/EmployeeForm';
+import useLatestEmployee from '../../hooks/useLatestEmployee';
 
 // There is no single-employee "show/{id}" endpoint on vueportal's
-// employee_master_data API (only index/store/update/delete) — this page
-// depends on being opened from the list (EmployeeMasterData.jsx passes the
-// row via `navigate(path, { state: { employee } })`). A direct link or a
-// page refresh loses that state, so it falls back to sending the user back
-// to the list rather than guessing at a fetch. See the
-// `employee-master-data` skill for the decision and how to revisit it
-// (e.g. if a `show/{id}` endpoint is ever added backend-side).
+// employee_master_data API, so useLatestEmployee re-reads this employee
+// through the list endpoint on every open (incl. a refresh, a direct link,
+// or returning here after an immediate save) instead of trusting the row
+// the list passed in router state, which goes stale.
 const EditEmployee = () => {
   const { state } = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const employee = state?.employee;
+  const { employee, isLoading } = useLatestEmployee(id, state?.employee);
+
+  if (isLoading) {
+    return <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>;
+  }
 
   if (!employee) {
     return (
       <Result
         status="info"
-        title="Open this employee from the list to edit them"
-        subTitle="This page needs the employee record passed from the list — it can't be reached directly or after a refresh yet."
+        title="Employee not found"
+        subTitle="This employee couldn't be loaded. Open them again from the list."
         extra={<Button type="primary" onClick={() => navigate('/employees')}>Back to List</Button>}
       />
     );
   }
 
-  return <EmployeeForm mode="edit" initialData={employee} />;
+  return <EmployeeForm key={employee.id} mode="edit" initialData={employee} />;
 };
 
 export default EditEmployee;
