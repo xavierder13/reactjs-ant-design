@@ -39,55 +39,160 @@ Qualified, 3 Non-Compliant, 4 Reserved, null = not reached. Hired = passed
 orientation + `signing_of_contract_date`. Rows also carry
 `progress_status`, a ready label (SQL CASE in `all_job_applicants()`).
 
-## Phase 1 — applicant lists (built)
+## Source of truth (user-decided, 2026-10-01)
+
+recruitment-portal's **current** code (its own `resources/js/views/recruitment/`
+pages + `ApplicantController`) is the reference for every rule — not
+vueportal's copies, which are older and drift (e.g. vueportal blocks Branch
+Managers on steps 4–5, the portal on 1, 4, 5; the portal dropped TIN from the
+final-interview files and the profile-completeness check). When the gateway
+lacks something, add the missing procedure to `RecruitmentGatewayController`
+(delegate to the portal's own method as the user) rather than re-implementing
+it. Don't change recruitment-portal's age handling (the stored `age` is the
+age when they applied; React computes it — see Phase 2).
+
+## Phase 1 — applicant lists (built, committed 69fa7b4)
 
 - `applicants/stages.js` — `APPLICANT_STAGES`: key/path, gateway `api`,
-  title, `careers-*-list` permission, default columns (from
-  ApplicantDataTable.vue). AppRoutes registers one route per stage with its
-  own permission; MainLayout's titleMap is generated from it; the menu has
-  an item per stage incl. Hired.
-- `JobApplicantList.jsx` (`stageKey` prop) — loads the full list once
+  title, `careers-*-list` permission, default columns (portal
+  ApplicantDataTable), `dates` / `dateField` (date-filter options per stage,
+  from `DATE_FIELDS`). AppRoutes registers one route per stage with its own
+  permission; MainLayout titleMap + menu (incl. Hired) come from it.
+- `JobApplicantList.jsx` (`stageKey`) — loads the full list once
   (`recruitmentApi.getApplicants(api)`, GET; no server paging), filters in
-  memory: search, status Segmented with live counts, branch, position,
-  date submitted; ColumnSelector (max 12) over all columns.
-- `applicants/applicantStatus.js` — STATUS_FILTERS (Vue's rule: a row
-  matches when ANY stage has the value; Reserved also needs no Failed),
-  `progressColor`, `isoFromDisplay` (gateway dates are `MM/DD/YYYY`
-  strings; dayjs has no customParseFormat loaded here).
-- Response: `{ job_applicants, branches, positions, branch_companies }`.
-  `position_preference` / `branch_preference` are comma-separated ids
-  (mapped to names via `positions` / `branches`); `branch_complied`,
-  `employment_branch`, `employment_position`, `hiring_officer_position`
-  are names. Live sizes (Administrator, 2026-10-01): All 8,538, Screening
-  3,149, Initial Interview 2,571, Exam 327, BI 85, Final 49, Orientation 22.
-- Stage counts are computed client-side from the loaded rows on purpose:
-  `get_all_status_count` runs as the service account (not via the
-  gateway), so it isn't scoped to the viewer.
+  memory: search, status filter **buttons** with live counts, Stage filter
+  (All Applicants only; portal rule: stage name contained in
+  `progress_status`), date filter with a per-stage date field, branch
+  (hidden for the Branch Manager role — the gateway scopes them), position;
+  ColumnSelector (max 12); View action opens the drawer.
+- `applicants/applicantStatus.js` — STATUS_FILTERS (any stage has the value;
+  Reserved also needs no Failed), `progressColorOf` / `progressTagProps`
+  (portal applicationProgress colours by furthest stage passed — orange
+  screening, purple, teal, lime, cyan, dark grey, green hired, indigo
+  reserved, red failed/non-compliant; Reserved at Initial Interview / Exam /
+  B.I counts as passed so the colour matches the label), STAGE_FILTERS,
+  `isoFromDisplay` (gateway dates are `MM/DD/YYYY`), `ageFromBirthdate`.
+- Response: `{ job_applicants, branches, positions, branch_companies }`;
+  preferences are comma ids (named via branches/positions); branch_complied /
+  employment_* / hiring_officer_position are names. Sizes (local copy of
+  production, 2026-10-01): All 8,539, Screening 3,150, Initial Interview
+  2,571, Exam 327, BI 85, Final 49, Orientation 22, Hired 2,261.
 
-## Phase 2 — applicant view (built)
+## Phase 2 — applicant view (built, committed 69fa7b4)
 
-`applicants/ApplicantDrawer.jsx`, opened by each list row's View action:
-`view_applicant/{id}` → stage chips (`stageProgress.js`: PIPELINE, the
-portal's currentProgress / chip colours), tabs Personal Information
-(+ education, family, dependents) / Work Experience / References / Files
-(download, `careers-file-download`), and a per-step progress summary. In
-this response stage dates are `YYYY-MM-DD`, but `birthdate` /
-`date_submitted` are `MM/DD/YYYY` strings; preferences are comma ids
-(named via the list's branches/positions). Chips take `onStepClick` for
-Phase 3 (only the current on-process step is clickable).
+`applicants/ApplicantDrawer.jsx` — `view_applicant/{id}` → stage chips
+(`stageProgress.js`: PIPELINE, `currentStep` = portal currentProgress,
+`stepState` chip colours), tabs: Personal Information (grouped cards, labels
+above values: Basic / Contact & Address / Government IDs / Education &
+Application, then education, family, dependents), Work Experience,
+References, Files (read-only list + download, `careers-file-download`);
+right: Application Progress timeline. Stage dates here are `YYYY-MM-DD`;
+`birthdate` / `date_submitted` are `MM/DD/YYYY`. **Age When Applied** =
+`ageFromBirthdate(birthdate, date_applied || date_submitted)` — the stored
+`age` comes from the browser and can be wrong; under 18 → "Check birthday"
+tag (mistyped birthdays, e.g. the current year — ~117 applicants).
+`StageChips` takes `onStepClick` (Phase 3): only the current on-process
+chip is clickable.
 
-## Planned phases
+## Remaining phases (portal rules to apply — read before building)
 
-2 applicant details (`view_applicant/{id}` → `{ success, applicant,
-educ_attains, experiences, references, fam_members, dependents,
-applicant_files, file }`; vueportal gates it on `vacancy-list`) ·
-3 status workflow (`update_status` with `step` 0–5 + that step's fields;
-`update_hiring_details` for `careers-update-hiring-details`) · 4 files
-(`file_list/{id}`, `file_upload` [applicant_id, document_type, file ≤20MB
-jpeg/jpg/png/docs/docx/pdf], `file_delete`, `file_download`) ·
-5 SMS/email (`send-sms`, `send-email`) · 6 reports (needs new vueportal
-proxy routes) · 7 application-form PDF (vueportal uses pdf-lib — a new
-dependency here; ask first).
+**Phase 3 — status update by clicking the current chip** (+ Phase 5, files
+are a prerequisite for "Passed"). Portal `ApplicationProgressDialog.vue`.
+`POST /recruitment/update_status` `{ applicant_id, step, ...step fields }`
+(gateway: `jobapplicants-change-status`; Branch Managers refused on steps
+1, 4, 5). Status options 0 On Process, 1 Passed, 2 Failed, 3 Non-Compliant,
+4 Reserved. Per step:
+- 0 Screening: `status`, `screening_date` (required when status > 0 only
+  for users with update-hiring-details).
+- 1 Initial Interview: `initial_interview_date` (required when status = 1),
+  `initial_interview_status`; on Passed `position_preference` +
+  `branch_preference` (multi-select, sent comma-joined) required.
+- 2 Exam: `branch_id_complied`, `iq_status`, `iq_date` (required > 0); Passed
+  requires an applicant file titled **Exam**.
+- 3 B.I & Basic Req: `bi_status`, `bi_date` (required > 0).
+- 4 Final Interview: `final_interview_date` (required > 0),
+  `final_interview_status`; on Passed `employment_position`,
+  `employment_branch`, `hiring_officer_position` (one of: HR Director,
+  General Manager, HR Division Manager, Recruitment Manager, Immediate
+  Division Manager, Immediate Department Manager, Branch Manager, Immediate
+  Branch Supervisor, Recruitment Staff), `hiring_officer_name`, and files:
+  Background Investigation, Final Interview Result, Birth Certificate,
+  Police Clearance, Diploma or Certification, Health Declaration, SSS,
+  Pag-IBIG, PhilHealth (+ Driver's License when the employment position is
+  Logistics Driver / C.I Collector / Technician). Non-Compliant → reason
+  (Hired in other organization / Back out due to Training / Others
+  (Specify)) → `final_interview_remarks`.
+- 5 Orientation: `orientation_date`, `signing_of_contract_date` (both
+  required > 0), `orientation_status`; Non-Compliant → reason →
+  `orientation_remarks`.
+- Confirm before saving; the response's `applicant` replaces the row.
+
+**Phase 4 — notifications** (after a successful save; portal sends SMS via
+M360 and email via Laravel mail templates). `notif_type` by step/status:
+0 Passed `personal_info_completion`, 0 Failed `failed_screening`; 1 On
+Process with a date `invitation_for_initial_interview`, 1 Passed
+`invitation_for_examination`, 1 Failed `failed_initial_interview`; 2 Failed
+`failed_examination`; 3 Passed `invitation_bm_interview`, 3 Failed
+`failed_examination`; 4 Failed `failed_bm_interview`. Invitations first ask
+date, time (8:00 AM–5:00 PM, 30-min), venue, facilitator, facilitator
+position (+ deadline date for `invitation_bm_interview`); email payload also
+carries `position` (first position preference). Then "Send notification?" →
+`POST send-email` then `send-sms` `{ applicant_id, step, notif_type, ... }`.
+Also the manual Send Notification (envelope) on the progress card. SMS needs
+a valid PH mobile (portal returns 422 otherwise). **Test only on a throwaway
+applicant with the user's own phone/email** once real M360 / Gmail
+credentials are in the local portal `.env` — the data is a production copy.
+
+**Phase 5 — applicant files**: upload `POST file_upload` (multipart:
+applicant_id, document_type, file ≤ 20MB jpeg/jpg/png/docs/docx/pdf;
+vueportal returns 422 on validation), types: Exam, Background
+Investigation, Diploma or Certification, Copy of Grades, Birth Certificate,
+Police Clearance, Health Declaration, SSS, Pag-IBIG, PhilHealth, TIN,
+Driver's License, Drive Test Result, Final Interview Result, Others;
+delete `POST file_delete { file_id }` (blocked after Final Interview
+passed); list `GET file_list/{id}`.
+
+**Phase 6 — edit hiring details**: progress-card pencil →
+`update_hiring_details` (all step fields; `careers-update-hiring-details`,
+Administrator only in both systems).
+
+**Phase 7 — list extras** (portal ApplicantDataTable): "Incomplete Details"
+icon (screening passed + missing required details / education / references,
+via `POST secondary_details { id: [...] }`) and "Incomplete Requirements"
+icon (final interview on process + missing final files); stage lists default
+to status **On Process** (portal locks it; All/Hired don't); Delete applicant
+(`POST delete_applicant/{id}`, `careers-applicant-delete`); Export dialog →
+`POST export/{report}` (applicants, total_count, sourcing, recruitment,
+hiring, signing_contract; Branch Managers' branch locked; gateway checks
+each report's portal permission).
+
+**Phase 8 — application-form PDF** (portal fills `/pdf/application_form.pdf`
+with pdf-lib in the browser) — needs the user's OK to add `pdf-lib`.
+
+**Phase 9 (optional) — live refresh** (portal uses a websocket on
+`applicant-submit`); ask the user.
+
+## Deployment checklist (not done yet)
+
+1. Deploy recruitment-portal `dfe7477` (gateway) to production FIRST.
+2. vueportal `.env`: restore the production `CAREERS_API_URL` (commented
+   line above the local one).
+3. Production: `composer dump-autoload`; `php artisan db:seed
+   --class=PermissionSeeder`; `php artisan db:seed
+   --class=RecruitmentBranchManagerPermissionSeeder`.
+
+## Local development setup (how it's wired now)
+
+- Local portal containers `recruitment_app` / `recruitment_nginx` /
+  `recruitment_db` (repo's docker-compose; nginx :8090), DB restored from
+  `C:\Users\User\Downloads\recruitment-portal-live(1).sql` (production
+  export 2026-10-01). `recruitment_nginx` was attached to docker
+  `shared_network` (`docker network connect shared_network
+  recruitment_nginx`) — redo after a container re-create.
+- vueportal `.env` `CAREERS_API_URL=http://recruitment_nginx/api`.
+- Local portal: `MAIL_MAILER=log`, M360 keys empty until the user adds them.
+- Uploads need `public/wysiwyg` writable in the portal container; portal
+  `npm run dev` rewrites the tracked `public/mix-manifest.json` — restore it.
 
 ## Rules enforced by the gateway beyond the portal's own controllers
 
@@ -96,10 +201,19 @@ Branch Managers can't update steps 1, 4, 5 (Initial Interview, Final
 Interview, Orientation); applicant files can't be deleted once
 `final_interview_status` = 1.
 
+## Permissions
+
+vueportal `careers-*` gate each route (RecruitmentMaintenance; Administrator
+passes); the gateway also checks the matching portal permission for the
+user. Branch Manager role: seeded by `RecruitmentBranchManagerPermissionSeeder`
+to mirror the portal role (all lists except Screening, update status, files,
+SMS/email, export; not hiring details / delete). `careers-applicant-delete`
+and `careers-export` are new (PermissionSeeder → Administrator). A user needs
+a portal account with the same email (1 of 74 vueportal Branch Managers
+lacks one).
+
 ## Still open
 
-- vueportal's own Vue ATS pages still call `/api/job_applicant/export_*` for
-  reports (never existed on vueportal) — the gateway now offers
-  `export/{report}` via vueportal; only the React side uses it.
-- New vueportal permissions `careers-applicant-delete`, `careers-export`
-  (seeded to Administrator).
+- vueportal's own Vue ATS pages still call `/api/job_applicant/export_*` and
+  GET `delete_applicant` (never existed on vueportal); only React uses the
+  new routes.
