@@ -33,6 +33,7 @@ import {
   ApartmentOutlined,
   FundOutlined,
 } from '@ant-design/icons';
+import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
 
 const { Header, Sider, Content } = Layout;
@@ -56,7 +57,7 @@ const titleMap = {
   '/employees/nte':                 { title: 'Issued NTE (Open)', breadcrumb: ['Employee', 'Issued NTE'] },
   '/employees/disciplinary':        { title: 'Disciplinary Actions (Open)', breadcrumb: ['Employee', 'Disciplinary Actions'] },
   '/vacancies':                     { title: 'Vacancies', breadcrumb: ['Recruitment', 'Vacancies'] },
-  '/recruitment/:url':       { title: 'Applicant List',      breadcrumb: ['Recruitment', 'Applicant List'] },
+  ...Object.fromEntries(APPLICANT_STAGES.map((stage) => [stage.path, { title: stage.title, breadcrumb: ['Recruitment', stage.title] }])),
   '/kpi-templates':          { title: 'KPI Templates',       breadcrumb: ['KPI Management', 'KPI Templates'] },
   '/kpi-templates/create':   { title: 'Create KPI Template', breadcrumb: ['KPI Management', 'KPI Templates', 'Create'] },
   '/kpi-evaluations':        { title: 'KPI Evaluations',     breadcrumb: ['KPI Management', 'Evaluations'] },
@@ -118,6 +119,7 @@ const menuData = [
           { key: 'bi-basic-req',      title: 'B.I & Basic Req.',  link: '/recruitment/bi-list',                permissions: ['careers-bi-list'] },
           { key: 'final-interview',   title: 'Final Interview',   link: '/recruitment/final-interview-list',   permissions: ['careers-final-interview-list'] },
           { key: 'orientation',       title: 'Orientation',       link: '/recruitment/orientation-list',       permissions: ['careers-orientation-list'] },
+          { key: 'hired',             title: 'Hired',             link: '/recruitment/hired-list',             permissions: ['careers-hired-list'] },
           { key: 'vacancies',         title: 'Vacancies',         link: '/vacancies',                          permissions: ['vacancy-list'] },
         ],
       },

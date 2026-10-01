@@ -250,6 +250,12 @@ Dated change history for each lives in `docs/<module>-history.md`.
   POST-only); most actions are gated only in the UI (backend checks just
   approve/reject); `KPI Self Evaluation` accounts are redirected to
   `/my-evaluations` with a one-item menu.
+- **Recruitment ATS** (`src/pages/recruitment/JobApplicantList.jsx`,
+  `applicants/`, routes `/recruitment/<stage>-list`) —
+  `.claude/skills/recruitment-ats/SKILL.md`. Key traps: data comes from
+  the careers portal through vueportal's gateway (one route + permission
+  per stage); gateway dates are `MM/DD/YYYY` strings; several gateway
+  routes the Vue page calls don't exist.
 - **Record management pages / Area Assignment** (`src/pages/area/`, route
   `/areas`) — `.claude/skills/record-management/SKILL.md`. Recipe for any
   new admin CRUD master-data page (Area is the reference implementation).

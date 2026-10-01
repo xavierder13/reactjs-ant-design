@@ -45,6 +45,7 @@ import OpenNteList from '../pages/employee_master_data/lists/OpenNteList';
 import OpenDisciplinaryList from '../pages/employee_master_data/lists/OpenDisciplinaryList';
 import Vacancies from '../pages/recruitment/Vacancies';
 import JobApplicantList from '../pages/recruitment/JobApplicantList';
+import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import ManpowerRequestIndex from '../pages/manpower_request/request/ManpowerRequestIndex';
 import CreateManpowerRequest from '../pages/manpower_request/request/CreateManpowerRequest';
 import EditManpowerRequest from '../pages/manpower_request/request/EditManpowerRequest';
@@ -79,7 +80,11 @@ const permissionRoutes = [
   { permissions: ['employee-master-data-create', 'employee-master-data-edit'], path: '/employees/:id/edit', element: <EditEmployee /> },
   { permissions: ['employee-acknowledgment-reports'], path: '/acknowledgment-reports', element: <AcknowledgmentReportIndex /> },
   { permissions: ['employee-acknowledgment-reports'], path: '/acknowledgment-reports/:id', element: <AcknowledgmentReportView /> },
-  { permissions: ['careers-applicant-list'], path: '/recruitment/:url', element: <JobApplicantList /> },
+  // One route per ATS list, each gated by its own careers-*-list permission
+  // (the backend checks the same one per endpoint).
+  ...APPLICANT_STAGES.map((stage) => ({
+    permissions: [stage.permission], path: stage.path, element: <JobApplicantList key={stage.key} stageKey={stage.key} />,
+  })),
   { permissions: ['vacancy-list'], path: '/vacancies', element: <Vacancies /> },
 
   // Manpower Request Routes
