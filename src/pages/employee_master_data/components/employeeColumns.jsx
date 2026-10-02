@@ -32,7 +32,12 @@ export const EMPLOYEE_COLUMNS = [
   { title: "Address", dataIndex: "address", value: "address" },
   { title: "Contact #", dataIndex: "contact", value: "contact" },
   { title: "Email", dataIndex: "email", value: "email" },
-  { title: "Job Description", dataIndex: "position.name", value: "position.name" },
+  {
+    title: "Job Description",
+    dataIndex: "position",
+    value: "position.name",
+    render: (position) => position?.name || "-"
+  },
   {
     title: "Promodizer Brand",
     dataIndex: "promodizer_brand",
@@ -46,7 +51,12 @@ export const EMPLOYEE_COLUMNS = [
     // fixed 2026-09-15.
     render: (promodizerBrand) => promodizerBrand?.brand || "-"
   },
-  { title: "Rank", dataIndex: "position.rank.name", value: "position.rank.name" },
+  {
+    title: "Rank",
+    dataIndex: "position",
+    value: "position.rank.name",
+    render: (position) => position?.rank?.name || "-",
+  },
   {
     title: "Department",
     dataIndex: "department",
@@ -97,7 +107,7 @@ const DEFAULT_COLUMN_VALUES = [
   "last_name",
   "first_name",
   "middle_name",
-  "dob",
+  "position.name",
   "active",
 ];
 export const DEFAULT_EMPLOYEE_COLUMNS = EMPLOYEE_COLUMNS.filter((c) => DEFAULT_COLUMN_VALUES.includes(c.value));
