@@ -41,7 +41,7 @@ files.** The backend is vueportal (its own `record-management` skill).
   `Form.Item` with `valuePropName='targetKeys'` and a
   `{ required: true, type: 'array', min: 1 }` rule; size it with
   `styles={{ section: { width: 'calc(50% - 20px)', height: 340 } }}` —
-  `listStyle` (what `RoleForm.jsx` still uses) is `@deprecated` in v6.
+  `listStyle` is `@deprecated` in v6.
   Numeric keys are fine (`TransferKey = React.Key`), so ids stay ints in
   the payload.
 - **"One parent per option"** (a branch in one area): the options endpoint

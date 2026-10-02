@@ -122,7 +122,7 @@ const RoleForm = ({ mode = 'create', role = null, permissions = [], rolePermissi
           disabled={readOnly}
           showSearch
           filterOption={(input, option) => option.title.toLowerCase().includes(input.toLowerCase())}
-          listStyle={{ width: 'calc(50% - 60px)', height: 400 }}
+          styles={{ section: { width: 'calc(50% - 60px)', height: 400 } }}
           render={(item) => item.title}
           pagination
         />
