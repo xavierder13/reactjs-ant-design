@@ -4,7 +4,7 @@ import {
   Table, Button, Tooltip, Empty, Timeline, App,
 } from 'antd';
 import {
-  ReloadOutlined, EditOutlined, LockOutlined, MailOutlined, UserOutlined, SolutionOutlined, TeamOutlined, PaperClipOutlined,
+  ReloadOutlined, EditOutlined, LockOutlined, MailOutlined, FilePdfOutlined, UserOutlined, SolutionOutlined, TeamOutlined, PaperClipOutlined,
 } from '@ant-design/icons';
 
 import useAuth from '../../../hooks/useAuth';
@@ -17,6 +17,7 @@ import StatusUpdateModal from './StatusUpdateModal';
 import ApplicantFilesTab from './ApplicantFilesTab';
 import SendNotificationModal from './SendNotificationModal';
 import { typeForResend } from './notifications';
+import { downloadApplicationFormPdf } from './applicationFormPdf';
 
 // Steps a Branch Manager may not update (portal userHasPermissionToUpdateStatus;
 // the gateway refuses them too).
@@ -278,6 +279,19 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps, onAp
   // state has a notification.
   const resendType = applicant && (canEmail || canSms) && !isBranchManager ? typeForResend(applicant) : '';
 
+  // Application form PDF (portal: anyone who can open the applicant).
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const downloadPdf = async () => {
+    setPdfBusy(true);
+    try {
+      await downloadApplicationFormPdf(data);
+    } catch (err) {
+      messageApi.error(err.message || 'The application form could not be generated.');
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
   const handleChanged = (row) => {
     setReloadKey((k) => k + 1);
     onApplicantChange?.(applicantId, row);
@@ -296,7 +310,12 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps, onAp
           {applicant.progress_status && <Tag {...progressTagProps(applicant)}>{applicant.progress_status}</Tag>}
         </Space>
       ) : 'Applicant'}
-      extra={<Button icon={<ReloadOutlined />} onClick={() => setReloadKey((k) => k + 1)} loading={loading}>Refresh</Button>}
+      extra={(
+        <Space>
+          <Button icon={<FilePdfOutlined />} onClick={downloadPdf} loading={pdfBusy} disabled={!applicant}>Application Form</Button>
+          <Button icon={<ReloadOutlined />} onClick={() => setReloadKey((k) => k + 1)} loading={loading}>Refresh</Button>
+        </Space>
+      )}
     >
       {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 16 }} />}
       <Spin spinning={loading}>
