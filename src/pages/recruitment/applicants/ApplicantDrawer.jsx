@@ -4,61 +4,27 @@ import {
   Table, Button, Tooltip, Empty, Timeline, App,
 } from 'antd';
 import {
-  CheckCircleFilled, CloseCircleFilled, ClockCircleOutlined, MinusCircleOutlined,
-  ReloadOutlined, DownloadOutlined, UserOutlined, SolutionOutlined, TeamOutlined, PaperClipOutlined,
+  ReloadOutlined, EditOutlined, LockOutlined, UserOutlined, SolutionOutlined, TeamOutlined, PaperClipOutlined,
 } from '@ant-design/icons';
 
 import useAuth from '../../../hooks/useAuth';
 import recruitmentApi from '../../../services/recruitment/recruitmentApi';
 import handleApiError from '../../../utils/handleApiError';
-import downloadBlobResponse from '../../../utils/downloadBlobResponse';
 import { formatDate } from '../../../utils/formatDate';
 import { progressTagProps, ageFromBirthdate } from './applicantStatus';
 import { PIPELINE, STATUS_LABELS, stepState, currentStep } from './stageProgress';
+import StatusUpdateModal from './StatusUpdateModal';
+import ApplicantFilesTab from './ApplicantFilesTab';
+
+// Steps a Branch Manager may not update (portal userHasPermissionToUpdateStatus;
+// the gateway refuses them too).
+const BRANCH_MANAGER_LOCKED_STEPS = [1, 4, 5];
 
 const show = (v) => (v === null || v === undefined || v === '' ? '-' : v);
 const names = (ids, map) => (ids ? String(ids).split(',').map((id) => map[id.trim()] || id).join(', ') : '-');
 
-const TONES = {
-  done: { color: 'success', icon: <CheckCircleFilled /> },
-  error: { color: 'error', icon: <CloseCircleFilled /> },
-  process: { color: 'warning', icon: <ClockCircleOutlined /> },
-  idle: { color: 'default', icon: <MinusCircleOutlined /> },
-};
-
-// The six pipeline steps as chips joined by connectors — the portal's
-// progress bar. `onStepClick` (Phase 3) is offered only on the current,
-// on-process step.
-function StageChips({ applicant, onStepClick }) {
-  const current = currentStep(applicant);
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-      {PIPELINE.map((p, i) => {
-        const state = stepState(applicant, p.step);
-        const tone = TONES[state.tone];
-        const clickable = onStepClick && state.tone === 'process' && i === current;
-        const tag = (
-          <Tag
-            color={tone.color}
-            icon={tone.icon}
-            style={{ margin: 0, padding: '4px 10px', fontSize: 13, cursor: clickable ? 'pointer' : 'default' }}
-            onClick={clickable ? () => onStepClick(p.step) : undefined}
-          >
-            {p.label}
-          </Tag>
-        );
-        return (
-          <Space key={p.step} size={6}>
-            {clickable ? <Tooltip title="Update status">{tag}</Tooltip> : tag}
-            {i < PIPELINE.length - 1 && (
-              <span style={{ width: 18, borderTop: `2px solid ${state.tone === 'done' ? '#52c41a' : '#d9d9d9'}` }} />
-            )}
-          </Space>
-        );
-      })}
-    </div>
-  );
-}
+// Status tag colour per step state (portal progressStatus()).
+const TONES = { done: 'success', error: 'error', process: 'warning', idle: 'default' };
 
 const DESC = { size: 'small', column: { xs: 1, sm: 2, lg: 3 } };
 
@@ -172,40 +138,13 @@ function PeopleTable({ rows, empty, firstColumn }) {
   );
 }
 
-function FilesTab({ files, canDownload }) {
-  const { message: messageApi } = App.useApp();
-  const download = async (file) => {
-    try {
-      const response = await recruitmentApi.downloadFile(file.id);
-      await downloadBlobResponse(response, `${file.title || 'file'}.${file.file_type || ''}`.replace(/\.$/, ''), messageApi);
-    } catch (error) {
-      handleApiError(error, messageApi);
-    }
-  };
-  if (!files.length) return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No files uploaded." />;
-  return (
-    <Table
-      rowKey="id" size="small" pagination={false} dataSource={files}
-      columns={[
-        { title: 'Document', dataIndex: 'title', render: (v) => <Tag>{show(v)}</Tag> },
-        { title: 'Type', dataIndex: 'file_type', render: (v) => show(v)?.toUpperCase?.() ?? '-' },
-        { title: 'Uploaded', dataIndex: 'created_at', render: (v) => formatDate(v) },
-        ...(canDownload ? [{
-          title: 'Actions', key: 'actions', width: 80,
-          render: (_, file) => (
-            <Tooltip title="Download">
-              <Button color="purple" variant="outlined" size="small" icon={<DownloadOutlined />} onClick={() => download(file)} />
-            </Tooltip>
-          ),
-        }] : []),
-      ]}
-    />
-  );
-}
-
 // Right-hand summary of every step: status, date and the step's own details
-// (the portal's ApplicationProgressCard, read-only).
-function ProgressSummary({ applicant, maps }) {
+// (the portal's ApplicationProgressCard). The current on-process step
+// carries the status update: `onUpdateStatus(step)` when the user may
+// update it, else `lockedNote` explains why not. `onEdit` opens the
+// hiring details.
+function ProgressSummary({ applicant, maps, onEdit, onUpdateStatus, lockedNote }) {
+  const current = currentStep(applicant);
   const extra = {
     0: [['Date Applied', applicant.date_submitted || formatDate(applicant.date_applied)], ['Position Applied', applicant.position_name], ['Branch Applied', applicant.branch_name]],
     1: [['Position Preference', names(applicant.position_preference, maps.positions)], ['Branch Preference', names(applicant.branch_preference, maps.branches)]],
@@ -219,24 +158,46 @@ function ProgressSummary({ applicant, maps }) {
     5: [['Contract Signed', formatDate(applicant.signing_of_contract_date)], ['Non-Compliant Reason', applicant.orientation_remarks]],
   };
   return (
-    <Card size="small" title="Application Progress">
+    <Card
+      size="small"
+      title="Application Progress"
+      extra={onEdit && (
+        <Tooltip title="Edit hiring details">
+          <Button color="green" variant="outlined" size="small" icon={<EditOutlined />} onClick={onEdit} />
+        </Tooltip>
+      )}
+    >
       <Timeline
         items={PIPELINE.map((p) => {
           const state = stepState(applicant, p.step);
           const rows = (extra[p.step] || []).filter(([, v]) => v && v !== '-');
+          const isCurrent = p.step === current && state.tone === 'process';
           return {
             key: p.step,
             color: { done: 'green', error: 'red', process: 'orange', idle: 'gray' }[state.tone],
             title: (
               <Space size={6} wrap>
                 <Typography.Text strong>{p.label}</Typography.Text>
-                {state.status !== null && <Tag color={TONES[state.tone].color}>{STATUS_LABELS[state.status]}</Tag>}
+                {state.status !== null && <Tag color={TONES[state.tone]}>{STATUS_LABELS[state.status]}</Tag>}
               </Space>
             ),
             content: (
               <div style={{ fontSize: 12 }}>
+                {isCurrent && onUpdateStatus && (
+                  <Button
+                    color="green" variant="outlined" size="small" icon={<EditOutlined />}
+                    style={{ margin: '-1px 0 6px' }} onClick={() => onUpdateStatus(p.step)}
+                  >
+                    Update Status
+                  </Button>
+                )}
                 {applicant[p.dateField] && <div>Date: {formatDate(applicant[p.dateField])}</div>}
                 {rows.map(([label, value]) => <div key={label}><Typography.Text type="secondary">{label}:</Typography.Text> {value}</div>)}
+                {isCurrent && !onUpdateStatus && lockedNote && (
+                  <Typography.Text type="secondary" italic style={{ display: 'block', marginTop: 4 }}>
+                    <LockOutlined /> {lockedNote}
+                  </Typography.Text>
+                )}
               </div>
             ),
           };
@@ -246,17 +207,24 @@ function ProgressSummary({ applicant, maps }) {
   );
 }
 
-// Applicant details drawer (Phase 2: view). `maps` = { branches, positions }
-// id→name lookups from the list response.
-export default function ApplicantDrawer({ applicantId, open, onClose, maps }) {
+// Applicant details drawer: view, status update (current stage chip),
+// hiring details (progress card pencil) and files. `maps` = { branches,
+// positions } id→name lookups from the list response. `onApplicantChange(id,
+// row?)` tells the list a save happened — `row` (list-row shape) when the
+// portal returned the updated applicant.
+export default function ApplicantDrawer({ applicantId, open, onClose, maps, onApplicantChange }) {
   const { message: messageApi } = App.useApp();
   const { hasRole, hasPermission } = useAuth();
-  const can = (p) => hasRole('Administrator') || hasPermission(p);
+  const isAdmin = hasRole('Administrator');
+  const can = (p) => isAdmin || hasPermission(p);
+  const isBranchManager = !isAdmin && hasRole('Branch Manager');
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  // { mode: 'status' | 'details', step } while the update modal is open.
+  const [editing, setEditing] = useState(null);
 
   useEffect(() => {
     if (!open || !applicantId) return undefined;
@@ -285,6 +253,16 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps }) {
   }, [open, applicantId, reloadKey, messageApi]);
 
   const applicant = data?.applicant;
+  const lockedForBranchManager = isBranchManager && BRANCH_MANAGER_LOCKED_STEPS.includes(currentStep(applicant));
+  const canUpdateStatus = can('careers-update-status') && !lockedForBranchManager;
+  const statusLockedNote = can('careers-update-status') && lockedForBranchManager
+    ? 'Branch Managers can\'t update this stage — HR updates it.' : null;
+  const canEditHiringDetails = can('careers-update-hiring-details') && !isBranchManager;
+
+  const handleChanged = (row) => {
+    setReloadKey((k) => k + 1);
+    onApplicantChange?.(applicantId, row);
+  };
 
   return (
     <Drawer
@@ -292,7 +270,7 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps }) {
       onClose={onClose}
       destroyOnHidden
       afterOpenChange={(isOpen) => { if (!isOpen) setData(null); }}
-      size="min(1280px, 100vw)"
+      size="min(1440px, 100vw)"
       title={applicant ? (
         <Space size={8} wrap>
           <span>{applicant.name}</span>
@@ -305,17 +283,8 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps }) {
       <Spin spinning={loading}>
         {applicant && (
           <Space orientation="vertical" size={16} style={{ width: '100%' }}>
-            <Card size="small">
-              <Space orientation="vertical" size={8} style={{ width: '100%' }}>
-                <Typography.Text type="secondary">
-                  {applicant.position_name} · {applicant.branch_name} · applied {applicant.date_submitted || formatDate(applicant.date_applied)}
-                </Typography.Text>
-                <StageChips applicant={applicant} />
-              </Space>
-            </Card>
-
             <Row gutter={[16, 16]}>
-              <Col xs={24} xl={16}>
+              <Col xs={24} lg={15}>
                 <Tabs
                   items={[
                     { key: 'personal', label: 'Personal Information', icon: <UserOutlined />, children: <PersonalTab data={data} /> },
@@ -351,18 +320,41 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps }) {
                     },
                     ...(can('careers-file-list') ? [{
                       key: 'files', label: `Files (${data.applicant_files.length})`, icon: <PaperClipOutlined />,
-                      children: <FilesTab files={data.applicant_files} canDownload={can('careers-file-download')} />,
+                      children: (
+                        <ApplicantFilesTab
+                          applicant={applicant} files={data.applicant_files} maps={maps} can={can}
+                          onChanged={() => handleChanged()}
+                        />
+                      ),
                     }] : []),
                   ]}
                 />
               </Col>
-              <Col xs={24} xl={8}>
-                <ProgressSummary applicant={applicant} maps={maps} />
+              <Col xs={24} lg={9}>
+                <ProgressSummary
+                  applicant={applicant}
+                  maps={maps}
+                  onUpdateStatus={canUpdateStatus ? (step) => setEditing({ mode: 'status', step }) : undefined}
+                  lockedNote={statusLockedNote}
+                  onEdit={canEditHiringDetails ? () => setEditing({ mode: 'details', step: currentStep(applicant) }) : undefined}
+                />
               </Col>
             </Row>
           </Space>
         )}
       </Spin>
+
+      <StatusUpdateModal
+        open={Boolean(editing && applicant)}
+        mode={editing?.mode}
+        step={editing?.step}
+        data={data}
+        maps={maps}
+        isBranchManager={isBranchManager}
+        canEditHiringDetails={can('careers-update-hiring-details')}
+        onClose={() => setEditing(null)}
+        onSaved={(row) => { setEditing(null); handleChanged(row); }}
+      />
     </Drawer>
   );
 }

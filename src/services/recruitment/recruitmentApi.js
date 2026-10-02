@@ -20,6 +20,50 @@ const recruitmentApi = {
   // POST /recruitment/file_download { file_id } (careers-file-download) → blob.
   downloadFile: (fileId) => axios.post('/recruitment/file_download', { file_id: fileId }, { responseType: 'blob' }),
 
+  // The calls below run the portal's own ApplicantController /
+  // ApplicantFileController methods as the signed-in user (gateway). A
+  // refusal (no portal account, missing portal permission, Branch Manager
+  // locked step) comes back as 403/422 { error: "..." }. The portal itself
+  // answers some failures with HTTP 200 — check `success` first.
+
+  // POST /recruitment/update_status (careers-update-status) { applicant_id,
+  // step 0–5, ...that step's fields } → { success, resp, applicant } where
+  // `applicant` has the list-row shape (MM/DD/YYYY dates, employment
+  // names). Branch Manager acting on an already-updated Exam/B.I step →
+  // 200 { warning }.
+  updateStatus: (payload) => axios.post('/recruitment/update_status', payload),
+
+  // POST /recruitment/update_hiring_details (careers-update-hiring-details)
+  // { applicant_id, every step field } → { success, resp, applicant };
+  // validation failure → 200 { error: { field: [msg] } }.
+  updateHiringDetails: (payload) => axios.post('/recruitment/update_hiring_details', payload),
+
+  // POST /recruitment/file_upload (careers-file-upload), multipart
+  // { applicant_id, document_type, file } → { success: "File has been
+  // uploaded", applicant_file }. vueportal validates first (422 { error:
+  // { field: [msg] } }); the portal answers its own failures with 200 { error }.
+  uploadFile: (applicantId, documentType, file) => {
+    const formData = new FormData();
+    formData.append('applicant_id', applicantId);
+    formData.append('document_type', documentType);
+    formData.append('file', file);
+    return axios.post('/recruitment/file_upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+
+  // POST /recruitment/file_delete { file_id } (careers-file-delete) →
+  // { success: "Record has been deleted" }; 422 { error } once the Final
+  // Interview is passed or for the applicant's Resume.
+  deleteFile: (fileId) => axios.post('/recruitment/file_delete', { file_id: fileId }),
+
+  // POST /recruitment/delete_applicant/{id} (careers-applicant-delete) →
+  // { success, message } — also deletes the applicant's files.
+  deleteApplicant: (id) => axios.post(`/recruitment/delete_applicant/${id}`),
+
+  // POST /recruitment/secondary_details { id: [applicant ids] } (any
+  // careers-*-list) → { success, educ_attains, references, files }, each
+  // row carrying applicant_id — the list's "incomplete" indicators.
+  secondaryDetails: (ids) => axios.post('/recruitment/secondary_details', { id: ids }),
+
   // GET /recruitment/total_active_employees (any logged-in user)
   // → { total_active_employees } — employee_master_data.active = 1.
   getTotalActiveEmployees: () => axios.get('/recruitment/total_active_employees'),
