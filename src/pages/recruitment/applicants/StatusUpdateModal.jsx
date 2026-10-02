@@ -8,6 +8,7 @@ import { PIPELINE, STATUS_LABELS, currentStep } from './stageProgress';
 import {
   EXAM_REQUIRED_FILES, finalRequiredFiles, missingFiles, detailsComplete, gatewayMessage, errorMessage,
 } from './requirements';
+import { typeAfterSave, SCHEDULE_DATE_FIELD } from './notifications';
 
 // Status update (Phase 3) and hiring-details edit (Phase 6) for one
 // applicant — recruitment-portal's ApplicationProgressDialog.vue and
@@ -15,7 +16,9 @@ import {
 //
 // mode 'status'  → only `step`'s fields; POST update_status { applicant_id,
 //                  step, ... }. The portal then opens / resets the later
-//                  steps itself.
+//                  steps itself. `onSaved(row, notify)` — `notify` = { step,
+//                  notifType, scheduleDate } when the save calls for an
+//                  email / SMS (notifications.js typeAfterSave).
 // mode 'details' → every step's fields; POST update_hiring_details, which
 //                  saves them verbatim — so here the form opens / clears
 //                  the later steps as statuses change (same as the portal
@@ -200,7 +203,10 @@ export default function StatusUpdateModal({
         : await recruitmentApi.updateStatus(payload);
       if (res?.success) {
         message.success(res.resp || 'Saved.');
-        onSaved(res.applicant);
+        // A status save may call for an email / SMS (portal rules); hiring
+        // details edits never do.
+        const notifType = details ? '' : typeAfterSave(step, payload);
+        onSaved(res.applicant, notifType && { step, notifType, scheduleDate: payload[SCHEDULE_DATE_FIELD[notifType]] });
         return;
       }
       if (res?.error && typeof res.error === 'object') {

@@ -4,7 +4,7 @@ import {
   Table, Button, Tooltip, Empty, Timeline, App,
 } from 'antd';
 import {
-  ReloadOutlined, EditOutlined, LockOutlined, UserOutlined, SolutionOutlined, TeamOutlined, PaperClipOutlined,
+  ReloadOutlined, EditOutlined, LockOutlined, MailOutlined, UserOutlined, SolutionOutlined, TeamOutlined, PaperClipOutlined,
 } from '@ant-design/icons';
 
 import useAuth from '../../../hooks/useAuth';
@@ -15,6 +15,8 @@ import { progressTagProps, ageFromBirthdate } from './applicantStatus';
 import { PIPELINE, STATUS_LABELS, stepState, currentStep } from './stageProgress';
 import StatusUpdateModal from './StatusUpdateModal';
 import ApplicantFilesTab from './ApplicantFilesTab';
+import SendNotificationModal from './SendNotificationModal';
+import { typeForResend } from './notifications';
 
 // Steps a Branch Manager may not update (portal userHasPermissionToUpdateStatus;
 // the gateway refuses them too).
@@ -142,8 +144,9 @@ function PeopleTable({ rows, empty, firstColumn }) {
 // (the portal's ApplicationProgressCard). The current on-process step
 // carries the status update: `onUpdateStatus(step)` when the user may
 // update it, else `lockedNote` explains why not. `onEdit` opens the
-// hiring details.
-function ProgressSummary({ applicant, maps, onEdit, onUpdateStatus, lockedNote }) {
+// hiring details; `onNotify` (envelope) resends the current step's
+// email / SMS.
+function ProgressSummary({ applicant, maps, onEdit, onNotify, onUpdateStatus, lockedNote }) {
   const current = currentStep(applicant);
   const extra = {
     0: [['Date Applied', applicant.date_submitted || formatDate(applicant.date_applied)], ['Position Applied', applicant.position_name], ['Branch Applied', applicant.branch_name]],
@@ -161,10 +164,19 @@ function ProgressSummary({ applicant, maps, onEdit, onUpdateStatus, lockedNote }
     <Card
       size="small"
       title="Application Progress"
-      extra={onEdit && (
-        <Tooltip title="Edit hiring details">
-          <Button color="green" variant="outlined" size="small" icon={<EditOutlined />} onClick={onEdit} />
-        </Tooltip>
+      extra={(onEdit || onNotify) && (
+        <Space size={4}>
+          {onEdit && (
+            <Tooltip title="Edit hiring details">
+              <Button color="green" variant="outlined" size="small" icon={<EditOutlined />} onClick={onEdit} />
+            </Tooltip>
+          )}
+          {onNotify && (
+            <Tooltip title="Send notification">
+              <Button color="cyan" variant="outlined" size="small" icon={<MailOutlined />} onClick={onNotify} />
+            </Tooltip>
+          )}
+        </Space>
       )}
     >
       <Timeline
@@ -225,6 +237,8 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps, onAp
   const [reloadKey, setReloadKey] = useState(0);
   // { mode: 'status' | 'details', step } while the update modal is open.
   const [editing, setEditing] = useState(null);
+  // { step, notifType, scheduleDate?, afterSave } while the notification dialog is open.
+  const [notifying, setNotifying] = useState(null);
 
   useEffect(() => {
     if (!open || !applicantId) return undefined;
@@ -258,6 +272,11 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps, onAp
   const statusLockedNote = can('careers-update-status') && lockedForBranchManager
     ? 'Branch Managers can\'t update this stage — HR updates it.' : null;
   const canEditHiringDetails = can('careers-update-hiring-details') && !isBranchManager;
+  const canEmail = can('careers-notification-send-email');
+  const canSms = can('careers-notification-send-sms');
+  // Manual resend: not Branch Managers (portal card), only when the current
+  // state has a notification.
+  const resendType = applicant && (canEmail || canSms) && !isBranchManager ? typeForResend(applicant) : '';
 
   const handleChanged = (row) => {
     setReloadKey((k) => k + 1);
@@ -336,6 +355,7 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps, onAp
                   maps={maps}
                   onUpdateStatus={canUpdateStatus ? (step) => setEditing({ mode: 'status', step }) : undefined}
                   lockedNote={statusLockedNote}
+                  onNotify={resendType ? () => setNotifying({ step: currentStep(applicant), notifType: resendType, afterSave: false }) : undefined}
                   onEdit={canEditHiringDetails ? () => setEditing({ mode: 'details', step: currentStep(applicant) }) : undefined}
                 />
               </Col>
@@ -353,7 +373,24 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps, onAp
         isBranchManager={isBranchManager}
         canEditHiringDetails={can('careers-update-hiring-details')}
         onClose={() => setEditing(null)}
-        onSaved={(row) => { setEditing(null); handleChanged(row); }}
+        onSaved={(row, notify) => {
+          setEditing(null);
+          handleChanged(row);
+          if (notify && (canEmail || canSms)) setNotifying({ ...notify, afterSave: true });
+        }}
+      />
+
+      <SendNotificationModal
+        open={Boolean(notifying && applicant)}
+        applicant={applicant}
+        step={notifying?.step}
+        notifType={notifying?.notifType}
+        scheduleDate={notifying?.scheduleDate}
+        afterSave={notifying?.afterSave}
+        maps={maps}
+        canEmail={canEmail}
+        canSms={canSms}
+        onClose={() => setNotifying(null)}
       />
     </Drawer>
   );

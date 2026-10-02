@@ -55,6 +55,16 @@ const recruitmentApi = {
   // Interview is passed or for the applicant's Resume.
   deleteFile: (fileId) => axios.post('/recruitment/file_delete', { file_id: fileId }),
 
+  // POST /recruitment/send-email (careers-notification-send-email) /
+  // send-sms (careers-notification-send-sms) { applicant_id, step,
+  // notif_type, position, date?, time?, venue?, facilitator?,
+  // facilitator_position?, deadline_date? } → { success: "Email/SMS has been
+  // sent", log }. Failures: 200 { error } (no email / unknown template),
+  // 422 { error } (invalid phone), 200 { success: false, status, body }
+  // (M360 refused), 5xx { error } (mail server).
+  sendEmail: (payload) => axios.post('/recruitment/send-email', payload),
+  sendSms: (payload) => axios.post('/recruitment/send-sms', payload),
+
   // POST /recruitment/delete_applicant/{id} (careers-applicant-delete) →
   // { success, message } — also deletes the applicant's files.
   deleteApplicant: (id) => axios.post(`/recruitment/delete_applicant/${id}`),
