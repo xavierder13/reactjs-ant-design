@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Card, Table, Tag, Input, Select, DatePicker, Space, Button, Typography, Badge, Alert, Tooltip, Popconfirm, App } from 'antd';
-import { ReloadOutlined, SearchOutlined, EyeOutlined, DeleteOutlined, WarningOutlined } from '@ant-design/icons';
+import { ReloadOutlined, SearchOutlined, EyeOutlined, DeleteOutlined, WarningOutlined, FileExcelOutlined } from '@ant-design/icons';
 
 import recruitmentApi from '../../services/recruitment/recruitmentApi';
 import useAuth from '../../hooks/useAuth';
@@ -10,6 +10,7 @@ import ColumnSelector from '../employee_master_data/components/ColumnSelector';
 import { APPLICANT_STAGES, DATE_FIELDS } from './applicants/stages';
 import { STATUS_FILTERS, STAGE_FILTERS, matchesStage, progressTagProps, isoFromDisplay } from './applicants/applicantStatus';
 import ApplicantDrawer from './applicants/ApplicantDrawer';
+import ExportModal from './applicants/ExportModal';
 import { detailsComplete, finalRequiredFiles, missingFiles, errorMessage, gatewayMessage } from './applicants/requirements';
 
 const { RangePicker } = DatePicker;
@@ -104,6 +105,7 @@ export default function JobApplicantList({ stageKey }) {
   const { hasRole, hasPermission } = useAuth();
   const can = (p) => hasRole('Administrator') || hasPermission(p);
   const canDelete = can('careers-applicant-delete');
+  const [exportOpen, setExportOpen] = useState(false);
   // Branch Managers only ever get their own branch's applicants (the gateway
   // scopes them), so the portal locks branch choice for that role
   // (DialogExport.vue `:readonly="hasRole('Branch Manager')"`) — hide it.
@@ -308,6 +310,9 @@ export default function JobApplicantList({ stageKey }) {
       )}
       extra={(
         <Space>
+          {can('careers-export') && (
+            <Button icon={<FileExcelOutlined />} onClick={() => setExportOpen(true)}>Export</Button>
+          )}
           <Button icon={<ReloadOutlined />} onClick={() => setReloadKey((k) => k + 1)} loading={loading}>
             Refresh
           </Button>
@@ -413,6 +418,15 @@ export default function JobApplicantList({ stageKey }) {
         onClose={() => setViewingId(null)}
         maps={names}
         onApplicantChange={handleApplicantChange}
+      />
+
+      <ExportModal
+        open={exportOpen}
+        stageKey={stage.key}
+        branches={names.branches}
+        can={can}
+        isBranchManager={!showBranchFilter}
+        onClose={() => setExportOpen(false)}
       />
     </Card>
   );

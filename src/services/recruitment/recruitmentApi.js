@@ -65,6 +65,16 @@ const recruitmentApi = {
   sendEmail: (payload) => axios.post('/recruitment/send-email', payload),
   sendSms: (payload) => axios.post('/recruitment/send-sms', payload),
 
+  // POST /recruitment/export/{report} (careers-export; the gateway checks the
+  // report's portal permission) — report: applicants | total_count |
+  // sourcing | recruitment | hiring | signing_contract. Body { date_from,
+  // date_to, asOfDate, branch_id (1000 = all), report_group, report_type,
+  // date_field_param, get_empty_date }. Returns DATA, not a file:
+  // { success, applicants } — detailed: an array of rows (status columns
+  // already labelled); front page: { [branch]: { total_count: {...},
+  // [position]: {...} } }. A Branch Manager always gets their own branch.
+  exportReport: (report, payload) => axios.post(`/recruitment/export/${report}`, payload),
+
   // POST /recruitment/delete_applicant/{id} (careers-applicant-delete) →
   // { success, message } — also deletes the applicant's files.
   deleteApplicant: (id) => axios.post(`/recruitment/delete_applicant/${id}`),
