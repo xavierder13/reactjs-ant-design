@@ -29,6 +29,7 @@ import { Link } from "react-router-dom";
 
 import useBranches from "../../hooks/useBranches";
 import useDepartments from "../../hooks/useDepartments";
+import usePositions from "../../hooks/usePositions";
 import useEmployees from "../../hooks/useEmployees";
 import useAuth from "../../hooks/useAuth";
 import handleApiError from "../../utils/handleApiError";
@@ -52,10 +53,11 @@ export default function EmployeeMasterData() {
   const { message: messageApi } = App.useApp();
   const { hasPermission } = useAuth();
 
-  // Not consumed by the list yet (no lookup filter UI in this pass) —
-  // kept so branch/department reference data is warm for the Employee
-  // Details tab, which does use these hooks.
-  useBranches();
+  // Branch and position feed the filter dropdowns below. Departments is not
+  // consumed by the list yet — kept so its reference data is warm for the
+  // Employee Details tab, which does use it.
+  const { branchOptions, isLoading: branchesLoading } = useBranches();
+  const { positionOptions, isLoading: positionsLoading } = usePositions();
   useDepartments();
 
   const { items: employees, pagination, isLoading, fetchItems, deleteEmployee } = useEmployees();
@@ -74,6 +76,9 @@ export default function EmployeeMasterData() {
   // status filter, so "All" is sent as undefined rather than a literal
   // third value the backend doesn't know about.
   const [statusFilter, setStatusFilter] = useState("All");
+  // null = no filter. Sent as undefined so the param is omitted entirely.
+  const [branchFilter, setBranchFilter] = useState(null);
+  const [positionFilter, setPositionFilter] = useState(null);
   const [selectedHeaders, setSelectedHeaders] = useState(defaultHeaders);
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -83,13 +88,30 @@ export default function EmployeeMasterData() {
 
   const currentTableHeaders = () => selectedHeaders.map((h) => ({ text: h.title, value: h.value }));
 
-  const fetchEmployees = (page = 1, pageSize = pagination.pageSize, searchValue = search, statusValue = statusFilter) => {
+  // Single source of truth for the request payload (minus paging). Pass
+  // `overrides` when a handler has a new filter value that state hasn't
+  // caught up with yet (setState is async).
+  const buildParams = (overrides = {}) => {
+    const f = { search, statusFilter, branchFilter, positionFilter, ...overrides };
+    return {
+      search: f.search,
+      search_status: f.statusFilter === "All" ? undefined : f.statusFilter,
+      search_branch: f.branchFilter ?? undefined,
+      search_position: f.positionFilter ?? undefined,
+      table_headers: currentTableHeaders(),
+    };
+  };
+
+  const fetchEmployees = (page = 1, pageSize = pagination.pageSize, overrides = {}) => {
     fetchItems({
       page,
       items_per_page: pageSize,
-      search: searchValue,
-      search_status: statusValue === "All" ? undefined : statusValue,
-      table_headers: currentTableHeaders(),
+      ...buildParams(overrides),
+    });
+    console.log("fetchEmployees called with params:", {
+      page,
+      items_per_page: pageSize,
+      ...buildParams(overrides),
     });
   };
 
@@ -104,12 +126,25 @@ export default function EmployeeMasterData() {
     const values = await searchForm.getFieldsValue();
     const searchValue = values.search || "";
     setSearch(searchValue);
-    fetchEmployees(1, pagination.pageSize, searchValue);
+    fetchEmployees(1, pagination.pageSize, { search: searchValue });
   };
 
   const handleStatusFilterChange = (value) => {
     setStatusFilter(value);
-    fetchEmployees(1, pagination.pageSize, search, value);
+    fetchEmployees(1, pagination.pageSize, { statusFilter: value });
+  };
+
+  // allowClear passes undefined on clear — normalise to null.
+  const handleBranchFilterChange = (value) => {
+    const next = value ?? null;
+    setBranchFilter(next);
+    fetchEmployees(1, pagination.pageSize, { branchFilter: next });
+  };
+
+  const handlePositionFilterChange = (value) => {
+    const next = value ?? null;
+    setPositionFilter(next);
+    fetchEmployees(1, pagination.pageSize, { positionFilter: next });
   };
 
   // Router-state carries the row already loaded in this list — there is no
@@ -124,9 +159,7 @@ export default function EmployeeMasterData() {
       await deleteEmployee(id, {
         page: pagination.current,
         items_per_page: pagination.pageSize,
-        search,
-        search_status: statusFilter === "All" ? undefined : statusFilter,
-        table_headers: currentTableHeaders(),
+        ...buildParams(),
       });
       messageApi.success('Employee deleted.');
     } catch (error) {
@@ -140,9 +173,7 @@ export default function EmployeeMasterData() {
       await deleteEmployee(selectedRowKeys, {
         page: pagination.current,
         items_per_page: pagination.pageSize,
-        search,
-        search_status: statusFilter === "All" ? undefined : statusFilter,
-        table_headers: currentTableHeaders(),
+        ...buildParams(),
       });
       messageApi.success(`${selectedRowKeys.length} employee(s) deleted.`);
       setSelectedRowKeys([]);
@@ -222,41 +253,71 @@ export default function EmployeeMasterData() {
             : {}
         }}
       >
-        <Row justify="space-between" align="middle" gutter={[8, 8]} wrap style={{ marginBottom: 16 }}>
-          <Col flex="none" style={{ minWidth: 260 }}>
-            <Form form={searchForm}>
-              <Space.Compact style={{ width: "100%" }}>
-                <Form.Item name="search" style={{ marginBottom: 0, flex: 1 }}>
-                  <Input
-                    placeholder="Search..."
-                    prefix={<SearchOutlined />}
-                    onPressEnter={searchData}
-                  />
-                </Form.Item>
-                <Button icon={<SearchOutlined />} onClick={searchData}>
-                  Search
-                </Button>
-              </Space.Compact>
-            </Form>
-          </Col>
+        {/* One wrapping, left-aligned filter row (same layout as the
+            recruitment applicant list): search, status, branch, position,
+            then the column picker. */}
+        <Space wrap align="end" style={{ marginBottom: 16 }}>
+          <Form form={searchForm}>
+            <Space.Compact>
+              <Form.Item name="search" style={{ marginBottom: 0 }}>
+                <Input
+                  allowClear
+                  placeholder="Search..."
+                  prefix={<SearchOutlined />}
+                  style={{ width: 280 }}
+                  onPressEnter={searchData}
+                  onChange={(e) => {
+                    // Clearing the box (x button or backspace) resets the list.
+                    if (!e.target.value && search) {
+                      setSearch("");
+                      fetchEmployees(1, pagination.pageSize, { search: "" });
+                    }
+                  }}
+                />
+              </Form.Item>
+              <Button icon={<SearchOutlined />} onClick={searchData}>
+                Search
+              </Button>
+            </Space.Compact>
+          </Form>
 
-          <Col flex="none">
-            <Select
-              value={statusFilter}
-              onChange={handleStatusFilterChange}
-              style={{ width: 140 }}
-              options={[
-                { label: "All Statuses", value: "All" },
-                { label: "Active", value: "Active" },
-                { label: "Inactive", value: "Inactive" },
-              ]}
-            />
-          </Col>
+          <Select
+            value={statusFilter}
+            onChange={handleStatusFilterChange}
+            style={{ width: 140 }}
+            options={[
+              { label: "All Statuses", value: "All" },
+              { label: "Active", value: "Active" },
+              { label: "Inactive", value: "Inactive" },
+            ]}
+          />
 
-          <Col flex="none">
-            <ColumnSelector headers={headers} selectedHeaders={selectedHeaders} onChange={setSelectedHeaders} />
-          </Col>
-        </Row>
+          <Select
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            placeholder="Branch"
+            style={{ width: 200 }}
+            value={branchFilter}
+            onChange={handleBranchFilterChange}
+            loading={branchesLoading}
+            options={branchOptions.map(({ label }) => ({ label, value: label }))}
+          />
+          
+          <Select
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            placeholder="Position"
+            style={{ width: 220 }}
+            value={positionFilter}
+            onChange={handlePositionFilterChange}
+            loading={positionsLoading}
+            options={positionOptions.map(({ label }) => ({ label, value: label }))}
+          />
+
+          <ColumnSelector headers={headers} selectedHeaders={selectedHeaders} onChange={setSelectedHeaders} />
+        </Space>
 
         {selectedRowKeys.length > 0 && (
           <Alert
