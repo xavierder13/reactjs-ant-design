@@ -31,6 +31,7 @@ import {
   BarChartOutlined,
   FileTextOutlined,
   ApartmentOutlined,
+  ClusterOutlined,
   FundOutlined,
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
@@ -67,6 +68,12 @@ const titleMap = {
   '/manpower-requests':        { title: 'Manpower Requests',       breadcrumb: ['Manpower Request', 'All Requests'] },
   '/manpower-requests/create': { title: 'Create Manpower Request', breadcrumb: ['Manpower Request', 'Create'] },
   '/areas':                    { title: 'Area Assignment',         breadcrumb: ['Human Resource', 'Area Assignment'] },
+  '/companies':                { title: 'Companies',               breadcrumb: ['Organization', 'Companies'] },
+  '/branches':                 { title: 'Branches',                breadcrumb: ['Organization', 'Branches'] },
+  '/departments':              { title: 'Departments',             breadcrumb: ['Organization', 'Departments'] },
+  '/positions':                { title: 'Positions',               breadcrumb: ['Organization', 'Job Structure', 'Positions'] },
+  '/ranks':                    { title: 'Ranks',                   breadcrumb: ['Organization', 'Job Structure', 'Ranks'] },
+  '/promodizer-brands':        { title: 'Promodizer Brands',       breadcrumb: ['Organization', 'Employee Lookups', 'Promodizer Brands'] },
 
 };
 
@@ -194,6 +201,42 @@ const menuData = [
     type: 'group',
     label: 'Set Up & Authorizations',
     children: [
+      // Org reference data, parents before children (Company → Branch →
+      // Department), then the job structure, then employee lookups.
+      {
+        key: 'organization',
+        title: 'Organization',
+        icon: <ClusterOutlined />,
+        children: [
+          {
+            key: 'org-structure',
+            type: 'group',
+            label: 'Structure',
+            children: [
+              { key: 'companies',   title: 'Companies',   link: '/companies',   permissions: ['company-list'] },
+              { key: 'branches',    title: 'Branches',    link: '/branches',    permissions: ['branch-list'] },
+              { key: 'departments', title: 'Departments', link: '/departments', permissions: ['department-list'] },
+            ],
+          },
+          {
+            key: 'org-jobs',
+            type: 'group',
+            label: 'Job Structure',
+            children: [
+              { key: 'positions', title: 'Positions', link: '/positions', permissions: ['position-list'] },
+              { key: 'ranks',     title: 'Ranks',     link: '/ranks',     permissions: ['rank-list'] },
+            ],
+          },
+          {
+            key: 'org-lookups',
+            type: 'group',
+            label: 'Employee Lookups',
+            children: [
+              { key: 'promodizer-brands', title: 'Promodizer Brands', link: '/promodizer-brands', permissions: ['promodizer-brand-list'] },
+            ],
+          },
+        ],
+      },
       {
         key: 'user-management',
         title: 'User Management',

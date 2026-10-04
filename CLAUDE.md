@@ -256,8 +256,10 @@ Dated change history for each lives in `docs/<module>-history.md`.
   the careers portal through vueportal's gateway (one route + permission
   per stage); gateway dates are `MM/DD/YYYY` strings; several gateway
   routes the Vue page calls don't exist.
-- **Record management pages / Area Assignment** (`src/pages/area/`, route
-  `/areas`) — `.claude/skills/record-management/SKILL.md`. Recipe for any
+- **Record management pages / Area Assignment / Organization** (`src/pages/area/`,
+  `src/pages/record_management/`, routes `/areas`, `/companies`, `/branches`,
+  `/departments`, `/positions`, `/ranks`, `/promodizer-brands`) —
+  `.claude/skills/record-management/SKILL.md`. Recipe for any
   new admin CRUD master-data page (Area is the reference implementation).
   Key traps: populate modal forms in `afterOpenChange`; reuse
   `EmployeeSelect` for employee pickers; `Transfer` for picking many items.

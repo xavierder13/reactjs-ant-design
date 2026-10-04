@@ -1,6 +1,6 @@
 ---
 name: record-management
-description: Recipe for adding a new admin "record management" (CRUD master-data) page to this React HRIS app — API wrapper, Zustand store + hook, list page with modal create/edit, route + menu registration, permission gating — using Area Assignment as the reference implementation. Also the reference for the Area Assignment page itself. Use when asked to build a new record-management/master-data/assignment page, or when changing Area Assignment.
+description: Recipe for adding a new admin "record management" (CRUD master-data) page to this React HRIS app — API wrapper, Zustand store + hook, list page with modal create/edit, route + menu registration, permission gating — using Area Assignment as the reference implementation. Also the reference for Area Assignment and the Organization pages (Companies, Branches, Departments, Positions, Ranks, Promodizer Brands). Use when asked to build a new record-management/master-data/assignment page, or when changing any of those pages.
 ---
 
 # Record management pages (frontend)
@@ -74,6 +74,59 @@ files — `MainLayout.jsx` and `EmployeeSelect.jsx` carry pre-existing
 errors) and `npm run build`. Grep `@deprecated` for every AntD component
 you used. Lint/build is not proof the page works — hand off to
 `/test-feature` / `/test-workflow`.
+
+## Organization pages (Companies, Branches, Departments, Positions, Ranks, Promodizer Brands)
+
+Replace vueportal's `company/`, `branch/`, `department/`, `position/`,
+`rank/`, `promodizer_brand/` `*Index.vue` screens.
+
+- Files: `src/pages/record_management/<entity>/<Entity>Index.jsx` +
+  `<Entity>FormModal.jsx`; shared `RecordToolbar.jsx` (search/Refresh/
+  Create), `RecordRowActions.jsx` (Edit/Delete), `ActiveTag.jsx`,
+  `saveRecord.js`; APIs in `src/services/record_management/` (contract in
+  each file's header comment); stores `rankStore`, `companyStore`,
+  `promodizerBrandStore`, `branchRecordStore`, `departmentRecordStore`,
+  `positionRecordStore` + hooks `useRanks`, `useCompanies`,
+  `usePromodizerBrands`, `useBranchRecords`, `useDepartmentRecords`,
+  `usePositionRecords` (Area shape; also hold the form options the same
+  `index` response returns — companies, divisions, ranks/branches/departments).
+- The `*RecordStore`s are separate from the cached dropdown lookups
+  (`branchStore`/`departmentStore`/`positionStore`, `isLoaded`-guarded);
+  every save/delete sets the matching lookup's `isLoaded: false` (Company
+  → branch lookup too) so the next page refetches.
+- Routes `/companies`, `/branches`, `/departments`, `/positions`, `/ranks`,
+  `/promodizer-brands`, each gated `<entity>-list`; actions gated
+  `<entity>-create/-edit/-delete` + Administrator bypass (Promodizer Brand
+  permissions are Administrator-only in the seeded roles).
+- Menu: Set Up & Authorizations → **Organization** (first), with item
+  groups *Structure* (Companies, Branches, Departments — parent before
+  child), *Job Structure* (Positions, Ranks), *Employee Lookups*
+  (Promodizer Brands). Breadcrumbs follow the same path.
+- Backend: GET `index`, POST `store`, `update/{id}`, `delete` (id in the
+  body as `<entity>_id`). Edit pre-fills from the list row — the backend's
+  POST `/edit` is unreachable (middleware checks `edit/*`). Validation
+  failures are **HTTP 200** error bags → `saveRecord.js` maps them onto
+  fields (`fieldFor` for Position's `branchRequirement.<i>.quantity`) and
+  toasts the first; an entry with no message (duplicate department name
+  returns `{ department: [] }`) gets a generic one.
+- Backend quirks the pages work around: Promodizer Brand update saves
+  `promodizer_brand`, not the validated `brand` → `update()` sends both
+  (vueportal's own Vue edit blanks the brand). Department's division rule
+  is keyed `division` and malformed (`required.integer`) → never send a
+  `division` key; division is required client-side only. Company and
+  Department `active` is a NOT NULL `'Y'`/`'N'` → always sent (Switch).
+- Position modal: tabs Details (name, rank, cost center from the fixed
+  `HQ-Management`/`BR-Officer`/`BR-Rank & File` list, department — all
+  required), Required Employees per Branch (every branch, quantity ≥ 0,
+  default 0, searchable — values read with `getFieldsValue(true)` because
+  filtered-out rows are unmounted) and Subordinates (`Transfer`, self
+  excluded; update replaces the set). Tabs are `forceRender`; a failed
+  validation jumps to the tab with the first error. List shows total
+  required headcount and subordinate count; expand → subordinate and
+  per-branch tags.
+- Delete has no in-use guard on the backend (no FKs, except a position
+  referenced by KPI templates/evaluations → 500); the Popconfirm says what
+  will show blank (Company shows its branch count).
 
 ## User Accounts (`/users`)
 

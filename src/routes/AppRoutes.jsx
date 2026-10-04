@@ -52,6 +52,12 @@ import EditManpowerRequest from '../pages/manpower_request/request/EditManpowerR
 import ViewManpowerRequest from '../pages/manpower_request/request/ViewManpowerRequest';
 import ManpowerRequestPrint from '../pages/manpower_request/request/ManpowerRequestPrint';
 import AreaIndex from '../pages/area/AreaIndex';
+import CompanyIndex from '../pages/record_management/company/CompanyIndex';
+import BranchIndex from '../pages/record_management/branch/BranchIndex';
+import DepartmentIndex from '../pages/record_management/department/DepartmentIndex';
+import PositionIndex from '../pages/record_management/position/PositionIndex';
+import RankIndex from '../pages/record_management/rank/RankIndex';
+import PromodizerBrandIndex from '../pages/record_management/promodizer_brand/PromodizerBrandIndex';
 
 // Errors
 import UnauthorizePage from '../pages/errors/UnauthorizePage';
@@ -94,6 +100,14 @@ const permissionRoutes = [
   { permissions: ['manpower-request-create', 'manpower-request-edit'], path: '/manpower-requests/:id/edit', element: <EditManpowerRequest /> },
   { permissions: ['manpower-request-print'], path: '/manpower-requests/:id/print', element: <ManpowerRequestPrint /> },
   { permissions: ['area-list'],               path: '/areas',                      element: <AreaIndex /> },
+
+  // Record Management (org reference data)
+  { permissions: ['company-list'],          path: '/companies',         element: <CompanyIndex /> },
+  { permissions: ['branch-list'],           path: '/branches',          element: <BranchIndex /> },
+  { permissions: ['department-list'],       path: '/departments',       element: <DepartmentIndex /> },
+  { permissions: ['position-list'],         path: '/positions',         element: <PositionIndex /> },
+  { permissions: ['rank-list'],             path: '/ranks',             element: <RankIndex /> },
+  { permissions: ['promodizer-brand-list'], path: '/promodizer-brands', element: <PromodizerBrandIndex /> },
 
   // KPI Template Routes
   { permissions: ['kpi-template-list'],         path: '/kpi-templates',        element: <KpiTemplateIndex /> },
