@@ -3,6 +3,7 @@ import { Table, App } from 'antd';
 import useAuth from '../../../hooks/useAuth';
 import useBranchRecords from '../../../hooks/useBranchRecords';
 import useBranchStore from '../../../store/branchStore';
+import useEmployeeFormOptionsStore from '../../../store/employeeFormOptionsStore';
 import branchApi from '../../../services/record_management/branchApi';
 import handleApiError from '../../../utils/handleApiError';
 import RecordToolbar from '../RecordToolbar';
@@ -36,7 +37,7 @@ const BranchIndex = () => {
 
   // Other pages' branch dropdowns/filters use the cached lookup store —
   // refetch it on the next page that needs it.
-  const reload = () => { refetch(); useBranchStore.setState({ isLoaded: false }); };
+  const reload = () => { refetch(); useBranchStore.setState({ isLoaded: false }); useEmployeeFormOptionsStore.setState({ isLoaded: false }); };
 
   const openCreate = () => { setEditing(null); setModalOpen(true); };
   const openEdit   = (record) => { setEditing(record); setModalOpen(true); };

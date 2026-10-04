@@ -3,6 +3,7 @@ import { Table, App } from 'antd';
 import useAuth from '../../../hooks/useAuth';
 import useDepartmentRecords from '../../../hooks/useDepartmentRecords';
 import useDepartmentStore from '../../../store/departmentStore';
+import useEmployeeFormOptionsStore from '../../../store/employeeFormOptionsStore';
 import departmentApi from '../../../services/record_management/departmentApi';
 import handleApiError from '../../../utils/handleApiError';
 import RecordToolbar from '../RecordToolbar';
@@ -35,7 +36,7 @@ const DepartmentIndex = () => {
 
   // Other pages' department dropdowns use the cached lookup store —
   // refetch it on the next page that needs it.
-  const reload = () => { refetch(); useDepartmentStore.setState({ isLoaded: false }); };
+  const reload = () => { refetch(); useDepartmentStore.setState({ isLoaded: false }); useEmployeeFormOptionsStore.setState({ isLoaded: false }); };
 
   const openCreate = () => { setEditing(null); setModalOpen(true); };
   const openEdit   = (record) => { setEditing(record); setModalOpen(true); };

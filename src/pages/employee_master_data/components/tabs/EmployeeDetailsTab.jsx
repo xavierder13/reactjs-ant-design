@@ -3,9 +3,7 @@
 import { Form, Input, Row, Col, DatePicker, Select, Descriptions, Button, Space, App } from "antd";
 import { CopyOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
-import useBranches from "../../../../hooks/useBranches";
-import useDepartments from "../../../../hooks/useDepartments";
-import usePositions from "../../../../hooks/usePositions";
+import useEmployeeFormOptions from "../../../../hooks/useEmployeeFormOptions";
 
 import { DISPLAY_DATE_FORMAT } from "../../../../utils/formatDate";
 // Matches vueportal's recruitment portal referral link format exactly
@@ -33,14 +31,15 @@ const EMPLOYMENT_TYPE_OPTIONS = [
 // response before assuming they're always populated.
 //
 // Promodizer Brand (Vue: conditional on Position = "Sales Specialist") is
-// intentionally omitted — this repo has no confirmed lookup store/hook for
-// promodizer brands yet. Add one (following useBranches/useDepartments'
-// pattern) before reintroducing this field; don't invent the endpoint.
+// intentionally omitted — /employee_master_data/create doesn't return
+// promodizer brands yet. Add them there (and to useEmployeeFormOptions)
+// before reintroducing this field; don't invent the endpoint.
 export default function EmployeeDetailsTab({ initialData, mode }) {
   const { message: messageApi } = App.useApp();
-  const { branchOptions } = useBranches();
-  const { departmentOptions } = useDepartments();
-  const { positionOptions } = usePositions();
+  // From the module's own /employee_master_data/create — not the
+  // Organization endpoints, which need branch-list/department-list/
+  // position-list that HR roles don't have.
+  const { branchOptions, departmentOptions, positionOptions } = useEmployeeFormOptions();
   // Cross-field validation below (Date Resigned >= Date Employed) needs
   // the shared ancestor Form instance directly — this component only ever
   // renders bare Form.Item fields (see the header comment), it doesn't own

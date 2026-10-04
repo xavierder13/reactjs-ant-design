@@ -75,9 +75,20 @@ src/services/employee/
 src/utils/downloadBlobResponse.js  blob download that detects a JSON error body (see "Export / Template")
 ```
 
-Reference/lookup data for Employee Details comes from the generic hooks —
-`useBranches`, `useDepartments`, `usePositions` — not a module-specific
-fetch like Manpower Request's `fetchFormData()`.
+Branch / department / position options for the module (Employee Details,
+Branch Assignment & Positions, Export and Submit Acknowledgment Report
+modals, the segment lists' `BranchFilter`) come from the module's own
+`POST /employee_master_data/create` → `{ branches, departments, positions }`
+(`[{ id, name }]`, by name) via `employeeApi.getCreate` →
+`employeeFormOptionsStore` (fetched once, `isLoaded` guard) →
+`useEmployeeFormOptions()` (`{ label, value: id }` options). It's gated by
+`employee-master-data-list`/`-create`/`-edit`. **Don't use** the generic
+`useBranches`/`useDepartments`/`usePositions` here: they call
+`/branch/index`, `/department/index`, `/position/get-all`, which need
+`branch-list`/`department-list`/`position-list` — only Administrator / HR
+Admin have them, so HR roles (Employee Master Data Administrator,
+Recruitment & Hiring) and managers got 401 and empty dropdowns. The list's
+own filters use `filterOptions` from the index response instead.
 
 ## Routes
 
@@ -340,7 +351,7 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   `department_id` to match the latest `date_assigned` row, so it can
   change what Employee Details shows (surfaced as a warning `Alert`).
   `branch`/`position` here are **name strings**, not ids — Selects reuse
-  `useBranches`/`usePositions` keyed on `.label`.
+  `useEmployeeFormOptions` keyed on `.label`.
 - **Evaluation & Regularization** is not a CRUD module: the core record's
   `regularization_date` (bare `Form.Item`, saved by the main Save) plus two
   files distinguished by `title` ("Performance for Regularization", "Memo
@@ -524,8 +535,9 @@ account form with an info Alert). Parts:
    future quick-edit; not on any code path.
 4. **Promodizer Brand**: the list column exists; the Employee Details
    **form field** (Vue: conditional on Position = "Sales Specialist") is
-   not built because there's no promodizer-brand lookup store/hook yet —
-   add one (like `useBranches`) first.
+   not built because `/employee_master_data/create` doesn't return
+   promodizer brands yet — add them there (and to `useEmployeeFormOptions`)
+   first.
 5. **Rank / Division / Company / Cost Center / Date Assigned / Length of
    Service** on Employee Details are read-only, best-effort (optional
    chaining, blank when absent), never sent in the payload.

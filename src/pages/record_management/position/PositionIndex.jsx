@@ -4,6 +4,7 @@ import { UpOutlined, DownOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import usePositionRecords from '../../../hooks/usePositionRecords';
 import usePositionStore from '../../../store/positionStore';
+import useEmployeeFormOptionsStore from '../../../store/employeeFormOptionsStore';
 import positionApi from '../../../services/record_management/positionApi';
 import handleApiError from '../../../utils/handleApiError';
 import RecordToolbar from '../RecordToolbar';
@@ -57,7 +58,7 @@ const PositionIndex = () => {
 
   // Other pages' position dropdowns use the cached lookup store — refetch
   // it on the next page that needs it.
-  const reload = () => { refetch(); usePositionStore.setState({ isLoaded: false }); };
+  const reload = () => { refetch(); usePositionStore.setState({ isLoaded: false }); useEmployeeFormOptionsStore.setState({ isLoaded: false }); };
 
   const openCreate = () => { setEditing(null); setModalOpen(true); };
   const openEdit   = (record) => { setEditing(record); setModalOpen(true); };

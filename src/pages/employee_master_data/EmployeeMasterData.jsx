@@ -28,8 +28,7 @@ import {
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 
-import useBranches from "../../hooks/useBranches";
-import useDepartments from "../../hooks/useDepartments";
+import useEmployeeFormOptions from "../../hooks/useEmployeeFormOptions";
 import useEmployees from "../../hooks/useEmployees";
 import useAuth from "../../hooks/useAuth";
 import useListAccess from "./lists/useListAccess";
@@ -69,13 +68,12 @@ export default function EmployeeMasterData() {
   // getEmployees()); hidden for branch/subordinate-scoped users.
   const { seesAllBranches } = useListAccess();
 
-  // Not consumed by the list — kept so branch/department reference data is
-  // warm for the Employee Details tab, which does use these hooks. The
-  // filter dropdowns use `filterOptions` from the list response instead:
-  // /branch/index etc. need branch-list/position-list/rank-list, which most
-  // list users (Branch/Department Managers, HR roles) don't have.
-  useBranches();
-  useDepartments();
+  // Not consumed by the list — warms the employee form's options for the
+  // View/Edit tabs. The filter dropdowns use `filterOptions` from the list
+  // response instead: /branch/index etc. need branch-list/position-list/
+  // rank-list, which most list users (Branch/Department Managers, HR roles)
+  // don't have.
+  useEmployeeFormOptions();
 
   const { items: employees, pagination, filterOptions, isLoading, fetchItems, deleteEmployee } = useEmployees();
 

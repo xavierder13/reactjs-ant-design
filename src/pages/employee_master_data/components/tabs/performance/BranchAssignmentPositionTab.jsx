@@ -2,8 +2,7 @@ import { Form, Select, DatePicker, Input, Alert } from "antd";
 import dayjs from "dayjs";
 import PerformanceRecordTab from "./PerformanceRecordTab";
 import branchAssignmentPositionApi from "../../../../../services/employee/branchAssignmentPositionApi";
-import useBranches from "../../../../../hooks/useBranches";
-import usePositions from "../../../../../hooks/usePositions";
+import useEmployeeFormOptions from "../../../../../hooks/useEmployeeFormOptions";
 import { formatDate, DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
 
 const columns = [
@@ -14,8 +13,8 @@ const columns = [
 ];
 
 export default function BranchAssignmentPositionTab({ employeeId, mode, initialRecords, pendingRecords, onPendingRecordsChange }) {
-  const { branchOptions } = useBranches();
-  const { positionOptions } = usePositions();
+  // Same options as the Employee Details tab (/employee_master_data/create).
+  const { branchOptions, positionOptions } = useEmployeeFormOptions();
   // The backend matches branch/position by NAME, not id (confirmed from
   // EmployeeBranchAssignmentPositionController — it looks rows up via
   // Branch::where('name', ...)/Position::where('name', ...)) — reuse the

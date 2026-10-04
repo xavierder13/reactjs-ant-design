@@ -93,7 +93,8 @@ Replace vueportal's `company/`, `branch/`, `department/`, `position/`,
 - The `*RecordStore`s are separate from the cached dropdown lookups
   (`branchStore`/`departmentStore`/`positionStore`, `isLoaded`-guarded);
   every save/delete sets the matching lookup's `isLoaded: false` (Company
-  → branch lookup too) so the next page refetches.
+  → branch lookup too; Branch/Department/Position also mark
+  `employeeFormOptionsStore` stale) so the next page refetches.
 - Routes `/companies`, `/branches`, `/departments`, `/positions`, `/ranks`,
   `/promodizer-brands`, each gated `<entity>-list`; actions gated
   `<entity>-create/-edit/-delete` + Administrator bypass (Promodizer Brand

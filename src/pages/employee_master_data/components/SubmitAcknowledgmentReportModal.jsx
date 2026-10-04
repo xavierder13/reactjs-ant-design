@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Modal, Button, Select, Table, Switch, Alert, App } from "antd";
-import useBranches from "../../../hooks/useBranches";
+import useEmployeeFormOptions from "../../../hooks/useEmployeeFormOptions";
 import useAcknowledgmentReportStore from "../../../store/acknowledgmentReportStore";
 import handleApiError from "../../../utils/handleApiError";
 
@@ -14,7 +14,9 @@ import handleApiError from "../../../utils/handleApiError";
 // and `branch` can seed sensible defaults.
 export default function SubmitAcknowledgmentReportModal({ open, employees, onClose, onSubmitted }) {
   const { message: messageApi } = App.useApp();
-  const { branchOptions } = useBranches();
+  // Module-gated options (/employee_master_data/create) — /branch/index
+  // needs branch-list, which HR roles don't have.
+  const { branchOptions } = useEmployeeFormOptions();
   const submitReport = useAcknowledgmentReportStore((s) => s.submitReport);
 
   const [branchId, setBranchId] = useState(undefined);

@@ -13,6 +13,11 @@ import axios from '../../api/axiosInstance';
 // or `{ error }` — callers must check `data.error`.
 const employeeApi = {
   getAll:   (payload = {}) => axios.post('/employee_master_data/index', payload),
+  // Form option lists → { branches, departments, positions } ([{ id, name }],
+  // by name). Gated by employee-master-data-list/-create/-edit — unlike
+  // /branch/index, /department/index and /position/get-all, which need
+  // branch-list/department-list/position-list that HR roles don't have.
+  getCreate: ()            => axios.post('/employee_master_data/create'),
   // `payload` is a FormData instance whenever EmployeeForm.jsx's create
   // flow has pending files/sub-records staged (Files & Requirements,
   // Evaluation & Regularization, NTE, Disciplinary, or any Performance

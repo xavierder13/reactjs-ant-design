@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Modal, Form, Select, DatePicker, Button, App } from "antd";
 
 import employeeApi from "../../../services/employee/employeeApi";
-import useBranches from "../../../hooks/useBranches";
+import useEmployeeFormOptions from "../../../hooks/useEmployeeFormOptions";
 import useAuth from "../../../hooks/useAuth";
 import handleApiError from "../../../utils/handleApiError";
 import downloadBlobResponse from "../../../utils/downloadBlobResponse";
@@ -41,7 +41,9 @@ const DATE_FIELD_OPTIONS = [
 export default function ExportEmployeesModal({ open, onClose, presetValues, extraPayload, title = "Employee List" }) {
   const { message: messageApi } = App.useApp();
   const { hasAnyRole } = useAuth();
-  const { branchOptions } = useBranches();
+  // Module-gated options (/employee_master_data/create) — /branch/index
+  // needs branch-list, which HR roles don't have.
+  const { branchOptions } = useEmployeeFormOptions();
   const [form] = Form.useForm();
   const [exporting, setExporting] = useState(false);
 
