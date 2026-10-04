@@ -8,6 +8,10 @@ import employeeApi from '../services/employee/employeeApi';
 const useEmployeeStore = create((set, get) => ({
   items: [],
   pagination: { current: 1, pageSize: 10, total: 0 },
+  // List filter options, from the same /employee_master_data/index
+  // response — gated by employee-master-data-list, unlike /branch/index,
+  // /position/get-all and /rank/index, which most list users can't call.
+  filterOptions: { branches: [], positions: [], ranks: [] },
   isLoading: false,
   error: null,
 
@@ -21,6 +25,11 @@ const useEmployeeStore = create((set, get) => ({
           current: data.employees.current_page,
           pageSize: data.employees.per_page,
           total: data.employees.total,
+        },
+        filterOptions: {
+          branches:  data.branches || [],
+          positions: data.positions || [],
+          ranks:     data.ranks || [],
         },
       });
     } catch (error) {

@@ -13,14 +13,12 @@ export const EMPLOYEE_COLUMNS = [
     title: "Branch",
     dataIndex: "branch",
     value: "branch.name",
-    sorter: true,
     render: (branch) => branch?.name || "-"
   },
   {
     title: "Company",
     dataIndex: "branch",
     value: "branch.company.name",
-    sorter: true,
     render: (branch) => branch?.company?.name || "-"
   },
   { title: "Emp. Code", dataIndex: "employee_code", value: "employee_code" },

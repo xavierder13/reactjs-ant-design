@@ -12,12 +12,13 @@ import useEmployeeStore from '../store/employeeStore';
 const useEmployees = () => {
   const items       = useEmployeeStore((state) => state.items);
   const pagination  = useEmployeeStore((state) => state.pagination);
+  const filterOptions = useEmployeeStore((state) => state.filterOptions);
   const isLoading   = useEmployeeStore((state) => state.isLoading);
   const error       = useEmployeeStore((state) => state.error);
   const fetchItems  = useEmployeeStore((state) => state.fetchItems);
   const deleteEmployee = useEmployeeStore((state) => state.deleteEmployee);
 
-  return { items, pagination, isLoading, error, fetchItems, deleteEmployee };
+  return { items, pagination, filterOptions, isLoading, error, fetchItems, deleteEmployee };
 };
 
 export default useEmployees;

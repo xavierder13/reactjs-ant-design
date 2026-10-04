@@ -12,7 +12,8 @@ export default function EmployeeTable({
   onDelete,
   onView,
   editData,
-  onChangePagination
+  onChangePagination,
+  onSortChange,
 }) {
 
   const { hasPermission } = useAuth();
@@ -59,6 +60,11 @@ export default function EmployeeTable({
       pagination={{
         ...pagination,
         onChange: (page, pageSize) => onChangePagination(page, pageSize),
+      }}
+      // Sorting is server-side (columns use `sorter: true` + a controlled
+      // sortOrder); a sort click fires only this, not pagination.onChange.
+      onChange={(_pagination, _filters, sorter, { action }) => {
+        if (action === 'sort') onSortChange?.(sorter);
       }}
       size="small"
     />

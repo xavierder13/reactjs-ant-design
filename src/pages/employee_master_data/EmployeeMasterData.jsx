@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -30,7 +30,6 @@ import { Link } from "react-router-dom";
 
 import useBranches from "../../hooks/useBranches";
 import useDepartments from "../../hooks/useDepartments";
-import usePositions from "../../hooks/usePositions";
 import useEmployees from "../../hooks/useEmployees";
 import useAuth from "../../hooks/useAuth";
 import handleApiError from "../../utils/handleApiError";
@@ -49,19 +48,29 @@ const { useBreakpoint } = Grid;
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200, 300, 500];
 
+const byName = (a, b) => a.name.localeCompare(b.name);
+
+// Picking a rank narrows the Position filter to that rank's positions.
+const positionsForRank = ({ positions, ranks }, rankName) => {
+  if (!rankName) return positions;
+  const rankId = ranks.find((r) => r.name === rankName)?.id;
+  return positions.filter((p) => p.rank_id === rankId);
+};
+
 export default function EmployeeMasterData() {
   const navigate = useNavigate();
   const { message: messageApi } = App.useApp();
   const { hasPermission } = useAuth();
 
-  // Branch and position feed the filter dropdowns below. Departments is not
-  // consumed by the list yet — kept so its reference data is warm for the
-  // Employee Details tab, which does use it.
-  const { branchOptions, isLoading: branchesLoading } = useBranches();
-  const { positionOptions, isLoading: positionsLoading } = usePositions();
+  // Not consumed by the list — kept so branch/department reference data is
+  // warm for the Employee Details tab, which does use these hooks. The
+  // filter dropdowns use `filterOptions` from the list response instead:
+  // /branch/index etc. need branch-list/position-list/rank-list, which most
+  // list users (Branch/Department Managers, HR roles) don't have.
+  useBranches();
   useDepartments();
 
-  const { items: employees, pagination, isLoading, fetchItems, deleteEmployee } = useEmployees();
+  const { items: employees, pagination, filterOptions, isLoading, fetchItems, deleteEmployee } = useEmployees();
 
   const [searchForm] = Form.useForm();
 
@@ -80,6 +89,10 @@ export default function EmployeeMasterData() {
   // null = no filter. Sent as undefined so the param is omitted entirely.
   const [branchFilter, setBranchFilter] = useState(null);
   const [positionFilter, setPositionFilter] = useState(null);
+  const [rankFilter, setRankFilter] = useState(null);
+  // Server-side column sort: { field: column value, order: 'ascend' | 'descend' }
+  // or null (backend default order).
+  const [sort, setSort] = useState(null);
   const [selectedHeaders, setSelectedHeaders] = useState(defaultHeaders);
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -93,12 +106,17 @@ export default function EmployeeMasterData() {
   // `overrides` when a handler has a new filter value that state hasn't
   // caught up with yet (setState is async).
   const buildParams = (overrides = {}) => {
-    const f = { search, statusFilter, branchFilter, positionFilter, ...overrides };
+    const f = { search, statusFilter, branchFilter, positionFilter, rankFilter, sort, ...overrides };
+    // A sort on a column the user has since hidden is dropped.
+    const activeSort = f.sort && selectedHeaders.some((h) => h.value === f.sort.field) ? f.sort : null;
     return {
       search: f.search,
       search_status: f.statusFilter === "All" ? undefined : f.statusFilter,
       search_branch: f.branchFilter ?? undefined,
       search_position: f.positionFilter ?? undefined,
+      search_rank: f.rankFilter ?? undefined,
+      sort_field: activeSort?.field,
+      sort_order: activeSort?.order,
       table_headers: currentTableHeaders(),
     };
   };
@@ -143,16 +161,48 @@ export default function EmployeeMasterData() {
     fetchEmployees(1, pagination.pageSize, { positionFilter: next });
   };
 
-  const hasActiveFilters = Boolean(search) || statusFilter !== "All" || branchFilter !== null || positionFilter !== null;
+  const branchOptions = useMemo(
+    () => [...filterOptions.branches].sort(byName).map((b) => ({ label: b.name, value: b.name })),
+    [filterOptions.branches],
+  );
+  const rankOptions = useMemo(
+    () => filterOptions.ranks.map((r) => ({ label: r.name, value: r.name })),
+    [filterOptions.ranks],
+  );
+  const positionOptions = useMemo(
+    () => [...positionsForRank(filterOptions, rankFilter)].sort(byName).map((p) => ({ label: p.name, value: p.name })),
+    [filterOptions, rankFilter],
+  );
 
-  // One request for all four resets, instead of one per filter.
+  // New sort → back to page 1, same page size. Clearing the sort (third
+  // click) returns to the backend's default order.
+  const handleSortChange = (sorter) => {
+    const next = sorter.order ? { field: sorter.columnKey, order: sorter.order } : null;
+    setSort(next);
+    fetchEmployees(1, pagination.pageSize, { sort: next });
+  };
+
+  // A selected position outside the new rank is cleared in the same request.
+  const handleRankFilterChange = (value) => {
+    const next = value ?? null;
+    const keepPosition = positionFilter && positionsForRank(filterOptions, next).some((p) => p.name === positionFilter);
+    const nextPosition = keepPosition ? positionFilter : null;
+    setRankFilter(next);
+    setPositionFilter(nextPosition);
+    fetchEmployees(1, pagination.pageSize, { rankFilter: next, positionFilter: nextPosition });
+  };
+
+  const hasActiveFilters = Boolean(search) || statusFilter !== "All" || branchFilter !== null || rankFilter !== null || positionFilter !== null;
+
+  // One request for all the resets, instead of one per filter.
   const clearFilters = () => {
     searchForm.resetFields();
     setSearch("");
     setStatusFilter("All");
     setBranchFilter(null);
     setPositionFilter(null);
-    fetchEmployees(1, pagination.pageSize, { search: "", statusFilter: "All", branchFilter: null, positionFilter: null });
+    setRankFilter(null);
+    fetchEmployees(1, pagination.pageSize, { search: "", statusFilter: "All", branchFilter: null, rankFilter: null, positionFilter: null });
   };
 
   // Router-state carries the row already loaded in this list — there is no
@@ -262,7 +312,7 @@ export default function EmployeeMasterData() {
         }}
       >
         {/* One wrapping, left-aligned filter row (same layout as the
-            recruitment applicant list): search, status, branch, position,
+            recruitment applicant list): search, status, branch, rank, position,
             then the column picker. */}
         <Space wrap align="end" style={{ marginBottom: 16 }}>
           <Form form={searchForm}>
@@ -308,13 +358,24 @@ export default function EmployeeMasterData() {
             style={{ width: 200 }}
             value={branchFilter}
             onChange={handleBranchFilterChange}
-            loading={branchesLoading}
-            options={branchOptions.map(({ label }) => ({ label, value: label }))}
+            options={branchOptions}
+          />
+
+          <Select
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            placeholder="Rank"
+            style={{ width: 160 }}
+            value={rankFilter}
+            onChange={handleRankFilterChange}
+            options={rankOptions}
           />
 
           {/* Values are names, not ids: the backend matches search_branch /
-              search_position on b.name / f.name (both unique). Long position
-              titles get a wider popup instead of being cut off. */}
+              search_rank / search_position on b.name / g.name / f.name (all
+              unique). Options follow the Rank filter. Long position titles
+              get a wider popup instead of being cut off. */}
           <Select
             allowClear
             showSearch
@@ -324,8 +385,7 @@ export default function EmployeeMasterData() {
             popupMatchSelectWidth={false}
             value={positionFilter}
             onChange={handlePositionFilterChange}
-            loading={positionsLoading}
-            options={positionOptions.map(({ label }) => ({ label, value: label }))}
+            options={positionOptions}
           />
 
           {hasActiveFilters && (
@@ -371,7 +431,14 @@ export default function EmployeeMasterData() {
         {!isMobile && (
           <EmployeeTable
             employees={employees}
-            columns={selectedHeaders.map((h) => ({ title: h.title, dataIndex: h.dataIndex, render: h.render }))}
+            columns={selectedHeaders.map((h) => ({
+              key: h.value,
+              title: h.title,
+              dataIndex: h.dataIndex,
+              render: h.render,
+              sorter: true,
+              sortOrder: sort?.field === h.value ? sort.order : null,
+            }))}
             loading={isLoading}
             pagination={pagination}
             selectedRowKeys={selectedRowKeys}
@@ -380,6 +447,7 @@ export default function EmployeeMasterData() {
             onView={viewData}
             onDelete={deleteData}
             onChangePagination={(page, pageSize) => fetchEmployees(page, pageSize)}
+            onSortChange={handleSortChange}
           />
         )}
 

@@ -118,8 +118,9 @@ resign:           ({ employee_id, date_resigned }) => POST '/employee_master_dat
 ```
 
 `getAll` (`{ page, items_per_page, search, search_status, search_branch,
-search_position, table_headers }`
-in, `{ employees: { data, current_page, per_page, total } }` out) is
+search_rank, search_position, sort_field, sort_order, table_headers }` in,
+`{ employees: { data, current_page, per_page, total }, branches, positions,
+ranks, departments, promodizer_brands }` out) is
 **confirmed**. file_* are **confirmed** against the controller:
 `file_upload` reads `file` + `document_type` (stored as `title`) and
 answers HTTP 200 with `{ success, file }` or `{ error }` (string or
@@ -208,11 +209,11 @@ columns once a permission hid a button):
   permission-gated). `Row justify="space-between" align="middle" wrap`.
 - **Toolbar row** (one wrapping `Space`): search (`Input` + `Button` in
   `Space.Compact`, clearing the box re-fetches), Status filter `Select`
-  (All/Active/Inactive), Branch and Position `Select`s (searchable,
-  clearable), a "Clear filters" button shown only while any filter is set,
-  `ColumnSelector`.
+  (All/Active/Inactive), Branch, Rank and Position `Select`s (searchable,
+  clearable), a "Clear filters" button shown only while any filter is set
+  (resets every filter, keeps the sort), `ColumnSelector`.
 - **Default columns** (`DEFAULT_EMPLOYEE_COLUMNS`): Branch, Emp. Code, Job
-  Title Code, Lastname, Firstname, Middlename, Birthday, Status — kept in
+  Title Code, Lastname, Firstname, Middlename, Job Description, Status — kept in
   `EMPLOYEE_COLUMNS` order, with Status last there so it stays last after
   `ColumnSelector` changes. The Status column renders a green `success` /
   grey `default` `Tag`, same as the View/Edit card header tag.
@@ -220,12 +221,32 @@ columns once a permission hid a button):
   sent as `undefined` (key omitted) — the backend has no `'All'` case.
   Changing it re-fetches page 1, and it's included in delete refetch
   payloads.
-- **Branch / Position filters** post `search_branch` / `search_position`
-  as the **name** (option value = label) — the backend matches `b.name` /
-  `f.name` (`employee_master_data.branch_id`/`position_id`, not the latest
-  branch assignment); names are unique per Branch/PositionController
-  validation. Cleared = key omitted. All filter params go through
-  `buildParams()`, shared by fetch, refresh and delete refetches.
+- **Branch / Rank / Position filters** post `search_branch` /
+  `search_rank` / `search_position` as the **name** (option value = label)
+  — the backend matches `b.name` / `g.name` / `f.name`
+  (`employee_master_data.branch_id`/`position_id` and that position's rank,
+  not the latest branch assignment); names are unique per Branch/Rank/
+  PositionController validation. Cleared = key omitted. All params go
+  through `buildParams()`, shared by fetch, refresh and delete refetches.
+- **Filter options** come from the list response itself
+  (`employeeStore.filterOptions` = `branches`, `positions`, `ranks`), not
+  `useBranches`/`usePositions`/`/rank/index`: those need `branch-list`/
+  `position-list`/`rank-list`, which almost no `employee-master-data-list`
+  role has (Branch/Department Managers, HR roles → 401, empty dropdowns).
+- **Rank narrows Position**: with a Rank picked, Position lists only
+  positions whose `rank_id` is that rank; picking a rank that excludes the
+  selected position clears it in the same request. Clearing Rank keeps the
+  position and restores every option.
+- **Sorting** is server-side: every column is `sorter: true` with a
+  controlled `sortOrder` (key = column `value`); a header click posts
+  `sort_field` (the column `value`) + `sort_order` (`ascend`/`descend`),
+  back to page 1; the third click clears it (backend default order). The
+  backend maps `sort_field` through its own whitelist (join aliases for
+  relation columns, real `employee_master_data` columns otherwise) and
+  ignores anything else; `id` breaks ties. Empty relation values (`-`) sort
+  first ascending. A sort on a column hidden via `ColumnSelector` is
+  dropped. Paging and filtering keep the sort. A sort click fires only the
+  Table's `onChange` (action `sort`), never `pagination.onChange`.
 - **Bulk action bar**: an `Alert` (`type="info"`) shown only when
   `selectedRowKeys.length > 0` — selection count, Clear selection,
   permission-gated Delete Selected (`Popconfirm` →
