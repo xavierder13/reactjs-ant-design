@@ -24,6 +24,7 @@ import {
   DownloadOutlined,
   ExportOutlined,
   DeleteOutlined,
+  ClearOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 
@@ -108,11 +109,6 @@ export default function EmployeeMasterData() {
       items_per_page: pageSize,
       ...buildParams(overrides),
     });
-    console.log("fetchEmployees called with params:", {
-      page,
-      items_per_page: pageSize,
-      ...buildParams(overrides),
-    });
   };
 
   // Re-fetch page 1 whenever the selected columns change (table_headers is
@@ -145,6 +141,18 @@ export default function EmployeeMasterData() {
     const next = value ?? null;
     setPositionFilter(next);
     fetchEmployees(1, pagination.pageSize, { positionFilter: next });
+  };
+
+  const hasActiveFilters = Boolean(search) || statusFilter !== "All" || branchFilter !== null || positionFilter !== null;
+
+  // One request for all four resets, instead of one per filter.
+  const clearFilters = () => {
+    searchForm.resetFields();
+    setSearch("");
+    setStatusFilter("All");
+    setBranchFilter(null);
+    setPositionFilter(null);
+    fetchEmployees(1, pagination.pageSize, { search: "", statusFilter: "All", branchFilter: null, positionFilter: null });
   };
 
   // Router-state carries the row already loaded in this list — there is no
@@ -303,18 +311,28 @@ export default function EmployeeMasterData() {
             loading={branchesLoading}
             options={branchOptions.map(({ label }) => ({ label, value: label }))}
           />
-          
+
+          {/* Values are names, not ids: the backend matches search_branch /
+              search_position on b.name / f.name (both unique). Long position
+              titles get a wider popup instead of being cut off. */}
           <Select
             allowClear
             showSearch
             optionFilterProp="label"
             placeholder="Position"
             style={{ width: 220 }}
+            popupMatchSelectWidth={false}
             value={positionFilter}
             onChange={handlePositionFilterChange}
             loading={positionsLoading}
             options={positionOptions.map(({ label }) => ({ label, value: label }))}
           />
+
+          {hasActiveFilters && (
+            <Button icon={<ClearOutlined />} onClick={clearFilters}>
+              Clear filters
+            </Button>
+          )}
 
           <ColumnSelector headers={headers} selectedHeaders={selectedHeaders} onChange={setSelectedHeaders} />
         </Space>

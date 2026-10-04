@@ -117,7 +117,8 @@ templateDownload: () => POST '/employee_master_data/template/download' (blob)
 resign:           ({ employee_id, date_resigned }) => POST '/employee_master_data/resign'
 ```
 
-`getAll` (`{ page, items_per_page, search, search_status, table_headers }`
+`getAll` (`{ page, items_per_page, search, search_status, search_branch,
+search_position, table_headers }`
 in, `{ employees: { data, current_page, per_page, total } }` out) is
 **confirmed**. file_* are **confirmed** against the controller:
 `file_upload` reads `file` + `document_type` (stored as `title`) and
@@ -205,8 +206,11 @@ columns once a permission hid a button):
 - **Card `title`**: page title (left) + page-level actions (right, `Space
   wrap`): Refresh, Import, Export, Template, Add Employee (each
   permission-gated). `Row justify="space-between" align="middle" wrap`.
-- **Toolbar row**: search (`Input` + `Button` in `Space.Compact`), Status
-  filter `Select` (All/Active/Inactive), `ColumnSelector`.
+- **Toolbar row** (one wrapping `Space`): search (`Input` + `Button` in
+  `Space.Compact`, clearing the box re-fetches), Status filter `Select`
+  (All/Active/Inactive), Branch and Position `Select`s (searchable,
+  clearable), a "Clear filters" button shown only while any filter is set,
+  `ColumnSelector`.
 - **Default columns** (`DEFAULT_EMPLOYEE_COLUMNS`): Branch, Emp. Code, Job
   Title Code, Lastname, Firstname, Middlename, Birthday, Status — kept in
   `EMPLOYEE_COLUMNS` order, with Status last there so it stays last after
@@ -216,6 +220,12 @@ columns once a permission hid a button):
   sent as `undefined` (key omitted) — the backend has no `'All'` case.
   Changing it re-fetches page 1, and it's included in delete refetch
   payloads.
+- **Branch / Position filters** post `search_branch` / `search_position`
+  as the **name** (option value = label) — the backend matches `b.name` /
+  `f.name` (`employee_master_data.branch_id`/`position_id`, not the latest
+  branch assignment); names are unique per Branch/PositionController
+  validation. Cleared = key omitted. All filter params go through
+  `buildParams()`, shared by fetch, refresh and delete refetches.
 - **Bulk action bar**: an `Alert` (`type="info"`) shown only when
   `selectedRowKeys.length > 0` — selection count, Clear selection,
   permission-gated Delete Selected (`Popconfirm` →
