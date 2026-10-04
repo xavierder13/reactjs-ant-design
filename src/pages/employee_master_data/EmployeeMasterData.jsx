@@ -32,6 +32,7 @@ import useBranches from "../../hooks/useBranches";
 import useDepartments from "../../hooks/useDepartments";
 import useEmployees from "../../hooks/useEmployees";
 import useAuth from "../../hooks/useAuth";
+import useListAccess from "./lists/useListAccess";
 import handleApiError from "../../utils/handleApiError";
 
 import ColumnSelector from "./components/ColumnSelector";
@@ -50,17 +51,23 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200, 300, 500];
 
 const byName = (a, b) => a.name.localeCompare(b.name);
 
-// Picking a rank narrows the Position filter to that rank's positions.
-const positionsForRank = ({ positions, ranks }, rankName) => {
-  if (!rankName) return positions;
+// Position filter options: optionally limited to `allowedIds` (a Branch
+// Manager's subordinate positions), then to the picked rank's positions.
+const positionsForRank = ({ positions, ranks }, rankName, allowedIds = null) => {
+  const allowed = allowedIds ? positions.filter((p) => allowedIds.includes(p.id)) : positions;
+  if (!rankName) return allowed;
   const rankId = ranks.find((r) => r.name === rankName)?.id;
-  return positions.filter((p) => p.rank_id === rankId);
+  return allowed.filter((p) => p.rank_id === rankId);
 };
 
 export default function EmployeeMasterData() {
   const navigate = useNavigate();
   const { message: messageApi } = App.useApp();
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
+  // Branch and Rank filters only for the roles the backend lets see every
+  // branch (the hasAnyRole list in EmployeeMasterDataController::
+  // getEmployees()); hidden for branch/subordinate-scoped users.
+  const { seesAllBranches } = useListAccess();
 
   // Not consumed by the list — kept so branch/department reference data is
   // warm for the Employee Details tab, which does use these hooks. The
@@ -169,9 +176,14 @@ export default function EmployeeMasterData() {
     () => filterOptions.ranks.map((r) => ({ label: r.name, value: r.name })),
     [filterOptions.ranks],
   );
+  // A Branch Manager (outside the all-branch roles) only picks among their
+  // position's subordinates. No subordinates on record → every position.
+  const subordinateIds = !seesAllBranches && hasRole('Branch Manager') && filterOptions.subordinatePositionIds.length
+    ? filterOptions.subordinatePositionIds
+    : null;
   const positionOptions = useMemo(
-    () => [...positionsForRank(filterOptions, rankFilter)].sort(byName).map((p) => ({ label: p.name, value: p.name })),
-    [filterOptions, rankFilter],
+    () => [...positionsForRank(filterOptions, rankFilter, subordinateIds)].sort(byName).map((p) => ({ label: p.name, value: p.name })),
+    [filterOptions, rankFilter, subordinateIds],
   );
 
   // New sort → back to page 1, same page size. Clearing the sort (third
@@ -185,7 +197,7 @@ export default function EmployeeMasterData() {
   // A selected position outside the new rank is cleared in the same request.
   const handleRankFilterChange = (value) => {
     const next = value ?? null;
-    const keepPosition = positionFilter && positionsForRank(filterOptions, next).some((p) => p.name === positionFilter);
+    const keepPosition = positionFilter && positionsForRank(filterOptions, next, subordinateIds).some((p) => p.name === positionFilter);
     const nextPosition = keepPosition ? positionFilter : null;
     setRankFilter(next);
     setPositionFilter(nextPosition);
@@ -350,27 +362,31 @@ export default function EmployeeMasterData() {
             ]}
           />
 
-          <Select
-            allowClear
-            showSearch
-            optionFilterProp="label"
-            placeholder="Branch"
-            style={{ width: 200 }}
-            value={branchFilter}
-            onChange={handleBranchFilterChange}
-            options={branchOptions}
-          />
+          {seesAllBranches && (
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder="Branch"
+              style={{ width: 200 }}
+              value={branchFilter}
+              onChange={handleBranchFilterChange}
+              options={branchOptions}
+            />
+          )}
 
-          <Select
-            allowClear
-            showSearch
-            optionFilterProp="label"
-            placeholder="Rank"
-            style={{ width: 160 }}
-            value={rankFilter}
-            onChange={handleRankFilterChange}
-            options={rankOptions}
-          />
+          {seesAllBranches && (
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder="Rank"
+              style={{ width: 160 }}
+              value={rankFilter}
+              onChange={handleRankFilterChange}
+              options={rankOptions}
+            />
+          )}
 
           {/* Values are names, not ids: the backend matches search_branch /
               search_rank / search_position on b.name / g.name / f.name (all

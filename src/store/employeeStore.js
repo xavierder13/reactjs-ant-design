@@ -11,7 +11,7 @@ const useEmployeeStore = create((set, get) => ({
   // List filter options, from the same /employee_master_data/index
   // response — gated by employee-master-data-list, unlike /branch/index,
   // /position/get-all and /rank/index, which most list users can't call.
-  filterOptions: { branches: [], positions: [], ranks: [] },
+  filterOptions: { branches: [], positions: [], ranks: [], subordinatePositionIds: [] },
   isLoading: false,
   error: null,
 
@@ -30,6 +30,9 @@ const useEmployeeStore = create((set, get) => ({
           branches:  data.branches || [],
           positions: data.positions || [],
           ranks:     data.ranks || [],
+          // The signed-in user's subordinate positions (Branch Manager's
+          // Position filter is limited to these).
+          subordinatePositionIds: data.subordinate_position_ids || [],
         },
       });
     } catch (error) {

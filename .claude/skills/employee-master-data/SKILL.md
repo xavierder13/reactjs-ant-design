@@ -120,7 +120,7 @@ resign:           ({ employee_id, date_resigned }) => POST '/employee_master_dat
 `getAll` (`{ page, items_per_page, search, search_status, search_branch,
 search_rank, search_position, sort_field, sort_order, table_headers }` in,
 `{ employees: { data, current_page, per_page, total }, branches, positions,
-ranks, departments, promodizer_brands }` out) is
+ranks, subordinate_position_ids, departments, promodizer_brands }` out) is
 **confirmed**. file_* are **confirmed** against the controller:
 `file_upload` reads `file` + `document_type` (stored as `title`) and
 answers HTTP 200 with `{ success, file }` or `{ error }` (string or
@@ -210,7 +210,8 @@ columns once a permission hid a button):
 - **Toolbar row** (one wrapping `Space`): search (`Input` + `Button` in
   `Space.Compact`, clearing the box re-fetches), Status filter `Select`
   (All/Active/Inactive), Branch, Rank and Position `Select`s (searchable,
-  clearable), a "Clear filters" button shown only while any filter is set
+  clearable; Branch and Rank only for the all-branch roles — see below),
+  a "Clear filters" button shown only while any filter is set
   (resets every filter, keeps the sort), `ColumnSelector`.
 - **Default columns** (`DEFAULT_EMPLOYEE_COLUMNS`): Branch, Emp. Code, Job
   Title Code, Lastname, Firstname, Middlename, Job Description, Status — kept in
@@ -233,6 +234,20 @@ columns once a permission hid a button):
   `useBranches`/`usePositions`/`/rank/index`: those need `branch-list`/
   `position-list`/`rank-list`, which almost no `employee-master-data-list`
   role has (Branch/Department Managers, HR roles → 401, empty dropdowns).
+- **Who sees which filter**: Branch and Rank are shown only when
+  `useListAccess().seesAllBranches` — the user has one of Administrator,
+  Employee Master Data Administrator, Recruitment & Hiring, Payroll Admin,
+  Employees Relation, Performance Management (exactly the roles
+  `getEmployees()` doesn't scope). Scoped users (Branch Manager,
+  Department/Division Manager, Section Head) get Status + Position only.
+  (`canFilterByBranch`, used by the segment lists, also admits a
+  "Department Manager" position — not used here.)
+- **Branch Manager's Position options** = their position's subordinate
+  positions (`subordinate_position_ids`, from `position_subs` of the
+  signed-in user's position — 12 for the "Branch Manager" position), when
+  the user has the Branch Manager role and none of the all-branch roles;
+  falls back to every position if none are on record. Other scoped roles
+  see every position.
 - **Rank narrows Position**: with a Rank picked, Position lists only
   positions whose `rank_id` is that rank; picking a rank that excludes the
   selected position clears it in the same request. Clearing Rank keeps the
