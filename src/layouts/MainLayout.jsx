@@ -54,6 +54,7 @@ const titleMap = {
   '/employees/create':       { title: 'Create Employee',     breadcrumb: ['Employee', 'Create'] },
   '/acknowledgment-reports': { title: 'Branch Reports', breadcrumb: ['Reports', 'Branch Reports'] },
   '/recruitment/setup/positions':     { title: 'Careers Positions', breadcrumb: ['Recruitment', 'Setup', 'Positions'] },
+  '/recruitment/setup/ranks':         { title: 'Careers Ranks', breadcrumb: ['Recruitment', 'Setup', 'Ranks'] },
   '/recruitment/setup/branches':      { title: 'Careers Branches', breadcrumb: ['Recruitment', 'Setup', 'Branches'] },
   '/recruitment/setup/job-vacancies': { title: 'Job Vacancies', breadcrumb: ['Recruitment', 'Setup', 'Job Vacancies'] },
   '/reports/branch-manpower': { title: 'Branch Manpower Fill Rate', breadcrumb: ['Reports', 'Branch Manpower Fill Rate'] },
@@ -153,6 +154,7 @@ const menuData = [
             icon: <ToolOutlined />,
             children: [
               { key: 'careers-positions',     title: 'Positions',     link: '/recruitment/setup/positions',     permissions: ['careers-position-list'] },
+              { key: 'careers-ranks',         title: 'Ranks',         link: '/recruitment/setup/ranks',         permissions: ['careers-rank-list'] },
               { key: 'careers-branches',      title: 'Branches',      link: '/recruitment/setup/branches',      permissions: ['careers-branch-list'] },
               { key: 'careers-job-vacancies', title: 'Job Vacancies', link: '/recruitment/setup/job-vacancies', permissions: ['careers-job-vacancy-list'] },
             ],

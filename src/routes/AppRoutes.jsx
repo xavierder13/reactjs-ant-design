@@ -39,6 +39,7 @@ import ViewEmployee from '../pages/employee_master_data/ViewEmployee';
 import AcknowledgmentReportIndex from '../pages/employee_master_data/acknowledgment_report/AcknowledgmentReportIndex';
 import BranchManpowerReport from '../pages/employee_master_data/branch_manpower/BranchManpowerReport';
 import CareersPositionIndex from '../pages/recruitment/setup/position/CareersPositionIndex';
+import CareersRankIndex from '../pages/recruitment/setup/rank/CareersRankIndex';
 import CareersBranchIndex from '../pages/recruitment/setup/branch/CareersBranchIndex';
 import JobVacancyIndex from '../pages/recruitment/setup/job_vacancy/JobVacancyIndex';
 import AcknowledgmentReportView from '../pages/employee_master_data/acknowledgment_report/AcknowledgmentReportView';
@@ -98,6 +99,7 @@ const permissionRoutes = [
   })),
   { permissions: ['vacancy-list'], path: '/vacancies', element: <Vacancies /> },
   { permissions: ['careers-position-list'], path: '/recruitment/setup/positions', element: <CareersPositionIndex /> },
+  { permissions: ['careers-rank-list'], path: '/recruitment/setup/ranks', element: <CareersRankIndex /> },
   { permissions: ['careers-branch-list'], path: '/recruitment/setup/branches', element: <CareersBranchIndex /> },
   { permissions: ['careers-job-vacancy-list'], path: '/recruitment/setup/job-vacancies', element: <JobVacancyIndex /> },
 

@@ -251,24 +251,25 @@ standard font can't encode print as "?". Verified by rendering
 
 ## Recruitment Setup — careers portal records
 
-Recruitment → **Setup** menu: Positions, Branches, Job Vacancies
-(`src/pages/recruitment/setup/{position,branch,job_vacancy}/`, routes
-`/recruitment/setup/positions|branches|job-vacancies`). These are the
+Recruitment → **Setup** menu (wrench icon): Positions, Ranks, Branches,
+Job Vacancies (`src/pages/recruitment/setup/{position,rank,branch,job_vacancy}/`,
+routes `/recruitment/setup/positions|ranks|branches|job-vacancies`). These are the
 careers portal's own records — what applicants pick on the careers site —
 not this HRIS's Organization branches/positions (different ids). Ports of
-the portal's `position/PositionIndex.vue`, `branch/BranchIndex.vue`,
-`recruitment/JobVacanciesIndex.vue`.
+the portal's `position/PositionIndex.vue`, `rank/RankIndex.vue`,
+`branch/BranchIndex.vue`, `recruitment/JobVacanciesIndex.vue`.
 
-- Flow: `careersPositionApi` / `careersBranchApi` / `jobVacancyApi` →
-  vueportal POST `/recruitment/setup/{branch|position|job_vacancy}/{index|edit|store|update|delete}/{id?}`
+- Flow: `careersPositionApi` / `careersRankApi` / `careersBranchApi` /
+  `jobVacancyApi` → vueportal POST
+  `/recruitment/setup/{branch|position|rank|job_vacancy}/{index|edit|store|update|delete}/{id?}`
   (`RecruitmentController@setup`) → gateway `recruitment_gateway/setup/…`
   (`RecruitmentGatewayController::SETUP_ACTIONS`) → the portal's own
-  Branch/Position/JobVacancy controller method as the user. Contracts in
+  Branch/Position/Rank/JobVacancy controller method as the user. Contracts in
   each API file's header.
-- Permissions: vueportal `careers-{branch|position|job-vacancy}-{list|create|edit|delete}`
+- Permissions: vueportal `careers-{branch|position|rank|job-vacancy}-{list|create|edit|delete}`
   (PermissionSeeder → Administrator); branch/position `index` also allowed
   with `careers-job-vacancy-create/-edit` (the vacancy form lists them).
-  The gateway checks the portal's `branch-*`, `position-*`,
+  The gateway checks the portal's `branch-*`, `position-*`, `rank-*`,
   `jobvacancies-*` (`update` = `jobvacancies-update`). Portal roles holding
   them: Administrator, Career Admin, Inventory Branch.
 - Stores `careersBranchStore` / `careersPositionStore` (+ departments,
@@ -308,6 +309,10 @@ the portal's `position/PositionIndex.vue`, `branch/BranchIndex.vue`,
   (replace-all; the others are disabled — portal rule). The list comes from
   the portal's join, so vacancies of deleted positions don't show.
 - Branch: code + name, both required and unique.
+- Rank: name, required and unique. The list shows how many careers
+  positions use each rank (from the positions index), and the delete
+  confirmation repeats it — the portal deletes a rank in use, leaving
+  positions with a missing rank (the Position modal then asks for one).
 - Deletes have no in-use guard (portal behaviour); deleting a vacancy
   leaves its `job_vacancy_branches` rows (portal behaviour). The gateway
   answers update/delete of a vacancy deleted meanwhile with 404 (the
