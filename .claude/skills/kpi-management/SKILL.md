@@ -158,6 +158,11 @@ Fixed 2026-09-30: blank grades saved as 0, client weight in the payload,
 summary not matching the stored score, duplicate `approve` in the API file.
 Remaining: the self tab's demerit block checks `position.template` (never
 loaded), so it doesn't show — fine, since employees don't rate demerits.
+The Consolidated Report keys component / demerit columns by position +
+component code, so it assumes one template per position (true today — the
+backend enforces it). If template versions are added, two templates'
+same-code components would merge into one column; the report must then
+group by position + template (planned, not built).
 
 ## Conventions
 
