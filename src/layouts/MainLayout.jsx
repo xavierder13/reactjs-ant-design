@@ -33,6 +33,7 @@ import {
   ApartmentOutlined,
   ClusterOutlined,
   FundOutlined,
+  ToolOutlined,
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
@@ -149,6 +150,7 @@ const menuData = [
           {
             key: 'recruitment-setup',
             title: 'Setup',
+            icon: <ToolOutlined />,
             children: [
               { key: 'careers-positions',     title: 'Positions',     link: '/recruitment/setup/positions',     permissions: ['careers-position-list'] },
               { key: 'careers-branches',      title: 'Branches',      link: '/recruitment/setup/branches',      permissions: ['careers-branch-list'] },
