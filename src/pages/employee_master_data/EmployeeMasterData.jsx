@@ -455,6 +455,7 @@ export default function EmployeeMasterData() {
             }))}
             loading={isLoading}
             pagination={pagination}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
             selectedRowKeys={selectedRowKeys}
             setSelectedRowKeys={setSelectedRowKeys}
             editData={editData}

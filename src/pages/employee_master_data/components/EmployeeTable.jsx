@@ -7,6 +7,7 @@ export default function EmployeeTable({
   columns,
   loading,
   pagination,
+  pageSizeOptions,
   selectedRowKeys,
   setSelectedRowKeys,
   onDelete,
@@ -57,9 +58,15 @@ export default function EmployeeTable({
         selectedRowKeys,
         onChange: (keys) => setSelectedRowKeys(keys)
       }}
+      // Records-per-page picker always shown (AntD hides it under 50
+      // rows by default) — defaults a caller's `pagination` can override,
+      // as EmployeeSegmentList does. A new page size starts from page 1.
       pagination={{
+        showSizeChanger: true,
+        pageSizeOptions,
+        showTotal: (total, [from, to]) => `${from}-${to} of ${total} records`,
         ...pagination,
-        onChange: (page, pageSize) => onChangePagination(page, pageSize),
+        onChange: (page, pageSize) => onChangePagination(pageSize === pagination.pageSize ? page : 1, pageSize),
       }}
       // Sorting is server-side (columns use `sorter: true` + a controlled
       // sortOrder); a sort click fires only this, not pagination.onChange.

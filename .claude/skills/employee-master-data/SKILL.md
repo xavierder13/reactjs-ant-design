@@ -163,7 +163,10 @@ services therefore have no `getAll`.
 - `items`, `pagination` (`{ current, pageSize, total }`), populated by
   `fetchItems(params)`. **Server-side paginated/searched** (the employee
   count is too large for this repo's usual in-memory filtering), called
-  directly with new params on search/page/column/status changes.
+  directly with new params on search/page/column/status changes. Records
+  per page: `PAGE_SIZE_OPTIONS` (10–500, sent as `items_per_page`, which
+  the backend doesn't cap) in both the desktop `EmployeeTable` and mobile
+  `PaginationControls`; changing the size goes back to page 1.
 - `deleteEmployee(ids, refetchParams)` — optimistically removes the row(s),
   then refetches to reconcile pagination/total.
 - No `current`/`fetchById` — there's no endpoint for it (see "Decisions" #1).
