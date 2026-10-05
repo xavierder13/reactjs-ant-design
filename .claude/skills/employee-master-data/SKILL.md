@@ -93,7 +93,10 @@ own filters use `filterOptions` from the index response instead.
 ## Routes
 
 Registered in both `AppRoutes.jsx` (`permissionRoutes`) and
-`MainLayout.jsx` (`menuData` + `titleMap`/`getPageMeta`):
+`MainLayout.jsx` (`menuData` + `titleMap`/`getPageMeta`). Sidebar: the list pages
+sit under Human Resource → Employee; Branch Reports and Branch Manpower Fill
+Rate sit under the generic Human Resource → **Reports** submenu (`hr-reports`,
+meant for every HR report — employee, recruitment, …):
 
 ```
 /employees                 → EmployeeMasterData         (employee-master-data-list)
@@ -102,6 +105,7 @@ Registered in both `AppRoutes.jsx` (`permissionRoutes`) and
 /employees/:id/edit        → EditEmployee               (employee-master-data-create, employee-master-data-edit)
 /acknowledgment-reports    → AcknowledgmentReportIndex  (employee-acknowledgment-reports)
 /acknowledgment-reports/:id → AcknowledgmentReportView  (employee-acknowledgment-reports)
+/reports/branch-manpower   → BranchManpowerReport       (employee-master-data-branch-manpower-export)
 /employees/hired-this-month   → HiredThisMonth       (employee-master-data-for-regularization — the backend gates this list on it too)
 /employees/for-regularization → ForRegularization    (employee-master-data-for-regularization)
 /employees/resigned           → ResignedEmployees    (employee-master-data-resigned-list)
@@ -440,7 +444,9 @@ Each list's total matches its dashboard card.
   'Employee List'` (the backend endpoint is a 4-way report dispatcher);
   Template calls the plain `template/download`. Other report/template
   types belong to their own sub-modules — add each following
-  `ExportEmployeesModal.jsx`, not one giant dialog.
+  `ExportEmployeesModal.jsx`, not one giant dialog. The dispatcher's
+  'Branch Manpower Report' is **not** used here — see Branch Manpower
+  Fill Rate below.
 - `ExportEmployeesModal.jsx` mirrors `ExportDialog.vue`: Branch picker only
   for `hasAnyRole('Administrator', 'Employee Master Data Administrator',
   'Recruitment & Hiring', 'Payroll Admin', 'Employees Relation',
@@ -462,6 +468,41 @@ Read-only on `EmployeeDetailsTab.jsx`, edit/view only, shown when
 `EmployeeInformationTabs.vue`'s `referralLink`) via
 `navigator.clipboard.writeText`. Generated server-side
 (`applyReferralCode()`); never in `buildPayload()`.
+
+## Branch Manpower Fill Rate
+
+`branch_manpower/BranchManpowerReport.jsx` (+ `PositionColumnsPicker.jsx`),
+`services/employee/branchManpowerApi.js`. R-5 report: Req / Exst / Vac per
+position for each branch, grouped by Area Assignment, with fill-in rate
+(Exst ÷ Req) and vacancy rate (Vac ÷ Req) per branch, area subtotal and
+grand total, plus a per-position percentage row.
+
+- Backend: vueportal `BranchManpowerReportController` +
+  `BranchManpowerReportService`, POST `/employee_master_data/branch_manpower/
+  options|report|export`, all gated by
+  `employee-master-data-branch-manpower-export` in
+  `EmployeeMasterDataMaintenance`. **Separate from** the dispatcher's legacy
+  'Branch Manpower Report' (`App\Exports\BranchManpowerReport`), which
+  vueportal's Vue `ExportDialog.vue` still uses unchanged.
+- Numbers reproduce the legacy export (Exst = its *Ending* column) — the
+  service docblock lists the legacy rules/quirks kept on purpose. The only
+  known difference: an employee with two assignments on the same
+  `date_assigned` (the service takes the last-entered row; the legacy
+  query's pick depends on MySQL's plan).
+- Filters: As of date; **Generate by** Per Area / Per Branch / Per HR Head
+  Personnel, each with a multi-select (`ids`, empty = all; reset when the
+  mode changes). Per Area groups by area (+ `UNASSIGNED` when all); Per
+  Branch is one flat group; Per HR Head groups by `area_hr_heads` employee
+  with the branches of every area they head (+ `NO HR HEAD` when all) — a
+  branch under two heads shows in both, the grand total counts it once.
+  Subtotal rows only appear with more than one group.
+- Position columns: one always-editable list, pre-filled with the legacy
+  17 (`default_positions`, includes the 4 Reserved columns that exist only
+  by name) — add any position, remove, drag rows by the handle to reorder
+  (`@hello-pangea/dnd`, as in the KPI template form), Reset restores the
+  17. Not saved; applies to that generation/export only.
+- Export = `.xlsx` with an `R-5` sheet (same order/filters as the screen)
+  and a `Detailed` sheet in the legacy 7-measures-per-position layout.
 
 ## Employee Acknowledgment Report
 

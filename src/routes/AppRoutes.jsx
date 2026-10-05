@@ -37,6 +37,7 @@ import CreateEmployee from '../pages/employee_master_data/CreateEmployee';
 import EditEmployee from '../pages/employee_master_data/EditEmployee';
 import ViewEmployee from '../pages/employee_master_data/ViewEmployee';
 import AcknowledgmentReportIndex from '../pages/employee_master_data/acknowledgment_report/AcknowledgmentReportIndex';
+import BranchManpowerReport from '../pages/employee_master_data/branch_manpower/BranchManpowerReport';
 import AcknowledgmentReportView from '../pages/employee_master_data/acknowledgment_report/AcknowledgmentReportView';
 import HiredThisMonth from '../pages/employee_master_data/lists/HiredThisMonth';
 import ForRegularization from '../pages/employee_master_data/lists/ForRegularization';
@@ -85,6 +86,7 @@ const permissionRoutes = [
   { permissions: ['employee-master-data-create'], path: '/employees/create', element: <CreateEmployee /> },
   { permissions: ['employee-master-data-create', 'employee-master-data-edit'], path: '/employees/:id/edit', element: <EditEmployee /> },
   { permissions: ['employee-acknowledgment-reports'], path: '/acknowledgment-reports', element: <AcknowledgmentReportIndex /> },
+  { permissions: ['employee-master-data-branch-manpower-export'], path: '/reports/branch-manpower', element: <BranchManpowerReport /> },
   { permissions: ['employee-acknowledgment-reports'], path: '/acknowledgment-reports/:id', element: <AcknowledgmentReportView /> },
   // One route per ATS list, each gated by its own careers-*-list permission
   // (the backend checks the same one per endpoint).

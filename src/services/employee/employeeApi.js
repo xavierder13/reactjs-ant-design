@@ -79,8 +79,9 @@ const employeeApi = {
   // Report' | 'Branch Manpower Report' | 'Key Performance Index
   // Monitoring') — this app only wires up 'Employee List' (the natural
   // companion to Import/the core record), since the other three belong to
-  // modules not built here yet (Attendance tab, dashboard reports). Always
-  // pass `report_type: 'Employee List'`. See the employee-master-data skill.
+  // modules not built here yet (Attendance tab, dashboard reports; Branch
+  // Manpower has its own endpoints — branchManpowerApi.js). Always pass
+  // `report_type: 'Employee List'`. See the employee-master-data skill.
   export: (payload) => axios.post('/employee_master_data/export', payload, { responseType: 'blob' }),
 
   // Single-purpose: downloads only the core Employee Master Data import

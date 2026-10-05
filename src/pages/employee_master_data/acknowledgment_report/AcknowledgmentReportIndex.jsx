@@ -102,7 +102,7 @@ export default function AcknowledgmentReportIndex() {
         style={{ margin: "16px 0", marginTop: 0 }}
         items={[
           { title: <Link to="/">Home</Link> },
-          { title: <Link to="/employees">Employee</Link> },
+          { title: "Reports" },
           { title: "Branch Reports" },
         ]}
       />

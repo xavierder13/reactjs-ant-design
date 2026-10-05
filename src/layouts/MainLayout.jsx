@@ -51,7 +51,8 @@ const titleMap = {
   '/permissions':            { title: 'Permissions',         breadcrumb: ['Authorizations', 'Permissions'] },
   '/employees':              { title: 'Employee Master Data', breadcrumb: ['Employee', 'Master Data'] },
   '/employees/create':       { title: 'Create Employee',     breadcrumb: ['Employee', 'Create'] },
-  '/acknowledgment-reports': { title: 'Branch Reports', breadcrumb: ['Employee', 'Branch Reports'] },
+  '/acknowledgment-reports': { title: 'Branch Reports', breadcrumb: ['Reports', 'Branch Reports'] },
+  '/reports/branch-manpower': { title: 'Branch Manpower Fill Rate', breadcrumb: ['Reports', 'Branch Manpower Fill Rate'] },
   '/employees/hired-this-month':    { title: 'Employees Hired This Month', breadcrumb: ['Employee', 'Hired This Month'] },
   '/employees/for-regularization':  { title: 'For Regularization', breadcrumb: ['Employee', 'For Regularization'] },
   '/employees/resigned':            { title: 'Resigned', breadcrumb: ['Employee', 'Resigned'] },
@@ -120,7 +121,6 @@ const menuData = [
         children: [
           { key: 'master-data',    title: 'Master Data',    link: '/employees',         permissions: ['employee-master-data-list'] },
           { key: 'master-data-create',    title: 'Master Data Create',    link: '/employees/create',         permissions: ['employee-master-data-create'] },
-          { key: 'acknowledgment-reports', title: 'Branch Reports', link: '/acknowledgment-reports', permissions: ['employee-acknowledgment-reports'] },
           { key: 'hired-this-month', title: 'Hired This Month', link: '/employees/hired-this-month', permissions: ['employee-master-data-for-regularization'] },
           { key: 'for-regularization', title: 'For Regularization', link: '/employees/for-regularization', permissions: ['employee-master-data-for-regularization'] },
           { key: 'resigned', title: 'Resigned', link: '/employees/resigned', permissions: ['employee-master-data-resigned-list'] },
@@ -154,6 +154,16 @@ const menuData = [
         ],
       },
       { key: 'area-assignment', title: 'Area Assignment', icon: <ApartmentOutlined />, link: '/areas', permissions: ['area-list'] },
+      // Every Human Resource report (employee, recruitment, …) goes here.
+      {
+        key: 'hr-reports',
+        title: 'Reports',
+        icon: <FundOutlined />,
+        children: [
+          { key: 'acknowledgment-reports', title: 'Branch Reports', link: '/acknowledgment-reports', permissions: ['employee-acknowledgment-reports'] },
+          { key: 'hr-report-branch-manpower', title: 'Branch Manpower Fill Rate', link: '/reports/branch-manpower', permissions: ['employee-master-data-branch-manpower-export'] },
+        ],
+      },
     ],
   },
 
@@ -320,7 +330,7 @@ const MainLayout = () => {
     if (/^\/employees\/\d+\/edit$/.test(pathname))
       return { title: 'Edit Employee', breadcrumb: ['Employee', 'Edit'] };
     if (/^\/acknowledgment-reports\/\d+$/.test(pathname))
-      return { title: 'View Branch Report', breadcrumb: ['Employee', 'Branch Reports', 'View'] };
+      return { title: 'View Branch Report', breadcrumb: ['Reports', 'Branch Reports', 'View'] };
     if (/^\/kpi-evaluations\/\d+$/.test(pathname))
       return { title: 'View Evaluation', breadcrumb: ['KPI Management', 'Evaluations', 'View'] };
     if (/^\/my-evaluations\/\d+$/.test(pathname))
