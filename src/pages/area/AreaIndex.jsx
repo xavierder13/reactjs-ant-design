@@ -1,25 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Table, Tag, Button, Input, Space, Popconfirm, Tooltip, Tabs, Typography, App } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, UserAddOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, UserAddOutlined } from '@ant-design/icons';
 import useAuth from '../../hooks/useAuth';
 import useAreas from '../../hooks/useAreas';
 import areaApi from '../../services/area/areaApi';
 import handleApiError from '../../utils/handleApiError';
 import AreaFormModal from './AreaFormModal';
 import AssignAreasModal from './AssignAreasModal';
+import ExpandIcon from '../../components/ExpandIcon';
 
 const { Text } = Typography;
-
-// Chevron expand toggle instead of AntD's default plus/minus — same as
-// the Branch Reports page (AcknowledgmentReportIndex.jsx).
-const expandIcon = ({ expanded, onExpand, record }) => (
-  <Button
-    type='text'
-    size='small'
-    icon={expanded ? <UpOutlined /> : <DownOutlined />}
-    onClick={(e) => onExpand(record, e)}
-  />
-);
 
 const branchTags = (areaBranches) =>
   areaBranches.map((ab) => <Tag key={ab.branch_id}>{ab.branch?.name}</Tag>);
@@ -244,7 +234,7 @@ const AreaIndex = () => {
                 loading={isLoading}
                 pagination={{ pageSize: 10, showSizeChanger: true }}
                 expandable={{
-                  expandIcon,
+                  expandIcon: (props) => <ExpandIcon {...props} />,
                   expandedRowRender: (area) => (
                     <Space orientation='vertical' size={4}>
                       {area.description && <Text type='secondary'>{area.description}</Text>}
@@ -267,7 +257,7 @@ const AreaIndex = () => {
                 loading={isLoading}
                 pagination={{ pageSize: 10, showSizeChanger: true }}
                 expandable={{
-                  expandIcon,
+                  expandIcon: (props) => <ExpandIcon {...props} />,
                   expandedRowRender: (row) => (
                     <Space orientation='vertical' size={4}>
                       {row.areas.map((a) => (

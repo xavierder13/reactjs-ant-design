@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Table, Tag, Button, Space, Typography, App } from 'antd';
-import { UpOutlined, DownOutlined } from '@ant-design/icons';
+import { Table, Tag, Space, Typography, App } from 'antd';
 import useAuth from '../../../hooks/useAuth';
 import usePositionRecords from '../../../hooks/usePositionRecords';
 import usePositionStore from '../../../store/positionStore';
@@ -10,18 +9,9 @@ import handleApiError from '../../../utils/handleApiError';
 import RecordToolbar from '../RecordToolbar';
 import RecordRowActions from '../RecordRowActions';
 import PositionFormModal from './PositionFormModal';
+import ExpandIcon from '../../../components/ExpandIcon';
 
 const { Text } = Typography;
-
-// Chevron expand toggle, same as AreaIndex.jsx.
-const expandIcon = ({ expanded, onExpand, record }) => (
-  <Button
-    type='text'
-    size='small'
-    icon={expanded ? <UpOutlined /> : <DownOutlined />}
-    onClick={(e) => onExpand(record, e)}
-  />
-);
 
 const totalRequired = (position) =>
   position.required_employees.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
@@ -122,7 +112,7 @@ const PositionIndex = () => {
         loading={isLoading}
         pagination={{ pageSize: 10, showSizeChanger: true }}
         expandable={{
-          expandIcon,
+          expandIcon: (props) => <ExpandIcon {...props} />,
           expandedRowRender: (position) => {
             const staffed = position.required_employees.filter((r) => Number(r.quantity) > 0);
             return (

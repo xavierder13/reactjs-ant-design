@@ -15,6 +15,7 @@ import {
 } from './kpiReportLayout';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import './KpiConsolidatedReport.css';
+import ExpandIcon from '../../../components/ExpandIcon';
 
 const { RangePicker } = DatePicker;
 
@@ -128,6 +129,7 @@ const KpiConsolidatedReport = () => {
       columns={toTableColumns(summaryCols)}
       dataSource={group.summary}
       expandable={showBreakdownList ? {
+        expandIcon: (props) => <ExpandIcon {...props} />,
         defaultExpandAllRows: true,
         expandedRowRender: (s) => (
           <Row gutter={24}>

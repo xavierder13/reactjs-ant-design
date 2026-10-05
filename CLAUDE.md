@@ -168,9 +168,12 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
   gets a row added here before it ships. Toolbar buttons (Create =
   `type="primary"`, Refresh/Export = default) and inline links inside a
   form field (e.g. an attachment's download/delete in `NteRecordsTab.jsx`)
-  are outside this rule. Expandable rows use the chevron `expandIcon`
-  (`UpOutlined`/`DownOutlined` text button) from
-  `AcknowledgmentReportIndex.jsx` / `AreaIndex.jsx`.
+  are outside this rule. Expandable rows use the shared
+  `src/components/ExpandIcon.jsx` — `expandable={{ expandIcon: (props) =>
+  <ExpandIcon {...props} />, ... }}` (circled chevron: right → rotates
+  down; grey ring, primary ring + light fill when open; empty slot for
+  non-expandable rows) —
+  never a local up/down button or AntD's default plus/minus.
 - Row actions are permission- and status-gated inline functions
   (e.g. `canEdit(record)`, `canSubmit(record)`, `canCancel(record)`)
   combining `hasPermission`/`hasAnyPermission`, allowed statuses, and

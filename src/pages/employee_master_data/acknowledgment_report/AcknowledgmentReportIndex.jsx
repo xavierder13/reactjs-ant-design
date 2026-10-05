@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card, Table, Breadcrumb, Space, Button, Popconfirm, Tooltip, Tag, App } from "antd";
-import { EyeOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, DownOutlined, UpOutlined } from "@ant-design/icons";
+import { EyeOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import useAcknowledgmentReports from "../../../hooks/useAcknowledgmentReports";
 import useAuth from "../../../hooks/useAuth";
@@ -8,6 +8,7 @@ import employeeAcknowledgmentReportApi from "../../../services/employee/employee
 import handleApiError from "../../../utils/handleApiError";
 
 import { formatDate } from "../../../utils/formatDate";
+import ExpandIcon from "../../../components/ExpandIcon";
 // Backend's index() returns branches, each with a nested
 // acknowledgment_reports array (branch-scoped visibility enforced
 // server-side via employee-acknowledgment-reports-all). Grouped-by-branch,
@@ -121,18 +122,9 @@ export default function AcknowledgmentReportIndex() {
             rowExpandable: (branch) => (branch.acknowledgment_reports || []).length > 0,
             expandedRowKeys,
             onExpandedRowsChange: (keys) => setExpandedRowKeys(keys),
-            // Matches DataTableGroup.vue's group.header toggle
-            // (mdi-chevron-up / mdi-chevron-down) instead of AntD's default
-            // plus/minus expand icon.
-            expandIcon: ({ expanded, onExpand, record }) =>
-              (record.acknowledgment_reports || []).length > 0 ? (
-                <Button
-                  type="text"
-                  size="small"
-                  icon={expanded ? <UpOutlined /> : <DownOutlined />}
-                  onClick={(e) => onExpand(record, e)}
-                />
-              ) : null,
+            // Shared chevron toggle instead of AntD's default plus/minus;
+            // branches without reports get an empty slot (rowExpandable).
+            expandIcon: (props) => <ExpandIcon {...props} />,
           }}
           columns={[
             {

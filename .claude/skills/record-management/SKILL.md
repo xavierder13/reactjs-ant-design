@@ -28,7 +28,7 @@ files.** The backend is vueportal (its own `record-management` skill).
   `CLAUDE.md` (Table/List Conventions) — View blue (`color="blue"`, not
   `primary`: the theme's primary is green), Edit green, Delete red,
   Cancel/Deactivate orange, Submit cyan, Print/Export purple; icon-only,
-  `size="small"`, `Tooltip`. Expand toggle = chevron `expandIcon`.
+  `size="small"`, `Tooltip`. Expand toggle = shared `src/components/ExpandIcon.jsx`.
 
 - **Permission gates**: `const isAdmin = hasRole('Administrator');
   const canEdit = isAdmin || hasPermission('<module>-edit');` — the
