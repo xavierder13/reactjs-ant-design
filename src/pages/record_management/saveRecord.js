@@ -7,11 +7,15 @@ import handleApiError from '../../utils/handleApiError';
 // field (`fieldFor` maps a backend key to a form name path); the first one
 // is also toasted, in case its field isn't visible (another tab, a filtered
 // row). Never throws — callers can set/clear their saving flag around it.
-const saveRecord = async ({ request, form, message, onSaved, fieldFor = (key) => key }) => {
+// `success` is usually the message itself; the careers portal's job vacancy
+// endpoints send `success: true` with the message in `resp`. `onError`
+// handles a failed request (default handleApiError; the careers setup pages
+// pass one that reads the gateway's `{ error }`).
+const saveRecord = async ({ request, form, message, onSaved, fieldFor = (key) => key, onError = handleApiError }) => {
   try {
     const { data } = await request();
     if (data.success) {
-      message.success(data.success);
+      message.success(typeof data.success === 'string' ? data.success : (data.resp || data.message || 'Record has been saved.'));
       onSaved();
       return;
     }
@@ -24,7 +28,7 @@ const saveRecord = async ({ request, form, message, onSaved, fieldFor = (key) =>
     form.setFields(entries.map(([key, errors]) => ({ name: fieldFor(key), errors })));
     if (entries.length) message.error(entries[0][1][0]);
   } catch (error) {
-    handleApiError(error, message);
+    onError(error, message);
   }
 };
 

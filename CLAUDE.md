@@ -251,7 +251,8 @@ Dated change history for each lives in `docs/<module>-history.md`.
   approve/reject); `KPI Self Evaluation` accounts are redirected to
   `/my-evaluations` with a one-item menu.
 - **Recruitment ATS** (`src/pages/recruitment/JobApplicantList.jsx`,
-  `applicants/`, routes `/recruitment/<stage>-list`) —
+  `applicants/`, `setup/`, routes `/recruitment/<stage>-list`,
+  `/recruitment/setup/…`) —
   `.claude/skills/recruitment-ats/SKILL.md`. Key traps: data comes from
   the careers portal through vueportal's gateway (one route + permission
   per stage); gateway dates are `MM/DD/YYYY` strings; several gateway

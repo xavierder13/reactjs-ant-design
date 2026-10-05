@@ -52,6 +52,9 @@ const titleMap = {
   '/employees':              { title: 'Employee Master Data', breadcrumb: ['Employee', 'Master Data'] },
   '/employees/create':       { title: 'Create Employee',     breadcrumb: ['Employee', 'Create'] },
   '/acknowledgment-reports': { title: 'Branch Reports', breadcrumb: ['Reports', 'Branch Reports'] },
+  '/recruitment/setup/positions':     { title: 'Careers Positions', breadcrumb: ['Recruitment', 'Setup', 'Positions'] },
+  '/recruitment/setup/branches':      { title: 'Careers Branches', breadcrumb: ['Recruitment', 'Setup', 'Branches'] },
+  '/recruitment/setup/job-vacancies': { title: 'Job Vacancies', breadcrumb: ['Recruitment', 'Setup', 'Job Vacancies'] },
   '/reports/branch-manpower': { title: 'Branch Manpower Fill Rate', breadcrumb: ['Reports', 'Branch Manpower Fill Rate'] },
   '/employees/hired-this-month':    { title: 'Employees Hired This Month', breadcrumb: ['Employee', 'Hired This Month'] },
   '/employees/for-regularization':  { title: 'For Regularization', breadcrumb: ['Employee', 'For Regularization'] },
@@ -142,6 +145,16 @@ const menuData = [
           { key: 'orientation',       title: 'Orientation',       link: '/recruitment/orientation-list',       permissions: ['careers-orientation-list'] },
           { key: 'hired',             title: 'Hired',             link: '/recruitment/hired-list',             permissions: ['careers-hired-list'] },
           { key: 'vacancies',         title: 'Vacancies',         link: '/vacancies',                          permissions: ['vacancy-list'] },
+          // Careers portal record maintenance (recruitment-portal data, via the gateway).
+          {
+            key: 'recruitment-setup',
+            title: 'Setup',
+            children: [
+              { key: 'careers-positions',     title: 'Positions',     link: '/recruitment/setup/positions',     permissions: ['careers-position-list'] },
+              { key: 'careers-branches',      title: 'Branches',      link: '/recruitment/setup/branches',      permissions: ['careers-branch-list'] },
+              { key: 'careers-job-vacancies', title: 'Job Vacancies', link: '/recruitment/setup/job-vacancies', permissions: ['careers-job-vacancy-list'] },
+            ],
+          },
         ],
       },
       {

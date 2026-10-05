@@ -63,6 +63,15 @@ files.** The backend is vueportal (its own `record-management` skill).
 - **Second view over the same data** instead of another endpoint: Area's
   "HR Heads" tab regroups `/area/index` by employee with `useMemo`
   (the "what is this employee assigned to" view).
+- **Rich text (HTML) fields**: `src/components/RichTextEditor.jsx` (CKEditor
+  5 configured to output CKEditor 4-identical HTML — see the recruitment-ats
+  skill) as the `Form.Item` control; treat an empty document as blank before
+  required checks (`isBlankHtml` in `CareersPositionFormModal.jsx`). `RichTextEditor.css` restores list indent and
+  paragraph/heading spacing inside `.ck-content` — `src/index.css`'s global
+  `* { margin: 0; padding: 0 }` reset otherwise puts bullets left of the text.
+- **`saveRecord` options**: `success` may be `true` with the message in
+  `resp`/`message`; pass `onError` when the backend answers `{ error }`
+  (the careers setup pages pass `showGatewayError`).
 - **AntD v6 Select search**: `showSearch={{ optionFilterProp: 'label' }}` —
   the top-level `optionFilterProp`/`filterOption`/`onSearch` props are
   `@deprecated` in the installed version (older files still use them).

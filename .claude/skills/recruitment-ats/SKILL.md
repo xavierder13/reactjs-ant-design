@@ -1,6 +1,6 @@
 ---
 name: recruitment-ats
-description: The Recruitment ATS (applicant tracking) in this app — applicant lists per pipeline stage, and the planned applicant details / status workflow / files / notifications / reports. Covers the vueportal → recruitment-portal gateway it runs on, confirmed data contracts, and the gateway's known gaps. Use for any work under src/pages/recruitment/ other than Vacancies, or anything calling /recruitment/* applicant endpoints.
+description: The Recruitment ATS (applicant tracking) in this app — applicant lists per pipeline stage, applicant details / status workflow / files / notifications / reports, and the Recruitment Setup pages (careers portal Positions, Branches, Job Vacancies). Covers the vueportal → recruitment-portal gateway it runs on, confirmed data contracts, and the gateway's known gaps. Use for any work under src/pages/recruitment/ other than Vacancies, or anything calling /recruitment/* applicant or setup endpoints.
 ---
 
 # Recruitment ATS
@@ -249,7 +249,70 @@ widgets; long text shrinks to its box (min 5pt) then cuts; characters the
 standard font can't encode print as "?". Verified by rendering
 (applicants #31896, #29226).
 
-## Remaining phases
+## Recruitment Setup — careers portal records
+
+Recruitment → **Setup** menu: Positions, Branches, Job Vacancies
+(`src/pages/recruitment/setup/{position,branch,job_vacancy}/`, routes
+`/recruitment/setup/positions|branches|job-vacancies`). These are the
+careers portal's own records — what applicants pick on the careers site —
+not this HRIS's Organization branches/positions (different ids). Ports of
+the portal's `position/PositionIndex.vue`, `branch/BranchIndex.vue`,
+`recruitment/JobVacanciesIndex.vue`.
+
+- Flow: `careersPositionApi` / `careersBranchApi` / `jobVacancyApi` →
+  vueportal POST `/recruitment/setup/{branch|position|job_vacancy}/{index|edit|store|update|delete}/{id?}`
+  (`RecruitmentController@setup`) → gateway `recruitment_gateway/setup/…`
+  (`RecruitmentGatewayController::SETUP_ACTIONS`) → the portal's own
+  Branch/Position/JobVacancy controller method as the user. Contracts in
+  each API file's header.
+- Permissions: vueportal `careers-{branch|position|job-vacancy}-{list|create|edit|delete}`
+  (PermissionSeeder → Administrator); branch/position `index` also allowed
+  with `careers-job-vacancy-create/-edit` (the vacancy form lists them).
+  The gateway checks the portal's `branch-*`, `position-*`,
+  `jobvacancies-*` (`update` = `jobvacancies-update`). Portal roles holding
+  them: Administrator, Career Admin, Inventory Branch.
+- Stores `careersBranchStore` / `careersPositionStore` (+ departments,
+  ranks) / `jobVacancyStore`, hooks `useCareersBranches` /
+  `useCareersPositions` / `useJobVacancies`; pages reuse the Organization
+  pieces (`RecordToolbar`, `RecordRowActions`, `saveRecord` — validation
+  failures are HTTP 200 bags; `onError: showGatewayError` reads the
+  gateway's `{ error }`).
+- Position: name (unique), rank, department (division read-only) required,
+  Active switch, description + qualifications in `src/components/RichTextEditor.jsx`.
+  **User requirement: the HTML must be the same as the portal's CKEditor 4
+  (4.17.2 standard-all, default config) saves.** So: CKEditor 5 with only
+  what CKEditor 4's standard setup keeps (Normal/H1–H3, bold, italic,
+  strike, remove format, lists + indent, block quote, link, table,
+  horizontal line, special characters — no underline/sub/sup/alignment/
+  paragraph indent, which CKEditor 4 strips), output rewritten by
+  `src/components/ckeditor4Html.js` (port of CKEditor 4's htmlwriter +
+  entities: tabs/newlines, `<br />`, `&ldquo;`/`&#39;`…, `<i>`→`<em>`, no
+  `<figure>`/`data-list-item-id`/`rel`), and the modal sends edited fields
+  with CRLF line breaks (the portal posts FormData; Laravel TrimStrings
+  drops the trailing break). `onChange` fires only while the editor is
+  focused, so an untouched field is sent back byte-identical. Verified in
+  headless Edge against CKEditor 4 itself: 149/149 React outputs round-trip
+  through CKEditor 4 unchanged; 102/104 stored texts identical — the two
+  others (positions 14, 45) hold `<li><p>`, which CKEditor 5 can't keep
+  (only changes if HR edits that field). Re-run that comparison after
+  changing the editor config or the converter. The list has no expandable
+  row (user decision) — the HTML is only shown in the editor; if it is ever
+  rendered as HTML here, sanitise it first (the portal API accepts any
+  HTML). Description required on update only (portal rule).
+  Not ported: "Level of Position" (the portal controller doesn't save it)
+  and the Job Offer PDF — production's `positions` has no `job_offer_file`
+  column, so the portal's own upload fails.
+- Job Vacancy: create = position, educational attainment (5 fixed values),
+  branch type (0 For Branch Only / 1 For Admin Only), status, hiring
+  branches (`Transfer`, optional); edit = status + hiring branches only
+  (replace-all; the others are disabled — portal rule). The list comes from
+  the portal's join, so vacancies of deleted positions don't show.
+- Branch: code + name, both required and unique.
+- Deletes have no in-use guard (portal behaviour); deleting a vacancy
+  leaves its `job_vacancy_branches` rows (portal behaviour). The gateway
+  answers update/delete of a vacancy deleted meanwhile with 404 (the
+  portal method would 500).
+
 
 **Phase 9 (optional) — live refresh** (portal uses a websocket on
 `applicant-submit`) — but the portal's application form has that emit
