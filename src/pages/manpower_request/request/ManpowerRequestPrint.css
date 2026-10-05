@@ -191,21 +191,31 @@
 }
 
 /* ── Print styles ──────────────────────────────────────────────────────────── */
+/* Page CSS is bundled globally, so every print rule here is scoped to
+   this page (body:has(.mrf-print)) — unscoped, "hide everything" blanked the
+   print of every other page (e.g. the KPI Consolidated Report), and a
+   plain @page fought the other pages' paper size. */
+@page manpower-request {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
 @media print {
 
-  @page {
-    size: A4 portrait;
-    margin: 10mm;
+  body:has(.mrf-print) {
+    page: manpower-request;
   }
 
-  /* Hide EVERYTHING */
-  body * {
+  /* Hide everything except .mrf-print */
+  body:has(.mrf-print) * {
     visibility: hidden !important;
   }
 
   /* Show ONLY .mrf-print and everything inside it */
-  .mrf-print,
-  .mrf-print * {
+  /* Same body:has() prefix as the hide rule above — :has() counts its
+     argument's specificity, so the plain selectors would lose to it. */
+  body:has(.mrf-print) .mrf-print,
+  body:has(.mrf-print) .mrf-print * {
     visibility: visible !important;
   }
 

@@ -4,21 +4,33 @@
   display: none;
 }
 
+/* Page CSS is bundled globally: every print rule here is scoped to this
+   page (body:has(.kpi-report)) and its paper size is a named page. */
+@page kpi-consolidated {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
 @media print {
-  @page {
-    size: A4 landscape;
-    margin: 10mm;
+  body:has(.kpi-report) {
+    page: kpi-consolidated;
   }
 
-  .ant-layout-sider,
-  .ant-layout-header,
-  .ant-breadcrumb,
-  .no-print {
+  body:has(.kpi-report) .ant-layout-sider,
+  body:has(.kpi-report) .ant-layout-header,
+  body:has(.kpi-report) .ant-breadcrumb,
+  body:has(.kpi-report) .no-print {
     display: none !important;
   }
 
-  .ant-layout,
-  .ant-layout-content {
+  /* The app layout is a fixed-height scroll box (100vh, overflow hidden /
+     auto) — release it so the whole report flows onto as many pages as
+     it needs instead of being clipped to one screen. */
+  body:has(.kpi-report) .ant-layout,
+  body:has(.kpi-report) .ant-layout-content {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
@@ -44,5 +56,16 @@
 
   .kpi-report .ant-table {
     font-size: 10px;
+  }
+
+  /* No on-screen controls on paper: the row expand toggles, and the
+     horizontal scrollbar of scroll-x tables. */
+  .kpi-report .ant-table-row-expand-icon-cell button {
+    display: none !important;
+  }
+
+  .kpi-report .ant-table-content,
+  .kpi-report .ant-table-body {
+    overflow: visible !important;
   }
 }

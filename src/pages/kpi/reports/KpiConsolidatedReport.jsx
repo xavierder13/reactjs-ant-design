@@ -119,8 +119,12 @@ const KpiConsolidatedReport = () => {
   const setSection = (key, value) => setSections((prev) => ({ ...prev, [key]: value }));
   const showBreakdownList = sections.job === 'breakdown' || sections.demerit === 'breakdown';
 
+  // defaultExpandAllRows only applies when a Table mounts — remount it when
+  // a breakdown is switched on or the rows change, so the breakdown lists
+  // open expanded (and print) instead of starting collapsed.
   const renderSummary = (group) => (
     <Table
+      key={`${showBreakdownList}-${group.summary.map((s) => s.key).join('|')}`}
       rowKey='key'
       size='small'
       bordered

@@ -332,8 +332,11 @@ extra gate. The backend only allows upload/delete in editable statuses.
 permission `manpower-request-print`. Follow `KpiEvaluationPrint.jsx`'s
 pattern — don't invent a new print technique:
 - A normal page route inside `MainLayout`/`ProtectedRoute`. `@media print`:
-  `body * { visibility: hidden }`, reveal only `.mrf-print`, force it to
-  `position: absolute; top: 0; left: 0`. The on-screen Print button calls
+  `body:has(.mrf-print) * { visibility: hidden }`, reveal only
+  `body:has(.mrf-print) .mrf-print(, *)`, force it to
+  `position: absolute; top: 0; left: 0`; paper size is the named
+  `@page manpower-request` (set on `body:has(.mrf-print)`). Scoped because
+  page CSS is global — see CLAUDE.md "Printing". The on-screen Print button calls
   `window.print()`; `.no-print` hides it when printing.
 - Rows use `page-break-inside: avoid`; `thead { display:
   table-header-group }` repeats headers.

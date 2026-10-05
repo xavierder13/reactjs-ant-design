@@ -71,9 +71,16 @@ Management", `titleMap`, regex cases for `:id` pages):
   [branch –] position) — screen, print and Excel always match. Job /
   demerit breakdowns differ per position, so in Summary they're an
   expanded list per position (and extra sheets), not columns.
-- Print: `window.print()` with `KpiConsolidatedReport.css` — hides the app
-  chrome and controls (`.no-print`), A4 landscape, each branch block starts
-  a new page.
+- Print: `window.print()` with `KpiConsolidatedReport.css`, every rule
+  scoped to `body:has(.kpi-report)` (see CLAUDE.md "Printing") — hides the
+  app chrome and controls (`.no-print`, row expand toggles, table
+  scrollbars), releases the layout's fixed-height scroll box so long
+  reports flow onto more pages, named `@page kpi-consolidated` A4
+  landscape, each branch block starts a new page. The summary table is
+  remounted (key) when a breakdown is switched on so its rows open
+  expanded — `defaultExpandAllRows` only applies on mount, and collapsed
+  rows don't print. `KpiEvaluationPrint.css` is scoped the same way
+  (`body:has(.kpi-print)`, `@page kpi-evaluation`).
 
 ## Evaluation list (`KpiEvaluationIndex.jsx`)
 

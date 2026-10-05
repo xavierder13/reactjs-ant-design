@@ -181,6 +181,21 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
 - Mutating actions (submit/cancel/approve/reject) are wrapped in
   `Popconfirm` before calling the API.
 
+## Printing
+
+Page CSS is bundled into one global stylesheet (every route is imported
+up front), so a print rule in one page's CSS applies to every page. Scope
+**every** `@media print` rule to its page with `body:has(.<page-root>)`,
+and use a named `@page <name>` set via `body:has(.<page-root>) { page:
+<name>; }` for paper size/margins — never a plain `@page` or a bare
+`body * { visibility: hidden }` (that blanked the print of every other
+page, e.g. the KPI Consolidated Report). The "show" rules need the same
+`body:has()` prefix as the "hide" rule: `:has()` counts its argument's
+specificity. The app layout is a fixed-height scroll box — a page that
+prints in place must release it (`height: auto; overflow: visible` on
+`.ant-layout` / `.ant-layout-content`). Check prints with a real browser
+PDF (headless Edge `Page.printToPDF`), not by reading the CSS.
+
 ## Error / Loading / Notification Conventions
 
 - Loading: AntD `Spin` for full-page/blocking loads; `loading` prop on
