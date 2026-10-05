@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.2.3",
+    "@ckeditor/ckeditor5-react": "^11.2.0",
     "@hello-pangea/dnd": "^18.0.1",
     "antd": "^6.4.3",
     "axios": "^1.16.1",
     "chart.js": "^4.5.1",
+    "ckeditor5": "^48.5.2",
     "dayjs": "^1.11.20",
     "pdf-lib": "^1.17.1",
     "react": "^19.2.6",

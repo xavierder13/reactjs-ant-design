@@ -1,0 +1,32 @@
+/* src/index.css resets margin/padding on every element, which inside the
+   editor pushes list bullets left of the text (lists lose their indent) and
+   removes paragraph/heading spacing. Restore, inside CKEditor's content only,
+   the browser defaults the careers portal's CKEditor 4 shows (its
+   contents.css indents lists with `ol, ul { padding: 0 40px }`). */
+.ck.ck-content p,
+.ck.ck-content ul,
+.ck.ck-content ol,
+.ck.ck-content blockquote,
+.ck.ck-content figure.table {
+  margin: 1em 0;
+}
+
+.ck.ck-content ul,
+.ck.ck-content ol {
+  padding: 0 40px;
+}
+
+/* Nested lists sit right under their item, as in a browser. */
+.ck.ck-content li > ul,
+.ck.ck-content li > ol {
+  margin: 0;
+}
+
+.ck.ck-content h1 { margin: 0.67em 0; }
+.ck.ck-content h2 { margin: 0.83em 0; }
+.ck.ck-content h3 { margin: 1em 0; }
+
+.ck.ck-content blockquote {
+  padding-left: 20px;
+  padding-right: 8px;
+}
