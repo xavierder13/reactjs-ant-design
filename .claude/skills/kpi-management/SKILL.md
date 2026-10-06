@@ -86,7 +86,8 @@ Management", `titleMap`, regex cases for `:id` pages):
 
 Search, status, **position** and **branch** filters (in-memory; options
 from the loaded evaluations — the list endpoint includes
-`employee.branch`).
+`employee.branch`). Every filter applies on change (search as you type),
+so there's no Search button — only Refresh.
 
 ## Evaluation view — action gates (`KpiEvaluationView.jsx`)
 

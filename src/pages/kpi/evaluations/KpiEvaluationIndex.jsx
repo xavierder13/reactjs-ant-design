@@ -7,7 +7,7 @@ import {
 } from 'antd';
 import {
   PlusOutlined, EyeOutlined,
-  ReloadOutlined, SearchOutlined,
+  ReloadOutlined, SearchOutlined, ClearOutlined,
   DeleteOutlined, PrinterOutlined 
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
@@ -39,6 +39,8 @@ const KpiEvaluationIndex = () => {
 
   const [searchForm] = Form.useForm();
   const [filtered, setFiltered] = useState([]);
+  const filterValues     = Form.useWatch([], searchForm) || {};
+  const hasActiveFilters = Boolean(filterValues.search || filterValues.status || filterValues.position_id || filterValues.branch_id);
 
   useEffect(() => {
     // fetchEvaluations();
@@ -210,87 +212,17 @@ const KpiEvaluationIndex = () => {
 
       <Card
         title={
-          <Row gutter={[8, 8]} align='middle'>
-            <Col xs={24} md={4}>
+          // Same layout as the Employee Master Data list: title left,
+          // page-level actions right, filters in their own row below.
+          <Row justify='space-between' align='middle' gutter={[8, 8]} wrap>
+            <Col flex='none'>
               <Typography.Title level={4} style={{ margin: 0 }}>
                 KPI Evaluations
               </Typography.Title>
             </Col>
 
-            <Col xs={24} md={5}>
-              <Form form={searchForm}>
-                <Form.Item name='search' style={{ marginBottom: 0 }}>
-                  <Input
-                    placeholder='Search employee...'
-                    prefix={<SearchOutlined />}
-                    onPressEnter={handleSearch}
-                  />
-                </Form.Item>
-              </Form>
-            </Col>
-
-            <Col xs={24} md={3}>
-              <Form form={searchForm}>
-                <Form.Item name='status' style={{ marginBottom: 0 }}>
-                  <Select
-                    placeholder='Filter by status'
-                    allowClear
-                    style={{ width: '100%' }}
-                    options={[
-                      { label: 'Draft',     value: 'draft' },
-                      { label: 'Self',      value: 'self' },
-                      { label: 'Reviewed',  value: 'reviewed' },
-                      { label: 'Submitted', value: 'submitted' },
-                      { label: 'Approved',  value: 'approved' },
-                    ]}
-                    onChange={handleSearch}
-                  />
-                </Form.Item>
-              </Form>
-            </Col>
-
-            <Col xs={24} md={4}>
-              <Form form={searchForm}>
-                <Form.Item name='position_id' style={{ marginBottom: 0 }}>
-                  <Select
-                    placeholder='Filter by position'
-                    allowClear
-                    showSearch
-                    optionFilterProp='label'
-                    style={{ width: '100%' }}
-                    options={positionOptions}
-                    onChange={handleSearch}
-                  />
-                </Form.Item>
-              </Form>
-            </Col>
-
-            <Col xs={24} md={4}>
-              <Form form={searchForm}>
-                <Form.Item name='branch_id' style={{ marginBottom: 0 }}>
-                  <Select
-                    placeholder='Filter by branch'
-                    allowClear
-                    showSearch
-                    optionFilterProp='label'
-                    style={{ width: '100%' }}
-                    options={branchOptions}
-                    onChange={handleSearch}
-                  />
-                </Form.Item>
-              </Form>
-            </Col>
-
-            <Col xs={24} md={4}>
+            <Col flex='none'>
               <Space wrap>
-                <Button
-                  color='primary'
-                  variant='outlined'
-                  icon={<SearchOutlined />}
-                  onClick={handleSearch}
-                >
-                  Search
-                </Button>
                 <Button
                   icon={<ReloadOutlined />}
                   onClick={() => {
@@ -300,23 +232,85 @@ const KpiEvaluationIndex = () => {
                 >
                   Refresh
                 </Button>
+
+                {(isAdmin || hasPermission('kpi-evaluation-create')) && (
+                  <Button
+                    type='primary'
+                    icon={<PlusOutlined />}
+                    onClick={() => navigate('/kpi-evaluations/create')}
+                  >
+                    Create
+                  </Button>
+                )}
               </Space>
             </Col>
-
-            {(isAdmin || hasPermission('kpi-evaluation-create')) && (
-              <Col xs={24} md={4} style={{ textAlign: 'right' }}>
-                <Button
-                  type='primary'
-                  icon={<PlusOutlined />}
-                  onClick={() => navigate('/kpi-evaluations/create')}
-                >
-                  Create
-                </Button>
-              </Col>
-            )}
           </Row>
         }
       >
+        {/* One wrapping, left-aligned filter row (same as Employee Master
+            Data): search, status, branch, position. Every filter applies on
+            change, so there's no Search button. */}
+        <Form form={searchForm}>
+          <Space wrap align='end' style={{ marginBottom: 16 }}>
+            <Form.Item name='search' style={{ marginBottom: 0 }}>
+              <Input
+                allowClear
+                placeholder='Search employee...'
+                prefix={<SearchOutlined />}
+                style={{ width: 280 }}
+                onChange={handleSearch}
+              />
+            </Form.Item>
+
+            <Form.Item name='status' style={{ marginBottom: 0 }}>
+              <Select
+                allowClear
+                placeholder='Status'
+                style={{ width: 140 }}
+                options={[
+                  { label: 'Draft',     value: 'draft' },
+                  { label: 'Self',      value: 'self' },
+                  { label: 'Reviewed',  value: 'reviewed' },
+                  { label: 'Submitted', value: 'submitted' },
+                  { label: 'Approved',  value: 'approved' },
+                ]}
+                onChange={handleSearch}
+              />
+            </Form.Item>
+
+            <Form.Item name='branch_id' style={{ marginBottom: 0 }}>
+              <Select
+                allowClear
+                showSearch
+                optionFilterProp='label'
+                placeholder='Branch'
+                style={{ width: 200 }}
+                options={branchOptions}
+                onChange={handleSearch}
+              />
+            </Form.Item>
+
+            <Form.Item name='position_id' style={{ marginBottom: 0 }}>
+              <Select
+                allowClear
+                showSearch
+                optionFilterProp='label'
+                placeholder='Position'
+                style={{ width: 220 }}
+                popupMatchSelectWidth={false}
+                options={positionOptions}
+                onChange={handleSearch}
+              />
+            </Form.Item>
+
+            {hasActiveFilters && (
+              <Button icon={<ClearOutlined />} onClick={handleReset}>
+                Clear filters
+              </Button>
+            )}
+          </Space>
+        </Form>
+
         <Table
           rowKey='id'
           columns={columns}
