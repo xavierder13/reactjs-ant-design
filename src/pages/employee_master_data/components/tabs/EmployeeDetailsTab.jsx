@@ -5,7 +5,7 @@ import { CopyOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import useEmployeeFormOptions from "../../../../hooks/useEmployeeFormOptions";
 
-import { DISPLAY_DATE_FORMAT } from "../../../../utils/formatDate";
+import { DISPLAY_DATE_FORMAT, formatDate } from "../../../../utils/formatDate";
 import { EMPLOYMENT_TYPE_OPTIONS } from "../../../../utils/employmentTypes";
 import ReadOnlyDateInput from "../ReadOnlyDateInput";
 // Matches vueportal's recruitment portal referral link format exactly
@@ -173,6 +173,10 @@ export default function EmployeeDetailsTab({ initialData, mode }) {
             { key: "cost_center", label: "Cost Center", children: initialData?.cost_center || "-" },
             { key: "date_assigned", label: "Date Assigned", children: initialData?.date_assigned || "-" },
             { key: "length_of_service", label: "Length of Service", children: initialData?.length_of_service || "-" },
+            // Regularization basis (backend directHireSinceSql): the first
+            // direct-hire Branch Assignment after the last agency one, else
+            // Date Employed.
+            { key: "direct_hire_since", label: "Direct Hire Since", children: formatDate(initialData?.direct_hire_since) },
           ]}
         />
       )}

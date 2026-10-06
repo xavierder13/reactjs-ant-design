@@ -149,14 +149,14 @@ export default function EvaluationRegularizationTab({ employeeId, mode, initialF
     <div>
       <Row gutter={16}>
         <Col xs={24} md={8}>
-          {/* Read-only: set by the backend (date employed + 180 days) when a
+          {/* Read-only: set by the backend (Direct Hire Since + 180 days) when a
               Passed interview regularizes the employee. Still part of the
               form so its saved value goes back unchanged on Save. */}
           <Form.Item
             name="regularization_date"
             label="Date of Regularization"
             labelCol={{ span: 24 }}
-            extra="Set automatically: 180 days after Date Employed, once the interview is Passed."
+            extra="Set automatically: 180 days after Direct Hire Since, once the interview is Passed."
           >
             <ReadOnlyDateInput placeholder="Not yet regularized" />
           </Form.Item>

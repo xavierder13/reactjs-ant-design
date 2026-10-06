@@ -99,9 +99,11 @@ Current headcount follows `active = 1`; the 12-month trend is rebuilt from
   group's headcount at the window start and today, grouped by the
   employee's *current* record (no assignment history exists).
 - **Regularization**: active Probationary, Sales Specialists excluded — the
-  For Regularization list/card population. Overdue = past 6 months; due
-  soon = reaches 6 months within `REGULARIZATION_DUE_DAYS` (30). Overdue +
-  due soon equals the For Regularization card (its ≥ 150-day rule).
+  For Regularization list/card population. Due date = Direct Hire Since
+  (`direct_hire_since`, the absorption date for former agency staff, else
+  date_employed) + `REGULARIZATION_DAYS` (180), the employee's
+  regularization-date rule. Overdue = past it; due soon = reaches it within
+  `REGULARIZATION_DUE_DAYS` (30).
 - **Relations**: NTEs (`employee_explanations`) and disciplinary cases
   (`employee_disciplinaries`) by `date_issued` over the 12-month window;
   by month, disciplinary by `offense` (category) / `disciplinary_action`,

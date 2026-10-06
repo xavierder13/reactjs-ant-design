@@ -388,12 +388,17 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   backend only writes the interview columns when the request sends them;
   the Vue form doesn't). On save, a changed interview with result Passed
   switches an employee who is already due (active, Probationary, 150+ days
-  since `date_employed`) to `employment_type` Regular with
-  `regularization_date` = `date_employed` + 180 days (user rule — not the
+  since **Direct Hire Since**) to `employment_type` Regular with
+  `regularization_date` = Direct Hire Since + 180 days (user rule — not the
   interview date); vueportal's "Regularize Passed Employees" action
   (`GET employee_master_data/regularize_passed_employees`,
   `employee-master-data-regularize`) catches the ones who become due later.
-  Date of Regularization is therefore read-only: the shared
+  Direct Hire Since (`EmployeeBranchAssignmentPosition::directHireSinceSql()`,
+  returned on every list/employee row as `direct_hire_since`, shown
+  read-only on Employee Details) = the first direct Branch Assignment after
+  the last agency one, else `date_employed`; the For Regularization
+  list/export, the dashboard's regularization section and the sync all use
+  it. Date of Regularization is therefore read-only: the shared
   `components/ReadOnlyDateInput.jsx` (a plain `<Input readOnly>`, same look
   as the Referral Code, not the greyed disabled style; also used for
   Employee Details' Date Resigned); the dayjs value stays in the form
