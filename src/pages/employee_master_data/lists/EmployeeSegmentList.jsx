@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Card, Row, Col, Typography, Input, Space, Button, Grid, Breadcrumb, Alert, Popconfirm, App,
+  Card, Row, Col, Typography, Input, Select, Space, Button, Grid, Breadcrumb, Alert, Popconfirm, App,
 } from "antd";
 import { ReloadOutlined, SearchOutlined, ExportOutlined, DeleteOutlined } from "@ant-design/icons";
 
@@ -16,6 +16,7 @@ import PaginationControls from "../components/PaginationControls";
 import ExportEmployeesModal from "../components/ExportEmployeesModal";
 import BranchFilter from "./BranchFilter";
 import useListAccess from "./useListAccess";
+import useEmployeeFormOptions from "../../../hooks/useEmployeeFormOptions";
 
 const { useBreakpoint } = Grid;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200, 300, 500];
@@ -30,7 +31,14 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200, 300, 500];
 // { modal: { presetValues, extraPayload, title } } (opens the Employee List
 // export pre-filled) or { request(payload), filename } (a dedicated export
 // endpoint that takes the list's own filters).
-export default function EmployeeSegmentList({ title, fetchPage, exportConfig }) {
+// `positionFilter` adds a Position filter (`search_position`, position
+// name) — only for endpoints that accept it.
+// `defaultColumns` overrides the picker's starting columns; `extraColumns`
+// are always shown after the picked ones (not in the picker or its search).
+export default function EmployeeSegmentList({
+  title, fetchPage, exportConfig, positionFilter = false,
+  defaultColumns = DEFAULT_EMPLOYEE_COLUMNS, extraColumns = [],
+}) {
   const navigate = useNavigate();
   const { message: messageApi } = App.useApp();
   const { can, canFilterByBranch } = useListAccess();
@@ -41,8 +49,10 @@ export default function EmployeeSegmentList({ title, fetchPage, exportConfig }) 
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [loading, setLoading] = useState(false);
   const [searchInput, setSearchInput] = useState("");
-  const [filters, setFilters] = useState({ search: "", search_branch: "" });
-  const [selectedHeaders, setSelectedHeaders] = useState(DEFAULT_EMPLOYEE_COLUMNS);
+  const [filters, setFilters] = useState({ search: "", search_branch: "", search_position: "" });
+  const { positionOptions, isLoading: positionsLoading } = useEmployeeFormOptions();
+  const [selectedHeaders, setSelectedHeaders] = useState(defaultColumns);
+  const shownColumns = [...selectedHeaders, ...extraColumns];
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -52,11 +62,12 @@ export default function EmployeeSegmentList({ title, fetchPage, exportConfig }) 
     items_per_page: pageSize,
     search: filters.search,
     search_branch: filters.search_branch,
+    ...(positionFilter ? { search_position: filters.search_position } : {}),
     table_headers: selectedHeaders.map((h) => ({ text: h.title, value: h.value })),
     // vueportal's "Include Sales Specialist" toggle is commented out, so
     // these lists always exclude them.
     include_sales_specialist: false,
-  }), [filters, selectedHeaders]);
+  }), [filters, selectedHeaders, positionFilter]);
 
   const loadPage = useCallback(async (page, pageSize) => {
     setLoading(true);
@@ -184,6 +195,20 @@ export default function EmployeeSegmentList({ title, fetchPage, exportConfig }) 
                   onChange={(branch) => setFilters((f) => ({ ...f, search_branch: branch }))}
                 />
               )}
+              {positionFilter && (
+                <Select
+                  value={filters.search_position || undefined}
+                  onChange={(position) => setFilters((f) => ({ ...f, search_position: position || "" }))}
+                  placeholder="Position"
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  loading={positionsLoading}
+                  style={{ width: 220 }}
+                  popupMatchSelectWidth={false}
+                  options={positionOptions.map((p) => ({ label: p.label, value: p.label }))}
+                />
+              )}
             </Space>
           </Col>
           <Col flex="none">
@@ -213,7 +238,7 @@ export default function EmployeeSegmentList({ title, fetchPage, exportConfig }) 
         {!isMobile ? (
           <EmployeeTable
             employees={employees}
-            columns={selectedHeaders.map((h) => ({ title: h.title, dataIndex: h.dataIndex, render: h.render }))}
+            columns={shownColumns.map((h) => ({ title: h.title, dataIndex: h.dataIndex, render: h.render }))}
             loading={loading}
             pagination={{ ...pagination, showSizeChanger: true, pageSizeOptions: PAGE_SIZE_OPTIONS, showTotal: (total, [from, to]) => `${from}-${to} of ${total}` }}
             selectedRowKeys={selectedRowKeys}
@@ -227,7 +252,7 @@ export default function EmployeeSegmentList({ title, fetchPage, exportConfig }) 
           <>
             <EmployeeCardMobile
               employees={employees}
-              selectedHeaders={selectedHeaders}
+              selectedHeaders={shownColumns}
               selectedRowKeys={selectedRowKeys}
               setSelectedRowKeys={setSelectedRowKeys}
               onDelete={deleteData}

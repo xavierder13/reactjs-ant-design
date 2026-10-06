@@ -450,7 +450,16 @@ Each list's total matches its dashboard card.
 - **Hired This Month / For Regularization** (`EmployeeSegmentList`): same rows as the
   main list (backend `getEmployees()` base), so the main list's columns, search,
   View/Edit via router state, delete and bulk delete all apply. Branch filter
-  (`search_branch`, branch **name**) only for `canFilterByBranch`. Always sends
+  (`search_branch`, branch **name**) only for `canFilterByBranch`. For
+  Regularization also has a Position filter (`positionFilter` prop →
+  `search_position`, position **name**, matched on `f.name` in
+  `forRegularizationQuery()`, so the export honours it too; Hired This
+  Month's endpoint doesn't accept it). For Regularization excludes failed
+  regularization interviews server-side (so its dashboard card does too),
+  starts with Date Employed instead of Status (`defaultColumns`), and always
+  shows an Interview column (`extraColumns` — outside the picker, so no
+  backend search mapping) reading Passed + date or "Not yet interviewed".
+  Always sends
   `include_sales_specialist: false` (vueportal's toggle is commented out). No status
   filter — both endpoints are active-only.
 - **Export**: For Regularization → `for_regularization/export` with the list filters.
