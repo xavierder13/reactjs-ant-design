@@ -78,6 +78,11 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
   - `titleMap` (or a regex case in `getPageMeta`) — page title + breadcrumb
 - A page that exists under `src/pages` but is not registered in both
   `AppRoutes.jsx` and `MainLayout.jsx` is **not reachable in the app**.
+- A sidebar entry that runs a one-off job instead of opening a page (e.g.
+  Human Resource → Sync & Updates) has `action` instead of `link`: add its
+  confirm text + API call to `SYNC_ACTIONS` in `MainLayout.jsx`; gate it
+  with the backend middleware's permission (`permissions: []` =
+  Administrator only).
 
 ## State Management Conventions (Zustand)
 

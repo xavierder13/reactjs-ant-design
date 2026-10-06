@@ -14,7 +14,8 @@ import {
   Space,
   Breadcrumb,
   Spin,
-  ConfigProvider
+  ConfigProvider,
+  App,
 } from 'antd';
 import {
   DashboardOutlined,
@@ -34,9 +35,36 @@ import {
   ClusterOutlined,
   FundOutlined,
   ToolOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
+import syncApi from '../services/employee/syncApi';
+import handleApiError from '../utils/handleApiError';
+
+// Sidebar "Sync & Updates" actions — wording from vueportal's Home.vue.
+const SYNC_ACTIONS = {
+  syncReferralCodes: {
+    title: 'Sync Referral Codes',
+    content: 'Referral codes will be synced with the careers portal.',
+    request: syncApi.syncReferralCodes,
+  },
+  generateReferralCodes: {
+    title: 'Generate Referral Codes',
+    content: 'Referral codes will be generated for employees who have none.',
+    request: syncApi.generateReferralCodes,
+  },
+  deactivateResigned: {
+    title: 'Deactivate Resigned Employees',
+    content: 'Employees whose last day of work has passed will be deactivated.',
+    request: syncApi.deactivateResigned,
+  },
+  regularizePassed: {
+    title: 'Regularize Passed Employees',
+    content: 'Probationary employees due for regularization who passed the regularization interview will be updated to Regular, regularized on their 180th day.',
+    request: syncApi.regularizePassed,
+  },
+};
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -179,6 +207,21 @@ const menuData = [
         children: [
           { key: 'acknowledgment-reports', title: 'Branch Reports', link: '/acknowledgment-reports', permissions: ['employee-acknowledgment-reports'] },
           { key: 'hr-report-branch-manpower', title: 'Branch Manpower Fill Rate', link: '/reports/branch-manpower', permissions: ['employee-master-data-branch-manpower-export'] },
+        ],
+      },
+      // Manual triggers, same group as vueportal's "Sync & Updates" menu:
+      // `action` items confirm, then call SYNC_ACTIONS[action] (no route).
+      // Permissions are the backend middleware's own gates; `[]` means
+      // Administrator only (the sidebar always lets the Administrator in).
+      {
+        key: 'hr-sync',
+        title: 'Sync & Updates',
+        icon: <SyncOutlined />,
+        children: [
+          { key: 'sync-referral-codes',     title: 'Sync Referral Codes',           action: 'syncReferralCodes',     permissions: ['careers-referral-list-sync'] },
+          { key: 'generate-referral-codes', title: 'Generate Referral Codes',       action: 'generateReferralCodes', permissions: [] },
+          { key: 'deactivate-resigned',     title: 'Deactivate Resigned',           action: 'deactivateResigned',    permissions: ['employee-master-data-deactivate'] },
+          { key: 'regularize-passed',       title: 'Regularize Passed',             action: 'regularizePassed',      permissions: ['employee-master-data-regularize'] },
         ],
       },
     ],
@@ -334,6 +377,27 @@ const MainLayout = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, isLoaded, hasPermission, hasRole, hasAnyPermission, clearAuth } = useAuth();
+  const { modal, message: messageApi } = App.useApp();
+
+  const runSyncAction = (name) => {
+    const { title, content, request } = SYNC_ACTIONS[name];
+    modal.confirm({
+      title,
+      content,
+      okText: 'Proceed',
+      // Resolves when the request finishes, so the dialog shows a spinner
+      // on Proceed until then.
+      onOk: async () => {
+        try {
+          const { data } = await request();
+          if (data?.error) messageApi.error(typeof data.error === 'string' ? data.error : `${title} failed.`);
+          else messageApi.success(data?.message || `${title} done.`);
+        } catch (error) {
+          handleApiError(error, messageApi);
+        }
+      },
+    });
+  };
   const [collapsed, setCollapsed] = React.useState(false);
 
   const getPageMeta = (pathname) => {
@@ -418,6 +482,7 @@ const MainLayout = () => {
     const isActive = item.key === activeKey;
     return {
       key: item.key,
+      ...(item.action ? { onClick: () => runSyncAction(item.action) } : {}),
       icon: React.isValidElement(item.icon)
         ? React.cloneElement(item.icon, {
             style: { color: isActive ? '#fff' : 'rgba(255,255,255,0.65)', fontSize: 14 },
