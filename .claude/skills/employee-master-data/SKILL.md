@@ -381,7 +381,8 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   `employee-master-data-regularize`) catches the ones who become due later.
   Date of Regularization is therefore read-only: the shared
   `components/ReadOnlyDateInput.jsx` (a plain `<Input readOnly>`, same look
-  as the Referral Code, not the greyed disabled style); the dayjs value stays in the form
+  as the Referral Code, not the greyed disabled style; also used for
+  Employee Details' Date Resigned); the dayjs value stays in the form
   untouched. Plus two
   files distinguished by `title` ("Performance for Regularization", "Memo
   of Regularization") on the core `file_upload`/`file_delete`/

@@ -6,17 +6,13 @@ import dayjs from "dayjs";
 import useEmployeeFormOptions from "../../../../hooks/useEmployeeFormOptions";
 
 import { DISPLAY_DATE_FORMAT } from "../../../../utils/formatDate";
+import { EMPLOYMENT_TYPE_OPTIONS } from "../../../../utils/employmentTypes";
+import ReadOnlyDateInput from "../ReadOnlyDateInput";
 // Matches vueportal's recruitment portal referral link format exactly
 // (EmployeeInformationTabs.vue's `referralLink` computed property) —
 // keep these in sync if the recruitment portal's URL/query param changes.
 const buildReferralLink = (code) => `https://recruitment.addessa.com/careers?ref=${code}`;
 
-// Matches EmployeeMasterDataController's validator() field-for-field
-// (Probationary/Regular — case must match exactly).
-const EMPLOYMENT_TYPE_OPTIONS = [
-  { label: "Probationary", value: "Probationary" },
-  { label: "Regular", value: "Regular" },
-];
 
 // Renders bare Form.Item fields only, inside EmployeeForm.jsx's shared
 // <Form> — see PersonalInformation.jsx's header comment for why.
@@ -40,19 +36,10 @@ export default function EmployeeDetailsTab({ initialData, mode }) {
   // Organization endpoints, which need branch-list/department-list/
   // position-list that HR roles don't have.
   const { branchOptions, departmentOptions, positionOptions } = useEmployeeFormOptions();
-  // Cross-field validation below (Date Resigned >= Date Employed) needs
-  // the shared ancestor Form instance directly — this component only ever
-  // renders bare Form.Item fields (see the header comment), it doesn't own
-  // a <Form> to read `form` off of a prop.
-  const form = Form.useFormInstance();
-
   const isEdit = mode === "edit" || mode === "view";
-  // User-requested, scoped to create mode only: neither date may be in
-  // the future, and Date Resigned can't be earlier than Date Employed.
-  // Not applied to edit mode — that wasn't asked for, and Date Resigned
-  // there is also set automatically by the Offboarding resign/rehire flow
-  // (see patchEmployee in EmployeeForm.jsx), which doesn't go through
-  // this form's own validation at all.
+  // User-requested, scoped to create mode only: Date Employed may not be in
+  // the future. (Date Resigned is read-only — the Offboarding resign/rehire
+  // flow sets it, see patchEmployee in EmployeeForm.jsx.)
   const isCreateMode = mode === "create";
   const disableFutureDates = (current) => current && current.isAfter(dayjs(), "day");
   const referralCode = initialData?.referral?.referral_code;
@@ -133,29 +120,14 @@ export default function EmployeeDetailsTab({ initialData, mode }) {
           </Form.Item>
         </Col>
         <Col xs={24} md={8} lg={6}>
+          {/* Read-only: set by the Offboarding tab (employeeApi.resign) from
+              the record's Last Day of Work. */}
           <Form.Item
             label="Date Resigned"
             name="date_resigned"
-            dependencies={isCreateMode ? ["date_employed"] : []}
-            rules={isCreateMode ? [{
-              validator: (_, value) => {
-                if (!value) return Promise.resolve();
-                if (value.isAfter(dayjs(), "day")) {
-                  return Promise.reject(new Error("Date Resigned cannot be a future date."));
-                }
-                const dateEmployed = form.getFieldValue("date_employed");
-                if (dateEmployed && value.isBefore(dateEmployed, "day")) {
-                  return Promise.reject(new Error("Date Resigned must be on or after Date Employed."));
-                }
-                return Promise.resolve();
-              },
-            }] : []}
+            extra="Set from the Offboarding record's Last Day of Work."
           >
-            <DatePicker
-              style={{ width: "100%" }}
-              format={DISPLAY_DATE_FORMAT}
-              disabledDate={isCreateMode ? disableFutureDates : undefined}
-            />
+            <ReadOnlyDateInput placeholder="Not resigned" />
           </Form.Item>
         </Col>
         <Col xs={24} md={8} lg={6}>

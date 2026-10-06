@@ -6,7 +6,7 @@ const { Text } = Typography;
 
 // Fixed entity order → fixed colors (never re-colored by rank or filter).
 const RANK_ORDER = ['Rank & File', 'Supervisory', 'Managerial', 'Top Management'];
-const EMPLOYMENT_ORDER = ['Regular', 'Probationary'];
+const EMPLOYMENT_ORDER = ['Regular', 'Probationary', 'Agency', 'Contractual'];
 const GENDER_ORDER = ['Male', 'Female'];
 
 // Rank, employment type and gender as 100% share bars.
