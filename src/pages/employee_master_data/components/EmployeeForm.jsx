@@ -179,6 +179,8 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
     if ('date_resigned' in patch) {
       form.setFieldsValue({ date_resigned: toDayjs(patch.date_resigned) });
     }
+    // Set by a Branch Assignment row's agency tag (BranchAssignmentPositionTab).
+    if ('employment_type' in patch) form.setFieldsValue({ employment_type: patch.employment_type });
   };
 
   // `employee` (the saved/live baseline — "currentData") vs the form's

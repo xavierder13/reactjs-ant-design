@@ -361,6 +361,20 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   "Add Period" creates all 12 months of a year in one call (`grade: null`
   each — not Vue's `grade: ""`); "Delete Period" removes a year's 12 rows
   by `employee_id`+`period`; only a single row's `grade` is editable.
+- **Branch Assignment & Positions — agency tag**: each row has `is_agency`
+  (Under Agency switch, default Direct) + optional `agency_name`
+  (AutoComplete fed by `branch_assignment_position/agency_names`; a direct
+  row stores no name; the Vue form doesn't send them, so the backend only
+  writes them when sent). Employment Type follows the agency *state*
+  (`EmployeeBranchAssignmentPosition::agencyState()`: latest row agency →
+  'agency'; latest direct with an earlier agency row → 'absorbed'; else
+  'direct'; latest = date_assigned then last entered). Only two transitions
+  change it — → agency sets **Agency**, agency → absorbed sets
+  **Probationary** — so transfers, remarks edits, deleting a transfer or
+  tagging old history never undo HR's value. Store/update/delete return
+  `employment_type` when it changed; the tab shows a message and patches
+  Employee Details via `onEmployeeChange` (so a later Save doesn't revert
+  it). Staged rows on create go through the same rule.
 - **Branch Assignment & Positions** side effect: backend store/update/
   delete overwrite the employee's own `branch_id`/`position_id`/
   `department_id` to match the latest `date_assigned` row, so it can

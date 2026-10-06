@@ -101,6 +101,8 @@ export function getEmployeeTabItems({ mode, initialData, onEmployeeChange, onPer
         <PerformanceManagementTab
           mode={mode}
           initialData={initialData}
+          // Branch Assignment rows can change the Employment Type (agency tag)
+          onEmployeeChange={onEmployeeChange}
           onActiveSubTabChange={onPerformanceSubTabChange}
           pendingCreateData={pendingCreateData}
           onPendingCreateDataChange={onPendingCreateDataChange}

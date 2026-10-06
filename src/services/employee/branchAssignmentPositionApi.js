@@ -34,6 +34,10 @@ const branchAssignmentPositionApi = {
   // POST /api/employee_master_data/branch_assignment_position/delete
   // body: { branch_assignment_id }
   remove: (branchAssignmentId) => axios.post('/employee_master_data/branch_assignment_position/delete', { branch_assignment_id: branchAssignmentId }),
+
+  // GET /api/employee_master_data/branch_assignment_position/agency_names
+  // → { agency_names: [...] } — agency names already entered (suggestions).
+  agencyNames: () => axios.get('/employee_master_data/branch_assignment_position/agency_names'),
 };
 
 export default branchAssignmentPositionApi;

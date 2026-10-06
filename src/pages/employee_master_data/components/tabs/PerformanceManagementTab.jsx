@@ -45,7 +45,7 @@ import TrainingTab from "./performance/TrainingTab";
 // own named slice via a tiny (key) => value / (value) => update(key,
 // value) adapter, so this component stays a single prop pair instead of
 // threading 6 separate pairs.
-export default function PerformanceManagementTab({ mode = "create", initialData, onActiveSubTabChange, pendingCreateData, onPendingCreateDataChange }) {
+export default function PerformanceManagementTab({ mode = "create", initialData, onEmployeeChange, onActiveSubTabChange, pendingCreateData, onPendingCreateDataChange }) {
   const { hasPermission } = useAuth();
   const employeeId = initialData?.id;
   const pending = (key) => pendingCreateData?.[key] || [];
@@ -124,6 +124,7 @@ export default function PerformanceManagementTab({ mode = "create", initialData,
           initialRecords={initialData?.branch_assignment_positions}
           pendingRecords={pending("branchAssignmentPositions")}
           onPendingRecordsChange={setPending("branchAssignmentPositions")}
+          onEmployeeChange={onEmployeeChange}
         />
       ),
     },
