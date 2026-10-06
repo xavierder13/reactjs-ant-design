@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import employeeApi from '../../../services/employee/employeeApi';
 import handleApiError from '../../../utils/handleApiError';
 import { isActiveValue } from '../../../utils/employeeStatus';
+import { formatDate } from '../../../utils/formatDate';
 import useAuth from '../../../hooks/useAuth';
 import EmployeeTabs from './EmployeeTabs';
 
@@ -24,8 +25,8 @@ const EMPLOYEE_DETAILS_FIELDS = [
   'job_title_code', 'position_id', 'department_id', 'branch_id',
   'employment_type', 'date_employed', 'date_resigned', 'application_source',
 ];
-const EVALUATION_REGULARIZATION_FIELDS = ['regularization_date'];
-const DATE_FIELDS = new Set(['birth_date', 'date_employed', 'date_resigned', 'regularization_date']);
+const EVALUATION_REGULARIZATION_FIELDS = ['regularization_date', 'regularization_interview_date', 'regularization_interview_status'];
+const DATE_FIELDS = new Set(['birth_date', 'date_employed', 'date_resigned', 'regularization_date', 'regularization_interview_date']);
 
 // mode: 'create' | 'edit' | 'view'. Mirrors ManpowerRequestForm.jsx's
 // shape (single Form instance, buildPayload, Save/Cancel). initialData is
@@ -288,6 +289,8 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
         date_employed:     initialData.date_employed ? dayjs(initialData.date_employed) : null,
         date_resigned:     initialData.date_resigned ? dayjs(initialData.date_resigned) : null,
         regularization_date: initialData.regularization_date ? dayjs(initialData.regularization_date) : null,
+        regularization_interview_date: initialData.regularization_interview_date ? dayjs(initialData.regularization_interview_date) : null,
+        regularization_interview_status: initialData.regularization_interview_status || null,
         application_source: initialData.application_source,
         active:             Boolean(initialData.active),
       });
@@ -321,13 +324,20 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
     date_employed:       values.date_employed ? values.date_employed.format('YYYY-MM-DD') : null,
     date_resigned:       values.date_resigned ? values.date_resigned.format('YYYY-MM-DD') : null,
     regularization_date: values.regularization_date ? values.regularization_date.format('YYYY-MM-DD') : null,
+    regularization_interview_date: values.regularization_interview_date ? values.regularization_interview_date.format('YYYY-MM-DD') : null,
+    regularization_interview_status: values.regularization_interview_date ? values.regularization_interview_status || null : null,
     application_source:  values.application_source,
     active:              Boolean(values.active),
   });
 
   const handleSave = async () => {
     try {
-      const values = await form.validateFields();
+      await form.validateFields();
+      // validateFields() only returns fields that are mounted, and a tab's
+      // fields only mount once it's opened — saving from Evaluation &
+      // Regularization without opening Employee Details dropped branch/
+      // position/employment type. The store holds every pre-filled value.
+      const values = form.getFieldsValue(true);
       setSaving(true);
       const payload = buildPayload(values);
       if (mode === 'create') {
@@ -368,6 +378,13 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
         navigate(`/employees/${saved.id}`, { state: { employee: saved } });
       } else {
         const { data } = await employeeApi.update(initialData.id, payload);
+        // update() also answers a validation failure with HTTP 200 and the
+        // bare field-error bag — don't report that as saved.
+        if (!data.employee && !data.employee_master_data) {
+          const [firstError] = Object.values(data || {});
+          messageApi.error([].concat(firstError)[0] || 'Failed to update employee.');
+          return;
+        }
         // Same unconfirmed-resource-key caveat as create (above). The
         // fallback here additionally drops any nested relation object
         // (position/department/branch, used for the read-only Rank/
@@ -383,6 +400,11 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
           branch: payload.branch_id === initialData.branch_id ? initialData.branch : undefined,
         };
         messageApi.success(data.message || 'Employee updated.');
+        // update() switches a due Probationary employee who passed the
+        // regularization interview to Regular, dated date_employed + 180 days.
+        if (payload.employment_type !== 'Regular' && saved.employment_type === 'Regular') {
+          messageApi.info(`Employment Type updated to Regular as of ${formatDate(saved.regularization_date)} (passed the regularization interview).`);
+        }
         navigate(`/employees/${initialData.id}`, { state: { employee: saved } });
       }
     } catch (error) {

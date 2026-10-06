@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Form, DatePicker, Typography, Card, Tag, Spin, App } from "antd";
+import { Form, DatePicker, Select, Row, Col, Typography, Card, Tag, Spin, App } from "antd";
 
 import employeeApi from "../../../../../services/employee/employeeApi";
 import handleApiError from "../../../../../utils/handleApiError";
 import downloadBlobResponse from "../../../../../utils/downloadBlobResponse";
 import { DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
 import FileSlotCard, { FileSlots } from "../../FileSlotCard";
+import ReadOnlyDateInput from "../../ReadOnlyDateInput";
 
 // vueportal's "Evaluation & Regularization" sub-tab (EmployeeInformationTabs.vue)
 // is not its own CRUD module like the other 6 Performance Management
@@ -146,14 +147,51 @@ export default function EvaluationRegularizationTab({ employeeId, mode, initialF
 
   return (
     <div>
-      <Form.Item
-        name="regularization_date"
-        label="Date of Regularization"
-        labelCol={{ span: 24 }}
-        style={{ maxWidth: 320 }}
-      >
-        <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} disabled={readOnly} />
-      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={8}>
+          {/* Read-only: set by the backend (date employed + 180 days) when a
+              Passed interview regularizes the employee. Still part of the
+              form so its saved value goes back unchanged on Save. */}
+          <Form.Item
+            name="regularization_date"
+            label="Date of Regularization"
+            labelCol={{ span: 24 }}
+            extra="Set automatically: 180 days after Date Employed, once the interview is Passed."
+          >
+            <ReadOnlyDateInput placeholder="Not yet regularized" />
+          </Form.Item>
+        </Col>
+        {/* A Passed result regularizes the employee (Employment Type →
+            Regular) once due — see the backend's passedForRegularizationQuery(). */}
+        <Col xs={24} md={8}>
+          <Form.Item name="regularization_interview_date" label="Date of Regularization Interview" labelCol={{ span: 24 }}>
+            <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} disabled={readOnly} />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={8}>
+          <Form.Item
+            name="regularization_interview_status"
+            label="Interview Result"
+            labelCol={{ span: 24 }}
+            dependencies={["regularization_interview_date"]}
+            rules={[({ getFieldValue }) => ({
+              validator: (_, value) => (getFieldValue("regularization_interview_date") && !value
+                ? Promise.reject(new Error("Interview Result is required when the interview date is filled in"))
+                : Promise.resolve()),
+            })]}
+          >
+            <Select
+              allowClear
+              placeholder="Passed or Failed"
+              disabled={readOnly}
+              options={[
+                { label: "Passed", value: "Passed" },
+                { label: "Failed", value: "Failed" },
+              ]}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
 
       {employeeId ? (
         <FileSlots>

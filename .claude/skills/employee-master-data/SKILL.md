@@ -192,8 +192,12 @@ mirroring `ManpowerRequestForm.jsx`:
 - `EmployeeTabs.jsx` renders inside that one `<Form>`; every tab's fields
   are bare `Form.Item`s with **no own `<Form>`/`useForm()`**. **Never wrap a
   tab's fields in its own `<Form>`** — it silently detaches them from
-  `validateFields()` and the `disabled` cascade. AntD `Tabs` keeps inactive
-  panes mounted, so values survive tab switches.
+  `validateFields()` and the `disabled` cascade. AntD `Tabs` only mounts a
+  pane the first time it's opened (then keeps it), so `validateFields()`
+  returns just the opened tabs' fields — `handleSave` builds the payload
+  from `form.getFieldsValue(true)` (the whole store, pre-filled for every
+  tab) instead. update() answers validation failures with HTTP 200 and a
+  bare error bag; `handleSave` shows the first error instead of "saved".
 - `buildPayload(values)` maps form values (dayjs → `'YYYY-MM-DD'`, `active`
   → boolean) into the payload — extend it for new core fields (e.g.
   `regularization_date`), don't build payloads ad hoc.
@@ -360,7 +364,21 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   `branch`/`position` here are **name strings**, not ids — Selects reuse
   `useEmployeeFormOptions` keyed on `.label`.
 - **Evaluation & Regularization** is not a CRUD module: the core record's
-  `regularization_date` (bare `Form.Item`, saved by the main Save) plus two
+  `regularization_date`, `regularization_interview_date` and
+  `regularization_interview_status` (Passed/Failed, required once the
+  interview date is set) — bare `Form.Item`s saved by the main Save (the
+  backend only writes the interview columns when the request sends them;
+  the Vue form doesn't). On save, a changed interview with result Passed
+  switches an employee who is already due (active, Probationary, 150+ days
+  since `date_employed`) to `employment_type` Regular with
+  `regularization_date` = `date_employed` + 180 days (user rule — not the
+  interview date); vueportal's "Regularize Passed Employees" action
+  (`GET employee_master_data/regularize_passed_employees`,
+  `employee-master-data-regularize`) catches the ones who become due later.
+  Date of Regularization is therefore read-only: the shared
+  `components/ReadOnlyDateInput.jsx` (a plain `<Input readOnly>`, same look
+  as the Referral Code, not the greyed disabled style); the dayjs value stays in the form
+  untouched. Plus two
   files distinguished by `title` ("Performance for Regularization", "Memo
   of Regularization") on the core `file_upload`/`file_delete`/
   `file_download` endpoints — the title is sent as `document_type`. Each is a
