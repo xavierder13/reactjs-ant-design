@@ -410,11 +410,11 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   read-only on Employee Details) = the first direct Branch Assignment after
   the last agency one, else `date_employed`; the For Regularization
   list/export, the dashboard's regularization section and the sync all use
-  it. Date of Regularization is therefore read-only: the shared
-  `components/ReadOnlyDateInput.jsx` (a plain `<Input readOnly>`, same look
-  as the Referral Code, not the greyed disabled style; also used for
-  Employee Details' Date Resigned); the dayjs value stays in the form
-  untouched. Plus two
+  it. Date of Regularization stays an editable date picker (user decision)
+  so HR can correct the auto-filled date. Employee Details' Date Resigned is
+  read-only via the shared `components/ReadOnlyDateInput.jsx` (a plain
+  `<Input readOnly>`, same look as the Referral Code, not the greyed disabled
+  style; the dayjs value stays in the form untouched). Plus two
   files distinguished by `title` ("Performance for Regularization", "Memo
   of Regularization") on the core `file_upload`/`file_delete`/
   `file_download` endpoints — the title is sent as `document_type`. Each is a

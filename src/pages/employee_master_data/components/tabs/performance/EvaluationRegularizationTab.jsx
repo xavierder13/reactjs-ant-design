@@ -6,7 +6,6 @@ import handleApiError from "../../../../../utils/handleApiError";
 import downloadBlobResponse from "../../../../../utils/downloadBlobResponse";
 import { DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
 import FileSlotCard, { FileSlots } from "../../FileSlotCard";
-import ReadOnlyDateInput from "../../ReadOnlyDateInput";
 
 // vueportal's "Evaluation & Regularization" sub-tab (EmployeeInformationTabs.vue)
 // is not its own CRUD module like the other 6 Performance Management
@@ -149,16 +148,15 @@ export default function EvaluationRegularizationTab({ employeeId, mode, initialF
     <div>
       <Row gutter={16}>
         <Col xs={24} md={8}>
-          {/* Read-only: set by the backend (Direct Hire Since + 180 days) when a
-              Passed interview regularizes the employee. Still part of the
-              form so its saved value goes back unchanged on Save. */}
+          {/* Filled by the backend (Direct Hire Since + 180 days) when a Passed
+              interview regularizes the employee; HR can still change it. */}
           <Form.Item
             name="regularization_date"
             label="Date of Regularization"
             labelCol={{ span: 24 }}
-            extra="Set automatically: 180 days after Direct Hire Since, once the interview is Passed."
+            extra="Set automatically 180 days after Direct Hire Since once the interview is Passed; can be changed."
           >
-            <ReadOnlyDateInput placeholder="Not yet regularized" />
+            <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} disabled={readOnly} />
           </Form.Item>
         </Col>
         {/* A Passed result regularizes the employee (Employment Type →
