@@ -14,7 +14,7 @@ import downloadBlobResponse from "../../../utils/downloadBlobResponse";
 import { formatDate, DISPLAY_DATE_FORMAT } from "../../../utils/formatDate";
 import ColumnSelector from "../components/ColumnSelector";
 import OffboardingFormFields from "../components/tabs/offboarding/OffboardingFormFields";
-import OffboardingFileSlot from "../components/tabs/offboarding/OffboardingFileSlot";
+import OffboardingFileSlot, { OffboardingFileSlots } from "../components/tabs/offboarding/OffboardingFileSlot";
 import BranchFilter from "./BranchFilter";
 import useListAccess from "./useListAccess";
 
@@ -334,17 +334,17 @@ export default function ResignedEmployees() {
         afterOpenChange={handleAfterOpenChange}
         confirmLoading={saving}
         okText="Save"
-        width={720}
+        width={880}
         destroyOnHidden
       >
         <Form form={form} layout="vertical">
           <OffboardingFormFields />
           {editing && (
-            <>
+            <OffboardingFileSlots>
               {fileSlot("Last Day File", "last_day_file")}
               {fileSlot("Clearance File", "clearance_file")}
               {fileSlot("Quitclaim File", "quitclaim_file")}
-            </>
+            </OffboardingFileSlots>
           )}
         </Form>
       </Modal>

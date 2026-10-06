@@ -14,22 +14,24 @@ const fileIcon = (name = "") => {
   return <FileOutlined />;
 };
 
+// Shrinks to the space left beside the buttons (narrow cards cut the name
+// with an ellipsis and show it in full on hover).
 const FileName = ({ name }) => (
-  <Space align="center" style={{ minWidth: 0, flex: 1 }}>
-    <span style={{ fontSize: 28, lineHeight: 1 }}>{fileIcon(name)}</span>
-    <Typography.Text ellipsis={{ tooltip: name }} style={{ maxWidth: 200 }}>{name}</Typography.Text>
-  </Space>
+  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
+    <span style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>{fileIcon(name)}</span>
+    <Typography.Text ellipsis={{ tooltip: name }} style={{ minWidth: 0 }}>{name}</Typography.Text>
+  </div>
 );
 
-// A row of file cards, two per row (stacked on phones). Render inside the
-// caller's <Form>. The backend ignores an upload over an existing file, hence
-// the hint.
-export function FileSlots({ children }) {
+// A row of file cards, `perRow` per row (stacked on phones). Render inside
+// the caller's <Form>. The backend ignores an upload over an existing file,
+// hence the default hint (pass hint={null} where nothing can be changed).
+export function FileSlots({ children, perRow = 2, hint = "To replace a file, delete it first." }) {
   return (
-    <Form.Item label="Attachments" extra="To replace a file, delete it first.">
+    <Form.Item label="Attachments" extra={hint}>
       <Row gutter={[16, 16]}>
         {[].concat(children).filter(Boolean).map((child, i) => (
-          <Col key={i} xs={24} md={12}>{child}</Col>
+          <Col key={i} xs={24} md={24 / perRow}>{child}</Col>
         ))}
       </Row>
     </Form.Item>
@@ -39,8 +41,9 @@ export function FileSlots({ children }) {
 // One attachment card. With a saved file (`fileName`): name + download/delete.
 // Without one: a drag-and-drop picker whose file is held as pending until the
 // record is saved. Pass `onDownload`/`onDelete` only when the user may do
-// that; omitted means the button is hidden.
-export default function FileSlotCard({ label, fileName, pendingFile, onPendingFileChange, onDownload, onDelete }) {
+// that; omitted means the button is hidden. `readOnly` shows "Not uploaded."
+// instead of the picker.
+export default function FileSlotCard({ label, fileName, pendingFile, onPendingFileChange, onDownload, onDelete, readOnly = false }) {
   const status = fileName
     ? <Tag color="success">Attached</Tag>
     : pendingFile
@@ -52,7 +55,7 @@ export default function FileSlotCard({ label, fileName, pendingFile, onPendingFi
     body = (
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <FileName name={fileName} />
-        <Space>
+        <Space style={{ flexShrink: 0 }}>
           {onDownload && (
             <Tooltip title="Download">
               <Button color="purple" variant="outlined" icon={<DownloadOutlined />} size="small" onClick={onDownload} />
@@ -77,6 +80,8 @@ export default function FileSlotCard({ label, fileName, pendingFile, onPendingFi
         </Tooltip>
       </div>
     );
+  } else if (readOnly) {
+    body = <Typography.Text type="secondary">Not uploaded.</Typography.Text>;
   } else {
     body = (
       <Upload.Dragger

@@ -392,9 +392,15 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   employee_id, date_resigned: last_day_of_work })` to flip the core
   employee's `active`/`date_resigned`. Best-effort: a failure is shown but
   doesn't roll back the saved record (same as the reference).
-- Three file slots (Last Day, Clearance, Quitclaim) can be uploaded on
-  **create** too; replace-blocked download/delete UI only once a file
-  exists.
+- Three file slots (Last Day, Clearance, Quitclaim) — `OffboardingFileSlot`
+  cards (shared `FileSlotCard`) in one `OffboardingFileSlots` row, also
+  used by the Resigned list's edit modal. Pickable on **create** too;
+  replace-blocked download/delete only once a file exists. Where the
+  record can't be edited (employee View mode / no edit permission) the row
+  action is View (eye), opening the modal read-only: fields disabled,
+  download-only cards. It's wrapped in `ConfigProvider componentDisabled=
+  {false}` because the employee page's View-mode `<Form disabled>` would
+  otherwise disable the View/Download/Close buttons.
 - Fixed lists: 23 resignation reasons ending in "Others (Specify)" (saved
   literally, no free-text follow-up); `compliance`: `Render 30 Days`,
   `Render 60 days`, `Non-Compliant` (keep the capitalization — it's the

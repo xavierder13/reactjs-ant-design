@@ -3,20 +3,18 @@
 import { useState } from "react";
 import {
   Table, Button, Modal, Form, Space,
-  Popconfirm, Tooltip, Empty, Tag, Upload, App,
+  Popconfirm, Tooltip, Empty, Tag, App, ConfigProvider,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import useAuth from "../../../../hooks/useAuth";
 import handleApiError from "../../../../utils/handleApiError";
 import employeeApi from "../../../../services/employee/employeeApi";
 import offboardingApi from "../../../../services/employee/offboardingApi";
-import OffboardingFileSlot from "./offboarding/OffboardingFileSlot";
+import OffboardingFileSlot, { OffboardingFileSlots } from "./offboarding/OffboardingFileSlot";
 import OffboardingFormFields from "./offboarding/OffboardingFormFields";
 import { formatDate } from "../../../../utils/formatDate";
-
-const ACCEPTED_FILE_TYPES = ".jpeg,.jpg,.png,.docs,.docx,.pdf";
 
 // This module's data source ambiguity (the previous Roadmap blocker) is
 // resolved — see offboardingApi.js for the full evidence. It also carries
@@ -29,6 +27,9 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
   const [records, setRecords] = useState(initialData?.offboardings || []);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  // Read-only look at a record (and its files) where it can't be edited —
+  // employee View mode, or no edit permission.
+  const [viewOnly, setViewOnly] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pendingLastDayFile, setPendingLastDayFile] = useState(null);
   const [pendingClearanceFile, setPendingClearanceFile] = useState(null);
@@ -85,11 +86,24 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
     setModalOpen(true);
   };
 
+  const openView = (record) => {
+    setEditing(record);
+    setViewOnly(true);
+    setModalOpen(true);
+  };
+
   const closeModal = () => {
     setModalOpen(false);
     setEditing(null);
+    setViewOnly(false);
     clearPendingFiles();
   };
+
+  const FILE_SLOTS = [
+    { label: "Last Day File", documentType: "last_day_file", pending: pendingLastDayFile, setPending: setPendingLastDayFile },
+    { label: "Clearance File", documentType: "clearance_file", pending: pendingClearanceFile, setPending: setPendingClearanceFile },
+    { label: "Quitclaim File", documentType: "quitclaim_file", pending: pendingQuitclaimFile, setPending: setPendingQuitclaimFile },
+  ];
 
   // Populate/reset the form only after the Modal has actually opened, not
   // in openCreate/openEdit above — this Modal has destroyOnHidden, so its
@@ -231,12 +245,21 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
       key: "last_pay_is_issued",
       render: (v) => <Tag color={v ? "success" : "default"}>{v ? "Yes" : "No"}</Tag>,
     },
-    ...(canEdit || canDelete ? [{
+    {
       title: "Actions",
       key: "actions",
       width: 100,
       render: (_, record) => (
         <Space>
+          {!canEdit && (
+            // The employee page's View-mode <Form disabled> would disable
+            // this button (and the modal's Download buttons) too.
+            <ConfigProvider componentDisabled={false}>
+              <Tooltip title="View">
+                <Button color="blue" variant="outlined" icon={<EyeOutlined />} size="small" onClick={() => openView(record)} />
+              </Tooltip>
+            </ConfigProvider>
+          )}
           {canEdit && (
             <Tooltip title="Edit">
               <Button color="green" variant="outlined" icon={<EditOutlined />} size="small" onClick={() => openEdit(record)} />
@@ -257,7 +280,7 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
           )}
         </Space>
       ),
-    }] : []),
+    },
   ];
 
   return (
@@ -272,92 +295,44 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
 
       <Table rowKey="id" size="small" dataSource={records} columns={columns} pagination={false} scroll={{ x: "max-content" }} />
 
-      <Modal
-        title={editing ? "Edit Offboarding Record" : "Add Offboarding Record"}
-        open={modalOpen}
-        onCancel={closeModal}
-        onOk={handleSave}
-        afterOpenChange={handleAfterOpenChange}
-        confirmLoading={saving}
-        okText="Save"
-        width={720}
-        destroyOnHidden
-      >
-        <Form form={form} layout="vertical">
-          <OffboardingFormFields />
+      <ConfigProvider componentDisabled={false}>
+        <Modal
+          title={viewOnly ? "Offboarding Record" : editing ? "Edit Offboarding Record" : "Add Offboarding Record"}
+          open={modalOpen}
+          onCancel={closeModal}
+          onOk={handleSave}
+          afterOpenChange={handleAfterOpenChange}
+          confirmLoading={saving}
+          okText="Save"
+          cancelText={viewOnly ? "Close" : "Cancel"}
+          okButtonProps={{ style: viewOnly ? { display: "none" } : undefined }}
+          width={880}
+          destroyOnHidden
+        >
+          <Form form={form} layout="vertical" disabled={viewOnly}>
+            <OffboardingFormFields />
 
-          {editing ? (
-            <>
-              <OffboardingFileSlot
-                label="Last Day File"
-                documentType="last_day_file"
-                record={editing}
-                pendingFile={pendingLastDayFile}
-                onPendingFileChange={setPendingLastDayFile}
-                canDownload={canDownloadFile}
-                canDeleteFile={canDeleteFile}
-                onFileDeleted={updateEditingFromResponse}
-              />
-              <OffboardingFileSlot
-                label="Clearance File"
-                documentType="clearance_file"
-                record={editing}
-                pendingFile={pendingClearanceFile}
-                onPendingFileChange={setPendingClearanceFile}
-                canDownload={canDownloadFile}
-                canDeleteFile={canDeleteFile}
-                onFileDeleted={updateEditingFromResponse}
-              />
-              <OffboardingFileSlot
-                label="Quitclaim File"
-                documentType="quitclaim_file"
-                record={editing}
-                pendingFile={pendingQuitclaimFile}
-                onPendingFileChange={setPendingQuitclaimFile}
-                canDownload={canDownloadFile}
-                canDeleteFile={canDeleteFile}
-                onFileDeleted={updateEditingFromResponse}
-              />
-            </>
-          ) : (
-            <>
-              <Form.Item label="Last Day File">
-                <Upload
-                  accept={ACCEPTED_FILE_TYPES}
-                  beforeUpload={(file) => { setPendingLastDayFile(file); return false; }}
-                  onRemove={() => setPendingLastDayFile(null)}
-                  fileList={pendingLastDayFile ? [pendingLastDayFile] : []}
-                  maxCount={1}
-                >
-                  <Button icon={<UploadOutlined />}>Select File</Button>
-                </Upload>
-              </Form.Item>
-              <Form.Item label="Clearance File">
-                <Upload
-                  accept={ACCEPTED_FILE_TYPES}
-                  beforeUpload={(file) => { setPendingClearanceFile(file); return false; }}
-                  onRemove={() => setPendingClearanceFile(null)}
-                  fileList={pendingClearanceFile ? [pendingClearanceFile] : []}
-                  maxCount={1}
-                >
-                  <Button icon={<UploadOutlined />}>Select File</Button>
-                </Upload>
-              </Form.Item>
-              <Form.Item label="Quitclaim File">
-                <Upload
-                  accept={ACCEPTED_FILE_TYPES}
-                  beforeUpload={(file) => { setPendingQuitclaimFile(file); return false; }}
-                  onRemove={() => setPendingQuitclaimFile(null)}
-                  fileList={pendingQuitclaimFile ? [pendingQuitclaimFile] : []}
-                  maxCount={1}
-                >
-                  <Button icon={<UploadOutlined />}>Select File</Button>
-                </Upload>
-              </Form.Item>
-            </>
-          )}
-        </Form>
-      </Modal>
+            <ConfigProvider componentDisabled={false}>
+              <OffboardingFileSlots readOnly={viewOnly}>
+                {FILE_SLOTS.map(({ label, documentType, pending, setPending }) => (
+                  <OffboardingFileSlot
+                    key={documentType}
+                    label={label}
+                    documentType={documentType}
+                    record={editing}
+                    pendingFile={pending}
+                    onPendingFileChange={setPending}
+                    canDownload={canDownloadFile}
+                    canDeleteFile={canDeleteFile}
+                    onFileDeleted={updateEditingFromResponse}
+                    readOnly={viewOnly}
+                  />
+                ))}
+              </OffboardingFileSlots>
+            </ConfigProvider>
+          </Form>
+        </Modal>
+      </ConfigProvider>
     </div>
   );
 }
