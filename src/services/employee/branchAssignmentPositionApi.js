@@ -38,6 +38,21 @@ const branchAssignmentPositionApi = {
   // GET /api/employee_master_data/branch_assignment_position/agency_names
   // → { agency_names: [...] } — agency names already entered (suggestions).
   agencyNames: () => axios.get('/employee_master_data/branch_assignment_position/agency_names'),
+
+  // Bulk create/update (Generate Template → fill → Import Data):
+  // POST /api/employee_master_data/branch_assignment_position/template/download → .xls blob
+  // (params as vueportal's TemplateDownloadDialog.vue sends them), and
+  // POST .../branch_assignment_position/import (multipart "file") — HTTP 200 with
+  // success | error_column | error_row_data+field_values | error_empty |
+  // error; see ImportDataModal.jsx.
+  templateDownload: (params = {}) => axios.post("/employee_master_data/branch_assignment_position/template/download", params, { responseType: "blob" }),
+  import: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return axios.post("/employee_master_data/branch_assignment_position/import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 export default branchAssignmentPositionApi;

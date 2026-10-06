@@ -42,7 +42,9 @@ src/pages/employee_master_data/
     ColumnSelector.jsx            column picker (max 8 by default, `maxColumns` prop), part of the list request payload
     PaginationControls.jsx        mobile pagination UI
     EmployeeModal.jsx             UNUSED — see "Decisions" #3
-    ImportEmployeesModal.jsx      Excel/CSV bulk import
+    importDocumentTypes.js        bulk create/update document types (shared by the two modals below)
+    GenerateTemplateModal.jsx     Generate Template (Document Type + its options)
+    ImportDataModal.jsx           Import Data (Document Type + file; error list)
     ExportEmployeesModal.jsx      Excel export (core record "Employee List" report only); optional presetValues/extraPayload/title
     SubmitAcknowledgmentReportModal.jsx  opened from the bulk-action bar
     FileSlotCard.jsx              attachment card (status tag, drag-drop picker, download/delete) + FileSlots row wrapper; used by NTE and Disciplinary dialogs
@@ -340,8 +342,8 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   `-file-delete`; offboarding uses `-offboarding` (tab) +
   `-offboarding-create/-edit/-delete/-file-download/-file-delete`;
   Evaluation & Regularization uses `-evaluation-regularization` only.
-  `-import`/`-template-download` variants per sub-module are seeded but not
-  wired.
+  `-import`/`-template-download` variants per sub-module gate the Generate
+  Template / Import Data document types (`importDocumentTypes.js`).
 - **Rule for any new permission check: confirm the string against the
   live database and the code path the Vue reference actually renders**,
   not `PermissionSeeder.php` or a commented-out lookalike. Both were wrong
@@ -374,7 +376,17 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   tagging old history never undo HR's value. Store/update/delete return
   `employment_type` when it changed; the tab shows a message and patches
   Employee Details via `onEmployeeChange` (so a later Save doesn't revert
-  it). Staged rows on create go through the same rule.
+  it). Staged rows on create go through the same rule. Bulk tagging uses
+  the Branch Assignment Position template/import: the template lists every
+  employee's existing assignments pre-filled (+ `under_agency` Yes/No,
+  `agency_name`; one blank line per employee without rows). On upload,
+  code-and-name-only lines and lines identical to an existing row are set
+  aside *before* validation (old rows can name unregistered positions,
+  e.g. "Department Manager"); the rest are validated, then the same
+  employee code + date + position + branch updates that row, otherwise a
+  row is added; Employment Types are synced per employee; the message
+  reports added / updated / unchanged. Old 6-column files still import and
+  leave tags alone.
 - **Branch Assignment & Positions** side effect: backend store/update/
   delete overwrite the employee's own `branch_id`/`position_id`/
   `department_id` to match the latest `date_assigned` row, so it can
@@ -500,11 +512,21 @@ Each list's total matches its dashboard card.
 
 ## Export / Template Download
 
-- Only the core-record pieces are wired: Export sends `report_type:
-  'Employee List'` (the backend endpoint is a 4-way report dispatcher);
-  Template calls the plain `template/download`. Other report/template
-  types belong to their own sub-modules — add each following
-  `ExportEmployeesModal.jsx`, not one giant dialog. The dispatcher's
+- Export sends `report_type: 'Employee List'` (the backend endpoint is a
+  4-way report dispatcher).
+- **Bulk create/update = Generate Template → fill → Import Data**, the
+  user's standard for data updates (vueportal TemplateDownloadDialog.vue /
+  ImportDialog.vue). `importDocumentTypes.js` lists the types both modals
+  offer: Employee Master Data, Branch Assignment Position, Monthly Key
+  Performance, Issued NTE, Disciplinary Action, Offboarding, Work Schedule.
+  Template options follow Vue: Document Status (All/Active/Inactive —
+  backends honour Active/Inactive, plus the old 'Active Only') and
+  Branch/Position (0 = ALL, for the HR roles in `BRANCH_POSITION_ROLES`) for
+  Branch Assignment and Monthly Key Performance; Year + Month for Monthly
+  Key Performance. Import handles `success`, `error_column`, `error_row_data`
+  + `field_values`, `collection_diff`, `duplicate_records`, `error_empty`
+  and `error`. Classroom / OJT Performance Rating are left out: their
+  controllers have no import()/template_download() (broken in Vue too). The dispatcher's
   'Branch Manpower Report' is **not** used here — see Branch Manpower
   Fill Rate below.
 - `ExportEmployeesModal.jsx` mirrors `ExportDialog.vue`: Branch picker only

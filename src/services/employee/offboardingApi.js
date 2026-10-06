@@ -70,6 +70,21 @@ const offboardingApi = {
   // POST /api/employee_master_data/offboarding/file_delete
   // body: { offboarding_id, document_type: 'last_day_file' | 'clearance_file' | 'quitclaim_file' }
   fileDelete: (offboardingId, documentType) => axios.post('/employee_master_data/offboarding/file_delete', { offboarding_id: offboardingId, document_type: documentType }),
+
+  // Bulk create/update (Generate Template → fill → Import Data):
+  // POST /api/employee_master_data/offboarding/template/download → .xls blob
+  // (params as vueportal's TemplateDownloadDialog.vue sends them), and
+  // POST .../offboarding/import (multipart "file") — HTTP 200 with
+  // success | error_column | error_row_data+field_values | error_empty |
+  // error; see ImportDataModal.jsx.
+  templateDownload: (params = {}) => axios.post("/employee_master_data/offboarding/template/download", params, { responseType: "blob" }),
+  import: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return axios.post("/employee_master_data/offboarding/import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 export default offboardingApi;

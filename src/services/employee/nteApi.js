@@ -44,6 +44,21 @@ const nteApi = {
   // POST /api/employee_master_data/nte/file_delete
   // body: { explanation_id, document_type: 'nte_file' | 'explanation_file' }
   fileDelete: (explanationId, documentType) => axios.post('/employee_master_data/nte/file_delete', { explanation_id: explanationId, document_type: documentType }),
+
+  // Bulk create/update (Generate Template → fill → Import Data):
+  // POST /api/employee_master_data/nte/template/download → .xls blob
+  // (params as vueportal's TemplateDownloadDialog.vue sends them), and
+  // POST .../nte/import (multipart "file") — HTTP 200 with
+  // success | error_column | error_row_data+field_values | error_empty |
+  // error; see ImportDataModal.jsx.
+  templateDownload: (params = {}) => axios.post("/employee_master_data/nte/template/download", params, { responseType: "blob" }),
+  import: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return axios.post("/employee_master_data/nte/import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 export default nteApi;

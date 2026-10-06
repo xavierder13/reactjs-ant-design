@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, Upload, Button, Select, Table, App } from "antd";
+import { Modal, Upload, Button, Select, Table, Alert, App } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 import useAuth from "../../../hooks/useAuth";
 import handleApiError from "../../../utils/handleApiError";
-import employeeApi from "../../../services/employee/employeeApi";
-import workScheduleApi from "../../../services/employee/workScheduleApi";
+import { DOCUMENT_TYPES } from "./importDocumentTypes";
 
 const { Dragger } = Upload;
 
@@ -24,33 +23,25 @@ const { Dragger } = Upload;
 // ImportEmployeesModal.jsx, which had exactly that bug (no success/error
 // shape check at all — see git history) — real defect, not hypothetical,
 // found while building this. See workScheduleApi.js/employeeApi.js's own
-// header comments for the confirmed backend contract.
-const DOCUMENT_TYPES = [
-  {
-    value: 'employee_master_data',
-    label: 'Employee Master Data',
-    permission: 'employee-master-data-import',
-    upload: (file) => employeeApi.import(file),
-  },
-  {
-    value: 'work_schedule',
-    label: 'Work Schedule',
-    permission: 'employee-master-data-work-schedule-import',
-    upload: (file) => workScheduleApi.import(file),
-  },
-];
+// header comments for the confirmed backend contract. Document types are
+// shared with GenerateTemplateModal (importDocumentTypes.js); Monthly Key
+// Performance can also answer `collection_diff` (missing months), and a
+// caught server exception comes back as `{ error }`.
 
 export default function ImportDataModal({ open, onClose, onImported }) {
   const { message: messageApi } = App.useApp();
-  const { hasPermission } = useAuth();
+  const { hasRole, hasPermission } = useAuth();
   const [documentType, setDocumentType] = useState(undefined);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   // null = error-list modal closed; an array (possibly empty) = open.
   const [errorRows, setErrorRows] = useState(null);
 
-  const options = DOCUMENT_TYPES.filter((type) => hasPermission(type.permission))
+  const isAdmin = hasRole('Administrator');
+  const options = DOCUMENT_TYPES.filter((type) => isAdmin || hasPermission(type.importPermission))
     .map(({ value, label }) => ({ value, label }));
+  const selectedType = DOCUMENT_TYPES.find((t) => t.value === documentType);
+  const messageRows = (messages) => [].concat(messages).map((msg, i) => ({ key: i, row: '-', column: '-', message: msg, value: '' }));
 
   const resetState = () => {
     setDocumentType(undefined);
@@ -104,11 +95,17 @@ export default function ImportDataModal({ open, onClose, onImported }) {
         onImported?.();
         onClose();
       } else if (data.error_column) {
-        setErrorRows(data.error_column.map((msg, i) => ({ key: i, row: '-', column: '-', message: msg, value: '' })));
+        setErrorRows(messageRows(data.error_column));
       } else if (data.error_row_data) {
         setErrorRows(buildErrorRows(data.error_row_data, data.field_values));
+      } else if (data.collection_diff) {
+        setErrorRows(messageRows(Object.values(data.collection_diff).flat()));
+      } else if (data.duplicate_records) {
+        setErrorRows(Object.entries(data.duplicate_records).map(([row, value]) => ({ key: row, row, column: '-', message: 'Duplicate record', value })));
       } else if (data.error_empty) {
         messageApi.error('File is empty.');
+      } else if (data.error) {
+        messageApi.error(typeof data.error === 'string' ? data.error : 'Import failed.');
       } else {
         messageApi.error('File type must be xlsx, xls, or csv.');
       }
@@ -140,6 +137,8 @@ export default function ImportDataModal({ open, onClose, onImported }) {
           value={documentType}
           onChange={setDocumentType}
         />
+
+        {selectedType?.hint && <Alert type="info" showIcon style={{ marginBottom: 16 }} title={selectedType.hint} />}
 
         <Dragger
           multiple={false}

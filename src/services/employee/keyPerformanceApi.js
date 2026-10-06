@@ -30,6 +30,21 @@ const keyPerformanceApi = {
   // POST /api/employee_master_data/key_performance/delete
   // body: { employee_id, period } — deletes the whole year (period), not one row.
   remove: (employeeId, period) => axios.post('/employee_master_data/key_performance/delete', { employee_id: employeeId, period }),
+
+  // Bulk create/update (Generate Template → fill → Import Data):
+  // POST /api/employee_master_data/key_performance/template/download → .xls blob
+  // (params as vueportal's TemplateDownloadDialog.vue sends them), and
+  // POST .../key_performance/import (multipart "file") — HTTP 200 with
+  // success | error_column | error_row_data+field_values | error_empty |
+  // error; see ImportDataModal.jsx.
+  templateDownload: (params = {}) => axios.post("/employee_master_data/key_performance/template/download", params, { responseType: "blob" }),
+  import: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return axios.post("/employee_master_data/key_performance/import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 export default keyPerformanceApi;

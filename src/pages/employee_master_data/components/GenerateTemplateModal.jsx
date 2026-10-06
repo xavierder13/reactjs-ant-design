@@ -1,69 +1,62 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, Select, App } from "antd";
+import { Modal, Select, Form, App } from "antd";
 import useAuth from "../../../hooks/useAuth";
+import useEmployeeFormOptions from "../../../hooks/useEmployeeFormOptions";
 import handleApiError from "../../../utils/handleApiError";
 import downloadBlobResponse from "../../../utils/downloadBlobResponse";
-import employeeApi from "../../../services/employee/employeeApi";
-import workScheduleApi from "../../../services/employee/workScheduleApi";
+import { DOCUMENT_TYPES, BRANCH_POSITION_ROLES, MONTHS } from "./importDocumentTypes";
 
-// Matches vueportal's TemplateDownloadDialog.vue: one entry point with a
-// "Document Type" dropdown deciding which sub-module's import template to
-// generate, instead of a separate button per module (see
-// EmployeeMasterData.jsx, which used to have a single Template button
-// scoped only to the core record). Vue's own dropdown also covers Branch
-// Assignment Position / Monthly Key Performance / Classroom & OJT
-// Performance Rating / NTE / Disciplinary / Offboarding — none of those
-// have an Import UI built in this app yet (see ImportDataModal.jsx's own
-// header comment), so listing their templates here would be a dead end;
-// only document types with a real Import counterpart are offered. Add a
-// new entry here and to ImportDataModal.jsx's DOCUMENT_TYPES together,
-// not separately, when the next sub-module's import UI gets built.
-const DOCUMENT_TYPES = [
-  {
-    value: 'employee_master_data',
-    label: 'Employee Master Data',
-    permission: 'employee-master-data-template-download',
-    filename: 'EmployeeMasterDataTemplate.xls',
-    download: () => employeeApi.templateDownload(),
-  },
-  {
-    value: 'work_schedule',
-    label: 'Work Schedule',
-    permission: 'employee-master-data-work-schedule-template-download',
-    filename: 'EmployeeWorkScheduleTemplate.xls',
-    download: () => workScheduleApi.templateDownload(),
-  },
-];
+// Matches vueportal's TemplateDownloadDialog.vue: a Document Type dropdown
+// (shared list in importDocumentTypes.js) plus the options the chosen
+// template's backend reads — Document Status, Branch / Position for HR
+// roles (0 = ALL; Branch Assignment Position and Monthly Key Performance),
+// and Year / Month for Monthly Key Performance.
+const YEARS = Array.from({ length: new Date().getFullYear() - 2019 }, (_, i) => 2020 + i).reverse();
+const STATUS_OPTIONS = ["All", "Active", "Inactive"].map((s) => ({ label: s, value: s }));
 
 export default function GenerateTemplateModal({ open, onClose }) {
   const { message: messageApi } = App.useApp();
-  const { hasPermission } = useAuth();
-  const [documentType, setDocumentType] = useState(undefined);
+  const { hasRole, hasPermission, hasAnyRole } = useAuth();
+  const { branchOptions, positionOptions } = useEmployeeFormOptions();
+  const [form] = Form.useForm();
   const [downloading, setDownloading] = useState(false);
+  const documentType = Form.useWatch("document_type", form);
 
-  const options = DOCUMENT_TYPES.filter((type) => hasPermission(type.permission))
+  const isAdmin = hasRole("Administrator");
+  const options = DOCUMENT_TYPES.filter((type) => isAdmin || hasPermission(type.templatePermission))
     .map(({ value, label }) => ({ value, label }));
+  const type = DOCUMENT_TYPES.find((t) => t.value === documentType);
+  const showBranchPosition = type?.templateOptions?.branchPosition && hasAnyRole(...BRANCH_POSITION_ROLES);
 
   const handleClose = () => {
     if (downloading) return;
-    setDocumentType(undefined);
+    form.resetFields();
     onClose();
   };
 
   const handleGenerate = async () => {
-    const type = DOCUMENT_TYPES.find((t) => t.value === documentType);
-    if (!type) {
-      messageApi.warning('Select a document type first.');
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
       return;
     }
     setDownloading(true);
     try {
-      const response = await type.download();
+      // Same body as Vue's dialog; each backend reads only its own fields.
+      const response = await type.download({
+        document_type: type.label,
+        document_status: values.document_status || "All",
+        branch_id: values.branch_id ?? "",
+        position_id: values.position_id ?? "",
+        period: values.period ?? "",
+        month: values.month ?? "",
+      });
       const downloaded = await downloadBlobResponse(response, type.filename, messageApi);
       if (downloaded) {
-        messageApi.success('Template downloaded.');
+        messageApi.success("Template downloaded.");
         handleClose();
       }
     } catch (error) {
@@ -83,13 +76,47 @@ export default function GenerateTemplateModal({ open, onClose }) {
       confirmLoading={downloading}
       destroyOnHidden
     >
-      <Select
-        placeholder="Select document type"
-        style={{ width: '100%' }}
-        options={options}
-        value={documentType}
-        onChange={setDocumentType}
-      />
+      <Form form={form} layout="vertical" initialValues={{ document_status: "All", month: "All", branch_id: 0, position_id: 0 }}>
+        <Form.Item name="document_type" label="Document Type" rules={[{ required: true, message: "Select a document type." }]}>
+          <Select placeholder="Select document type" options={options} />
+        </Form.Item>
+
+        {showBranchPosition && (
+          <>
+            <Form.Item name="position_id" label="Position">
+              <Select
+                showSearch
+                optionFilterProp="label"
+                options={[{ label: "ALL", value: 0 }, ...positionOptions]}
+              />
+            </Form.Item>
+            <Form.Item name="branch_id" label="Branch">
+              <Select
+                showSearch
+                optionFilterProp="label"
+                options={[{ label: "ALL", value: 0 }, ...branchOptions]}
+              />
+            </Form.Item>
+          </>
+        )}
+
+        {type?.templateOptions?.kpi && (
+          <>
+            <Form.Item name="period" label="Year" rules={[{ required: true, message: "Year is required." }]}>
+              <Select placeholder="Select year" options={YEARS.map((y) => ({ label: String(y), value: y }))} />
+            </Form.Item>
+            <Form.Item name="month" label="Month" rules={[{ required: true, message: "Month is required." }]}>
+              <Select options={["All", ...MONTHS].map((m) => ({ label: m, value: m }))} />
+            </Form.Item>
+          </>
+        )}
+
+        {type?.templateOptions?.status && (
+          <Form.Item name="document_status" label="Document Status">
+            <Select options={STATUS_OPTIONS} />
+          </Form.Item>
+        )}
+      </Form>
     </Modal>
   );
 }

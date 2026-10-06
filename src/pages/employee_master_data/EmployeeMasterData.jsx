@@ -40,6 +40,7 @@ import EmployeeCardMobile from "./components/EmployeeCardMobile";
 import PaginationControls from "./components/PaginationControls";
 import ImportDataModal from "./components/ImportDataModal";
 import GenerateTemplateModal from "./components/GenerateTemplateModal";
+import { TEMPLATE_PERMISSIONS, IMPORT_PERMISSIONS } from "./components/importDocumentTypes";
 import ExportEmployeesModal from "./components/ExportEmployeesModal";
 import SubmitAcknowledgmentReportModal from "./components/SubmitAcknowledgmentReportModal";
 import { EMPLOYEE_COLUMNS as headers, DEFAULT_EMPLOYEE_COLUMNS as defaultHeaders } from "./components/employeeColumns";
@@ -62,7 +63,8 @@ const positionsForRank = ({ positions, ranks }, rankName, allowedIds = null) => 
 export default function EmployeeMasterData() {
   const navigate = useNavigate();
   const { message: messageApi } = App.useApp();
-  const { hasPermission, hasRole } = useAuth();
+  const { hasPermission, hasAnyPermission, hasRole } = useAuth();
+  const isAdmin = hasRole('Administrator');
   // Branch and Rank filters only for the roles the backend lets see every
   // branch (the hasAnyRole list in EmployeeMasterDataController::
   // getEmployees()); hidden for branch/subordinate-scoped users.
@@ -285,13 +287,13 @@ export default function EmployeeMasterData() {
                   Refresh
                 </Button>
 
-                {(hasPermission('employee-master-data-import') || hasPermission('employee-master-data-work-schedule-import')) && (
+                {(isAdmin || hasAnyPermission(...IMPORT_PERMISSIONS)) && (
                   <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>
                     Import
                   </Button>
                 )}
 
-                {(hasPermission('employee-master-data-template-download') || hasPermission('employee-master-data-work-schedule-template-download')) && (
+                {(isAdmin || hasAnyPermission(...TEMPLATE_PERMISSIONS)) && (
                   <Button
                     icon={<DownloadOutlined />}
                     onClick={() => setGenerateTemplateOpen(true)}
