@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Space, Divider, Tag, App } from 'antd';
-import dayjs from 'dayjs';
 import employeeApi from '../../../services/employee/employeeApi';
 import handleApiError from '../../../utils/handleApiError';
 import { isActiveValue } from '../../../utils/employeeStatus';
-import { formatDate } from '../../../utils/formatDate';
+import { toDayjs, formatDate } from '../../../utils/formatDate';
 import useAuth from '../../../hooks/useAuth';
 import EmployeeTabs from './EmployeeTabs';
 
@@ -178,7 +177,7 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
     setEmployee((prev) => ({ ...prev, ...patch }));
     if ('active' in patch) form.setFieldsValue({ active: Boolean(patch.active) });
     if ('date_resigned' in patch) {
-      form.setFieldsValue({ date_resigned: patch.date_resigned ? dayjs(patch.date_resigned) : null });
+      form.setFieldsValue({ date_resigned: toDayjs(patch.date_resigned) });
     }
   };
 
@@ -192,8 +191,8 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
   const normalizeFieldValue = (field, rawValue) => {
     if (DATE_FIELDS.has(field)) {
       if (!rawValue) return null;
-      const value = typeof rawValue?.format === 'function' ? rawValue : dayjs(rawValue);
-      return value.isValid() ? value.format('YYYY-MM-DD') : null;
+      const value = typeof rawValue?.format === 'function' ? rawValue : toDayjs(rawValue);
+      return value?.isValid() ? value.format('YYYY-MM-DD') : null;
     }
     return rawValue === undefined ? null : rawValue;
   };
@@ -267,7 +266,7 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
         last_name:         initialData.last_name,
         first_name:        initialData.first_name,
         middle_name:       initialData.middle_name,
-        birth_date:        initialData.birth_date ? dayjs(initialData.birth_date) : (initialData.dob ? dayjs(initialData.dob) : null),
+        birth_date:        toDayjs(initialData.birth_date) || toDayjs(initialData.dob),
         gender:            initialData.gender,
         civil_status:      initialData.civil_status,
         contact:           initialData.contact,
@@ -286,10 +285,10 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
         department_id:     initialData.department_id,
         branch_id:         initialData.branch_id,
         employment_type:   initialData.employment_type,
-        date_employed:     initialData.date_employed ? dayjs(initialData.date_employed) : null,
-        date_resigned:     initialData.date_resigned ? dayjs(initialData.date_resigned) : null,
-        regularization_date: initialData.regularization_date ? dayjs(initialData.regularization_date) : null,
-        regularization_interview_date: initialData.regularization_interview_date ? dayjs(initialData.regularization_interview_date) : null,
+        date_employed:     toDayjs(initialData.date_employed),
+        date_resigned:     toDayjs(initialData.date_resigned),
+        regularization_date: toDayjs(initialData.regularization_date),
+        regularization_interview_date: toDayjs(initialData.regularization_interview_date),
         regularization_interview_status: initialData.regularization_interview_status || null,
         application_source: initialData.application_source,
         active:             Boolean(initialData.active),

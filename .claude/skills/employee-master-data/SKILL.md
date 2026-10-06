@@ -202,7 +202,11 @@ mirroring `ManpowerRequestForm.jsx`:
   → boolean) into the payload — extend it for new core fields (e.g.
   `regularization_date`), don't build payloads ad hoc.
 - Edit/View pre-fill via `form.setFieldsValue` in a `useEffect` on
-  `initialData`, converting dates back to dayjs. Falls back to
+  `initialData`, converting dates with `toDayjs()` (`utils/formatDate.js`),
+  never a bare `dayjs(...)`: 2,000+ legacy `regularization_date`/
+  `date_resigned` rows (and ~350 offboarding dates) are MySQL zero dates
+  (`0000-00-00`), which dayjs shows as 11/30/1899 and a save would write
+  back. Falls back to
   `initialData.dob` when `birth_date` is absent (schema column is `dob`,
   validated request field is `birth_date`).
 - Derived display values (e.g. Age) must use `Form.useWatch(...)`, not a

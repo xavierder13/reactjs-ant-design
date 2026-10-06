@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Card, Tabs, Form } from "antd";
 import { useSearchParams } from "react-router-dom";
-import dayjs from "dayjs";
 import { ProfileOutlined, IdcardOutlined, FolderOpenOutlined } from "@ant-design/icons";
 
 import useAuth from "../../../hooks/useAuth";
+import { toDayjs } from "../../../utils/formatDate";
 import { getEmployeeTabItems, TAB_PERMISSIONS } from "../components/employeeTabItems";
 import ProfileHeader from "./ProfileHeader";
 import ProfileOverview from "./ProfileOverview";
@@ -78,7 +78,7 @@ export default function EmployeeProfile({ employee: initialEmployee, view = "hr"
           <Card size="small">
             <Form
               layout="vertical"
-              initialValues={{ regularization_date: employee.regularization_date ? dayjs(employee.regularization_date) : null }}
+              initialValues={{ regularization_date: toDayjs(employee.regularization_date) }}
             >
               {tab.children}
             </Form>

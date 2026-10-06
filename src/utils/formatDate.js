@@ -8,6 +8,16 @@ export const DISPLAY_DATE_FORMAT = 'MM/DD/YYYY';
 // dayjs can't parse is shown unchanged rather than as "Invalid Date".
 // Use it through an arrow in AntD columns — `render: (v) => formatDate(v)` —
 // since `render` also passes (record, index), which would land in `fallback`.
+// API date → dayjs for a DatePicker, or null when empty. MySQL's zero date
+// ('0000-00-00', e.g. 2,000+ legacy regularization_date/date_resigned rows)
+// must be null: dayjs reads it as 11/30/1899, and saving the form would
+// write that back.
+export const toDayjs = (value) => {
+  if (!value || String(value).startsWith('0000-00-00')) return null;
+  const date = dayjs(value);
+  return date.isValid() ? date : null;
+};
+
 export const formatDate = (value, fallback = '-') => {
   if (value === null || value === undefined || value === '' || String(value).startsWith('0000-00-00')) {
     return fallback;

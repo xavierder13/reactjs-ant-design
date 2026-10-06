@@ -11,7 +11,7 @@ import employeeApi from "../../../services/employee/employeeApi";
 import offboardingApi from "../../../services/employee/offboardingApi";
 import handleApiError from "../../../utils/handleApiError";
 import downloadBlobResponse from "../../../utils/downloadBlobResponse";
-import { formatDate, DISPLAY_DATE_FORMAT } from "../../../utils/formatDate";
+import { formatDate, toDayjs, DISPLAY_DATE_FORMAT } from "../../../utils/formatDate";
 import ColumnSelector from "../components/ColumnSelector";
 import OffboardingFormFields from "../components/tabs/offboarding/OffboardingFormFields";
 import OffboardingFileSlot, { OffboardingFileSlots } from "../components/tabs/offboarding/OffboardingFileSlot";
@@ -143,13 +143,12 @@ export default function ResignedEmployees() {
 
   const handleAfterOpenChange = (isOpen) => {
     if (!isOpen || !editing) return;
-    const toDay = (v) => (v && !String(v).startsWith("0000") ? dayjs(v) : null);
     form.setFieldsValue({
-      last_day_of_work: toDay(editing.last_day_of_work),
+      last_day_of_work: toDayjs(editing.last_day_of_work),
       reason_of_resignation: editing.reason_of_resignation || undefined,
-      resignation_date_filed: toDay(editing.resignation_date_filed),
-      resignation_date_received: toDay(editing.resignation_date_received),
-      resignation_effectivity_date: toDay(editing.resignation_effectivity_date),
+      resignation_date_filed: toDayjs(editing.resignation_date_filed),
+      resignation_date_received: toDayjs(editing.resignation_date_received),
+      resignation_effectivity_date: toDayjs(editing.resignation_effectivity_date),
       coe_is_issued: Boolean(editing.coe_is_issued),
       last_pay_is_issued: Boolean(editing.last_pay_is_issued),
       compliance: editing.compliance || undefined,

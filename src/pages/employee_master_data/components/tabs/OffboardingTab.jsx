@@ -14,7 +14,7 @@ import employeeApi from "../../../../services/employee/employeeApi";
 import offboardingApi from "../../../../services/employee/offboardingApi";
 import OffboardingFileSlot, { OffboardingFileSlots } from "./offboarding/OffboardingFileSlot";
 import OffboardingFormFields from "./offboarding/OffboardingFormFields";
-import { formatDate } from "../../../../utils/formatDate";
+import { formatDate, toDayjs } from "../../../../utils/formatDate";
 
 // This module's data source ambiguity (the previous Roadmap blocker) is
 // resolved — see offboardingApi.js for the full evidence. It also carries
@@ -117,11 +117,11 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
     if (!isOpen) return;
     if (editing) {
       form.setFieldsValue({
-        last_day_of_work: editing.last_day_of_work ? dayjs(editing.last_day_of_work) : null,
+        last_day_of_work: toDayjs(editing.last_day_of_work),
         reason_of_resignation: editing.reason_of_resignation || undefined,
-        resignation_date_filed: editing.resignation_date_filed ? dayjs(editing.resignation_date_filed) : null,
-        resignation_date_received: editing.resignation_date_received ? dayjs(editing.resignation_date_received) : null,
-        resignation_effectivity_date: editing.resignation_effectivity_date ? dayjs(editing.resignation_effectivity_date) : null,
+        resignation_date_filed: toDayjs(editing.resignation_date_filed),
+        resignation_date_received: toDayjs(editing.resignation_date_received),
+        resignation_effectivity_date: toDayjs(editing.resignation_effectivity_date),
         coe_is_issued: Boolean(editing.coe_is_issued),
         last_pay_is_issued: Boolean(editing.last_pay_is_issued),
         compliance: editing.compliance || undefined,
