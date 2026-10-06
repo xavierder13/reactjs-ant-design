@@ -9,6 +9,7 @@ import SectionLabel from './components/SectionLabel';
 import WorkforceSkeleton from './components/WorkforceSkeleton';
 import WorkforceOverviewCards from './components/WorkforceOverviewCards';
 import WorkforceFilters from './components/WorkforceFilters';
+import { NO_FILTERS, toQuery, DATE_FIELD_OPTIONS } from './components/workforceFilterQuery';
 import HeadcountSummary from './components/HeadcountSummary';
 import WorkforceMix from './components/WorkforceMix';
 import HeadcountBreakdown from './components/HeadcountBreakdown';
@@ -25,7 +26,6 @@ import StaffingVsPlan from './components/StaffingVsPlan';
 import PeopleMoments from './components/PeopleMoments';
 
 const { Text } = Typography;
-const NO_FILTERS = { branch_id: undefined, department_id: undefined };
 
 // Workforce Dashboard — HR analytics over Employee Master Data. Current
 // state first (overview cards, headcount & composition, regularization,
@@ -42,6 +42,9 @@ const WorkforceDashboardPage = () => {
   const [loadFailed, setLoadFailed] = useState(false);
   const [filters, setFilters] = useState(NO_FILTERS);
   const [refreshKey, setRefreshKey] = useState(0);
+  // Refetch only when the request actually changes (e.g. not when a date
+  // field is picked before its range).
+  const queryKey = JSON.stringify(toQuery(filters));
 
   const fetchSummary = useCallback(async (activeFilters) => {
     setLoading(true);
@@ -58,9 +61,9 @@ const WorkforceDashboardPage = () => {
   }, [message]);
 
   useEffect(() => {
-    const load = async () => { await fetchSummary(filters); };
+    const load = async () => { await fetchSummary(JSON.parse(queryKey)); };
     load();
-  }, [fetchSummary, filters, refreshKey]);
+  }, [fetchSummary, queryKey, refreshKey]);
 
   const refresh = () => setRefreshKey((k) => k + 1);
 
@@ -70,10 +73,15 @@ const WorkforceDashboardPage = () => {
   const relationMonths = useMemo(() => toDate(dashboard?.relations.months || []), [dashboard]);
 
   const exportReport = () => {
-    const branch = dashboard.filters.branches.find((b) => b.id === filters.branch_id)?.name;
-    const department = dashboard.filters.departments.find((d) => d.id === filters.department_id)?.name;
+    const query = JSON.parse(queryKey);
+    const branch = dashboard.filters.branches.find((b) => b.id === query.branch_id)?.name;
+    const department = dashboard.filters.departments.find((d) => d.id === query.department_id)?.name;
+    const position = dashboard.filters.positions?.find((p) => p.id === query.position_id)?.name;
+    const dates = query.date_field
+      ? `${DATE_FIELD_OPTIONS.find((o) => o.value === query.date_field)?.label} ${dayjs(query.date_from).format('MM/DD/YYYY')}–${dayjs(query.date_to).format('MM/DD/YYYY')}`
+      : null;
     try {
-      downloadWorkforceReport(dashboard, [branch, department].filter(Boolean).join(' / ') || 'Company-wide');
+      downloadWorkforceReport(dashboard, [branch, department, position, query.employment_type, dates].filter(Boolean).join(' / ') || 'Company-wide');
     } catch (error) {
       console.error('[WorkforceDashboard] export error:', error);
       message.error('Failed to export the report.');
@@ -87,7 +95,13 @@ const WorkforceDashboardPage = () => {
   }
 
   const { headcount, composition, movement, attrition, regularization, relations, staffing, moments, filters: options } = dashboard;
-  const unfiltered = !filters.branch_id && !filters.department_id;
+  const unfiltered = queryKey === '{}';
+  // The staffing plan is branch × position only.
+  const unappliedFilters = [
+    filters.department_id && 'department',
+    filters.employment_type && 'employment type',
+    JSON.parse(queryKey).date_field && 'date',
+  ].filter(Boolean);
   const lastMonth = movement.months[movement.months.length - 1];
   const staleActive = unfiltered ? headcount.active - lastMonth.headcount_end : 0;
 
@@ -120,7 +134,7 @@ const WorkforceDashboardPage = () => {
         <RegularizationStatus regularization={regularization} />
 
         <SectionLabel extra={<Text type='secondary' style={{ fontSize: 12 }}>Required plantilla vs. active employees</Text>}>Staffing vs. Plan</SectionLabel>
-        <StaffingVsPlan staffing={staffing} departmentFiltered={!!filters.department_id} />
+        <StaffingVsPlan staffing={staffing} unappliedFilters={unappliedFilters} />
 
         <SectionLabel extra={<Text type='secondary' style={{ fontSize: 12 }}>Next {moments.days} days</Text>}>People Moments</SectionLabel>
         <PeopleMoments moments={moments} />

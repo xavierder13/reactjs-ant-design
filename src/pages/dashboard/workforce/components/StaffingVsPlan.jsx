@@ -25,7 +25,7 @@ const columnsFor = (groupLabel) => [
 ];
 
 // Required plantilla vs. active employees (the Vacancies page's comparison).
-export default function StaffingVsPlan({ staffing, departmentFiltered }) {
+export default function StaffingVsPlan({ staffing, unappliedFilters = [] }) {
   const [group, setGroup] = useState('by_branch');
   const navigate = useNavigate();
   const { hasRole, hasPermission } = useAuth();
@@ -54,7 +54,7 @@ export default function StaffingVsPlan({ staffing, departmentFiltered }) {
           <Table key={group} rowKey='label' size='small' columns={columnsFor(groupLabel)} dataSource={staffing[group]} pagination={{ pageSize: 10, showSizeChanger: true }} scroll={{ x: 'max-content' }} />
           <Text type='secondary' style={{ fontSize: 12 }}>
             Plan = required employees per branch and position; current = active employees in the same branch and position.
-            {departmentFiltered && ' The plan has no department, so the department filter doesn’t apply here.'}
+            {unappliedFilters.length > 0 && ` The plan is only by branch and position, so the ${unappliedFilters.join(', ')} filter${unappliedFilters.length > 1 ? 's don’t' : ' doesn’t'} apply here.`}
           </Text>
         </ChartCard>
       </div>

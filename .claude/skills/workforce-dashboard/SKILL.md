@@ -15,7 +15,9 @@ login lands there (`GuestRoute`).
 Same shape as the Recruitment Dashboard: a thin page + one component per section.
 
 - `src/pages/dashboard/workforce/WorkforceDashboardPage.jsx` — loads
-  `/employee_dashboard/summary`, holds the branch/department filter and
+  `/employee_dashboard/summary`, holds the filter state (branch,
+  department, position, employment type, date range on a chosen date field
+  — `components/workforceFilterQuery.js` maps it to the request) and
   refresh state, marks the current month "(to date)", renders sections —
   current state first (overview, headcount & composition, regularization,
   staffing vs. plan, people moments), then the last 12 months (hires vs.
@@ -69,7 +71,14 @@ holding it see the page.
 
 ## Backend (vueportal)
 
-`POST /api/employee_dashboard/summary` `{ branch_id?, department_id? }` —
+`POST /api/employee_dashboard/summary` `{ branch_id?, department_id?,
+employment_type?, position_id?, date_field?, date_from?, date_to? }` —
+all applied by `scopeEmployees()` to every employee-based section;
+`date_field` ∈ `DATE_FILTER_FIELDS` (Date Employed, Date Resigned, Date of
+Regularization, Date of Regularization Interview, Birthday — not the
+legacy resignation columns), the range needs all three, zero dates never
+match. Staffing honours only branch and position (the page names the
+filters that don't apply). `filters.positions` feeds the Position select.
 `EmployeeDashboardController` + `EmployeeDashboardService`,
 `EmployeeDashboardMaintenance`. Aggregates only, except `moments` (name,
 position, branch and upcoming date — never birth year or age).
@@ -103,8 +112,8 @@ Current headcount follows `active = 1`; the 12-month trend is rebuilt from
   quantity > 0, inner-joined to positions like `RecruitmentController@vacancies`)
   vs. active employees in the same branch × position. Short = Σ max(required
   − current, 0) = the Total Vacancies card; fill rate = Σ min(current,
-  required) ÷ required. The plan has no department → only the branch
-  filter applies (the page says so).
+  required) ÷ required. The plan is branch × position → only those two
+  filters apply (the page names the others).
 - **Moments**: active employees' birthdays / work anniversaries (1+ years)
   in the next `MOMENTS_DAYS` (30); 29 Feb → 28 Feb in non-leap years.
 

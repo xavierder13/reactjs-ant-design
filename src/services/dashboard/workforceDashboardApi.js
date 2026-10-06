@@ -3,7 +3,10 @@ import axios from '../../api/axiosInstance';
 // Backend: vueportal EmployeeDashboardController@summary + EmployeeDashboardService,
 // gated by `hr-payroll-dashboard` (EmployeeDashboardMaintenance). Aggregated
 // counts only — no employee rows.
-// POST /employee_dashboard/summary  body: { branch_id?, department_id? }
+// POST /employee_dashboard/summary  body: { branch_id?, department_id?,
+//   employment_type?, position_id?, date_field?, date_from?, date_to? }
+//   (date_field = one of EmployeeDashboardService::DATE_FILTER_FIELDS; the
+//   range needs all three; staffing only honours branch and position)
 // → { success, dashboard: {
 //      as_of,
 //      headcount: { active, regular, probationary, probationary_pct, female, male,
@@ -21,7 +24,7 @@ import axios from '../../api/axiosInstance';
 //                                  early, headcount, avg_headcount, turnover_rate|null }] } },
 //      regularization: { probation_months, due_days, probationary, overdue, due_soon, on_track,
 //                        no_hire_date, by_branch: [{ label, overdue, due_soon, on_track }] },
-//      filters: { branches: [{ id, name }], departments: [{ id, name }] } } }
+//      filters: { branches: [{ id, name }], departments: [{ id, name }], positions: [{ id, name }] } } }
 const workforceDashboardApi = {
   getSummary: (filters = {}) => axios.post('/employee_dashboard/summary', filters),
 };
