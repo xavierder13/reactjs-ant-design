@@ -348,6 +348,18 @@ user: skip (lists have Refresh) or poll the open list every few minutes.
 - Uploads need `public/wysiwyg` writable in the portal container; portal
   `npm run dev` rewrites the tracked `public/mix-manifest.json` — restore it.
 
+Notification bell: vueportal `NotificationService` (not a `/recruitment/*`
+route — `/api/notifications/summary`) calls the gateway's
+`notification_counts` server-side via `RecruitmentController::notificationCounts()`
+(10 s timeout; null on any failure, so the bell drops recruitment instead of
+failing). The procedure counts, from the acting user's own scoped All
+Applicants list (`get_applicants_new`, needs `jobapplicants-list`),
+applications created today and, per stage (initial interview, exam, B.I.,
+final interview, orientation), applicants still on process (status 0) whose
+stage date is today or earlier — overdue schedules keep counting;
+each stage only when the portal user has its `jobapplicants-*-list`
+permission and the HRIS user its `careers-*-list`.
+
 ## Rules enforced by the gateway beyond the portal's own controllers
 
 The portal's UI applied these client-side only; the gateway enforces them:

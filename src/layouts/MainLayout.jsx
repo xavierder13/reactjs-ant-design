@@ -10,7 +10,6 @@ import {
   Dropdown,
   Button,
   Divider,
-  Badge,
   Space,
   Breadcrumb,
   Spin,
@@ -24,7 +23,6 @@ import {
   SettingOutlined,
   LogoutOutlined,
   MenuOutlined,
-  BellOutlined,
   DownOutlined,
   IdcardOutlined,
   SolutionOutlined,
@@ -39,6 +37,7 @@ import {
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
+import NotificationBell from '../components/NotificationBell';
 import syncApi from '../services/employee/syncApi';
 import handleApiError from '../utils/handleApiError';
 
@@ -701,22 +700,7 @@ const MainLayout = () => {
 
           {/* Right: bell + user chip */}
           <Space align="center" size={10}>
-            <Badge count={0} size="small">
-              <Button
-                type="text"
-                icon={<BellOutlined style={{ color: '#389e0d', fontSize: 16 }} />}
-                style={{
-                  background: '#f6ffed',
-                  border: '0.5px solid #d9f7be',
-                  borderRadius: 6,
-                  width: 34,
-                  height: 34,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              />
-            </Badge>
+            <NotificationBell />
 
             <Dropdown menu={avatarMenu} placement="bottomRight" trigger={['click']}>
               <div
