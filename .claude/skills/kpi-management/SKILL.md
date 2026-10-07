@@ -29,7 +29,7 @@ DELETE), unlike Manpower Request's POST-only API.
     (employee self-grades; read-only once past `draft`).
 - Services: `src/services/kpi/kpiTemplateApi.js`, `kpiEvaluationApi.js`
   (evaluations, employees, my-evaluations, `saveApproverRatings`). Stores: `kpiTemplateStore.js`, `kpiEvaluationStore.js`.
-- Not in the UI: KPI settings (weights), reports, behavior-criteria list,
+- Not in the UI: KPI settings (weights), behavior-criteria list,
   single template-item endpoints.
 
 ## Routes & menu
@@ -45,6 +45,7 @@ Management", `titleMap`, regex cases for `:id` pages):
 | `/kpi-evaluations`, `/kpi-evaluations/:id` | `kpi-evaluation-list` |
 | `/kpi-evaluations/create` | `kpi-evaluation-create` |
 | `/kpi-evaluations/:id/print` | `kpi-evaluation-print` |
+| `/kpi-dashboard` | `kpi-report-view` (menu Dashboards → KPI Dashboard, with the Workforce / Recruitment Dashboards) |
 | `/kpi-reports/consolidated` | `kpi-report-view` (menu KPI Management → Reports) |
 | `/my-evaluations` | `kpi-self-evaluation-list` |
 | `/my-evaluations/:id` | `kpi-self-evaluation-create` or `-edit` |
@@ -54,6 +55,32 @@ Management", `titleMap`, regex cases for `:id` pages):
   `hr-payroll-dashboard`) shows a one-item menu. These accounts are created
   by the backend (`<employee_code>@hr_evaluation.ac`) when a `self`
   evaluation is created.
+
+## KPI Dashboard (`src/pages/kpi/dashboard/`)
+
+- `KpiDashboard.jsx` on the Consolidated Report endpoint (approved only,
+  `visibleTo`-scoped): the evaluation period goes to the server; positions
+  (multi), branch and evaluation type (All / Supervisor / Self) filter in the
+  browser, options from the data. Based on `final_score`.
+- `kpiDashboard.js` (pure): `employeeScores` — one entry per employee +
+  position, the **average** of their final grades in the period (monthly
+  evaluations count once per employee); `rankPosition` (ties share a rank);
+  `averageBy('branch'|'position')` over employees' averages; `summarize`
+  (average, passing 75+, top/lowest, distribution). `RATING_BANDS` = the
+  print form's scale (Effective 98+, Competent 90, Satisfactory 85, Average
+  80, Needs Improvement 75, Failed below 75).
+- Tabs (shared `src/pages/dashboard/components/DashboardTabLayout.jsx`, as
+  on the Recruitment / Workforce Dashboards; `?tab=`, sticky bar with the
+  period + filter tags, Filters drawer with the same filters stacked, jump
+  chips in 2+ section tabs): Overview (headline tiles, rating
+  distribution), Ranking per Position (position select, default the one with
+  most employees; trophies for 1–3), By Branch (average chart, top 15, +
+  table), By Position (table). Badges: employees / branches / positions.
+- Top row as on the other dashboards: green "N approved evaluations · M
+  employees" tag; small Refresh then primary Export Report —
+  `src/utils/kpiDashboardReport.js` (SheetJS: Summary, Rating Distribution,
+  Ranking per Position (every position), By Branch, By Position; same
+  period and filters as the page).
 
 ## Consolidated Report (`src/pages/kpi/reports/`)
 

@@ -100,6 +100,7 @@ const titleMap = {
   '/kpi-evaluations/create': { title: 'Create Evaluation',     breadcrumb: ['KPI Management', 'Evaluations', 'Create'] },
   '/my-evaluations':         { title: 'My Evaluations',        breadcrumb: ['KPI Management', 'My Evaluations'] },
   '/kpi-reports/consolidated': { title: 'KPI Consolidated Report', breadcrumb: ['KPI Management', 'Reports', 'Consolidated Report'] },
+  '/kpi-dashboard':            { title: 'KPI Dashboard', breadcrumb: ['Dashboards', 'KPI Dashboard'] },
   '/manpower-requests':        { title: 'Manpower Requests',       breadcrumb: ['Manpower Request', 'All Requests'] },
   '/manpower-requests/create': { title: 'Create Manpower Request', breadcrumb: ['Manpower Request', 'Create'] },
   '/areas':                    { title: 'Area Assignment',         breadcrumb: ['Human Resource', 'Area Assignment'] },
@@ -138,6 +139,7 @@ const menuData = [
     children: [
       { key: 'workforce-dashboard', title: 'Workforce Dashboard',   link: '/workforce-dashboard', permissions: ['hr-payroll-dashboard'] },
       { key: 'dashboard',           title: 'Recruitment Dashboard', link: '/dashboard',           permissions: ['hr-payroll-dashboard'] },
+      { key: 'kpi-dashboard',       title: 'KPI Dashboard',         link: '/kpi-dashboard',       permissions: ['kpi-report-view'] },
     ],
   },
   { type: 'divider' },
