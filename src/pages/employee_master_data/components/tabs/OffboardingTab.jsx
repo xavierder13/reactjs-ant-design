@@ -122,6 +122,7 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
         resignation_date_filed: toDayjs(editing.resignation_date_filed),
         resignation_date_received: toDayjs(editing.resignation_date_received),
         resignation_effectivity_date: toDayjs(editing.resignation_effectivity_date),
+        exit_interview_date: toDayjs(editing.exit_interview_date),
         coe_is_issued: Boolean(editing.coe_is_issued),
         last_pay_is_issued: Boolean(editing.last_pay_is_issued),
         compliance: editing.compliance || undefined,
@@ -139,6 +140,8 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
     if (values.resignation_date_filed) formData.append("resignation_date_filed", values.resignation_date_filed.format("YYYY-MM-DD"));
     if (values.resignation_date_received) formData.append("resignation_date_received", values.resignation_date_received.format("YYYY-MM-DD"));
     if (values.resignation_effectivity_date) formData.append("resignation_effectivity_date", values.resignation_effectivity_date.format("YYYY-MM-DD"));
+    // Always sent (empty clears it) — the backend only touches it when present.
+    formData.append("exit_interview_date", values.exit_interview_date ? values.exit_interview_date.format("YYYY-MM-DD") : "");
     formData.append("coe_is_issued", values.coe_is_issued ? "1" : "0");
     formData.append("last_pay_is_issued", values.last_pay_is_issued ? "1" : "0");
     if (values.compliance) formData.append("compliance", values.compliance);
@@ -232,6 +235,7 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
   const columns = [
     { title: "Last Day of Work", dataIndex: "last_day_of_work", key: "last_day_of_work", render: (v) => formatDate(v) },
     { title: "Reason", dataIndex: "reason_of_resignation", key: "reason_of_resignation" },
+    { title: "Exit Interview", dataIndex: "exit_interview_date", key: "exit_interview_date", render: (v) => (v ? formatDate(v) : <Tag>None</Tag>) },
     { title: "Compliance", dataIndex: "compliance", key: "compliance" },
     {
       title: "COE Issued",

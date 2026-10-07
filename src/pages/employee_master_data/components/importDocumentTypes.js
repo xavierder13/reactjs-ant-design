@@ -78,6 +78,7 @@ export const DOCUMENT_TYPES = [
     filename: "EmployeeOffboardingTemplate.xls",
     download: (params) => offboardingApi.templateDownload(params),
     upload: (file) => offboardingApi.import(file),
+    hint: "A line with the same employee code and last day of work updates that offboarding; otherwise it's added. exit_interview_date (YYYY-MM-DD, format the cell as Text) is optional — leave it blank when no exit interview was held; a blank cell keeps the date already saved. Older templates without that column still import.",
   },
   {
     value: "work_schedule",

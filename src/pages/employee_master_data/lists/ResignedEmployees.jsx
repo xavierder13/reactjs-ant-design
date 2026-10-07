@@ -149,6 +149,7 @@ export default function ResignedEmployees() {
       resignation_date_filed: toDayjs(editing.resignation_date_filed),
       resignation_date_received: toDayjs(editing.resignation_date_received),
       resignation_effectivity_date: toDayjs(editing.resignation_effectivity_date),
+      exit_interview_date: toDayjs(editing.exit_interview_date),
       coe_is_issued: Boolean(editing.coe_is_issued),
       last_pay_is_issued: Boolean(editing.last_pay_is_issued),
       compliance: editing.compliance || undefined,
@@ -177,6 +178,7 @@ export default function ResignedEmployees() {
     ["resignation_date_filed", "resignation_date_received", "resignation_effectivity_date"].forEach((key) => {
       if (values[key]) formData.append(key, values[key].format("YYYY-MM-DD"));
     });
+    formData.append("exit_interview_date", values.exit_interview_date ? values.exit_interview_date.format("YYYY-MM-DD") : "");
     formData.append("coe_is_issued", values.coe_is_issued ? "1" : "0");
     formData.append("last_pay_is_issued", values.last_pay_is_issued ? "1" : "0");
     if (values.compliance) formData.append("compliance", values.compliance);

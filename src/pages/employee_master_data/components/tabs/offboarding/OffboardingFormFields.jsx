@@ -46,6 +46,9 @@ export default function OffboardingFormFields() {
       <Form.Item name="resignation_effectivity_date" label="Resignation Effectivity Date">
         <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
       </Form.Item>
+      <Form.Item name="exit_interview_date" label="Exit Interview Date" extra="Leave blank if no exit interview was held — Exit Interview Analysis counts interviews by this date.">
+        <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
+      </Form.Item>
       <Form.Item name="compliance" label="Compliance">
         <Select options={COMPLIANCE_OPTIONS.map((c) => ({ label: c, value: c }))} />
       </Form.Item>
