@@ -59,7 +59,7 @@ export default function DisciplinaryFormFields() {
       <Form.Item name="transmit_date" label="Transmit Date">
         <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
       </Form.Item>
-      <Form.Item name="return_date" label="Return Date">
+      <Form.Item name="return_date" label="Return Date" extra="Case Resolution Time ends on this date (from the NTE's Date Received by HR).">
         <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
       </Form.Item>
     </>

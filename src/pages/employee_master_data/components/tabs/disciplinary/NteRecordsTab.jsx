@@ -89,6 +89,7 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords, pendin
         nte_code: editing.nte_code,
         violation: editing.violation,
         explanation_date: editing.explanation_date ? dayjs(editing.explanation_date) : null,
+        date_received_by_hr: editing.date_received_by_hr ? dayjs(editing.date_received_by_hr) : null,
         remarks: editing.remarks,
         status: editing.status,
       });
@@ -110,6 +111,8 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords, pendin
     formData.append("nte_code", values.nte_code);
     formData.append("violation", values.violation);
     if (values.explanation_date) formData.append("explanation_date", values.explanation_date.format("YYYY-MM-DD"));
+    // Always sent (empty clears it) — the backend only touches it when present.
+    formData.append("date_received_by_hr", values.date_received_by_hr ? values.date_received_by_hr.format("YYYY-MM-DD") : "");
     if (values.remarks) formData.append("remarks", values.remarks);
     if (values.status) formData.append("status", values.status);
     if (pendingNteFile) formData.append("nte_file", pendingNteFile);
@@ -132,6 +135,7 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords, pendin
       nte_code: values.nte_code,
       violation: values.violation,
       explanation_date: values.explanation_date ? values.explanation_date.format("YYYY-MM-DD") : null,
+      date_received_by_hr: values.date_received_by_hr ? values.date_received_by_hr.format("YYYY-MM-DD") : null,
       remarks: values.remarks || null,
       status: values.status || "Open",
       nte_file: pendingNteFile,

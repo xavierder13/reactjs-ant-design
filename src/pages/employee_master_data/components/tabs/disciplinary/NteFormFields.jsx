@@ -25,6 +25,13 @@ export default function NteFormFields() {
       <Form.Item name="explanation_date" label="Explanation Date">
         <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
       </Form.Item>
+      <Form.Item
+        name="date_received_by_hr"
+        label="Date Received by HR"
+        extra="When the NTE reached HR — Case Resolution Time counts from this date to the disciplinary record's Return Date."
+      >
+        <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
+      </Form.Item>
       <Form.Item name="remarks" label="Remarks">
         <Input.TextArea rows={3} />
       </Form.Item>

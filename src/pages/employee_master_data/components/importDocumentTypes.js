@@ -59,6 +59,7 @@ export const DOCUMENT_TYPES = [
     filename: "EmployeeNTETemplate.xls",
     download: (params) => nteApi.templateDownload(params),
     upload: (file) => nteApi.import(file),
+    hint: "A line with the same employee code, date issued and NTE code updates that NTE; otherwise it's added. date_received_by_hr (YYYY-MM-DD, format the cell as Text) is optional — it starts Case Resolution Time; a blank cell keeps the date already saved. Older templates without that column still import.",
   },
   {
     value: "disciplinary",

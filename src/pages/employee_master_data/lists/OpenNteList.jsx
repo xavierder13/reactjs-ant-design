@@ -16,6 +16,7 @@ const COLUMNS = [
   { title: "NTE Code", dataIndex: "nte_code" },
   { title: "Violation", dataIndex: "violation", ellipsis: true, width: 260 },
   { title: "Explanation Date", dataIndex: "explanation_date", render: (v) => formatDate(v) },
+  { title: "Received by HR", dataIndex: "date_received_by_hr", render: (v) => formatDate(v) },
 ];
 
 const loadOpenNte = async () => (await nteApi.getOpenQueue()).data.explanations;
@@ -44,6 +45,7 @@ function NteEditModal({ record, onClose, onSaved }) {
       nte_code: record.nte_code,
       violation: record.violation,
       explanation_date: record.explanation_date ? dayjs(record.explanation_date) : null,
+      date_received_by_hr: record.date_received_by_hr ? dayjs(record.date_received_by_hr) : null,
       remarks: record.remarks,
       status: record.status || "Open",
     });
@@ -64,6 +66,7 @@ function NteEditModal({ record, onClose, onSaved }) {
     formData.append("nte_code", values.nte_code);
     formData.append("violation", values.violation);
     if (values.explanation_date) formData.append("explanation_date", values.explanation_date.format("YYYY-MM-DD"));
+    formData.append("date_received_by_hr", values.date_received_by_hr ? values.date_received_by_hr.format("YYYY-MM-DD") : "");
     if (values.remarks) formData.append("remarks", values.remarks);
     if (values.status) formData.append("status", values.status);
     Object.entries(pendingFiles).forEach(([key, file]) => { if (file) formData.append(key, file); });
