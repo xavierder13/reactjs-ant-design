@@ -48,6 +48,7 @@ import ForRegularization from '../pages/employee_master_data/lists/ForRegulariza
 import ResignedEmployees from '../pages/employee_master_data/lists/ResignedEmployees';
 import OpenNteList from '../pages/employee_master_data/lists/OpenNteList';
 import OpenDisciplinaryList from '../pages/employee_master_data/lists/OpenDisciplinaryList';
+import ReferralCodeList from '../pages/employee_master_data/referral_codes/ReferralCodeList';
 import Vacancies from '../pages/recruitment/Vacancies';
 import JobApplicantList from '../pages/recruitment/JobApplicantList';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
@@ -86,6 +87,7 @@ const permissionRoutes = [
   { permissions: ['employee-master-data-resigned-list'], path: '/employees/resigned', element: <ResignedEmployees /> },
   { permissions: ['employee-master-data-nte-list'], path: '/employees/nte', element: <OpenNteList /> },
   { permissions: ['employee-master-data-disciplinary-list'], path: '/employees/disciplinary', element: <OpenDisciplinaryList /> },
+  { permissions: ['employee-referral-list'], path: '/employees/referral-codes', element: <ReferralCodeList /> },
   { permissions: ['employee-master-data-list'], path: '/employees/:id', element: <ViewEmployee /> },
   { permissions: ['employee-master-data-create'], path: '/employees/create', element: <CreateEmployee /> },
   { permissions: ['employee-master-data-create', 'employee-master-data-edit'], path: '/employees/:id/edit', element: <EditEmployee /> },

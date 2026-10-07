@@ -8,10 +8,7 @@ import useEmployeeFormOptions from "../../../../hooks/useEmployeeFormOptions";
 import { DISPLAY_DATE_FORMAT, formatDate } from "../../../../utils/formatDate";
 import { EMPLOYMENT_TYPE_OPTIONS } from "../../../../utils/employmentTypes";
 import ReadOnlyDateInput from "../ReadOnlyDateInput";
-// Matches vueportal's recruitment portal referral link format exactly
-// (EmployeeInformationTabs.vue's `referralLink` computed property) —
-// keep these in sync if the recruitment portal's URL/query param changes.
-const buildReferralLink = (code) => `https://recruitment.addessa.com/careers?ref=${code}`;
+import { buildReferralLink, copyText } from "../../../../utils/referralLink";
 
 
 // Renders bare Form.Item fields only, inside EmployeeForm.jsx's shared
@@ -45,7 +42,7 @@ export default function EmployeeDetailsTab({ initialData, mode }) {
   const referralCode = initialData?.referral?.referral_code;
 
   const copyReferralLink = () => {
-    navigator.clipboard.writeText(buildReferralLink(referralCode))
+    copyText(buildReferralLink(referralCode))
       .then(() => messageApi.success('Referral link copied!'))
       .catch(() => messageApi.error('Could not copy link.'));
   };

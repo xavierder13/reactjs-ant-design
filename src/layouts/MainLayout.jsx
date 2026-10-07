@@ -51,7 +51,7 @@ const SYNC_ACTIONS = {
   },
   generateReferralCodes: {
     title: 'Generate Referral Codes',
-    content: 'Referral codes will be generated for employees who have none.',
+    content: 'Active employees without a referral code will get one, inactive codes of active employees will be reactivated, and codes of resigned employees will be deactivated. Run Sync Referral Codes afterwards to update the careers portal.',
     request: syncApi.generateReferralCodes,
   },
   deactivateResigned: {
@@ -91,6 +91,7 @@ const titleMap = {
   '/employees/resigned':            { title: 'Resigned', breadcrumb: ['Employee', 'Resigned'] },
   '/employees/nte':                 { title: 'Issued NTE (Open)', breadcrumb: ['Employee', 'Issued NTE'] },
   '/employees/disciplinary':        { title: 'Disciplinary Actions (Open)', breadcrumb: ['Employee', 'Disciplinary Actions'] },
+  '/employees/referral-codes':      { title: 'Referral Codes', breadcrumb: ['Employee', 'Referral Codes'] },
   '/vacancies':                     { title: 'Vacancies', breadcrumb: ['Recruitment', 'Vacancies'] },
   ...Object.fromEntries(APPLICANT_STAGES.map((stage) => [stage.path, { title: stage.title, breadcrumb: ['Recruitment', stage.title] }])),
   '/kpi-templates':          { title: 'KPI Templates',       breadcrumb: ['KPI Management', 'KPI Templates'] },
@@ -159,6 +160,7 @@ const menuData = [
           { key: 'resigned', title: 'Resigned', link: '/employees/resigned', permissions: ['employee-master-data-resigned-list'] },
           { key: 'open-nte', title: 'Issued NTE', link: '/employees/nte', permissions: ['employee-master-data-nte-list'] },
           { key: 'open-disciplinary', title: 'Disciplinary Actions', link: '/employees/disciplinary', permissions: ['employee-master-data-disciplinary-list'] },
+          { key: 'referral-codes', title: 'Referral Codes', link: '/employees/referral-codes', permissions: ['employee-referral-list'] },
         ]
       },
       {

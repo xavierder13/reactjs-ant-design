@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Card, Avatar, Typography, Tag, Space, Upload, Button, Tooltip, Row, Col, Spin, App } from "antd";
-import { CameraOutlined, MailOutlined, PhoneOutlined, ShopOutlined, IdcardOutlined } from "@ant-design/icons";
+import { CameraOutlined, MailOutlined, PhoneOutlined, ShopOutlined, IdcardOutlined, ShareAltOutlined, CopyOutlined } from "@ant-design/icons";
 
 import employeeApi from "../../../services/employee/employeeApi";
 import handleApiError from "../../../utils/handleApiError";
 import { formatDate } from "../../../utils/formatDate";
 import { isActiveValue } from "../../../utils/employeeStatus";
 import { employeePhotoUrl, initials } from "../../../utils/employeePhoto";
+import { buildReferralLink, copyText } from "../../../utils/referralLink";
 import reportingManager from "./reportingManager";
 
 const PHOTO_TYPES = ["jpg", "jpeg", "png"];
@@ -41,6 +42,13 @@ export default function ProfileHeader({ employee, canUploadPhoto, onEmployeeChan
   const manager = reportingManager(employee);
   const photoUrl = employeePhotoUrl(employee, photoVersion);
   const managerPhotoUrl = employeePhotoUrl(manager);
+  const referral = employee.referral;
+
+  const copyReferralLink = () => {
+    copyText(buildReferralLink(referral.referral_code))
+      .then(() => messageApi.success("Referral link copied!"))
+      .catch(() => messageApi.error("Could not copy link."));
+  };
 
   const handlePhoto = async (file) => {
     const ext = file.name.split(".").pop().toLowerCase();
@@ -131,6 +139,22 @@ export default function ProfileHeader({ employee, canUploadPhoto, onEmployeeChan
             </ContactLine>
             <ContactLine icon={<PhoneOutlined />}>{employee.contact}</ContactLine>
           </Space>
+
+          {referral?.referral_code && (
+            <Space size={8} wrap align="center" style={{ marginTop: 10 }}>
+              <ShareAltOutlined style={{ color: "rgba(0, 0, 0, 0.65)" }} />
+              <Typography.Text type="secondary">Referral Code:</Typography.Text>
+              <Typography.Text strong copyable={{ text: referral.referral_code, tooltips: ["Copy code", "Copied"] }}>
+                {referral.referral_code}
+              </Typography.Text>
+              {!referral.is_active && (
+                <Tooltip title="The careers portal won't accept this code until it is reactivated.">
+                  <Tag color="warning" style={{ marginInlineEnd: 0 }}>Inactive</Tag>
+                </Tooltip>
+              )}
+              <Button size="small" icon={<CopyOutlined />} onClick={copyReferralLink}>Copy referral link</Button>
+            </Space>
+          )}
         </div>
       </div>
 
