@@ -92,6 +92,7 @@ const titleMap = {
   '/employees/nte':                 { title: 'Issued NTE (Open)', breadcrumb: ['Employee', 'Issued NTE'] },
   '/employees/disciplinary':        { title: 'Disciplinary Actions (Open)', breadcrumb: ['Employee', 'Disciplinary Actions'] },
   '/employees/referral-codes':      { title: 'Referral Codes', breadcrumb: ['Employee', 'Referral Codes'] },
+  '/employees/new-hired':           { title: 'New Hired', breadcrumb: ['Employee', 'New Hired'] },
   '/vacancies':                     { title: 'Vacancies', breadcrumb: ['Recruitment', 'Vacancies'] },
   ...Object.fromEntries(APPLICANT_STAGES.map((stage) => [stage.path, { title: stage.title, breadcrumb: ['Recruitment', stage.title] }])),
   '/kpi-templates':          { title: 'KPI Templates',       breadcrumb: ['KPI Management', 'KPI Templates'] },
@@ -155,6 +156,7 @@ const menuData = [
         children: [
           { key: 'master-data',    title: 'Master Data',    link: '/employees',         permissions: ['employee-master-data-list'] },
           { key: 'master-data-create',    title: 'Master Data Create',    link: '/employees/create',         permissions: ['employee-master-data-create'] },
+          { key: 'new-hired', title: 'New Hired', link: '/employees/new-hired', permissions: ['employee-master-data-new-hired-list'] },
           { key: 'hired-this-month', title: 'Hired This Month', link: '/employees/hired-this-month', permissions: ['employee-master-data-for-regularization'] },
           { key: 'for-regularization', title: 'For Regularization', link: '/employees/for-regularization', permissions: ['employee-master-data-for-regularization'] },
           { key: 'resigned', title: 'Resigned', link: '/employees/resigned', permissions: ['employee-master-data-resigned-list'] },

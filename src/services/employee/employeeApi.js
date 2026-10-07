@@ -99,6 +99,17 @@ const employeeApi = {
   // employee record; does not touch the offboarding record itself.
   resign: (payload) => axios.post('/employee_master_data/resign', payload),
 
+  // New Hired (vueportal EmployeeNewHired.vue): careers-portal hired
+  // applicants (orientation passed, contract signed up to today) not yet
+  // synced. GET /employee_master_data/new_hired (employee-master-data-new-hired-list)
+  // → { employees: [applicant rows, as the portal's all_job_applicants()], ... }
+  getNewHired: () => axios.get('/employee_master_data/new_hired'),
+  // POST /employee_master_data/sync/new_hired (employee-master-data-sync-new-hired)
+  // body: { employees: [the selected rows, as received] } — creates each as a
+  // Probationary employee (skipped when one with the same name, birthdate and
+  // gender exists) and logs it as synced either way.
+  syncNewHired: (employees) => axios.post('/employee_master_data/sync/new_hired', { employees }),
+
   // Segment lists — the Hired This Month / For Regularization / Resigned
   // pages, and the Workforce Dashboard's counts (read `employees.total`).
   // All paginated via ?page=. `table_headers` must be headers this endpoint's
