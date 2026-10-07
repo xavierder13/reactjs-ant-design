@@ -67,7 +67,7 @@ export default function QualifiedCandidatesPerVacancy({ rows }) {
       </Card>
 
       <Card size='small' style={{ borderRadius: 8 }}>
-        <Table size='small' rowKey='position' dataSource={rows} columns={columns} pagination={{ pageSize: 8, showSizeChanger: true, pageSizeOptions: [8, 15, 50] }} />
+        <Table size='small' rowKey='position' dataSource={rows} columns={columns} pagination={{ pageSize: 8, showSizeChanger: true, pageSizeOptions: [8, 15, 50] }} scroll={{ x: 'max-content' }} />
       </Card>
     </div>
   );

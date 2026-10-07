@@ -167,9 +167,12 @@ export function computeRecruitmentMetrics({ allApplicantRows, filters, dateRange
     return true;
   });
 
-  // vueportal: the stage filter is not applied here (only to dateFilteredApplicants).
+  // Deliberate difference from vueportal (user, 2026-10-07: every section
+  // follows the dashboard filters): the stage filter applies here too, so a
+  // stage other than Hired leaves no hires.
   const hiredApplicants = allApplicantRows.filter((applicant) => {
     if (!applicant.isHired || applicant.dateHired === null) return false;
+    if (filters.stage    && applicant.recruitmentStage  !== filters.stage)    return false;
     if (filters.branch   && applicant.appliedBranch     !== filters.branch)   return false;
     if (filters.position && applicant.appliedPosition   !== filters.position) return false;
     if (filters.source   && applicant.applicationSource !== filters.source)   return false;

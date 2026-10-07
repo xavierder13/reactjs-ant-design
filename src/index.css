@@ -52,3 +52,43 @@ body {
 .ant-modal-confirm .ant-modal-confirm-body-wrapper {
   padding: 20px 24px;
 }
+
+/* Recruitment Dashboard jump links (DashboardNav): AntD's horizontal Anchor
+   drawn as pill chips instead of an underline; the active section is filled
+   with the app green. */
+.rd-jump.ant-anchor-wrapper-horizontal::before,
+.rd-jump .ant-anchor-ink {
+  display: none !important;
+}
+.rd-jump .ant-anchor {
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.rd-jump .ant-anchor .ant-anchor-link {
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: none;
+}
+.rd-jump .ant-anchor .ant-anchor-link .ant-anchor-link-title {
+  display: inline-block;
+  padding: 2px 12px;
+  font-size: 12px;
+  line-height: 20px;
+  border: 1px solid #d9d9d9;
+  border-radius: 999px;
+  color: rgba(0, 0, 0, 0.65);
+  background: #fff;
+  transition: all 0.2s;
+}
+.rd-jump .ant-anchor .ant-anchor-link .ant-anchor-link-title:hover {
+  border-color: #389e0d;
+  color: #389e0d;
+}
+.rd-jump .ant-anchor .ant-anchor-link .ant-anchor-link-title.ant-anchor-link-title-active,
+.rd-jump .ant-anchor .ant-anchor-link .ant-anchor-link-title.ant-anchor-link-title-active:hover {
+  background: #389e0d;
+  border-color: #389e0d;
+  color: #fff !important;
+}

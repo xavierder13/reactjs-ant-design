@@ -3,15 +3,10 @@ import { ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 import { DISPLAY_DATE_FORMAT } from '../../../../utils/formatDate';
+import { FILTER_DEFS } from '../filterDefs';
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
-const FILTER_DEFS = [
-  { label: 'Branch', key: 'branch' },
-  { label: 'Position', key: 'position' },
-  { label: 'Source', key: 'source' },
-  { label: 'Stage', key: 'stage' },
-];
 const labelStyle = { fontSize: 10, fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 4 };
 
 // vueportal DashboardFilters.vue — dimension filters + analytics date range.
@@ -21,12 +16,12 @@ export default function DashboardFilters({ filters, filterOptions, dateRange, on
     <>
       <Card size='small' style={{ marginBottom: 20, borderRadius: 8 }}>
         <Row gutter={[12, 12]} align='bottom'>
-          {FILTER_DEFS.map(({ label, key }) => (
+          {FILTER_DEFS.map(({ label, plural, key }) => (
             <Col key={key} xs={12} sm={8} md={4}>
               <Text style={labelStyle}>{label}</Text>
               <Select
                 allowClear
-                placeholder={`All ${label}s`}
+                placeholder={`All ${plural}`}
                 style={{ width: '100%' }}
                 options={(filterOptions[key] || []).map((v) => ({ label: v, value: v }))}
                 value={filters[key] || undefined}

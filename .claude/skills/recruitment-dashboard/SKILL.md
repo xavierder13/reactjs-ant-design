@@ -16,8 +16,10 @@ the two.
   data its components build. Pure JS, no React. vueportal quirks are kept on
   purpose (marked `vueportal:`), e.g. hired applicants appear in both
   `dateFilteredApplicants` and `hiredApplicants`, so gender/education/civil
-  status/top positions/branch breakdown count each hire twice, and the stage
-  filter is not applied to `hiredApplicants`.
+  status/top positions/branch breakdown count each hire twice. One deliberate
+  difference: every section follows the dashboard filters (user,
+  2026-10-07), so the stage filter also applies to `hiredApplicants`
+  (vueportal skips it there).
 - `src/pages/dashboard/recruitment/components/` — one component per vueportal
   component (DashboardFilters, KpiCards, PipelineStageCards, RecruitmentFunnel,
   SourcingMetrics, ApplicantDistribution, GenderAndStageOutcome,
@@ -44,10 +46,38 @@ the two.
   process (stage color) / failed (red) / reserved (navy).
   Styling never touches `recruitmentMetrics.js`.
 - `src/pages/dashboard/DashboardPage.jsx` — loads data, holds filter state,
-  calls `computeRecruitmentMetrics` once, renders sections in vueportal order.
+  calls `computeRecruitmentMetrics` once, and renders the sections grouped
+  into tabs (`TABS`: Overview, Pipeline, Sourcing & Applicants, Hiring Team,
+  Manpower Requests; `renderSection(id)` maps a section id to its
+  component). Only the active tab's sections render. The tab is in the URL
+  (`?tab=`). The tab body is the shared `src/pages/dashboard/components/DashboardTabLayout.jsx` (+ `useDashboardTabs.js`, `DashboardNav.jsx` — also used by the Workforce Dashboard; `renderSection(id, { changeTab })`). A sticky bar (`DashboardNav.jsx`, `top: -24` inside MainLayout's
+  scrolling Content; a shadow only once stuck, via an IntersectionObserver
+  on a sentinel) holds AntD's default line tabs (active = app green label +
+  ink bar; per-tab colors and a green strip were tried and reverted by the
+  user, 2026-10-07) (icon + label; live counts on Pipeline =
+  applicants in the period and Manpower Requests = open vacancies, as light
+  green chips like the "records loaded" tag), a Filters button with the active-filter count,
+  the period and filters in effect as removable tags, and — in tabs with 4+
+  sections — AntD `Anchor` jump links drawn as pill chips (`.rd-jump` in
+  `src/index.css`; active = filled app green, white text) on md+, or a "Jump
+  to section…" select on phones. Each tab opens with its title and a
+  one-line description in a light green block with the tab icon and a green
+  left stripe (not sticky). Sections carry `id`s and scroll to just below the bar. Overview's `RecruitmentScorecard.jsx` shows
+  Time to Fill / Hiring Efficiency / Aging of Vacancies; a tile opens the
+  Manpower Requests tab at its section. Export Report still covers every
+  section. The Filters button opens `DashboardFilterDrawer.jsx` (right
+  drawer, full width on phones) with the same filters as the top panel
+  (`recruitment/filterDefs.js`), applied immediately. Headless-Edge note: virtual time barely runs rAF/smooth scroll —
+  drive rAF with timers and force `behavior: 'auto'` when testing jumps.
 - Deliberate differences: Branch Breakdown and the Hiring Officer table page
   at 10 rows with a visible pager (vueportal shows the first 10 and hides the
-  rest); TimeToFill exists only here.
+  rest); the stage filter applies to hires; TimeToFill exists only here and
+  follows the date range, Branch and Position (matched by name to the MRF
+  branch / line position) — Source, Stage and Gender are applicant-only, and
+  the section says so when one is set. HiringEfficiency (also only here,
+  `recruitment/hiringEfficiency.js`) follows the same date range / Branch /
+  Position; VacancyAging (`recruitment/vacancyAging.js`) uses Branch /
+  Position and the range's end as its as-of date.
 
 ## Parity check — run after any metric change
 
@@ -60,8 +90,14 @@ cd .claude/skills/recruitment-dashboard/parity && python3 gen.py      # fixture.
 docker cp . vueportal_app:/tmp/parity && docker exec -e TZ=Asia/Manila vueportal_app sh -c 'cd /tmp/parity && node vue_harness.js'
 docker cp vueportal_app:/tmp/parity/vue_out.json . && docker cp . rbac-react-dev:/tmp/parity
 docker exec -e TZ=Asia/Manila rbac-react-dev sh -c 'cd /tmp/parity && node react_harness.mjs'
-docker cp rbac-react-dev:/tmp/parity/react_out.json . && python3 compare.py   # expect N/N identical
+docker cp rbac-react-dev:/tmp/parity/react_out.json . && python3 compare.py
 ```
+
+Expected: every scenario PASS except "stage Screening", where the
+hire-based values (Total Hired, hire rate, sourcing/placement/hiring officer,
+hired counts) are 0 in this app because the stage filter applies to hires —
+213/228 identical as of 2026-10-07. Any other difference is a regression.
+Delete the generated `fixture.json` / `*_out.json` afterwards.
 
 The real page reads `/recruitment/applicant_list`, which calls the production
 careers portal — for a browser comparison, intercept that request and serve

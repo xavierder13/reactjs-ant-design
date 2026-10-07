@@ -34,7 +34,7 @@ export default function ReservedApplicantAging({ reservedAgingRows, reservedAgin
           </Col>
         ))}
       </Row>
-      <Table size='small' rowKey='rowId' dataSource={rows} columns={columns} pagination={{ pageSize: 10 }} />
+      <Table size='small' rowKey='rowId' dataSource={rows} columns={columns} pagination={{ pageSize: 10 }} scroll={{ x: 'max-content' }} />
     </Card>
   );
 }

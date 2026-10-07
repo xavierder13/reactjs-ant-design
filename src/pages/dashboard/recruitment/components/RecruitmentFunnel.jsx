@@ -30,7 +30,7 @@ function FunnelChart({ rows }) {
 
   return (
     <div style={{ overflowX: 'auto' }}>
-      <svg width={SVG_W} height={embudo.length * ROW_H + 20} style={{ fontFamily: 'inherit', display: 'block', margin: '0 auto' }}>
+      <svg viewBox={`0 0 ${SVG_W} ${embudo.length * ROW_H + 20}`} width='100%' style={{ maxWidth: SVG_W, fontFamily: 'inherit', display: 'block', margin: '0 auto' }}>
         {embudo.map((row, i) => {
           const y = i * ROW_H + 10;
           const tw = topW(i);

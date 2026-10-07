@@ -69,7 +69,7 @@ export default function DeepAnalysis({ topPositionEntries, branchBreakdownEntrie
     <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
       <Col xs={24} md={12}>
         <Card size='small' title='Top Positions Applied' style={{ borderRadius: 8, height: '100%' }}>
-          <Table size='small' rowKey='rank' dataSource={topPositionEntries} columns={positionColumns} pagination={false} />
+          <Table size='small' rowKey='rank' dataSource={topPositionEntries} columns={positionColumns} pagination={false} scroll={{ x: 'max-content' }} />
         </Card>
       </Col>
       <Col xs={24} md={12}>
@@ -80,6 +80,7 @@ export default function DeepAnalysis({ topPositionEntries, branchBreakdownEntrie
             dataSource={branchBreakdownEntries}
             columns={branchColumns}
             pagination={{ defaultPageSize: 10, showSizeChanger: true, pageSizeOptions: [10, 20, 50], showTotal: (total) => `${total} branches` }}
+            scroll={{ x: 'max-content' }}
           />
         </Card>
       </Col>

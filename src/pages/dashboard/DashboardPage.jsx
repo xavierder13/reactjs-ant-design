@@ -1,7 +1,8 @@
 // src/pages/dashboard/DashboardPage.jsx
 //
-// Recruitment Dashboard — same sections, order and numbers as vueportal's
-// resources/js/views/dashboard/Dashboard.vue. All metrics come from
+// Recruitment Dashboard — same sections and numbers as vueportal's
+// resources/js/views/dashboard/Dashboard.vue (plus this app's Manpower
+// Request KPIs), grouped into tabs (TABS) under a sticky bar. All metrics come from
 // recruitment/recruitmentMetrics.js (a line-for-line port of Dashboard.vue's
 // computed block, parity-checked against vueportal's own code); each section
 // is a component under recruitment/components/, one per vueportal component.
@@ -9,7 +10,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Card, Divider, Typography, Button, Tag, Space, App } from 'antd';
-import { CheckCircleOutlined, ReloadOutlined, FileExcelOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, ReloadOutlined, FileExcelOutlined, DashboardOutlined, FunnelPlotOutlined, TeamOutlined, SolutionOutlined, FileDoneOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import axiosInstance from '../../api/axiosInstance';
 import manpowerRequestApi from '../../services/manpower_request/manpowerRequestApi';
 import { downloadRecruitmentReport } from '../../utils/recruitmentReport';
@@ -17,7 +19,6 @@ import {
   loadApplicantRows, computeRecruitmentMetrics, defaultDateRange, emptyFilters,
 } from './recruitment/recruitmentMetrics';
 import { PRIMARY_GREEN } from './recruitment/chartSetup';
-import SectionLabel from './recruitment/components/SectionLabel';
 import DashboardSkeleton from './recruitment/components/DashboardSkeleton';
 import DashboardFilters from './recruitment/components/DashboardFilters';
 import KpiCards from './recruitment/components/KpiCards';
@@ -35,8 +36,48 @@ import QualifiedCandidatesPerVacancy from './recruitment/components/QualifiedCan
 import DeepAnalysis from './recruitment/components/DeepAnalysis';
 import RecruitmentInsights from './recruitment/components/RecruitmentInsights';
 import TimeToFill from './recruitment/components/TimeToFill';
+import HiringEfficiency from './recruitment/components/HiringEfficiency';
+import VacancyAging from './recruitment/components/VacancyAging';
+import RecruitmentScorecard from './recruitment/components/RecruitmentScorecard';
+import DashboardFilterDrawer from './recruitment/components/DashboardFilterDrawer';
+import DashboardTabLayout from './components/DashboardTabLayout';
+import { computeVacancyAging } from './recruitment/vacancyAging';
 
 const { Text, Title } = Typography;
+
+const FILTER_LABELS = { branch: 'Branch', position: 'Position', source: 'Source', stage: 'Stage', gender: 'Gender' };
+
+// Tabs, each a list of sections (rendered by renderSection). Export Report
+// still covers every section.
+const TABS = [
+  { key: 'overview', label: 'Overview', icon: <DashboardOutlined />, description: 'The headline numbers for the period and what needs attention.', sections: [
+    { id: 'kpis', title: 'Key Performance Indicators' },
+    { id: 'scorecard', title: 'Recruitment KPI Scorecard' },
+    { id: 'insights', title: 'Recruitment Insights' },
+  ] },
+  { key: 'pipeline', label: 'Pipeline', icon: <FunnelPlotOutlined />, description: 'Where applicants are in the hiring process, and where they drop off or wait.', sections: [
+    { id: 'pipeline', title: 'Applicant Pipeline' },
+    { id: 'funnel', title: 'Recruitment Funnel' },
+    { id: 'compliance', title: 'Compliance & Onboarding Metrics' },
+    { id: 'reserved', title: 'Reserved Applicant Aging' },
+    { id: 'qualified', title: 'Qualified Candidates Per Vacancy' },
+  ] },
+  { key: 'sourcing', label: 'Sourcing & Applicants', icon: <TeamOutlined />, description: 'Where applicants come from and who they are.', sections: [
+    { id: 'sourcing', title: 'Sourcing Metrics' },
+    { id: 'distribution', title: 'Applicant Distribution' },
+    { id: 'demographics', title: 'Applicant Demographics' },
+    { id: 'deep', title: 'Deep Analysis' },
+  ] },
+  { key: 'team', label: 'Hiring Team', icon: <SolutionOutlined />, description: 'How hiring officers perform and how well placements match preferences.', sections: [
+    { id: 'officers', title: 'Hiring Officer Performance' },
+    { id: 'placement', title: 'Placement Match Analysis' },
+  ] },
+  { key: 'manpower', label: 'Manpower Requests', icon: <FileDoneOutlined />, description: 'How fast approved MRF positions get filled, against RF 25 / SUP 45 / MGR 60 days.', sections: [
+    { id: 'time-to-fill', title: 'Time to Fill' },
+    { id: 'hiring-efficiency', title: 'Hiring Efficiency' },
+    { id: 'vacancy-aging', title: 'Aging of Vacancies' },
+  ] },
+];
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -49,6 +90,8 @@ const DashboardPage = () => {
   const [mrfList, setMrfList] = useState([]);
   const [applicantFilters, setApplicantFilters] = useState(emptyFilters);
   const [analyticsDateRange, setAnalyticsDateRange] = useState(defaultDateRange);
+
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const fetchApplicants = useCallback(async () => {
     setIsLoadingApplicants(true);
@@ -94,6 +137,14 @@ const DashboardPage = () => {
     allApplicantRows, filters: applicantFilters, dateRange: analyticsDateRange, positions, branches,
   }), [allApplicantRows, applicantFilters, analyticsDateRange, positions, branches]);
 
+  // Live counts on two tabs: applicants in the period, open vacancies.
+  const aging = useMemo(() => computeVacancyAging(mrfList, analyticsDateRange, applicantFilters), [mrfList, analyticsDateRange, applicantFilters]);
+  const tabs = TABS.map((t) => {
+    if (t.key === 'pipeline') return { ...t, badge: metrics.dateFilteredApplicants.length };
+    if (t.key === 'manpower') return { ...t, badge: aging.count };
+    return t;
+  });
+
   const resetAllFilters = () => { setApplicantFilters(emptyFilters()); setAnalyticsDateRange(defaultDateRange()); };
 
   const exportReport = () => {
@@ -122,6 +173,63 @@ const DashboardPage = () => {
     );
   }
 
+  const clearFilter = (key) => setApplicantFilters((f) => ({ ...f, [key]: '' }));
+  const showFilters = () => setFiltersOpen(true);
+
+  // Each section, by id — grouped into tabs by TABS.
+  const renderSection = (id, { changeTab }) => {
+    switch (id) {
+      case 'kpis': return <KpiCards kpiCards={metrics.kpiCards} />;
+      case 'scorecard': return <RecruitmentScorecard mrfList={mrfList} dateRange={analyticsDateRange} filters={applicantFilters} onOpen={(sectionId) => changeTab('manpower', sectionId)} />;
+      case 'insights': return <RecruitmentInsights recruitmentInsights={metrics.recruitmentInsights} />;
+      case 'pipeline': return <PipelineStageCards recruitmentStageCards={metrics.recruitmentStageCards} onNavigate={navigate} />;
+      case 'funnel': return (
+        <RecruitmentFunnel
+          recruitmentStageAnalysisRows={metrics.recruitmentStageAnalysisRows}
+          recruitmentFunnelRows={metrics.recruitmentFunnelRows}
+          avgDaysPerStage={metrics.avgDaysPerStage}
+        />
+      );
+      case 'compliance': return <ComplianceMetrics nonCompliantByMonth={metrics.nonCompliantByMonth} />;
+      case 'reserved': return <ReservedApplicantAging reservedAgingRows={metrics.reservedAgingRows} reservedAgingBuckets={metrics.reservedAgingBuckets} />;
+      case 'qualified': return <QualifiedCandidatesPerVacancy rows={metrics.qualifiedCandidatesPerVacancy} />;
+      case 'sourcing': return (
+        <SourcingMetrics
+          dateFilteredApplicants={metrics.dateFilteredApplicants}
+          hiredApplicants={metrics.hiredApplicants}
+          sourcingChannelEfficiency={metrics.sourcingChannelEfficiency}
+        />
+      );
+      case 'distribution': return (
+        <>
+          <ApplicantDistribution dateFilteredApplicants={metrics.dateFilteredApplicants} hiredApplicants={metrics.hiredApplicants} />
+          <GenderAndStageOutcome
+            genderBreakdownStats={metrics.genderBreakdownStats}
+            stageOutcomeData={metrics.stageOutcomeData}
+            totalApplicants={metrics.dateFilteredApplicants.length}
+          />
+        </>
+      );
+      case 'demographics': return <ApplicantDemographics educAttainStats={metrics.educAttainStats} civilStatusStats={metrics.civilStatusStats} />;
+      case 'deep': return (
+        <DeepAnalysis
+          topPositionEntries={metrics.topPositionEntries}
+          branchBreakdownEntries={metrics.branchBreakdownEntries}
+          heatmapSourceLabels={metrics.heatmapSourceLabels}
+          heatmapStageLabels={metrics.heatmapStageLabels}
+          heatmapDataGrid={metrics.heatmapDataGrid}
+          heatmapMaxValue={metrics.heatmapMaxValue}
+        />
+      );
+      case 'officers': return <HiringOfficerPerformance hiringOfficerStats={metrics.hiringOfficerStats} />;
+      case 'placement': return <PlacementMatchAnalysis placementMatchStats={metrics.placementMatchStats} iqPassRateByPosition={metrics.iqPassRateByPosition} />;
+      case 'time-to-fill': return <TimeToFill mrfList={mrfList} dateRange={analyticsDateRange} filters={applicantFilters} />;
+      case 'hiring-efficiency': return <HiringEfficiency mrfList={mrfList} dateRange={analyticsDateRange} filters={applicantFilters} />;
+      case 'vacancy-aging': return <VacancyAging mrfList={mrfList} dateRange={analyticsDateRange} filters={applicantFilters} />;
+      default: return null;
+    }
+  };
+
   return (
     <div style={{ fontFamily: "'Segoe UI', sans-serif" }}>
       <Row justify='space-between' align='middle' style={{ marginBottom: 20 }}>
@@ -142,68 +250,31 @@ const DashboardPage = () => {
         onResetDate={() => setAnalyticsDateRange(defaultDateRange())}
       />
 
-      <SectionLabel>Key Performance Indicators</SectionLabel>
-      <KpiCards kpiCards={metrics.kpiCards} />
-
-      <SectionLabel>Applicant Pipeline</SectionLabel>
-      <PipelineStageCards recruitmentStageCards={metrics.recruitmentStageCards} onNavigate={navigate} />
-
-      <SectionLabel>Recruitment Funnel</SectionLabel>
-      <RecruitmentFunnel
-        recruitmentStageAnalysisRows={metrics.recruitmentStageAnalysisRows}
-        recruitmentFunnelRows={metrics.recruitmentFunnelRows}
-        avgDaysPerStage={metrics.avgDaysPerStage}
+      <DashboardFilterDrawer
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        filters={applicantFilters}
+        filterOptions={metrics.allFilterOptions}
+        dateRange={analyticsDateRange}
+        onFiltersChange={setApplicantFilters}
+        onDateRangeChange={setAnalyticsDateRange}
+        onReset={resetAllFilters}
+        onResetDate={() => setAnalyticsDateRange(defaultDateRange())}
       />
 
-      <SectionLabel>Sourcing Metrics</SectionLabel>
-      <SourcingMetrics
-        dateFilteredApplicants={metrics.dateFilteredApplicants}
-        hiredApplicants={metrics.hiredApplicants}
-        sourcingChannelEfficiency={metrics.sourcingChannelEfficiency}
+      {/* Tabs (?tab=), sticky bar, jump links — shared with the Workforce Dashboard. */}
+      <DashboardTabLayout
+        tabs={tabs}
+        renderSection={renderSection}
+        nav={{
+          chips: Object.entries(FILTER_LABELS).filter(([key]) => applicantFilters[key])
+            .map(([key, label]) => ({ key, label, value: applicantFilters[key] })),
+          period: `${analyticsDateRange.from ? dayjs(analyticsDateRange.from).format('MMM D, YYYY') : 'All time'} – ${analyticsDateRange.to ? dayjs(analyticsDateRange.to).format('MMM D, YYYY') : 'Today'}`,
+          emptyText: 'All branches, positions, sources, stages and genders',
+          onClearFilter: clearFilter,
+          onShowFilters: showFilters,
+        }}
       />
-
-      <SectionLabel>Applicant Distribution</SectionLabel>
-      <ApplicantDistribution dateFilteredApplicants={metrics.dateFilteredApplicants} hiredApplicants={metrics.hiredApplicants} />
-
-      <GenderAndStageOutcome
-        genderBreakdownStats={metrics.genderBreakdownStats}
-        stageOutcomeData={metrics.stageOutcomeData}
-        totalApplicants={metrics.dateFilteredApplicants.length}
-      />
-
-      <SectionLabel>Compliance &amp; Onboarding Metrics</SectionLabel>
-      <ComplianceMetrics nonCompliantByMonth={metrics.nonCompliantByMonth} />
-
-      <SectionLabel>Reserved Applicant Aging</SectionLabel>
-      <ReservedApplicantAging reservedAgingRows={metrics.reservedAgingRows} reservedAgingBuckets={metrics.reservedAgingBuckets} />
-
-      <SectionLabel>Applicant Demographics</SectionLabel>
-      <ApplicantDemographics educAttainStats={metrics.educAttainStats} civilStatusStats={metrics.civilStatusStats} />
-
-      <SectionLabel>Hiring Officer Performance</SectionLabel>
-      <HiringOfficerPerformance hiringOfficerStats={metrics.hiringOfficerStats} />
-
-      <SectionLabel>Placement Match Analysis</SectionLabel>
-      <PlacementMatchAnalysis placementMatchStats={metrics.placementMatchStats} iqPassRateByPosition={metrics.iqPassRateByPosition} />
-
-      <SectionLabel>Qualified Candidates Per Vacancy</SectionLabel>
-      <QualifiedCandidatesPerVacancy rows={metrics.qualifiedCandidatesPerVacancy} />
-
-      <SectionLabel>Deep Analysis</SectionLabel>
-      <DeepAnalysis
-        topPositionEntries={metrics.topPositionEntries}
-        branchBreakdownEntries={metrics.branchBreakdownEntries}
-        heatmapSourceLabels={metrics.heatmapSourceLabels}
-        heatmapStageLabels={metrics.heatmapStageLabels}
-        heatmapDataGrid={metrics.heatmapDataGrid}
-        heatmapMaxValue={metrics.heatmapMaxValue}
-      />
-
-      <SectionLabel>Manpower Request — Time to Fill</SectionLabel>
-      <TimeToFill mrfList={mrfList} />
-
-      <SectionLabel>Recruitment Insights</SectionLabel>
-      <RecruitmentInsights recruitmentInsights={metrics.recruitmentInsights} />
     </div>
   );
 };
