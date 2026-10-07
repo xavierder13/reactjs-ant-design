@@ -249,6 +249,7 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
           )
           && isFieldGroupChanged(EVALUATION_REGULARIZATION_FIELDS);
       case 'disciplinary':
+      case 'training':
       case 'offboarding':
       case 'workSchedule':
       case 'attendance':

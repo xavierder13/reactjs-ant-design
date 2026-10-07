@@ -14,7 +14,7 @@ import "../components/employeeTabs.css";
 
 // The existing Employee Master Data tabs reused read-only below the
 // profile's own sections (HR view only).
-const RECORD_TAB_KEYS = ["workSchedule", "attendance", "performance", "disciplinary", "offboarding"];
+const RECORD_TAB_KEYS = ["workSchedule", "attendance", "performance", "disciplinary", "training", "offboarding"];
 
 // Shared employee profile — the HR view at /employees/:id (`view="hr"`) and
 // the signed-in user's own profile at /user/profile (`view="self"`, when

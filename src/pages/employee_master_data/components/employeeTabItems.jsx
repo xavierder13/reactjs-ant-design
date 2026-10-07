@@ -2,12 +2,13 @@
 // Profile page (profile/EmployeeProfile.jsx, which reuses the record tabs).
 import {
   UserOutlined, SolutionOutlined, ScheduleOutlined, FieldTimeOutlined,
-  RiseOutlined, WarningOutlined, LogoutOutlined,
+  RiseOutlined, WarningOutlined, ReadOutlined, LogoutOutlined,
 } from "@ant-design/icons";
 import PersonalDataTab from "./tabs/PersonalDataTab";
 import EmployeeDetailsTab from "./tabs/EmployeeDetailsTab";
 import PerformanceManagementTab from "./tabs/PerformanceManagementTab";
 import DisciplinaryTab from "./tabs/DisciplinaryTab";
+import TrainingProgramTab from "./tabs/TrainingProgramTab";
 import OffboardingTab from "./tabs/OffboardingTab";
 import WorkScheduleTab from "./tabs/WorkScheduleTab";
 import AttendanceTab from "./tabs/AttendanceTab";
@@ -33,6 +34,7 @@ export const TAB_PERMISSIONS = {
   attendance: "employee-master-data-attendance",
   performance: "employee-master-data-performance-management",
   disciplinary: "employee-master-data-disciplinary-measures-penalties",
+  training: "employee-master-data-training-program",
   offboarding: "employee-master-data-offboarding",
 };
 
@@ -121,6 +123,13 @@ export function getEmployeeTabItems({ mode, initialData, onEmployeeChange, onPer
           onPendingCreateDataChange={onPendingCreateDataChange}
         />
       ),
+    },
+    // HR-encoded training programs; placed before Offboarding (user rule).
+    {
+      key: "training",
+      label: "Training",
+      icon: <ReadOutlined />,
+      children: <TrainingProgramTab mode={mode} initialData={initialData} />,
     },
     {
       key: "offboarding",
