@@ -44,3 +44,11 @@ body {
     display: none;
   }
 }
+/* App.jsx's Modal theme sets contentPadding: 0 (padding moves onto the
+   header/body/footer for edge-to-edge dividers). Confirm dialogs
+   (modal.confirm — e.g. Sync & Updates) have no header/footer, so they lost
+   all padding: icon, text and buttons touched the edges. Restore AntD's
+   default confirm padding. */
+.ant-modal-confirm .ant-modal-confirm-body-wrapper {
+  padding: 20px 24px;
+}
