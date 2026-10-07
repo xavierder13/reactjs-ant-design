@@ -8,10 +8,10 @@ description: Established architecture, files, and conventions for the Employee M
 **Status:** complete relative to the vueportal reference — core record CRUD
 (list with server-side search/pagination/column picker/status filter, bulk
 delete, Excel import/export, template download, create, view, edit,
-delete), all 6 record tabs (Personal Data, Employee Details, Performance
-Management, Disciplinary Measures & Penalties, Offboarding, Attendance),
-Referral Code display, and the separate Employee Acknowledgment Report
-feature. Nothing in this module is blocked; see "Deferred" at the end.
+delete), the record tabs (Personal Data, Employee Details, Work Schedule,
+Attendance, Performance Management, Disciplinary Measures & Penalties,
+Training, Offboarding), Referral Code display + the Referral Codes list,
+and the separate Employee Acknowledgment Report feature. Nothing in this module is blocked; see "Deferred" at the end.
 
 This file describes the **current** state only. The dated history (how each
 piece was built, bugs found, verification runs, corrections) is in
@@ -54,6 +54,7 @@ src/pages/employee_master_data/
       PerformanceManagementTab.jsx  7 sub-tabs in performance/ (see "Sub-tabs")
       DisciplinaryTab.jsx         disciplinary/NteRecordsTab.jsx + disciplinary/DisciplinaryRecordsTab.jsx
                                   (form fields: NteFormFields.jsx / DisciplinaryFormFields.jsx; NteFileSlot.jsx)
+      TrainingProgramTab.jsx      HR-encoded training programs (on PerformanceRecordTab), before Offboarding
       OffboardingTab.jsx          + offboarding/OffboardingFileSlot.jsx, offboarding/OffboardingFormFields.jsx
       AttendanceTab.jsx           read-only, own fetch
   lists/                          segment / open-case list pages (see "Segment and Open-Case Lists")
@@ -61,6 +62,10 @@ src/pages/employee_master_data/
     ResignedEmployees.jsx         latest offboarding per employee, date-filtered, edit/delete offboarding
     OpenCaseList.jsx              shared client-side queue list → OpenNteList.jsx, OpenDisciplinaryList.jsx
     BranchFilter.jsx, useListAccess.js  branch-name filter; `can()` (Administrator bypass) + canFilterByBranch
+  referral_codes/
+    ReferralCodeList.jsx          /employees/referral-codes — every employee's referral code + copyable link
+  new_hired/
+    NewHiredList.jsx              /employees/new-hired — careers-portal hires not yet synced; select + Sync
   acknowledgment_report/
     AcknowledgmentReportIndex.jsx   /acknowledgment-reports
     AcknowledgmentReportView.jsx    /acknowledgment-reports/:id
@@ -73,7 +78,9 @@ src/services/employee/
   employeeAcknowledgmentReportApi.js
   keyPerformanceApi.js, classroomPerformanceRatingApi.js, ojtPerformanceRatingApi.js,
   branchAssignmentPositionApi.js, meritHistoryApi.js, trainingApi.js,
-  nteApi.js, disciplinaryApi.js, offboardingApi.js, attendanceApi.js
+  trainingProgramApi.js, nteApi.js, disciplinaryApi.js, offboardingApi.js, attendanceApi.js,
+  employeeReferralApi.js
+src/utils/referralLink.js          buildReferralLink() + copyText() (clipboard with a non-HTTPS fallback)
 src/utils/downloadBlobResponse.js  blob download that detects a JSON error body (see "Export / Template")
 ```
 
@@ -113,6 +120,8 @@ meant for every HR report — employee, recruitment, …):
 /employees/resigned           → ResignedEmployees    (employee-master-data-resigned-list)
 /employees/nte                → OpenNteList          (employee-master-data-nte-list)
 /employees/disciplinary       → OpenDisciplinaryList (employee-master-data-disciplinary-list)
+/employees/referral-codes     → ReferralCodeList     (employee-referral-list)
+/employees/new-hired          → NewHiredList         (employee-master-data-new-hired-list; Sync: employee-master-data-sync-new-hired)
 ```
 
 ## API / Service Pattern
@@ -154,7 +163,8 @@ Contracts".
 sub-module relation onto every row — `monthly_key_performances`,
 `classroom_performance_ratings`, `ojt_performance_ratings`,
 `branch_assignment_positions`, `merit_histories`, `trainings`,
-`explanations` (NTE), `disciplinaries`, `offboardings`. Since View/Edit
+`training_programs` (+ `department`), `explanations` (NTE),
+`disciplinaries`, `offboardings`. Since View/Edit
 load the full row (`useLatestEmployee`), every sub-tab except Attendance
 starts from `initialData.<relation>` with **no extra fetch**. Sub-module
 services therefore have no `getAll`.
@@ -332,13 +342,14 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   umbrella permission — a tab the user lacks is absent from `items`, not
   disabled: `-personal-data`, `-employee-details`,
   `-performance-management`, `-disciplinary-measures-penalties`,
-  `-offboarding`, `-attendance`. Inner sub-tabs are filtered the same way
+  `-training-program`, `-offboarding`, `-attendance`, `-work-schedule`. Inner sub-tabs are filtered the same way
   by their own permission. A role can hold a sub-permission without the
   umbrella (e.g. Payroll Admin) — that must hide the whole tab.
 - Sub-modules use `employee-master-data-<sub>-list/-create/-edit/-delete`
   for `key-performance`, `classroom-performance-rating`,
   `ojt-performance-rating`, `branch-assignment-position`, `merit-history`,
-  `training`; `nte-*` and `disciplinary-*` add `-file-download`/
+  `training` (the Performance Management ratings); the Training tab uses
+  `employee-master-data-training-program-create/-edit/-delete`; `nte-*` and `disciplinary-*` add `-file-download`/
   `-file-delete`; offboarding uses `-offboarding` (tab) +
   `-offboarding-create/-edit/-delete/-file-download/-file-delete`;
   Evaluation & Regularization uses `-evaluation-regularization` only.
@@ -363,10 +374,13 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   "Add Period" creates all 12 months of a year in one call (`grade: null`
   each — not Vue's `grade: ""`); "Delete Period" removes a year's 12 rows
   by `employee_id`+`period`; only a single row's `grade` is editable.
-- **Branch Assignment & Positions — agency tag**: each row has `is_agency`
-  (Under Agency switch, default Direct) + optional `agency_name`
-  (AutoComplete fed by `branch_assignment_position/agency_names`; a direct
-  row stores no name; the Vue form doesn't send them, so the backend only
+- **Branch Assignment & Positions — employment source**: each row has
+  `employment_source` (string, `direct` default / `agency`; extend
+  `EmployeeBranchAssignmentPosition::EMPLOYMENT_SOURCES` + the tab's
+  `EMPLOYMENT_SOURCE_OPTIONS` to add one — only `agency` counts as
+  agency-hired, any other source is a direct hire) + optional `agency_name`
+  (AutoComplete fed by `branch_assignment_position/agency_names`; only an
+  agency row stores a name; the Vue form doesn't send them, so the backend only
   writes them when sent). Employment Type follows the agency *state*
   (`EmployeeBranchAssignmentPosition::agencyState()`: latest row agency →
   'agency'; latest direct with an earlier agency row → 'absorbed'; else
@@ -378,8 +392,9 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   Employee Details via `onEmployeeChange` (so a later Save doesn't revert
   it). Staged rows on create go through the same rule. Bulk tagging uses
   the Branch Assignment Position template/import: the template lists every
-  employee's existing assignments pre-filled (+ `under_agency` Yes/No,
-  `agency_name`; one blank line per employee without rows). On upload,
+  employee's existing assignments pre-filled (+ `employment_source`
+  direct/agency, any case, blank = direct, and `agency_name`; one blank
+  line per employee without rows). On upload,
   code-and-name-only lines and lines identical to an existing row are set
   aside *before* validation (old rows can name unregistered positions,
   e.g. "Department Manager"); the rest are validated, then the same
@@ -435,6 +450,30 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
 - Fixed lists from the reference: `offenses` (8), `disciplinary_measures`
   (6), `offense_series` (First–Fifth), as closed `Select`s; `status`
   `Open`/`Closed`. `offense_type` is free text.
+
+**Training** (`TrainingProgramTab.jsx`, `trainingProgramApi.js`; backend
+`EmployeeTrainingProgramController` + `EmployeeTrainingProgramService`,
+table `employee_training_programs`, routes
+`employee_master_data/training_program/store|update/{id}|delete`):
+- HR-encoded training programs; its own outer tab placed **before
+  Offboarding** (user rule). Not the Performance Management "Training"
+  sub-tab (`employee_trainings`: mentor/grade/KPI), which is unchanged.
+- Fields: Training Program Title, Training Type (Onboarding / Technical /
+  Soft Skills / Leadership / Compliance / Others → required "Please
+  specify" = `training_type_other`, cleared for any other type; the list
+  shows "Others — <specified>"), Provider (Internal → Department
+  from `useEmployeeFormOptions`; External → provider name + optional
+  Training Fee), Delivery Method (Online / In-Person), Date, Location
+  (required for In-Person). Fixed lists must match
+  `EmployeeTrainingProgram::TRAINING_TYPES/PROVIDERS/DELIVERY_METHODS`
+  (validated with `Rule::in`). The service clears the side that doesn't
+  apply (Internal → no provider name/fee; External → no department).
+- Unlike the other `PerformanceRecordTab` users, validation failures are
+  **HTTP 422** with a field bag; `saveResult()` turns that into
+  `{ success: false, errors }`. Every write returns `training_programs`
+  (the employee's full list, newest date first). Create mode shows "Save
+  the employee first" (not part of `store()`). Main Save is hidden on it.
+  Not in vueportal's Vue UI, the template/import or exports.
 
 **Offboarding** (`OffboardingTab.jsx`, `offboarding/OffboardingFileSlot.jsx`,
 `offboardingApi.js`):
@@ -542,14 +581,47 @@ Each list's total matches its dashboard card.
   a corrupt file. Known gap: non-200 blob errors still show a generic
   message (shared `handleApiError` doesn't parse Blob bodies) — left alone.
 
-## Referral Code Field
+## New Hired (sync from the careers portal)
 
-Read-only on `EmployeeDetailsTab.jsx`, edit/view only, shown when
-`initialData.referral?.referral_code` exists. A copy button builds
-`https://recruitment.addessa.com/careers?ref=<code>` (must match
-`EmployeeInformationTabs.vue`'s `referralLink`) via
-`navigator.clipboard.writeText`. Generated server-side
-(`applyReferralCode()`); never in `buildPayload()`.
+Port of vueportal `EmployeeNewHired.vue`. `GET employee_master_data/new_hired`
+→ the portal's `job_applicant/get_all_hired`: orientation passed, contract
+signed up to today, not in `employee_new_hired_sync_logs`. Client-side search
+/ sort; Sync posts the selected rows **as received** to
+`sync/new_hired`, which creates each as Probationary (`employee_code`
+`careers-<applicant id>`; skipped if name + birthdate + gender already exist)
+and logs it as synced either way. Sync does **not** assign referral codes —
+run Generate Referral Codes afterwards. The notification bell counts this list
+(`RecruitmentController::newHiredCount`).
+
+## Referral Codes
+
+- Link: `utils/referralLink.js` `buildReferralLink(code)` =
+  `https://recruitment.addessa.com/careers?ref=<code>` (must match
+  `EmployeeInformationTabs.vue`'s `referralLink`); copy via `copyText()`
+  (`navigator.clipboard` only exists over HTTPS/localhost — falls back to
+  `execCommand('copy')`). Generated server-side (`applyReferralCode()`);
+  never in `buildPayload()`.
+- The careers portal only accepts a code whose `employee_referrals.is_active`
+  is true (an inactive one is silently dropped from the application form),
+  so the profile and list tag inactive codes.
+- `is_active` follows the employee's `active` (store/update/rehire/resign/
+  offboarding/deactivate and the Excel import all call
+  `applyReferralCode()`). Human Resource → Sync & Updates → **Generate
+  Referral Codes** (Administrator) repairs everything in one transaction:
+  creates missing codes for active employees, reactivates their inactive
+  ones, deactivates resigned employees' codes, and reports the three counts.
+  Then **Sync Referral Codes** pushes the flags to the portal — never Sync
+  first while codes are out of step (it would deactivate them on the portal).
+- Shown on: `EmployeeDetailsTab.jsx` (edit/view), `ProfileHeader.jsx` (HR
+  and self profile; copyable code + "Copy referral link" button), and the
+  **Referral Codes** list (`ReferralCodeList.jsx`, sidebar Human Resource →
+  Employee). The list's backend is `POST employee_master_data/referral_codes`
+  (`EmployeeReferralController@index` + `EmployeeReferralService`, gated by
+  `employee-referral-list`, not branch-scoped): server-paginated, `search`
+  (employee code / names / referral code), `status` (Active/Inactive
+  employee, default Active), `code_status` (Active/Inactive/None),
+  `branch_id`; returns its own `branches` so it doesn't need the
+  employee-master-data permissions.
 
 ## Branch Manpower Fill Rate
 
@@ -629,7 +701,7 @@ account form with an info Alert). Parts:
   history timeline), `ProfileDocuments.jsx` (all core files; upload needs a
   document type → `document_type`; `-file-upload/-download/-delete`).
 - HR view only: the record tabs (work schedule, attendance, performance,
-  disciplinary, offboarding) from `getEmployeeTabItems({ mode: 'view' })`,
+  disciplinary, training, offboarding) from `getEmployeeTabItems({ mode: 'view' })`,
   each in its own non-disabled `<Form>` (view mode hides mutations;
   `disabled` would also kill downloads/attendance filters).
 - Gating: HR sections follow `TAB_PERMISSIONS` (Overview/Documents =
@@ -724,3 +796,33 @@ so it describes the new current state, and delete anything the change made
 untrue. Don't append dated "Done, added YYYY-MM-DD" entries; put the
 narrative (what changed, why, bugs found, how it was verified) in the
 commit message and, if worth keeping, `docs/employee-master-data-history.md`.
+
+
+## NTE: Date Received by HR
+
+`employee_explanations.date_received_by_hr` (migration
+`2026_10_07_120000_add_date_received_by_hr_to_employee_explanations_table`,
+run by `--path` only) — on `NteFormFields.jsx` (employee NTE tab, Open NTE
+list edit, staged create) and the Open NTE list column. It starts Case
+Resolution Time (Workforce Dashboard); the disciplinary record's Return
+Date ends it. The React forms always send it (empty clears it);
+`EmployeeNTEController` writes it only when the request has the key, so
+vueportal's Vue NTE form (which lacks it) can't wipe it. NTE template /
+import: `date_received_by_hr` is the 11th (last) column — 10-column files
+still import; a blank cell keeps the saved date. The import now
+`updateOrCreate`s on employee + `date_issued` + `nte_code` (it used to
+`firstOrCreate` on every field, so a changed status/remarks added a copy).
+
+## Offboarding: Exit Interview Date
+
+`employee_offboardings.exit_interview_date` (migration
+`2026_10_07_130000_add_exit_interview_date_to_employee_offboardings_table`,
+`--path` only) on `OffboardingFormFields.jsx` (Offboarding tab + Resigned
+list edit) and the Offboarding tab table ("None" when blank). React always
+sends it (empty clears); `EmployeeOffboardingController::save` writes it only
+when present, so the Vue form can't wipe it. Feeds Exit Interview Analysis
+(Workforce Dashboard). Offboarding template / import: `exit_interview_date`
+is the 9th (last) column — 8-column files still import; a blank cell keeps
+the saved date. The import now `updateOrCreate`s on employee +
+`last_day_of_work` (it used to `firstOrCreate` on every field, so a changed
+COE / compliance added a copy).
