@@ -39,7 +39,7 @@ export const DOCUMENT_TYPES = [
     download: (params) => branchAssignmentPositionApi.templateDownload(params),
     upload: (file) => branchAssignmentPositionApi.import(file),
     templateOptions: { status: true, branchPosition: true },
-    hint: "The template lists each employee's existing assignments — edit a line, or add a line for a new assignment. A line with the same employee code, date assigned, position and branch updates that assignment; otherwise it's added. Unchanged lines and lines with only the employee code/name are skipped. under_agency: Yes or No (blank = No); agency_name is optional, for Yes only.",
+    hint: "The template lists each employee's existing assignments — edit a line, or add a line for a new assignment. A line with the same employee code, date assigned, position and branch updates that assignment; otherwise it's added. Unchanged lines and lines with only the employee code/name are skipped. employment_source: direct or agency (blank = direct); agency_name is optional, for agency only.",
   },
   {
     value: "key_performance",

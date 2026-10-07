@@ -1,31 +1,39 @@
 import { useEffect, useState } from "react";
-import { Form, Select, DatePicker, Input, Alert, Switch, AutoComplete, Tag, App } from "antd";
+import { Form, Select, DatePicker, Input, Alert, AutoComplete, Tag, App } from "antd";
 import dayjs from "dayjs";
 import PerformanceRecordTab from "./PerformanceRecordTab";
 import branchAssignmentPositionApi from "../../../../../services/employee/branchAssignmentPositionApi";
 import useEmployeeFormOptions from "../../../../../hooks/useEmployeeFormOptions";
 import { formatDate, DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
 
+// Must match EmployeeBranchAssignmentPosition::EMPLOYMENT_SOURCES (a string,
+// so more sources can be added). Only 'agency' counts as agency-hired.
+const EMPLOYMENT_SOURCE_OPTIONS = [
+  { label: "Direct", value: "direct" },
+  { label: "Agency", value: "agency" },
+];
+const SOURCE_LABELS = Object.fromEntries(EMPLOYMENT_SOURCE_OPTIONS.map((o) => [o.value, o.label]));
+
 const columns = [
   { title: "Date Assigned", dataIndex: "date_assigned", key: "date_assigned", render: (v) => formatDate(v) },
   { title: "Branch", dataIndex: "branch", key: "branch" },
   { title: "Position", dataIndex: "position", key: "position" },
   {
-    title: "Hire",
-    dataIndex: "is_agency",
-    key: "is_agency",
-    render: (isAgency, record) => (isAgency
+    title: "Employment Source",
+    dataIndex: "employment_source",
+    key: "employment_source",
+    render: (source, record) => (source === "agency"
       ? <Tag color="orange">Agency{record.agency_name ? ` · ${record.agency_name}` : ""}</Tag>
-      : <Tag color="green">Direct</Tag>),
+      : <Tag color="green">{SOURCE_LABELS[source] || source || "Direct"}</Tag>),
   },
   { title: "Remarks", dataIndex: "remarks", key: "remarks" },
 ];
 
-// The Under Agency tag and its optional name, as the backend stores them —
-// a direct-hire row carries no agency name.
+// The employment source and its optional agency name, as the backend
+// stores them — only an agency row carries an agency name.
 const agencyValues = (values) => ({
-  is_agency: Boolean(values.is_agency),
-  agency_name: values.is_agency ? values.agency_name?.trim() || null : null,
+  employment_source: values.employment_source || "direct",
+  agency_name: values.employment_source === "agency" ? values.agency_name?.trim() || null : null,
 });
 
 export default function BranchAssignmentPositionTab({ employeeId, mode, initialRecords, pendingRecords, onPendingRecordsChange, onEmployeeChange }) {
@@ -71,7 +79,7 @@ export default function BranchAssignmentPositionTab({ employeeId, mode, initialR
         style={{ marginBottom: 12 }}
         type="warning"
         showIcon
-        title="Adding, editing, or deleting an assignment here updates the employee's current Branch/Position on the Employee Details tab to match whichever assignment now has the latest date — reopen this record to see that reflected there. Tagging the latest assignment Under Agency sets Employment Type to Agency; a direct-hire assignment right after an agency one (absorbed) sets it to Probationary."
+        title="Adding, editing, or deleting an assignment here updates the employee's current Branch/Position on the Employee Details tab to match whichever assignment now has the latest date — reopen this record to see that reflected there. Setting the latest assignment's Employment Source to Agency sets Employment Type to Agency; a Direct assignment right after an agency one (absorbed) sets it to Probationary."
       />
       <PerformanceRecordTab
         title="Branch Assignment / Position"
@@ -86,7 +94,7 @@ export default function BranchAssignmentPositionTab({ employeeId, mode, initialR
           date_assigned: record?.date_assigned ? dayjs(record.date_assigned) : null,
           branch: record?.branch ?? null,
           position: record?.position ?? null,
-          is_agency: Boolean(record?.is_agency),
+          employment_source: record?.employment_source || "direct",
           agency_name: record?.agency_name ?? null,
           remarks: record?.remarks ?? "",
         })}
@@ -124,15 +132,15 @@ export default function BranchAssignmentPositionTab({ employeeId, mode, initialR
               />
             </Form.Item>
             <Form.Item
-              name="is_agency"
-              label="Under Agency"
-              valuePropName="checked"
-              extra="Off = direct hire. When the employee is absorbed, add a new assignment with this off."
+              name="employment_source"
+              label="Employment Source"
+              rules={[{ required: true, message: "Please select the employment source." }]}
+              extra="When an agency employee is absorbed, add a new assignment with Direct."
             >
-              <Switch checkedChildren="Agency" unCheckedChildren="Direct" />
+              <Select options={EMPLOYMENT_SOURCE_OPTIONS} />
             </Form.Item>
-            <Form.Item noStyle shouldUpdate={(prev, curr) => prev.is_agency !== curr.is_agency}>
-              {({ getFieldValue }) => getFieldValue("is_agency") && (
+            <Form.Item noStyle shouldUpdate={(prev, curr) => prev.employment_source !== curr.employment_source}>
+              {({ getFieldValue }) => getFieldValue("employment_source") === "agency" && (
                 <Form.Item name="agency_name" label="Agency (optional)">
                   <AutoComplete
                     allowClear
