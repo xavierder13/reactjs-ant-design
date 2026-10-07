@@ -13,6 +13,9 @@ import axios from '../../api/axiosInstance';
 //                   avg_age, avg_tenure_years, unknown_age },
 //      composition: { branch, department, rank, employment_type, gender, age, tenure:
 //                     [{ label, count }] },   // age/tenure in band order, others by count desc
+//      demographics: { total, generation: [{ label, born_between, age_group, count, pct, unknown? }],
+//                      tenure, gender, employment_status: [{ label, count, pct, unknown? }] },
+//                      // active employees; each list sums to total
 //      movement: { months: [{ month, label, hires, separations, net, headcount_start,
 //                             headcount_end, turnover_rate }],   // last 12, oldest first
 //                  totals: { hires, separations, net, avg_headcount, turnover_rate } },

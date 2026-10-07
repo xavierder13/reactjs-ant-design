@@ -10,6 +10,37 @@ HR analytics page, separate from the Recruitment Dashboard (`/dashboard`,
 **Dashboards** menu group; `/dashboard` stays the recruitment page because
 login lands there (`GuestRoute`).
 
+
+## Exit Interview Analysis (Offboarding KPI 6a)
+
+`attrition.exit_interviews` (`exitInterviews()`), section after Attrition
+(`ExitInterviews.jsx`): per month of the 12-month window, exit interviews
+conducted (offboarding `exit_interview_date` in the month, any record of the
+filtered employees) ÷ employees who left (`date_resigned`) — HR's formula;
+plus leavers interviewed (latest offboarding has the date) per reason, with
+the Attrition voluntary/involuntary type. HR's approved reason categories
+aren't mapped yet. Most leavers have no offboarding record locally, so
+coverage depends on offboarding records being created.
+
+## Layout (tabs)
+
+`WorkforceDashboardPage.jsx` groups the sections into tabs (`TABS`):
+Overview (Workforce Overview cards — company-wide — and People Moments),
+Headcount (Headcount & Composition, Workforce Demographics; badge = active
+headcount), Movement & Attrition (Hires vs. Separations incl. DataNotes,
+Attrition), Regularization & Staffing (Regularization, Quality of Hires,
+Staffing vs. Plan), Employee Relations. It uses the Recruitment Dashboard's
+shared tab body (`src/pages/dashboard/components/DashboardTabLayout.jsx`):
+tab in the URL (`?tab=`), only the active tab renders, sticky bar with the
+filters in effect as removable tags (date chip = the date-field range) and
+"As of" date, jump chips in tabs with 2+ sections (`jumpMin: 2` — the
+sections are long), light-green tab intro. The top filter card stays; the
+Filters button opens a drawer with the same filters stacked
+(`WorkforceFilters vertical`). Export Report still covers every section.
+Top row matches the Recruitment Dashboard: a green "As of … · N active
+employees" tag on the left, small Refresh then primary Export Report on the
+right.
+
 ## Files
 
 Same shape as the Recruitment Dashboard: a thin page + one component per section.
@@ -94,6 +125,18 @@ Current headcount follows `active = 1`; the 12-month trend is rebuilt from
   Program, Excess Collector; **Other / not specified** = blank, no record;
   **Voluntary** = every other reason (incl. Back-out). Decided with the
   user — change the lists in `EmployeeDashboardService`, not the frontend.
+- **Workforce Demographics** (`components/WorkforceDemographics.jsx`,
+  `demographics` in the summary): active employees (filters applied) by
+  generation, tenure, gender and employment status — four tables (count,
+  share bar, %) that each sum to `total`, also exported as a "Demographics"
+  sheet. Generations by birth year = HR's table completed with the
+  standard Pew ranges (`GENERATIONS`: Gen Alpha 2013–2024, Gen Z, Gen Y /
+  Millennials, Gen X, Baby Boomers 1946–1964 — HR's table began at 1955 —,
+  Silent Generation 1928–1945); "Age Group" is derived from the current
+  year; out-of-range years / no birth date are their own grey rows. Tenure
+  = the Length of Service bands (date_employed). Employment status always
+  lists Probationary, Regular, Contractual, Agency. Share bars are one
+  colour (six tenure bands would outrun the 4-colour palette).
 - **Early attrition** = left before `PROBATION_MONTHS` (6) after hire.
 - **Turnover by branch / department / position** = separations ÷ avg of the
   group's headcount at the window start and today, grouped by the
@@ -110,12 +153,40 @@ Current headcount follows `active = 1`; the 12-month trend is rebuilt from
   by branch with NTEs per 100 (÷ date-based headcount today, like
   turnover — not the `active` flag). Repeat case = 3+ NTEs. NTE
   `violation` is free text, so it isn't broken down.
+  **Admin Case Resolution Rate** (Employee Relations KPI 1,
+  `adminCases()`): resolved ÷ raised over the same window, per month and
+  per branch. A case = an NTE (its disciplinary record — same employee +
+  `nte_code`, codes '' / '-' never link — is its outcome, not a new case) or
+  a disciplinary record with no matching NTE. Resolved = status Close/Closed
+  (case-insensitive; both spellings are in use) and the linked disciplinary
+  record closed too. No resolved date exists → a case counts in its issue
+  month.
+  **Case Resolution Time** (Employee Relations KPI 3, `resolutionTime()`):
+  cases resolved in the window = disciplinary records whose `return_date`
+  is in it; days = `return_date` − the linked NTE's `date_received_by_hr`
+  (same employee + `nte_code`). Average = total days ÷ cases, per penalty
+  vs `RESOLUTION_TARGETS` (Verbal / Written / Last & Final Warning 5,
+  Suspension 15, Dismissal/Termination 20; others 5). Cases missing either
+  date (or received after the return date) are left out — `missing_dates`;
+  past cases were not backfilled (user decision).
+- **Quality of Hires** (Recruitment KPI 2, `qualityOfHires()`,
+  `QualityOfHires.jsx`, under Regularization): per month of the 12-month
+  window, employees regularized in it (Employment Type Regular +
+  `regularization_date` in the month, resigned since included) ÷ employees
+  hired (`date_employed`) in the whole month `QUALITY_LAG_MONTHS` (=
+  `PROBATION_MONTHS`, 6) earlier; null when nobody was hired then. The
+  12-month rate = Σ regularized ÷ Σ hired. Not a cohort match (the
+  regularized need not be those hires), as HR defined it.
 - **Staffing vs. plan**: `required_employee_maps` (branch × position,
   quantity > 0, inner-joined to positions like `RecruitmentController@vacancies`)
   vs. active employees in the same branch × position. Short = Σ max(required
   − current, 0) = the Total Vacancies card; fill rate = Σ min(current,
-  required) ÷ required. The plan is branch × position → only those two
-  filters apply (the page names the others).
+  required) ÷ required. Split Organic (A) / Agency (B) for Recruitment
+  KPI 1: agency = the employee's latest branch assignment has
+  `employment_source` agency (`EmployeeBranchAssignmentPosition::currentSourceSql`),
+  everyone else organic; each slot's filled count goes to organic first,
+  so organic + agency fill rate = fill rate. The plan is branch × position
+  → only those two filters apply (the page names the others).
 - **Moments**: active employees' birthdays / work anniversaries (1+ years)
   in the next `MOMENTS_DAYS` (30); 29 Feb → 28 Feb in non-leap years.
 
