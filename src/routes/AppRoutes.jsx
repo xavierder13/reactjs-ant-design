@@ -73,6 +73,15 @@ import AccessChartIndex from '../pages/approval/AccessChartIndex';
 import PayrollCutoffIndex from '../pages/payroll_cutoff/PayrollCutoffIndex';
 import AuditTrailIndex from '../pages/audit_trail/AuditTrailIndex';
 import CompensationIndex from '../pages/compensation/CompensationIndex';
+import ContributionIndex from '../pages/payroll/contribution/ContributionIndex';
+import ContributionTableIndex from '../pages/payroll/contribution/ContributionTableIndex';
+import DeductionIndex from '../pages/payroll/deduction/DeductionIndex';
+import DeductionTypeIndex from '../pages/payroll/deduction/DeductionTypeIndex';
+import RetroIndex from '../pages/payroll/retro/RetroIndex';
+import AllowanceIndex from '../pages/payroll/allowance/AllowanceIndex';
+import AllowanceTypeIndex from '../pages/payroll/allowance/AllowanceTypeIndex';
+import PayrollSettingsPage from '../pages/payroll/settings/PayrollSettingsPage';
+import OvertimeIndex from '../pages/overtime/OvertimeIndex';
 import ApprovingOfficerIndex from '../pages/approval/ApprovingOfficerIndex';
 import CompanyIndex from '../pages/record_management/company/CompanyIndex';
 import BranchIndex from '../pages/record_management/branch/BranchIndex';
@@ -143,6 +152,15 @@ const permissionRoutes = [
   { permissions: ['access-chart-list'], path: '/approving-officers', element: <ApprovingOfficerIndex /> },
   { permissions: ['activity-logs'], path: '/audit-trail', element: <AuditTrailIndex /> },
   { permissions: ['compensation-list'], path: '/compensation', element: <CompensationIndex /> },
+  { permissions: ['contribution-profile-list'], path: '/contributions', element: <ContributionIndex /> },
+  { permissions: ['contribution-table-list'], path: '/contribution-tables', element: <ContributionTableIndex /> },
+  { permissions: ['deduction-list'], path: '/deductions', element: <DeductionIndex /> },
+  { permissions: ['deduction-type-list'], path: '/deduction-types', element: <DeductionTypeIndex /> },
+  { permissions: ['retro-list'], path: '/retro', element: <RetroIndex /> },
+  { permissions: ['allowance-list'], path: '/allowances', element: <AllowanceIndex /> },
+  { permissions: ['allowance-type-list'], path: '/allowance-types', element: <AllowanceTypeIndex /> },
+  { permissions: ['payroll-setting-view', 'payroll-setting-edit'], path: '/payroll-settings', element: <PayrollSettingsPage /> },
+  { permissions: ['overtime-list', 'overtime-list-all'], path: '/overtime', element: <OvertimeIndex /> },
 
   // Record Management (org reference data)
   { permissions: ['company-list'],          path: '/companies',         element: <CompanyIndex /> },

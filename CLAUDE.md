@@ -76,6 +76,9 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
 - Every real page must also be added to `MainLayout.jsx`:
   - `menuData` — sidebar entry with `permissions`
   - `titleMap` (or a regex case in `getPageMeta`) — page title + breadcrumb
+- `menuData` also feeds the header menu search (`src/components/MenuSearch.jsx`,
+  Ctrl+K): every visible `link`/`action` entry is searchable by its title and
+  section path, with the sidebar's own permission check — no separate list.
 - A page that exists under `src/pages` but is not registered in both
   `AppRoutes.jsx` and `MainLayout.jsx` is **not reachable in the app**.
 - A sidebar entry that runs a one-off job instead of opening a page (e.g.

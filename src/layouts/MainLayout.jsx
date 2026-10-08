@@ -40,10 +40,13 @@ import {
   AuditOutlined,
   FileSearchOutlined,
   WalletOutlined,
+  SearchOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
 import NotificationBell from '../components/NotificationBell';
+import MenuSearch from '../components/MenuSearch';
 import syncApi from '../services/employee/syncApi';
 import handleApiError from '../utils/handleApiError';
 
@@ -123,6 +126,15 @@ const titleMap = {
   '/approving-officers':       { title: 'Approving Officers',      breadcrumb: ['Approvals', 'Approving Officers'] },
   '/audit-trail':              { title: 'Audit Trail',             breadcrumb: ['Set Up & Authorizations', 'Audit Trail'] },
   '/compensation':             { title: 'Salary History',          breadcrumb: ['Payroll', 'Salary History'] },
+  '/contributions':            { title: 'Contributions',           breadcrumb: ['Payroll', 'Contributions'] },
+  '/deductions':               { title: 'Deductions',              breadcrumb: ['Payroll', 'Deductions'] },
+  '/retro':                    { title: 'Retro Adjustments',       breadcrumb: ['Payroll', 'Retro Adjustments'] },
+  '/contribution-tables':      { title: 'Contribution Tables',     breadcrumb: ['Payroll', 'Setup', 'Contribution Tables'] },
+  '/deduction-types':          { title: 'Deduction Types',         breadcrumb: ['Payroll', 'Setup', 'Deduction Types'] },
+  '/allowances':               { title: 'Allowances',              breadcrumb: ['Payroll', 'Allowances'] },
+  '/allowance-types':          { title: 'Allowance Types',         breadcrumb: ['Payroll', 'Setup', 'Allowance Types'] },
+  '/payroll-settings':         { title: 'Payroll Settings',        breadcrumb: ['Payroll', 'Setup', 'Payroll Settings'] },
+  '/overtime':                 { title: 'Overtime',                breadcrumb: ['Time & Leave', 'Overtime'] },
   '/shifts':                   { title: 'Shifts',                  breadcrumb: ['Time & Leave', 'Shifts'] },
   '/companies':                { title: 'Companies',               breadcrumb: ['Organization', 'Companies'] },
   '/branches':                 { title: 'Branches',                breadcrumb: ['Organization', 'Branches'] },
@@ -244,6 +256,7 @@ const menuData = [
             label: 'Attendance',
             children: [
               { key: 'time-entries', title: 'Manual Time Entries', link: '/time-entries', permissions: ['time-entry-list', 'time-entry-list-all'] },
+              { key: 'overtime',     title: 'Overtime',            link: '/overtime',     permissions: ['overtime-list', 'overtime-list-all'] },
             ],
           },
           {
@@ -267,14 +280,37 @@ const menuData = [
           },
         ],
       },
-      // Pay records for payroll (salary now; allowances and the payroll run
-      // come next — docs/hris-roadmap.md in the workspace).
+      // Pay records the payroll run reads: salary, allowances, statutory
+      // contributions, scheduled deductions and retro adjustments, plus the
+      // payroll settings and setup tables.
       {
         key: 'payroll',
         title: 'Payroll',
         icon: <WalletOutlined />,
         children: [
-          { key: 'compensation', title: 'Salary History', link: '/compensation', permissions: ['compensation-list'] },
+          {
+            key: 'payroll-records',
+            type: 'group',
+            label: 'Records',
+            children: [
+              { key: 'compensation',  title: 'Salary History',    link: '/compensation',  permissions: ['compensation-list'] },
+              { key: 'contributions', title: 'Contributions',     link: '/contributions', permissions: ['contribution-profile-list'] },
+              { key: 'allowances',    title: 'Allowances',        link: '/allowances',    permissions: ['allowance-list'] },
+              { key: 'deductions',    title: 'Deductions',        link: '/deductions',    permissions: ['deduction-list'] },
+              { key: 'retro',         title: 'Retro Adjustments', link: '/retro',         permissions: ['retro-list'] },
+            ],
+          },
+          {
+            key: 'payroll-setup',
+            type: 'group',
+            label: 'Setup',
+            children: [
+              { key: 'contribution-tables', title: 'Contribution Tables', link: '/contribution-tables', permissions: ['contribution-table-list'] },
+              { key: 'payroll-settings',    title: 'Payroll Settings',    link: '/payroll-settings',    permissions: ['payroll-setting-view', 'payroll-setting-edit'] },
+              { key: 'deduction-types',     title: 'Deduction Types',     link: '/deduction-types',     permissions: ['deduction-type-list'] },
+              { key: 'allowance-types',     title: 'Allowance Types',     link: '/allowance-types',     permissions: ['allowance-type-list'] },
+            ],
+          },
         ],
       },
       {
@@ -536,6 +572,9 @@ const MainLayout = () => {
   const isMobile = screens.lg === false;
   const isNarrow = screens.md === false;
   const [drawerOpen, setDrawerOpen] = React.useState(false);
+  // phones: the header's search icon swaps the header for a full-width search
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  if (searchOpen && !isNarrow) setSearchOpen(false);
   // any navigation closes the drawer
   const [drawerPath, setDrawerPath] = React.useState(pathname);
   if (drawerPath !== pathname) {
@@ -577,6 +616,15 @@ const MainLayout = () => {
     navigate('/login');
   };
 
+  // Product rule: the Administrator sees every menu entry
+  const isAdmin = hasRole('Administrator');
+  const canSeeItem = (item) => {
+    if (isAdmin) return true;
+    if (item.permission && !hasPermission(item.permission)) return false;
+    if (item.permissions && !item.permissions.some((p) => hasPermission(p))) return false;
+    return true;
+  };
+
   // ─── Menu item generator ─────────────────────────────────────────────────────
   const generateMenuItem = (item) => {
     if (!item) return null;
@@ -604,10 +652,7 @@ const MainLayout = () => {
       };
     }
 
-    // Product rule: the Administrator sees every menu entry
-    const isAdmin = hasRole('Administrator');
-    if (!isAdmin && item.permission && !hasPermission(item.permission)) return null;
-    if (!isAdmin && item.permissions && !item.permissions.some((p) => hasPermission(p))) return null;
+    if (!canSeeItem(item)) return null;
 
     if (item.children) {
       const children = item.children.map(generateMenuItem).filter(Boolean);
@@ -648,6 +693,29 @@ const MainLayout = () => {
         },
       ]
     : tidyDividers(menuData.map(generateMenuItem).filter(Boolean));
+
+  // ─── Menu search entries ──────────────────────────────────────────────────────
+  // The same entries the sidebar shows (same permission check), flattened
+  // with the section titles above each one, e.g. Time & Leave › Setup.
+  const collectSearchItems = (items, path = []) => items.flatMap((item) => {
+    if (!item || item.type === 'divider') return [];
+    if (item.type === 'group') return collectSearchItems(item.children ?? [], [...path, item.label]);
+    if (!canSeeItem(item)) return [];
+    if (item.children) return collectSearchItems(item.children, [...path, item.title]);
+    return item.link || item.action ? [{ key: item.key, title: item.title, path, link: item.link, action: item.action }] : [];
+  });
+
+  const searchItems = isEmployeeOnly
+    ? [{ key: 'my-evaluations', title: 'My Evaluations', path: [], link: '/my-evaluations' }]
+    : collectSearchItems(menuData);
+
+  const openSearchItem = (item) => {
+    setSearchOpen(false);
+    if (item.action) runSyncAction(item.action);
+    else navigate(item.link);
+  };
+  // the inline search box narrows with the screen; phones get an icon instead
+  const searchWidth = screens.xl ? 260 : isMobile ? 180 : 220;
 
   // ─── Avatar dropdown ──────────────────────────────────────────────────────────
   const avatarMenu = {
@@ -841,6 +909,19 @@ const MainLayout = () => {
             flexShrink: 0,
           }}
         >
+          {isNarrow && searchOpen ? (
+            <>
+              <MenuSearch
+                items={searchItems}
+                onPick={openSearchItem}
+                autoFocus
+                popupWidth
+                style={{ flex: 1, minWidth: 0 }}
+              />
+              <Button type="text" aria-label="Close search" icon={<CloseOutlined />} onClick={() => setSearchOpen(false)} style={{ flexShrink: 0 }} />
+            </>
+          ) : (
+          <>
           {/* Left: hamburger + breadcrumb */}
           <div style={{ display: 'flex', alignItems: 'center', gap: isNarrow ? 8 : 12, minWidth: 0, flex: 1 }}>
             <Button
@@ -869,8 +950,18 @@ const MainLayout = () => {
             </div>
           </div>
 
-          {/* Right: bell + user chip */}
+          {/* Right: menu search + bell + user chip */}
           <Space align="center" size={isNarrow ? 6 : 10} style={{ flexShrink: 0 }}>
+            {isNarrow ? (
+              <Button type="text" aria-label="Search menu" icon={<SearchOutlined style={{ color: '#389e0d' }} />} onClick={() => setSearchOpen(true)} />
+            ) : (
+              <MenuSearch
+                items={searchItems}
+                onPick={openSearchItem}
+                placeholder="Search menu… (Ctrl+K)"
+                style={{ width: searchWidth }}
+              />
+            )}
             <NotificationBell />
 
             <Dropdown menu={avatarMenu} placement="bottomRight" trigger={['click']}>
@@ -911,6 +1002,8 @@ const MainLayout = () => {
               </div>
             </Dropdown>
           </Space>
+          </>
+          )}
         </Header>
 
         {/* ── Content ────────────────────────────────────────────────────────── */}

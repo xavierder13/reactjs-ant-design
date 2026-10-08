@@ -63,5 +63,7 @@ its own (older) copies of these. React: `ApprovalSteps` renders `status()`.
 
 ## Next
 
-Overtime filing on the same helpers; the DTR (schedule + punches + approved
-time entries + leave + holidays) once payroll cutoffs are known.
+Overtime filing is built on the same helpers (`src/pages/overtime/`,
+vueportal `OvertimeService`, "Overtime" Access Chart). Next: the DTR —
+schedule + punches + approved time entries / overtime + leave + holidays
+per payroll cut-off.
