@@ -24,7 +24,7 @@ const EditEmployee = () => {
         status="info"
         title="Employee not found"
         subTitle="This employee couldn't be loaded. Open them again from the list."
-        extra={<Button type="primary" onClick={() => navigate('/employees')}>Back to List</Button>}
+        extra={<Button type="primary" onClick={() => navigate(state?.returnTo || '/employees')}>Back to List</Button>}
       />
     );
   }

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Card, Row, Col, Typography, Input, Select, Space, Button, Grid, Breadcrumb, Alert, Popconfirm, App,
 } from "antd";
-import { ReloadOutlined, SearchOutlined, ExportOutlined, DeleteOutlined } from "@ant-design/icons";
+import { ReloadOutlined, SearchOutlined, ExportOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 
 import employeeApi from "../../../services/employee/employeeApi";
 import handleApiError from "../../../utils/handleApiError";
@@ -30,16 +30,19 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200, 300, 500];
 // `fetchPage(payload, page)` loads one page. `exportConfig` is either
 // { modal: { presetValues, extraPayload, title } } (opens the Employee List
 // export pre-filled) or { request(payload), filename } (a dedicated export
-// endpoint that takes the list's own filters).
+// endpoint that takes the list's own filters), or omitted for no Export.
+// `showCreate` adds the main list's Add button (→ /employees/create).
 // `positionFilter` adds a Position filter (`search_position`, position
 // name) — only for endpoints that accept it.
 // `defaultColumns` overrides the picker's starting columns; `extraColumns`
 // are always shown after the picked ones (not in the picker or its search).
 export default function EmployeeSegmentList({
-  title, fetchPage, exportConfig, positionFilter = false,
+  title, fetchPage, exportConfig, positionFilter = false, showCreate = false,
   defaultColumns = DEFAULT_EMPLOYEE_COLUMNS, extraColumns = [],
 }) {
   const navigate = useNavigate();
+  // Passed to View/Edit/Add so their Back to List / Cancel return here.
+  const { pathname: returnTo } = useLocation();
   const { message: messageApi } = App.useApp();
   const { can, canFilterByBranch } = useListAccess();
   const screens = useBreakpoint();
@@ -93,8 +96,8 @@ export default function EmployeeSegmentList({
   const refresh = () => loadPage(pagination.current, pagination.pageSize);
   const applySearch = () => setFilters((f) => ({ ...f, search: searchInput }));
 
-  const viewData = (record) => navigate(`/employees/${record.id}`, { state: { employee: record } });
-  const editData = (record) => navigate(`/employees/${record.id}/edit`, { state: { employee: record } });
+  const viewData = (record) => navigate(`/employees/${record.id}`, { state: { employee: record, returnTo } });
+  const editData = (record) => navigate(`/employees/${record.id}/edit`, { state: { employee: record, returnTo } });
 
   const deleteIds = async (ids) => {
     await employeeApi.delete(ids);
@@ -167,7 +170,10 @@ export default function EmployeeSegmentList({
             <Col flex="none">
               <Space wrap>
                 <Button icon={<ReloadOutlined />} onClick={refresh} disabled={loading}>Refresh</Button>
-                {can("employee-master-data-export") && (
+                {showCreate && can("employee-master-data-create") && (
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/employees/create", { state: { returnTo } })}>Add Employee</Button>
+                )}
+                {exportConfig && can("employee-master-data-export") && (
                   <Button icon={<ExportOutlined />} onClick={handleExport} loading={exporting}>Export</Button>
                 )}
               </Space>
@@ -269,7 +275,7 @@ export default function EmployeeSegmentList({
         )}
       </Card>
 
-      {exportConfig.modal && (
+      {exportConfig?.modal && (
         <ExportEmployeesModal
           open={exportOpen}
           onClose={() => setExportOpen(false)}

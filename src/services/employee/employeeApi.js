@@ -120,6 +120,9 @@ const employeeApi = {
   // POST /employee_master_data/for_regularization — active Probationary,
   // employed 150+ days.
   getForRegularization: (payload, page = 1) => axios.post(`/employee_master_data/for_regularization?page=${page}`, payload),
+  // POST /employee_master_data/index + careers_synced — employees synced from
+  // the careers portal still on their placeholder code 'careers-<applicant id>'.
+  getCareersSynced: (payload, page = 1) => axios.post(`/employee_master_data/index?page=${page}`, { ...payload, careers_synced: true }),
   // POST /employee_master_data/for_regularization/export — same filters as the
   // list (search, search_branch, table_headers, include_sales_specialist), .xls blob.
   exportForRegularization: (payload) => axios.post('/employee_master_data/for_regularization/export', payload, { responseType: 'blob' }),

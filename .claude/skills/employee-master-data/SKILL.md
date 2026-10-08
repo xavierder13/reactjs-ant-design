@@ -58,7 +58,7 @@ src/pages/employee_master_data/
       OffboardingTab.jsx          + offboarding/OffboardingFileSlot.jsx, offboarding/OffboardingFormFields.jsx
       AttendanceTab.jsx           read-only, own fetch
   lists/                          segment / open-case list pages (see "Segment and Open-Case Lists")
-    EmployeeSegmentList.jsx       shared server-paginated list → HiredThisMonth.jsx, ForRegularization.jsx
+    EmployeeSegmentList.jsx       shared server-paginated list → HiredThisMonth.jsx, ForRegularization.jsx, CareersSyncedList.jsx
     ResignedEmployees.jsx         latest offboarding per employee, date-filtered, edit/delete offboarding
     OpenCaseList.jsx              shared client-side queue list → OpenNteList.jsx, OpenDisciplinaryList.jsx
     BranchFilter.jsx, useListAccess.js  branch-name filter; `can()` (Administrator bypass) + canFilterByBranch
@@ -122,6 +122,7 @@ meant for every HR report — employee, recruitment, …):
 /employees/disciplinary       → OpenDisciplinaryList (employee-master-data-disciplinary-list)
 /employees/referral-codes     → ReferralCodeList     (employee-referral-list)
 /employees/new-hired          → NewHiredList         (employee-master-data-new-hired-list; Sync: employee-master-data-sync-new-hired)
+/employees/careers-synced     → CareersSyncedList    (employee-master-data-list)
 ```
 
 ## API / Service Pattern
@@ -520,7 +521,9 @@ Each list's total matches its dashboard card.
 
 - **Hired This Month / For Regularization** (`EmployeeSegmentList`): same rows as the
   main list (backend `getEmployees()` base), so the main list's columns, search,
-  View/Edit via router state, delete and bulk delete all apply. Branch filter
+  View/Edit via router state, delete and bulk delete all apply. View/Edit/Add also pass
+  `returnTo` (the list's path) in router state: the form's Cancel, the profile's
+  Back to List and the post-save profile all lead back to that list (default `/employees`). Branch filter
   (`search_branch`, branch **name**) only for `canFilterByBranch`. For
   Regularization also has a Position filter (`positionFilter` prop →
   `search_position`, position **name**, matched on `f.name` in
@@ -533,6 +536,16 @@ Each list's total matches its dashboard card.
   Always sends
   `include_sales_specialist: false` (vueportal's toggle is commented out). No status
   filter — both endpoints are active-only.
+- **Synced from Careers** (`CareersSyncedList`, `EmployeeSegmentList`): employees
+  synced by New Hired that still have the placeholder `employee_code`
+  `careers-<applicant id>` — the main `index()` with `careers_synced: true`
+  (`employee_code LIKE 'careers-%'`), so it is branch-scoped like the main list,
+  includes Sales Specialists and inactive rows, and takes `search_position`.
+  A row drops off once HR sets the real employee code. Default columns add Date
+  Employed and Employment Type; an always-shown Employment Source column reads the
+  latest Branch Assignment row (latest `date_assigned`, then id) — "No assignment"
+  until HR adds one. `showCreate` adds the main list's Add Employee button; no
+  Export (`exportConfig` omitted).
 - **Export**: For Regularization → `for_regularization/export` with the list filters.
   Hired This Month → the Employee List export **pre-filled** (Date Employed, 1st of
   month → today, Active Only, `include_sales_specialist: false`); vueportal's Hired

@@ -46,6 +46,7 @@ import JobVacancyIndex from '../pages/recruitment/setup/job_vacancy/JobVacancyIn
 import AcknowledgmentReportView from '../pages/employee_master_data/acknowledgment_report/AcknowledgmentReportView';
 import HiredThisMonth from '../pages/employee_master_data/lists/HiredThisMonth';
 import ForRegularization from '../pages/employee_master_data/lists/ForRegularization';
+import CareersSyncedList from '../pages/employee_master_data/lists/CareersSyncedList';
 import ResignedEmployees from '../pages/employee_master_data/lists/ResignedEmployees';
 import OpenNteList from '../pages/employee_master_data/lists/OpenNteList';
 import OpenDisciplinaryList from '../pages/employee_master_data/lists/OpenDisciplinaryList';
@@ -92,6 +93,7 @@ const permissionRoutes = [
   { permissions: ['employee-referral-list'], path: '/employees/referral-codes', element: <ReferralCodeList /> },
   { permissions: ['employee-master-data-new-hired-list'], path: '/employees/new-hired', element: <NewHiredList /> },
   { permissions: ['employee-master-data-list'], path: '/employees/:id', element: <ViewEmployee /> },
+  { permissions: ['employee-master-data-list'], path: '/employees/careers-synced', element: <CareersSyncedList /> },
   { permissions: ['employee-master-data-create'], path: '/employees/create', element: <CreateEmployee /> },
   { permissions: ['employee-master-data-create', 'employee-master-data-edit'], path: '/employees/:id/edit', element: <EditEmployee /> },
   { permissions: ['employee-acknowledgment-reports'], path: '/acknowledgment-reports', element: <AcknowledgmentReportIndex /> },

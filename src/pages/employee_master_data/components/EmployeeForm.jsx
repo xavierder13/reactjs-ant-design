@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Form, Button, Card, Space, Divider, Tag, App } from 'antd';
 import employeeApi from '../../../services/employee/employeeApi';
 import handleApiError from '../../../utils/handleApiError';
@@ -35,6 +35,10 @@ const DATE_FIELDS = new Set(['birth_date', 'date_employed', 'date_resigned', 're
 const EmployeeForm = ({ mode = 'create', initialData = null }) => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  // The list that opened the form (a segment list passes it in router state);
+  // Cancel goes back there, and Save hands it on to the profile's Back to List.
+  const { state: locationState } = useLocation();
+  const returnTo = locationState?.returnTo || '/employees';
   const { message: messageApi } = App.useApp();
   const { hasPermission, hasAnyPermission } = useAuth();
   const [saving, setSaving] = useState(false);
@@ -377,7 +381,7 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
         // comes back, rather than crashing on an unconfirmed field name.
         const saved = data.employee || data.employee_master_data || { ...payload, id: data.id };
         messageApi.success(data.message || 'Employee created.');
-        navigate(`/employees/${saved.id}`, { state: { employee: saved } });
+        navigate(`/employees/${saved.id}`, { state: { employee: saved, returnTo } });
       } else {
         const { data } = await employeeApi.update(initialData.id, payload);
         // update() also answers a validation failure with HTTP 200 and the
@@ -407,7 +411,7 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
         if (payload.employment_type !== 'Regular' && saved.employment_type === 'Regular') {
           messageApi.info(`Employment Type updated to Regular as of ${formatDate(saved.regularization_date)} (passed the regularization interview).`);
         }
-        navigate(`/employees/${initialData.id}`, { state: { employee: saved } });
+        navigate(`/employees/${initialData.id}`, { state: { employee: saved, returnTo } });
       }
     } catch (error) {
       if (!error.errorFields) handleApiError(error, messageApi);
@@ -458,7 +462,7 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
               Save
             </Button>
           )}
-          <Button onClick={() => navigate('/employees')} disabled={saving}>
+          <Button onClick={() => navigate(returnTo)} disabled={saving}>
             {readOnly ? 'Back to List' : 'Cancel'}
           </Button>
         </Space>

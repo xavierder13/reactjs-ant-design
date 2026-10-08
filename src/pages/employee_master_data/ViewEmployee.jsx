@@ -14,6 +14,8 @@ const ViewEmployee = () => {
   const navigate = useNavigate();
   const { hasRole, hasPermission } = useAuth();
   const { employee, isLoading } = useLatestEmployee(id, state?.employee);
+  // The segment list that opened this page (e.g. Synced from Careers), else the main list.
+  const returnTo = state?.returnTo || '/employees';
 
   if (isLoading) {
     return <div style={{ textAlign: 'center', padding: 48 }}><Spin /></div>;
@@ -25,7 +27,7 @@ const ViewEmployee = () => {
         status="info"
         title="Employee not found"
         subTitle="This employee couldn't be loaded. Open them again from the list."
-        extra={<Button type="primary" onClick={() => navigate('/employees')}>Back to List</Button>}
+        extra={<Button type="primary" onClick={() => navigate(returnTo)}>Back to List</Button>}
       />
     );
   }
@@ -39,12 +41,12 @@ const ViewEmployee = () => {
       view="hr"
       extra={(
         <Space>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/employees')}>Back to List</Button>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(returnTo)}>Back to List</Button>
           {canEdit && (
             <Button
               type="primary"
               icon={<EditOutlined />}
-              onClick={() => navigate(`/employees/${employee.id}/edit`, { state: { employee } })}
+              onClick={() => navigate(`/employees/${employee.id}/edit`, { state: { employee, returnTo } })}
             >
               Edit
             </Button>
