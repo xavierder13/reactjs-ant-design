@@ -138,6 +138,34 @@ Replace vueportal's `company/`, `branch/`, `department/`, `position/`,
   referenced by KPI templates/evaluations → 500); the Popconfirm says what
   will show blank (Company shows its branch count).
 
+## Holiday Calendar (`/holiday-calendar`)
+
+- Replaces vueportal's `calendar/HolidayCalendar.vue`. Files:
+  `src/pages/record_management/holiday_calendar/` (`HolidayCalendarIndex.jsx`,
+  `HolidayCalendarFormModal.jsx`, `holidayTypes.js`), `holidayCalendarApi.js`
+  (contract in its header), `holidayCalendarStore.js`, `useHolidayCalendars.js`.
+  Menu Human Resource → Holiday Calendar (`holiday-calendar-list`); actions
+  `holiday-calendar-create/-edit/-delete` + Administrator bypass.
+- Views: **Calendar** (AntD `Calendar`, `cellRender`; click a day = create
+  on that date, click a holiday = edit; year view shows a count per month)
+  and **List** (the selected year). Shared filters: year, type, branch,
+  title search, Active / incl. inactive.
+- Types keep the stored values `Regular` / `Special` / `Working` / `Local`
+  (the Vue page uses them too), shown as Regular Holiday / Special
+  Non-Working Day / Special Working Day / Local Holiday with the DOLE pay
+  rule as form help text (`holidayTypes.js`; nothing computes pay).
+- Branches: `Transfer` + "All branches" / "Clear". A national type
+  pre-selects every branch on create; Local starts empty. One row per
+  branch (`holiday_calendar_branches`), so "All branches" in the list means
+  every *current* branch — a branch created later is not included in
+  existing holidays.
+- Backend (HTTP 200 error bags → `saveRecord`, `branches.N` keys mapped to
+  the `branches` field): `branches` required (≥ 1, existing; repeated ids allowed — update keeps
+  one row per branch and removes duplicates older updates left),
+  `holiday_type` in the four values. Inactive (`status` 0) keeps the record;
+  the delete confirm suggests it. The routes `import` and
+  `template/download` have no controller methods (not wired).
+
 ## User Accounts (`/users`)
 
 - `src/pages/user/UserIndex.jsx` + `UserFormModal.jsx` + `RolePermissionsModal.jsx`, `userApi.js`,

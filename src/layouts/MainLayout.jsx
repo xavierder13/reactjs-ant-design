@@ -34,6 +34,7 @@ import {
   FundOutlined,
   ToolOutlined,
   SyncOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
@@ -106,6 +107,7 @@ const titleMap = {
   '/manpower-requests':        { title: 'Manpower Requests',       breadcrumb: ['Manpower Request', 'All Requests'] },
   '/manpower-requests/create': { title: 'Create Manpower Request', breadcrumb: ['Manpower Request', 'Create'] },
   '/areas':                    { title: 'Area Assignment',         breadcrumb: ['Human Resource', 'Area Assignment'] },
+  '/holiday-calendar':         { title: 'Holiday Calendar',        breadcrumb: ['Human Resource', 'Holiday Calendar'] },
   '/companies':                { title: 'Companies',               breadcrumb: ['Organization', 'Companies'] },
   '/branches':                 { title: 'Branches',                breadcrumb: ['Organization', 'Branches'] },
   '/departments':              { title: 'Departments',             breadcrumb: ['Organization', 'Departments'] },
@@ -209,6 +211,7 @@ const menuData = [
         ],
       },
       { key: 'area-assignment', title: 'Area Assignment', icon: <ApartmentOutlined />, link: '/areas', permissions: ['area-list'] },
+      { key: 'holiday-calendar', title: 'Holiday Calendar', icon: <CalendarOutlined />, link: '/holiday-calendar', permissions: ['holiday-calendar-list'] },
       // Every Human Resource report (employee, recruitment, …) goes here.
       {
         key: 'hr-reports',

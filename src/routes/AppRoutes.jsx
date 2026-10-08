@@ -62,6 +62,7 @@ import EditManpowerRequest from '../pages/manpower_request/request/EditManpowerR
 import ViewManpowerRequest from '../pages/manpower_request/request/ViewManpowerRequest';
 import ManpowerRequestPrint from '../pages/manpower_request/request/ManpowerRequestPrint';
 import AreaIndex from '../pages/area/AreaIndex';
+import HolidayCalendarIndex from '../pages/record_management/holiday_calendar/HolidayCalendarIndex';
 import CompanyIndex from '../pages/record_management/company/CompanyIndex';
 import BranchIndex from '../pages/record_management/branch/BranchIndex';
 import DepartmentIndex from '../pages/record_management/department/DepartmentIndex';
@@ -119,6 +120,7 @@ const permissionRoutes = [
   { permissions: ['manpower-request-create', 'manpower-request-edit'], path: '/manpower-requests/:id/edit', element: <EditManpowerRequest /> },
   { permissions: ['manpower-request-print'], path: '/manpower-requests/:id/print', element: <ManpowerRequestPrint /> },
   { permissions: ['area-list'],               path: '/areas',                      element: <AreaIndex /> },
+  { permissions: ['holiday-calendar-list'],   path: '/holiday-calendar',           element: <HolidayCalendarIndex /> },
 
   // Record Management (org reference data)
   { permissions: ['company-list'],          path: '/companies',         element: <CompanyIndex /> },
