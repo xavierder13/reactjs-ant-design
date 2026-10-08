@@ -716,13 +716,21 @@ account form with an info Alert). Parts:
   education), `ProfileEmployment.jsx` (employment, job & org, assignment
   history timeline), `ProfileDocuments.jsx` (all core files; upload needs a
   document type → `document_type`; `-file-upload/-download/-delete`).
-- HR view only: the record tabs (work schedule, attendance, performance,
-  disciplinary, training, offboarding) from `getEmployeeTabItems({ mode: 'view' })`,
+- The record tabs (work schedule, attendance, performance, disciplinary,
+  training, offboarding) from `getEmployeeTabItems({ mode: 'view' })`,
   each in its own non-disabled `<Form>` (view mode hides mutations;
-  `disabled` would also kill downloads/attendance filters).
+  `disabled` would also kill downloads/attendance filters). HR: by
+  `TAB_PERMISSIONS`. Self: all of them (read from the my_profile record)
+  except Attendance, whose `employee_master_data/attendance` endpoint needs
+  `employee-master-data-attendance`.
+- Work Schedule's Shift column is `src/pages/shift/ShiftChip.jsx`: click the
+  code → popover with the weekly breakdown (time in/out, break, hours, rest
+  days, grace) from the version's `shift` (`EmployeeWorkScheduleController::
+  shiftLoad()` sends code, name, description, grace_minutes, active, days).
 - Gating: HR sections follow `TAB_PERMISSIONS` (Overview/Documents =
   personal-data, Employment = employee-details); self view always shows
-  Overview/Employment/Documents but actions still need their permission.
+  Overview/Employment/Documents and the record tabs above, but actions
+  still need their permission.
   Administrator passes every gate. `extraTabs` adds UserProfile's
   "Account & Security" tab.
 

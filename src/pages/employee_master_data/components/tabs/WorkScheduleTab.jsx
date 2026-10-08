@@ -13,6 +13,7 @@ import handleApiError from "../../../../utils/handleApiError";
 import workScheduleApi from "../../../../services/employee/workScheduleApi";
 import shiftApi from "../../../../services/shift/shiftApi";
 import { patternSummary } from "../../../shift/shiftHelpers";
+import ShiftChip from "../../../shift/ShiftChip";
 import { formatDate, DISPLAY_DATE_FORMAT } from "../../../../utils/formatDate";
 
 // Next id for a staged (create-mode) row — unique among the staged rows.
@@ -206,7 +207,7 @@ export default function WorkScheduleTab({ mode = "create", initialData, pendingR
       title: "Shift",
       key: "shift",
       render: (_, record) => (record.shift
-        ? <Tooltip title={record.shift.name}><Tag color="blue">{record.shift.code}</Tag></Tooltip>
+        ? <ShiftChip shift={record.shift} />
         : <Tooltip title="Entered by hand before Work Schedules picked a shift"><Tag>Manual</Tag></Tooltip>),
     },
     { title: "Schedule", key: "schedule", render: (_, record) => scheduleText(record) },
