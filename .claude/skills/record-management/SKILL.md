@@ -24,6 +24,15 @@ files.** The backend is vueportal (its own `record-management` skill).
 
 ### Patterns worth reusing verbatim
 
+- **Read-only, not disabled** (user rule): a value the user can't change
+  but should read — the employee of a filed record, a value filled from
+  another pick (Hiring Officer Position), a locked pattern — is shown
+  `readOnly` (Input / InputNumber) or as plain text, never `disabled` (the
+  greyed look). `disabled` is only for a control that isn't available yet
+  (e.g. Half Day on a multi-day leave). Precedent: MRF's quantity,
+  `ReadOnlyDateInput`. When values render as text inside a Form.List, build
+  the payload from `form.getFieldValue(...)` — `validateFields()` returns
+  only rendered fields.
 - **Pagination**: `pagination={tablePagination(10)}` (`src/utils/tablePagination.js`
   — records-per-page selector 10/20/50/100 + "x-y of n records"). Never a
   fixed `pageSize` on a client-side table: it overrides AntD's internal
@@ -172,6 +181,35 @@ Replace vueportal's `company/`, `branch/`, `department/`, `position/`,
   the delete confirm suggests it. The routes `import` and
   `template/download` have no controller methods (not wired).
 
+## Approvals — Access Charts & Approving Officers
+
+- Set Up & Authorizations → **Approvals**: Access Charts (`/access-charts`)
+  and Approving Officers (`/approving-officers`), both `access-chart-list`.
+  Replace vueportal's `access_chart/AccessChartIndex.vue`. Files
+  `src/pages/approval/`, `accessChartApi.js` (contract in its header),
+  `accessChartStore` + `useAccessCharts` (one GET `/access_chart/index`
+  feeds both pages: charts, modules, users).
+- Access Charts: one row per approval procedure (name, module, levels with
+  approvals needed and officer count); create / edit = name, module, levels
+  in order with approvals needed (Form.List; only the last level can be
+  removed; a warning when a removed level still has officers). No expand
+  row (user preference): the row's **Approving Officers** action (green,
+  `UsergroupAddOutlined`) opens `ApprovingOfficersModal` — per level the
+  officers (closable tag → Popconfirm → remove; `access-chart-delete`) and
+  an add select (`access-chart-create`); saves at once and refetches.
+- Approving Officers: the same maps regrouped per user (the "what does this
+  person approve" view) with assign (user → chart → level) and remove.
+- Charts the HRIS finds **by name** (`approvalHelpers.SYSTEM_CHARTS`: Manpower
+  Request, MRF - *, Leave Application, Manual Time Entry) show an "HRIS" tag,
+  can't be deleted, and their name is read-only.
+- Backend fixes made for this page (shared with the Vue screen): update
+  removes levels left out and syncs `max_approval_level`; delete removes the
+  chart's levels too; adding the same user twice at a level is refused.
+  Validation failures are HTTP 200 bags (`saveRecord`).
+- `ApproversFromMrfSeeder` (vueportal) copied the "MRF - Additional"
+  approvers into Leave Application and Manual Time Entry (level 1 managers,
+  1 approval; level 2 HR) and gave them the approver roles — additive.
+
 ## User Accounts (`/users`)
 
 - `src/pages/user/UserIndex.jsx` + `UserFormModal.jsx` + `RolePermissionsModal.jsx`, `userApi.js`,
@@ -190,7 +228,8 @@ Replace vueportal's `company/`, `branch/`, `department/`, `position/`,
   keyed by role **name** (Spatie `assignRole`); update replaces all roles.
   Employee Record = `users.employee_id` via `EmployeeSelect` (all
   employees, inactive tagged; `initialOption` labels the saved one). The
-  backend validates exists + one account per employee, and only changes the
+  backend validates exists (several accounts may link the same employee —
+  user rule, 2026-10-09), and only changes the
   link when `employee_id` is sent (vueportal's Vue form doesn't send it).
   `/user/index`, store and update return `employee` ({ id, employee_code,
   first_name, last_name, active } or null) — label via `userEmployee.js`.
