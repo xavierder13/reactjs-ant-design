@@ -158,17 +158,54 @@ const menuData = [
         key: 'employee',
         title: 'Employee',
         icon: <IdcardOutlined />,
+        // Grouped by the employee lifecycle, like Set Up → Organization:
+        // the records, then joining, conduct, leaving, and programs.
         children: [
-          { key: 'master-data',    title: 'Master Data',    link: '/employees',         permissions: ['employee-master-data-list'] },
-          { key: 'master-data-create',    title: 'Master Data Create',    link: '/employees/create',         permissions: ['employee-master-data-create'] },
-          { key: 'new-hired', title: 'New Hired', link: '/employees/new-hired', permissions: ['employee-master-data-new-hired-list'] },
-          { key: 'careers-synced', title: 'Synced from Careers', link: '/employees/careers-synced', permissions: ['employee-master-data-list'] },
-          { key: 'hired-this-month', title: 'Hired This Month', link: '/employees/hired-this-month', permissions: ['employee-master-data-for-regularization'] },
-          { key: 'for-regularization', title: 'For Regularization', link: '/employees/for-regularization', permissions: ['employee-master-data-for-regularization'] },
-          { key: 'resigned', title: 'Resigned', link: '/employees/resigned', permissions: ['employee-master-data-resigned-list'] },
-          { key: 'open-nte', title: 'Issued NTE', link: '/employees/nte', permissions: ['employee-master-data-nte-list'] },
-          { key: 'open-disciplinary', title: 'Disciplinary Actions', link: '/employees/disciplinary', permissions: ['employee-master-data-disciplinary-list'] },
-          { key: 'referral-codes', title: 'Referral Codes', link: '/employees/referral-codes', permissions: ['employee-referral-list'] },
+          {
+            key: 'emp-records',
+            type: 'group',
+            label: 'Records',
+            children: [
+              { key: 'master-data',        title: 'Master Data',        link: '/employees',        permissions: ['employee-master-data-list'] },
+              { key: 'master-data-create', title: 'Master Data Create', link: '/employees/create', permissions: ['employee-master-data-create'] },
+            ],
+          },
+          {
+            key: 'emp-onboarding',
+            type: 'group',
+            label: 'Hiring & Onboarding',
+            children: [
+              { key: 'new-hired',          title: 'New Hired',           link: '/employees/new-hired',          permissions: ['employee-master-data-new-hired-list'] },
+              { key: 'careers-synced',     title: 'Synced from Careers', link: '/employees/careers-synced',     permissions: ['employee-master-data-list'] },
+              { key: 'hired-this-month',   title: 'Hired This Month',    link: '/employees/hired-this-month',   permissions: ['employee-master-data-for-regularization'] },
+              { key: 'for-regularization', title: 'For Regularization',  link: '/employees/for-regularization', permissions: ['employee-master-data-for-regularization'] },
+            ],
+          },
+          {
+            key: 'emp-relations',
+            type: 'group',
+            label: 'Employee Relations',
+            children: [
+              { key: 'open-nte',          title: 'Issued NTE',           link: '/employees/nte',          permissions: ['employee-master-data-nte-list'] },
+              { key: 'open-disciplinary', title: 'Disciplinary Actions', link: '/employees/disciplinary', permissions: ['employee-master-data-disciplinary-list'] },
+            ],
+          },
+          {
+            key: 'emp-separation',
+            type: 'group',
+            label: 'Separation',
+            children: [
+              { key: 'resigned', title: 'Resigned', link: '/employees/resigned', permissions: ['employee-master-data-resigned-list'] },
+            ],
+          },
+          {
+            key: 'emp-programs',
+            type: 'group',
+            label: 'Programs',
+            children: [
+              { key: 'referral-codes', title: 'Referral Codes', link: '/employees/referral-codes', permissions: ['employee-referral-list'] },
+            ],
+          },
         ]
       },
       {
