@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Row, Col, Card, Table, Tag, Typography } from 'antd';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 const { Text } = Typography;
 
@@ -34,7 +35,7 @@ export default function ReservedApplicantAging({ reservedAgingRows, reservedAgin
           </Col>
         ))}
       </Row>
-      <Table size='small' rowKey='rowId' dataSource={rows} columns={columns} pagination={{ pageSize: 10 }} scroll={{ x: 'max-content' }} />
+      <Table size='small' rowKey='rowId' dataSource={rows} columns={columns} pagination={tablePagination(10)} scroll={{ x: 'max-content' }} />
     </Card>
   );
 }

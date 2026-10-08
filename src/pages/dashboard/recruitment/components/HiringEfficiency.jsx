@@ -6,6 +6,7 @@ import StatTile from '../../workforce/components/StatTile';
 import { PRIMARY_GREEN } from '../chartSetup';
 import { BAR, lineScales, soften } from '../../chartTheme';
 import { computeHiringEfficiency } from '../hiringEfficiency';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 const { Text } = Typography;
 
@@ -63,7 +64,7 @@ export default function HiringEfficiency({ mrfList, dateRange, filters = {} }) {
         <Col xs={24} lg={14}>
           <Card size='small' title='Closed vs. Open Positions' style={{ borderRadius: 8, height: '100%' }}
             extra={<Text type='secondary' style={{ fontSize: 11 }}>Open = open at start + newly approved</Text>}>
-            <Table rowKey='key' size='small' columns={monthColumns} dataSource={months} pagination={{ pageSize: 6 }} scroll={{ x: 'max-content' }} />
+            <Table rowKey='key' size='small' columns={monthColumns} dataSource={months} pagination={tablePagination(6)} scroll={{ x: 'max-content' }} />
           </Card>
         </Col>
       </Row>

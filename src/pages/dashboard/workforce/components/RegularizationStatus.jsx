@@ -5,6 +5,7 @@ import StatTile from './StatTile';
 import ChartCard from './ChartCard';
 import { TONES } from './workforceTones';
 import useAuth from '../../../../hooks/useAuth';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 const { Text } = Typography;
 const fmt = (n) => (n ?? 0).toLocaleString();
@@ -43,7 +44,7 @@ export default function RegularizationStatus({ regularization: r }) {
       <Col xs={24} lg={14}>
         <ChartCard title='Overdue and Due Soon by Branch'>
           {r.by_branch.length ? (
-            <Table rowKey='label' size='small' columns={branchColumns} dataSource={r.by_branch} pagination={{ pageSize: 8 }} />
+            <Table rowKey='label' size='small' columns={branchColumns} dataSource={r.by_branch} pagination={tablePagination(8)} />
           ) : (
             <Text type='secondary'>No probationary employees are overdue or due soon.</Text>
           )}

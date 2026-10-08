@@ -6,6 +6,7 @@ import StatTile from '../../workforce/components/StatTile';
 import { STAGE_COLORS, PRIMARY_GREEN } from '../chartSetup';
 import { BAR, LINE, endLabelsPlugin, baseScales, lineScales, soften } from '../../chartTheme';
 import { computeTimeToFill, TIME_TO_FILL_STANDARDS } from '../timeToFill';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 const { Text } = Typography;
 
@@ -122,7 +123,7 @@ export default function TimeToFill({ mrfList, dateRange, filters = {} }) {
 
       <Card size='small' title='Positions Filled' style={{ borderRadius: 8, marginTop: 16 }}
         extra={<Text type='secondary' style={{ fontSize: 11 }}>Date Approved → Date Hired</Text>}>
-        <Table rowKey='key' size='small' columns={filledColumns} dataSource={t.rows} pagination={{ pageSize: 10 }} scroll={{ x: 'max-content' }} />
+        <Table rowKey='key' size='small' columns={filledColumns} dataSource={t.rows} pagination={tablePagination(10)} scroll={{ x: 'max-content' }} />
       </Card>
     </div>
   );

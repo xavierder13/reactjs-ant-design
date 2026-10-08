@@ -5,6 +5,7 @@ import ChartBox from './ChartBox';
 import StatTile from '../../workforce/components/StatTile';
 import { BAR, endLabelsPlugin, baseScales, soften } from '../../chartTheme';
 import { computeVacancyAging } from '../vacancyAging';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 const { Text } = Typography;
 
@@ -77,7 +78,7 @@ export default function VacancyAging({ mrfList, dateRange, filters = {} }) {
         <Col xs={24} lg={15}>
           <Card size='small' title='Open Vacancies' style={{ borderRadius: 8, height: '100%' }}
             extra={<Text type='secondary' style={{ fontSize: 11 }}>Days since Date Approved</Text>}>
-            <Table rowKey='key' size='small' columns={columns} dataSource={a.open} pagination={{ pageSize: 8 }} scroll={{ x: 'max-content' }} />
+            <Table rowKey='key' size='small' columns={columns} dataSource={a.open} pagination={tablePagination(8)} scroll={{ x: 'max-content' }} />
           </Card>
         </Col>
       </Row>

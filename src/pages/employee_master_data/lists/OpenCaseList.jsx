@@ -8,6 +8,7 @@ import { ReloadOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from "@a
 import handleApiError from "../../../utils/handleApiError";
 import { formatDate } from "../../../utils/formatDate";
 import useListAccess from "./useListAccess";
+import { tablePagination } from '../../../utils/tablePagination';
 
 // Columns every open-case row carries (the backend queue joins the employee
 // and branch onto each record); the page's own `columns` go between these
@@ -171,7 +172,7 @@ export default function OpenCaseList({
           dataSource={visibleRows}
           loading={loading}
           scroll={{ x: "max-content" }}
-          pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total, [from, to]) => `${from}-${to} of ${total}` }}
+          pagination={tablePagination(10)}
         />
       </Card>
 

@@ -4,6 +4,7 @@ import StatTile from './StatTile';
 import ChartCard from './ChartCard';
 import { TrendLineChart } from './workforceCharts';
 import { TONES } from './workforceTones';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 const fmt = (n) => (n ?? 0).toLocaleString();
 const fmtRate = (v) => (v == null ? '—' : `${v}%`);
@@ -37,7 +38,7 @@ export default function QualityOfHires({ quality: q, months }) {
         <Col xs={24} lg={12}><ChartCard title='Quality of Hires per Month'><TrendLineChart months={months} field='rate' label='Quality of Hires' suffix='%' /></ChartCard></Col>
         <Col xs={24} lg={12}>
           <ChartCard title={`Regularized vs. Hired ${q.lag_months} Months Earlier`}>
-            <Table rowKey='month' size='small' columns={columns} dataSource={[...months].reverse()} pagination={{ pageSize: 6 }} />
+            <Table rowKey='month' size='small' columns={columns} dataSource={[...months].reverse()} pagination={tablePagination(6)} />
           </ChartCard>
         </Col>
       </Row>

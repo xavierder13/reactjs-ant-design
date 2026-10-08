@@ -15,6 +15,7 @@ import ChartBox from '../../dashboard/recruitment/components/ChartBox';
 import DashboardTabLayout from '../../dashboard/components/DashboardTabLayout';
 import { BAR, baseScales, endLabelsPlugin, soften } from '../../dashboard/chartTheme';
 import { RATING_BANDS, bandOf, filterRows, summarize, rankPosition, averageBy } from './kpiDashboard';
+import { tablePagination } from '../../../utils/tablePagination';
 
 const { Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -265,7 +266,7 @@ export default function KpiDashboard() {
           )}
           extra={<Text type='secondary' style={{ fontSize: 11 }}>By average final grade in the period</Text>}
         >
-          <Table rowKey='key' size='small' columns={rankingColumns} dataSource={ranking} pagination={{ pageSize: 10, showSizeChanger: true }} scroll={{ x: 'max-content' }} />
+          <Table rowKey='key' size='small' columns={rankingColumns} dataSource={ranking} pagination={tablePagination(10)} scroll={{ x: 'max-content' }} />
         </Card>
       );
       case 'branch-chart': return (
@@ -285,12 +286,12 @@ export default function KpiDashboard() {
       );
       case 'branch-table': return (
         <Card size='small' style={{ borderRadius: 8, marginBottom: 24 }}>
-          <Table rowKey='label' size='small' columns={groupColumns('Branch')} dataSource={byBranch} pagination={{ pageSize: 10, showSizeChanger: true }} scroll={{ x: 'max-content' }} />
+          <Table rowKey='label' size='small' columns={groupColumns('Branch')} dataSource={byBranch} pagination={tablePagination(10)} scroll={{ x: 'max-content' }} />
         </Card>
       );
       case 'position-table': return (
         <Card size='small' style={{ borderRadius: 8, marginBottom: 24 }}>
-          <Table rowKey='label' size='small' columns={groupColumns('Position')} dataSource={byPosition} pagination={{ pageSize: 10, showSizeChanger: true }} scroll={{ x: 'max-content' }} />
+          <Table rowKey='label' size='small' columns={groupColumns('Position')} dataSource={byPosition} pagination={tablePagination(10)} scroll={{ x: 'max-content' }} />
         </Card>
       );
       default: return null;

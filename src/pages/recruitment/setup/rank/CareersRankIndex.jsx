@@ -8,6 +8,7 @@ import RecordToolbar from '../../../record_management/RecordToolbar';
 import RecordRowActions from '../../../record_management/RecordRowActions';
 import { resultMessage, showGatewayError } from '../setupHelpers';
 import CareersRankFormModal from './CareersRankFormModal';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 // Careers portal ranks — recruitment-portal rank/RankIndex.vue, run through
 // the vueportal gateway as the signed-in user. A rank groups careers
@@ -103,7 +104,7 @@ const CareersRankIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
       <CareersRankFormModal open={modalOpen} rank={editing} onClose={closeModal} onSaved={handleSaved} />
     </div>

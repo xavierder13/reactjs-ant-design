@@ -10,6 +10,7 @@ import handleApiError from "../../../utils/handleApiError";
 import downloadBlobResponse from "../../../utils/downloadBlobResponse";
 import { formatDate } from "../../../utils/formatDate";
 import { DOCUMENT_TYPES, REGULARIZATION_DOCUMENT_TYPES } from "../components/tabs/personal/documentTypes";
+import { tablePagination } from '../../../utils/tablePagination';
 
 const ACCEPTED_FILE_TYPES = ".jpeg,.jpg,.png,.docs,.docx,.pdf";
 const TYPE_OPTIONS = [...DOCUMENT_TYPES, ...REGULARIZATION_DOCUMENT_TYPES].map((t) => ({ label: t, value: t }));
@@ -161,7 +162,7 @@ export default function ProfileDocuments({ employee, canUpload, canDownload, can
         size="small"
         dataSource={files}
         columns={columns}
-        pagination={files.length > 10 ? { pageSize: 10 } : false}
+        pagination={files.length > 10 ? tablePagination(10) : false}
         locale={{ emptyText: "No documents uploaded yet." }}
         scroll={{ x: "max-content" }}
       />

@@ -9,6 +9,7 @@ import handleApiError from '../../../utils/handleApiError';
 import RecordToolbar from '../RecordToolbar';
 import RecordRowActions from '../RecordRowActions';
 import BranchFormModal from './BranchFormModal';
+import { tablePagination } from '../../../utils/tablePagination';
 
 // Branch maintenance — replaces vueportal's branch/BranchIndex.vue.
 const BranchIndex = () => {
@@ -97,7 +98,7 @@ const BranchIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
       <BranchFormModal
         open={modalOpen}

@@ -9,6 +9,7 @@ import handleApiError from "../../../utils/handleApiError";
 
 import { formatDate } from "../../../utils/formatDate";
 import ExpandIcon from "../../../components/ExpandIcon";
+import { tablePagination } from '../../../utils/tablePagination';
 // Backend's index() returns branches, each with a nested
 // acknowledgment_reports array (branch-scoped visibility enforced
 // server-side via employee-acknowledgment-reports-all). Grouped-by-branch,
@@ -116,7 +117,7 @@ export default function AcknowledgmentReportIndex() {
           size="small"
           loading={isLoading}
           dataSource={branches}
-          pagination={{ pageSize: 10, showSizeChanger: true }}
+          pagination={tablePagination(10)}
           expandable={{
             expandedRowRender,
             rowExpandable: (branch) => (branch.acknowledgment_reports || []).length > 0,

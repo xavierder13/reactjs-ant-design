@@ -12,6 +12,7 @@ import { formatDate } from '../../../utils/formatDate';
 import RecordRowActions from '../RecordRowActions';
 import HolidayCalendarFormModal from './HolidayCalendarFormModal';
 import { HOLIDAY_TYPES, holidayType } from './holidayTypes';
+import { tablePagination } from '../../../utils/tablePagination';
 
 // Holiday Calendar — replaces vueportal's calendar/HolidayCalendar.vue.
 // Calendar view (month grid; click a day to add, a holiday to edit) and a
@@ -235,7 +236,7 @@ const HolidayCalendarIndex = () => {
           columns={columns}
           dataSource={yearRows}
           loading={isLoading}
-          pagination={{ pageSize: 20, showSizeChanger: true }}
+          pagination={tablePagination(20)}
           title={() => `${month.year()}: ${yearRows.length} holiday${yearRows.length === 1 ? '' : 's'}`}
         />
       )}

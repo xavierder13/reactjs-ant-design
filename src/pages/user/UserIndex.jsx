@@ -9,6 +9,7 @@ import handleApiError from '../../utils/handleApiError';
 import UserFormModal from './UserFormModal';
 import { employeeLabel } from './userEmployee';
 import RolePermissionsModal from './RolePermissionsModal';
+import { tablePagination } from '../../utils/tablePagination';
 
 const { Text } = Typography;
 
@@ -196,7 +197,7 @@ const UserIndex = () => {
         columns={columns}
         dataSource={filteredUsers}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `${total} users` }}
+        pagination={tablePagination(10, { showTotal: (total) => `${total} users` })}
         scroll={{ x: 'max-content' }}
       />
 

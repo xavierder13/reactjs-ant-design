@@ -9,6 +9,7 @@ import manpowerRequestApi from '../../../services/manpower_request/manpowerReque
 import handleApiError from '../../../utils/handleApiError';
 import downloadBlobResponse from '../../../utils/downloadBlobResponse';
 import { formatDate, DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
+import { tablePagination } from '../../../utils/tablePagination';
 
 const { RangePicker } = DatePicker;
 
@@ -316,7 +317,7 @@ const ManpowerRequestIndex = () => {
         columns={columns}
         dataSource={filteredItems}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Segmented, Table, Typography } from 'antd';
 import ChartCard from './ChartCard';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 const { Text } = Typography;
 const fmt = (n) => (n ?? 0).toLocaleString();
@@ -36,7 +37,7 @@ export default function TurnoverTable({ turnoverBy }) {
         key={group}
         rowKey='label' size='small' scroll={{ x: 'max-content' }}
         columns={columnsFor(groupLabel)} dataSource={turnoverBy[group]}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
       <Text type='secondary' style={{ fontSize: 12 }}>
         Turnover = separations ÷ average of the group&apos;s headcount 12 months ago and today. Grouped by each employee&apos;s current record; rates on small headcounts swing widely.

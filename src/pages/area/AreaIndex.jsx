@@ -8,6 +8,7 @@ import handleApiError from '../../utils/handleApiError';
 import AreaFormModal from './AreaFormModal';
 import AssignAreasModal from './AssignAreasModal';
 import ExpandIcon from '../../components/ExpandIcon';
+import { tablePagination } from '../../utils/tablePagination';
 
 const { Text } = Typography;
 
@@ -232,7 +233,7 @@ const AreaIndex = () => {
                 columns={areaColumns}
                 dataSource={filteredAreas}
                 loading={isLoading}
-                pagination={{ pageSize: 10, showSizeChanger: true }}
+                pagination={tablePagination(10)}
                 expandable={{
                   expandIcon: (props) => <ExpandIcon {...props} />,
                   expandedRowRender: (area) => (
@@ -255,7 +256,7 @@ const AreaIndex = () => {
                 columns={hrHeadColumns}
                 dataSource={hrHeadRows}
                 loading={isLoading}
-                pagination={{ pageSize: 10, showSizeChanger: true }}
+                pagination={tablePagination(10)}
                 expandable={{
                   expandIcon: (props) => <ExpandIcon {...props} />,
                   expandedRowRender: (row) => (

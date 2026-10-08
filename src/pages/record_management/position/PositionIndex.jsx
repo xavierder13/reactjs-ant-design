@@ -10,6 +10,7 @@ import RecordToolbar from '../RecordToolbar';
 import RecordRowActions from '../RecordRowActions';
 import PositionFormModal from './PositionFormModal';
 import ExpandIcon from '../../../components/ExpandIcon';
+import { tablePagination } from '../../../utils/tablePagination';
 
 const { Text } = Typography;
 
@@ -110,7 +111,7 @@ const PositionIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
         expandable={{
           expandIcon: (props) => <ExpandIcon {...props} />,
           expandedRowRender: (position) => {

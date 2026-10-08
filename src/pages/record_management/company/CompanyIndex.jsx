@@ -9,6 +9,7 @@ import RecordToolbar from '../RecordToolbar';
 import RecordRowActions from '../RecordRowActions';
 import ActiveTag from '../ActiveTag';
 import CompanyFormModal from './CompanyFormModal';
+import { tablePagination } from '../../../utils/tablePagination';
 
 // Company maintenance — replaces vueportal's company/CompanyIndex.vue.
 const CompanyIndex = () => {
@@ -88,7 +89,7 @@ const CompanyIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
       <CompanyFormModal open={modalOpen} company={editing} onClose={closeModal} onSaved={handleSaved} />
     </div>

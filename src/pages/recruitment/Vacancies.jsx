@@ -9,6 +9,7 @@ import recruitmentApi from "../../services/recruitment/recruitmentApi";
 import handleApiError from "../../utils/handleApiError";
 import downloadBlobResponse from "../../utils/downloadBlobResponse";
 import useAuth from "../../hooks/useAuth";
+import { tablePagination } from '../../utils/tablePagination';
 
 const byText = (key) => (a, b) => String(a[key] ?? "").localeCompare(String(b[key] ?? ""));
 const byNumber = (key) => (a, b) => a[key] - b[key];
@@ -144,7 +145,7 @@ export default function Vacancies() {
           dataSource={rows}
           loading={loading}
           scroll={{ x: "max-content" }}
-          pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total, [from, to]) => `${from}-${to} of ${total}` }}
+          pagination={tablePagination(10)}
         />
       </Card>
     </>

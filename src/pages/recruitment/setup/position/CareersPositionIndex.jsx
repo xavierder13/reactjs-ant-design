@@ -7,6 +7,7 @@ import RecordToolbar from '../../../record_management/RecordToolbar';
 import RecordRowActions from '../../../record_management/RecordRowActions';
 import { resultMessage, showGatewayError } from '../setupHelpers';
 import CareersPositionFormModal from './CareersPositionFormModal';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 // Careers portal positions — recruitment-portal position/PositionIndex.vue,
 // run through the vueportal gateway as the signed-in user. These are what
@@ -99,7 +100,7 @@ const CareersPositionIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
       <CareersPositionFormModal
         open={modalOpen}

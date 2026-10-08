@@ -7,6 +7,7 @@ import handleApiError from '../../../utils/handleApiError';
 import RecordToolbar from '../RecordToolbar';
 import RecordRowActions from '../RecordRowActions';
 import RankFormModal from './RankFormModal';
+import { tablePagination } from '../../../utils/tablePagination';
 
 // Rank maintenance — replaces vueportal's rank/RankIndex.vue.
 const RankIndex = () => {
@@ -78,7 +79,7 @@ const RankIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
       <RankFormModal open={modalOpen} rank={editing} onClose={closeModal} onSaved={handleSaved} />
     </div>

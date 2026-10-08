@@ -4,6 +4,7 @@ import StatTile from './StatTile';
 import ChartCard from './ChartCard';
 import { MonthlyCountChart, TrendLineChart } from './workforceCharts';
 import { TONES } from './workforceTones';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 const { Text } = Typography;
 const fmt = (n) => (n ?? 0).toLocaleString();
@@ -51,7 +52,7 @@ export default function ExitInterviews({ data: x, months }) {
         </Col>
         <Col xs={24}>
           <ChartCard title='Exit Interviews by Reason for Leaving'>
-            <Table rowKey='label' size='small' columns={reasonColumns} dataSource={x.by_reason} pagination={{ pageSize: 10, showSizeChanger: true }} scroll={{ x: 'max-content' }} />
+            <Table rowKey='label' size='small' columns={reasonColumns} dataSource={x.by_reason} pagination={tablePagination(10)} scroll={{ x: 'max-content' }} />
             <Text type='secondary' style={{ fontSize: 12 }}>
               Reasons as recorded on each leaver&apos;s latest offboarding (Voluntary / Involuntary as in Attrition). An exit interview counts in the month of its Exit Interview Date; a leaver counts in the month of Date Resigned.
             </Text>

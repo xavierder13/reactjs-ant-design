@@ -6,6 +6,9 @@ import AppRoutes from './routes/AppRoutes';
 const App = () => {
   return (
     <ConfigProvider
+      // Every paged table offers records per page — also the ones that keep
+      // AntD's default pagination (see src/utils/tablePagination.js).
+      pagination={{ showSizeChanger: true }}
       theme={{
         token: {
           colorPrimary: '#389e0d',

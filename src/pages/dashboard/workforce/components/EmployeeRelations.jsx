@@ -5,6 +5,7 @@ import StatTile from './StatTile';
 import ChartCard from './ChartCard';
 import { CountBarChart, MonthlyCountChart, TrendLineChart } from './workforceCharts';
 import { TONES } from './workforceTones';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 const { Text } = Typography;
 const fmt = (n) => (n ?? 0).toLocaleString();
@@ -110,7 +111,7 @@ export default function EmployeeRelations({ relations, months }) {
         </Col>
         <Col xs={24}>
           <ChartCard title='NTEs and Disciplinary Cases by Branch'>
-            <Table rowKey='label' size='small' columns={branchColumns} dataSource={relations.by_branch} pagination={{ pageSize: 10, showSizeChanger: true }} scroll={{ x: 'max-content' }} />
+            <Table rowKey='label' size='small' columns={branchColumns} dataSource={relations.by_branch} pagination={tablePagination(10)} scroll={{ x: 'max-content' }} />
             <Text type='secondary' style={{ fontSize: 12 }}>
               By each employee&apos;s current branch; per 100 = NTEs ÷ current headcount (hired, not yet resigned). NTE violations are free text, so they aren&apos;t broken down.
               {' '}Admin case = an NTE (with its disciplinary record, matched by NTE code) or a disciplinary record without an NTE; resolved = status Close/Closed. There is no resolution date, so a case counts in the month it was issued.

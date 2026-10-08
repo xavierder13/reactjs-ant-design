@@ -9,6 +9,7 @@ import RecordToolbar from '../../../record_management/RecordToolbar';
 import RecordRowActions from '../../../record_management/RecordRowActions';
 import { resultMessage, showGatewayError } from '../setupHelpers';
 import JobVacancyFormModal from './JobVacancyFormModal';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 // Careers portal job vacancies — recruitment-portal
 // recruitment/JobVacanciesIndex.vue, run through the vueportal gateway as
@@ -110,7 +111,7 @@ const JobVacancyIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
       <JobVacancyFormModal
         open={modalOpen}

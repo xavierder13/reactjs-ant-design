@@ -7,6 +7,7 @@ import RecordToolbar from '../../../record_management/RecordToolbar';
 import RecordRowActions from '../../../record_management/RecordRowActions';
 import { resultMessage, showGatewayError } from '../setupHelpers';
 import CareersBranchFormModal from './CareersBranchFormModal';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 // Careers portal branches — recruitment-portal branch/BranchIndex.vue, run
 // through the vueportal gateway as the signed-in user. These are the
@@ -86,7 +87,7 @@ const CareersBranchIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
       <CareersBranchFormModal open={modalOpen} branch={editing} onClose={closeModal} onSaved={handleSaved} />
     </div>

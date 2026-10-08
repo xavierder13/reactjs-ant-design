@@ -24,6 +24,12 @@ files.** The backend is vueportal (its own `record-management` skill).
 
 ### Patterns worth reusing verbatim
 
+- **Pagination**: `pagination={tablePagination(10)}` (`src/utils/tablePagination.js`
+  — records-per-page selector 10/20/50/100 + "x-y of n records"). Never a
+  fixed `pageSize` on a client-side table: it overrides AntD's internal
+  state, so the size selector shows but does nothing. Server-paginated
+  tables keep their own current/pageSize/onChange. `App.jsx`'s
+  ConfigProvider turns the selector on for tables left on AntD's defaults.
 - **Row action buttons**: follow the mandatory color coding table in
   `CLAUDE.md` (Table/List Conventions) — View blue (`color="blue"`, not
   `primary`: the theme's primary is green), Edit green, Delete red,

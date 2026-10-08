@@ -7,6 +7,7 @@ import handleApiError from '../../../utils/handleApiError';
 import RecordToolbar from '../RecordToolbar';
 import RecordRowActions from '../RecordRowActions';
 import PromodizerBrandFormModal from './PromodizerBrandFormModal';
+import { tablePagination } from '../../../utils/tablePagination';
 
 // Promodizer Brand maintenance — replaces vueportal's promodizer_brand/PromodizerBrandIndex.vue.
 const PromodizerBrandIndex = () => {
@@ -78,7 +79,7 @@ const PromodizerBrandIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
       <PromodizerBrandFormModal open={modalOpen} brand={editing} onClose={closeModal} onSaved={handleSaved} />
     </div>

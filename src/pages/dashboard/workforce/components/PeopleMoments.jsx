@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import ChartCard from './ChartCard';
 import { IconBadge } from './StatTile';
 import { TONES } from './workforceTones';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 const { Text } = Typography;
 
@@ -33,12 +34,12 @@ export default function PeopleMoments({ moments }) {
     <Row gutter={[16, 16]}>
       <Col xs={24} lg={12}>
         <ChartCard title={<Title icon={<GiftOutlined />} tone={TONES.people}>Birthdays · {moments.birthdays.length}</Title>}>
-          <Table rowKey='id' size='small' columns={birthdayColumns} dataSource={moments.birthdays} pagination={{ pageSize: 8, hideOnSinglePage: true }} locale={{ emptyText: `No birthdays in the next ${moments.days} days.` }} />
+          <Table rowKey='id' size='small' columns={birthdayColumns} dataSource={moments.birthdays} pagination={tablePagination(8, { hideOnSinglePage: true })} locale={{ emptyText: `No birthdays in the next ${moments.days} days.` }} />
         </ChartCard>
       </Col>
       <Col xs={24} lg={12}>
         <ChartCard title={<Title icon={<TrophyOutlined />} tone={TONES.growth}>Work Anniversaries · {moments.anniversaries.length}</Title>}>
-          <Table rowKey='id' size='small' columns={anniversaryColumns} dataSource={moments.anniversaries} pagination={{ pageSize: 8, hideOnSinglePage: true }} locale={{ emptyText: `No work anniversaries in the next ${moments.days} days.` }} />
+          <Table rowKey='id' size='small' columns={anniversaryColumns} dataSource={moments.anniversaries} pagination={tablePagination(8, { hideOnSinglePage: true })} locale={{ emptyText: `No work anniversaries in the next ${moments.days} days.` }} />
         </ChartCard>
       </Col>
     </Row>

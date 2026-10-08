@@ -10,6 +10,7 @@ import RecordToolbar from '../RecordToolbar';
 import RecordRowActions from '../RecordRowActions';
 import ActiveTag from '../ActiveTag';
 import DepartmentFormModal from './DepartmentFormModal';
+import { tablePagination } from '../../../utils/tablePagination';
 
 // Department maintenance — replaces vueportal's department/DepartmentIndex.vue.
 const DepartmentIndex = () => {
@@ -95,7 +96,7 @@ const DepartmentIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
       <DepartmentFormModal
         open={modalOpen}

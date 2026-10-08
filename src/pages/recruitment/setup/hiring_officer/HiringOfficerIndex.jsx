@@ -8,6 +8,7 @@ import RecordToolbar from '../../../record_management/RecordToolbar';
 import RecordRowActions from '../../../record_management/RecordRowActions';
 import HiringOfficerFormModal from './HiringOfficerFormModal';
 import { officerName, ineligibleReason } from './hiringOfficer';
+import { tablePagination } from '../../../../utils/tablePagination';
 
 // Hiring officers — the Hiring Officer Name options on an applicant's Final
 // Interview step; picking one there fills its position. Each is an Employee
@@ -106,7 +107,7 @@ const HiringOfficerIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
+        pagination={tablePagination(10)}
       />
       <HiringOfficerFormModal open={modalOpen} hiringOfficer={editing} onClose={closeModal} onSaved={handleSaved} />
     </div>
