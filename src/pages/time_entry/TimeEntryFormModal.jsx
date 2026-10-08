@@ -8,7 +8,8 @@ import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../utils/formatDate';
 import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
 import { applyLeaveErrors } from '../leave/leaveHelpers';
-import { scheduleText, punchText, hhmm } from './timeEntryHelpers';
+import { scheduleText, hhmm } from './timeEntryHelpers';
+import TimeComparison from './TimeComparison';
 
 const toTime = (t) => (t ? dayjs(`2000-01-01 ${hhmm(t)}`) : null);
 
@@ -27,6 +28,8 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
   const date = Form.useWatch('date', form);
   const timeIn = Form.useWatch('time_in', form);
   const timeOut = Form.useWatch('time_out', form);
+  const breakOut = Form.useWatch('break_out', form);
+  const breakIn = Form.useWatch('break_in', form);
   const entryType = Form.useWatch('entry_type', form);
   const ready = !!(open && employeeId && date);
 
@@ -39,6 +42,8 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
         employee_id: entry.employee_id,
         date: dayjs(entry.date),
         time_in: toTime(entry.time_in),
+        break_out: toTime(entry.break_out),
+        break_in: toTime(entry.break_in),
         time_out: toTime(entry.time_out),
         entry_type: entry.entry_type,
         location: entry.location,
@@ -57,6 +62,8 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
           employee_id: employeeId,
           date: date.format('YYYY-MM-DD'),
           time_in: timeIn?.format('HH:mm') || null,
+          break_out: breakOut?.format('HH:mm') || null,
+          break_in: breakIn?.format('HH:mm') || null,
           time_out: timeOut?.format('HH:mm') || null,
           // placeholders so the preview validates before they're filled in
           entry_type: entryType || types[0],
@@ -74,7 +81,7 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
       }
     }, 300);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [ready, employeeId, date, timeIn, timeOut, entryType, types, entry, message]);
+  }, [ready, employeeId, date, timeIn, timeOut, breakOut, breakIn, entryType, types, entry, message]);
 
   const handleSave = async () => {
     let values;
@@ -86,6 +93,8 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
     const payload = {
       date: values.date.format('YYYY-MM-DD'),
       time_in: values.time_in?.format('HH:mm') || null,
+      break_out: values.break_out?.format('HH:mm') || null,
+      break_in: values.break_in?.format('HH:mm') || null,
       time_out: values.time_out?.format('HH:mm') || null,
       entry_type: values.entry_type,
       location: values.location?.trim() || null,
@@ -104,6 +113,11 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
       setSaving(false);
     }
   };
+
+  // a break needs both ends
+  const pairedWith = (other, text) => ({
+    validator: (_, value) => (!value === !form.getFieldValue(other) ? Promise.resolve() : Promise.reject(new Error(text))),
+  });
 
   const atLeastOneTime = {
     validator: () => (form.getFieldValue('time_in') || form.getFieldValue('time_out')
@@ -127,7 +141,7 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
         {entry ? (
           <>
             <Form.Item label='Employee'>
-              <Input disabled value={`${entry.employee?.employee_code} - ${entry.employee?.full_name}`} />
+              <Input readOnly value={`${entry.employee?.employee_code} - ${entry.employee?.full_name}`} />
             </Form.Item>
             <Form.Item name='employee_id' hidden><Input /></Form.Item>
           </>
@@ -142,12 +156,35 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
               <DatePicker format={DISPLAY_DATE_FORMAT} disabledDate={(d) => d.isAfter(dayjs(), 'day')} style={{ width: '100%' }} />
             </Form.Item>
           </Col>
-          <Col xs={12} md={8}>
+          <Col xs={24} md={16} />
+          <Col xs={12} md={6}>
             <Form.Item name='time_in' label='Time In' dependencies={['time_out']} rules={[atLeastOneTime]}>
               <TimePicker format='HH:mm' minuteStep={1} style={{ width: '100%' }} />
             </Form.Item>
           </Col>
-          <Col xs={12} md={8}>
+          <Col xs={12} md={6}>
+            <Form.Item
+              name='break_out'
+              label='Break Out'
+              tooltip='Start of the break — fill both break times or neither.'
+              dependencies={['break_in']}
+              rules={[pairedWith('break_in', 'Give the break out with the break in')]}
+            >
+              <TimePicker format='HH:mm' minuteStep={1} style={{ width: '100%' }} />
+            </Form.Item>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Item
+              name='break_in'
+              label='Break In'
+              tooltip='Back from the break.'
+              dependencies={['break_out']}
+              rules={[pairedWith('break_out', 'Give the break in with the break out')]}
+            >
+              <TimePicker format='HH:mm' minuteStep={1} style={{ width: '100%' }} />
+            </Form.Item>
+          </Col>
+          <Col xs={12} md={6}>
             <Form.Item name='time_out' label='Time Out' dependencies={['time_in']} tooltip='Earlier than the time in = the next day.'>
               <TimePicker format='HH:mm' minuteStep={1} style={{ width: '100%' }} />
             </Form.Item>
@@ -180,9 +217,17 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
               style={{ marginBottom: 12 }}
             />
           )}
-          <Descriptions size='small' bordered column={1}>
-            <Descriptions.Item label='Schedule that day'>{scheduleText(preview.schedule)}</Descriptions.Item>
-            <Descriptions.Item label='Biometric punches'>{punchText(preview.punches)}</Descriptions.Item>
+          <TimeComparison
+            punches={preview.punches}
+            scheduleLine={`Schedule that day — ${scheduleText(preview.schedule)}`}
+            filed={{
+              time_in: timeIn?.format('HH:mm'),
+              break_out: breakOut?.format('HH:mm'),
+              break_in: breakIn?.format('HH:mm'),
+              time_out: timeOut?.format('HH:mm'),
+            }}
+          />
+          <Descriptions size='small' bordered column={1} style={{ marginTop: 12 }}>
             <Descriptions.Item label='Approval'>
               {preview.approvers === null
                 ? 'No approval procedure set up — time entry approvers decide in one step.'

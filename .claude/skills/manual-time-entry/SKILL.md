@@ -24,10 +24,16 @@ MRF — viewing by subordinates, approver and permission.
 
 ## Rules (TimeEntryService)
 
+- Times follow the Attendance tab's structure: **Time In → Break Out
+  (start of break) → Break In (back) → Time Out**. Break out / in are
+  optional but come as a pair (and differ).
 - One Pending / Approved entry per employee per date; today or past only;
   time in and/or time out (out before in = next day); active employee;
   type in TYPES; reason required. Warnings (not blocking): a date over 31
   days ago (payroll period), a day off in the schedule.
+- `TimeComparison` shows Biometric vs Filed for the four times (the
+  biometric reading = getAttendanceLogs' first IN, break out, break in,
+  last OUT) plus all punches — in the form preview and the details dialog.
 - Each filing shows that day's schedule (`ScheduleService::forDate` —
   shifting, else Work Schedule) and the **biometric punches** read from
   BioBridge (`EmployeeMasterDataController::getAttendanceLogs`, read-only;

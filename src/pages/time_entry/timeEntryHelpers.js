@@ -16,18 +16,13 @@ export const timeRange = (inTime, outTime) => {
   return `${a || '—'} – ${b || '—'}${a && b && b < a ? ' (+1)' : ''}`;
 };
 
+// "12:00 – 13:00" or null when no break was filed.
+export const breakRange = (breakOut, breakIn) => (breakOut || breakIn ? timeRange(breakOut, breakIn) : null);
+
 // The schedule in force that day, as text.
 export const scheduleText = (s) => {
   if (!s) return '—';
   if (!s.source) return 'No schedule';
   const from = s.source === 'shift' ? `Shifting ${s.shift_code}` : `Work Schedule${s.shift_code ? ` ${s.shift_code}` : ''}`;
   return `${from}: ${s.day_off ? 'Day off' : timeRange(s.time_in, s.time_out)}`;
-};
-
-// The day's biometric punches, as text.
-export const punchText = (p) => {
-  if (p === null || p === undefined) return 'Biometric logs unavailable';
-  if (Array.isArray(p) && !p.length) return 'No biometric punches that day';
-  if (!p.logs?.length) return 'No biometric punches that day';
-  return p.logs.map((l) => `${l.punch} ${l.time}`).join(' · ');
 };

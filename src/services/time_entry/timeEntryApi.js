@@ -11,7 +11,7 @@ import axios from '../../api/axiosInstance';
 // - getAll(params) → { entries: paginator, see_all } — params: scope
 //   ('for_approval'), page, per_page, status, entry_type, branch_id,
 //   employee_id, date_from / date_to, search. Row: { id, employee_id, date,
-//   time_in ('08:00:00' | null), time_out, entry_type, location, reason,
+//   time_in ('08:00:00' | null), break_out, break_in, time_out, entry_type, location, reason,
 //   status, current_level, submitted_at, filed_by, acted_by, acted_at,
 //   action_remarks, created_at, employee { employee_code, full_name, branch,
 //   position }, filer { name }, actor { name } }.
@@ -26,7 +26,8 @@ import axios from '../../api/axiosInstance';
 //   [{ level, required, approved, status, approvers, actions }], history,
 //   can_approve }, schedule, punches }; 404 when not visible.
 // - create / update(id) payload { employee_id (create only), date 'YYYY-MM-DD',
-//   time_in 'HH:mm' | null, time_out (before time in = next day),
+//   time_in 'HH:mm' | null, break_out / break_in (both or neither), time_out
+//   (before time in = next day),
 //   entry_type, location, reason } → { message, entry }; 422 bag or
 //   { message } (future date, no time, a pending / approved entry that day,
 //   acted-on).

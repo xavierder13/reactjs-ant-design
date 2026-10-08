@@ -4,7 +4,8 @@ import timeEntryApi from '../../services/time_entry/timeEntryApi';
 import handleApiError from '../../utils/handleApiError';
 import { formatDate } from '../../utils/formatDate';
 import ApprovalSteps from '../../components/approval/ApprovalSteps';
-import { TIME_ENTRY_STATUS_COLORS, timeRange, scheduleText, punchText } from './timeEntryHelpers';
+import { TIME_ENTRY_STATUS_COLORS, scheduleText } from './timeEntryHelpers';
+import TimeComparison from './TimeComparison';
 
 // A time entry (fetched: /time_entry/show) with that day's schedule and
 // biometric punches beside it, its approval route, and the actions this
@@ -84,9 +85,7 @@ const TimeEntryDetailsModal = ({ entryId, canCancel, onClose, onActed }) => {
               {[entry.employee?.branch?.name, entry.employee?.position?.name].filter(Boolean).join(' / ') || '—'}
             </Descriptions.Item>
             <Descriptions.Item label='Date'>{formatDate(entry.date)}</Descriptions.Item>
-            <Descriptions.Item label='Filed time'><Typography.Text strong>{timeRange(entry.time_in, entry.time_out)}</Typography.Text></Descriptions.Item>
             <Descriptions.Item label='Schedule that day'>{scheduleText(data.schedule)}</Descriptions.Item>
-            <Descriptions.Item label='Biometric punches'>{punchText(data.punches)}</Descriptions.Item>
             <Descriptions.Item label='Type'>{entry.entry_type}{entry.location ? ` — ${entry.location}` : ''}</Descriptions.Item>
             <Descriptions.Item label='Reason'>{entry.reason}</Descriptions.Item>
             <Descriptions.Item label='Status'><Tag color={TIME_ENTRY_STATUS_COLORS[entry.status]}>{entry.status}</Tag></Descriptions.Item>
@@ -98,6 +97,8 @@ const TimeEntryDetailsModal = ({ entryId, canCancel, onClose, onActed }) => {
               </Descriptions.Item>
             )}
           </Descriptions>
+          <Typography.Title level={5} style={{ marginTop: 16 }}>Filed vs Biometric</Typography.Title>
+          <TimeComparison punches={data.punches} filed={entry} />
           <Typography.Title level={5} style={{ marginTop: 16 }}>Approval</Typography.Title>
           <ApprovalSteps approval={data.approval} chartName='Manual Time Entry' />
           {(decidable || cancellable) && (

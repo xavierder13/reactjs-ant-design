@@ -8,7 +8,7 @@ import timeEntryApi from '../../services/time_entry/timeEntryApi';
 import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../utils/formatDate';
 import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../utils/tablePagination';
-import { TIME_ENTRY_STATUS_COLORS, TIME_ENTRY_STATUSES, timeRange } from './timeEntryHelpers';
+import { TIME_ENTRY_STATUS_COLORS, TIME_ENTRY_STATUSES, timeRange, breakRange } from './timeEntryHelpers';
 import TimeEntryFormModal from './TimeEntryFormModal';
 import TimeEntryDetailsModal from './TimeEntryDetailsModal';
 
@@ -103,7 +103,19 @@ const TimeEntryIndex = () => {
       ) : '—'),
     },
     { title: 'Date', dataIndex: 'date', width: 120, render: (d) => formatDate(d) },
-    { title: 'Time', key: 'time', width: 150, render: (_, r) => timeRange(r.time_in, r.time_out) },
+    {
+      title: 'Time',
+      key: 'time',
+      width: 170,
+      render: (_, r) => (
+        <div>
+          <div>{timeRange(r.time_in, r.time_out)}</div>
+          {breakRange(r.break_out, r.break_in) && (
+            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{`Break ${breakRange(r.break_out, r.break_in)}`}</div>
+          )}
+        </div>
+      ),
+    },
     { title: 'Type', dataIndex: 'entry_type', width: 150, render: (t, r) => <Tooltip title={r.location}>{t}</Tooltip> },
     { title: 'Reason', dataIndex: 'reason', ellipsis: true },
     {
@@ -186,7 +198,7 @@ const TimeEntryIndex = () => {
             style={{ width: 220 }}
           />
         </Space>
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={openCreate}>File Time Entry</Button>}
         </Space>
