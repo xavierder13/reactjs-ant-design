@@ -69,12 +69,13 @@ Access Chart**, the Manpower Request way. Contracts are in
 
 ## Rules (LeaveService — the backend is authoritative)
 
-- **Days counted**: each date in the range, skipping the employee's rest
-  day under the Work Schedule in effect that day (latest
-  `effective_date` ≤ date; `rest_day` matched by weekday name) and active
-  Holiday Calendar holidays observed by the employee's branch — unless the
-  type `counts_calendar_days` (maternity). No work schedule → no rest day
-  skipped (the form warns). Half day (AM/PM) only on a one-day leave = 0.5.
+- **Days counted**: each date in the range, skipping the employee's day off
+  under the schedule in force that day (`ScheduleService` — an active
+  temporary shifting, else the Work Schedule rest day; see the
+  shift-management skill) and active, non-Special-Working Holiday Calendar
+  holidays observed by the employee's branch — unless the type
+  `counts_calendar_days` (maternity). No schedule → no day skipped (the form
+  warns). Half day (AM/PM) only on a one-day leave = 0.5.
 - **Eligibility** (`ineligibility()`): type active, gender, employment
   types (comma list), `min_service_months` from `date_employed`.
 - **Balance** per type and year (year of `date_from`): credits = the

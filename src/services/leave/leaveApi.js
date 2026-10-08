@@ -30,8 +30,8 @@ import axios from '../../api/axiosInstance';
 //   (leave-list/-create/-edit — the form's types and the list filters).
 // - compute(payload { employee_id, leave_type_id, date_from, date_to,
 //   half_day, leave_id? }) → { count: { days, breakdown: [{ date, day,
-//   counts, skipped }], no_schedule, schedule_starts (first schedule's date
-//   when after date_from, else null) }, approvers: level-1 approvers for this
+//   counts, skipped, source, shift_code }], no_schedule, unscheduled (dates
+//   with no Work Schedule / shifting when only some are) }, approvers: level-1 approvers for this
 //   employee [{ id, name }] ([] = nobody covers them; null = no procedure),
 //   balance: that type's balances row for the year (so filers needn't hold
 //   the balance permissions), error: the rule that blocks saving |

@@ -88,6 +88,7 @@ export const DOCUMENT_TYPES = [
     filename: "EmployeeWorkScheduleTemplate.xls",
     download: () => workScheduleApi.templateDownload(),
     upload: (file) => workScheduleApi.import(file),
+    hint: "Columns: employee_code, effective_date (YYYY-MM-DD, format the cell as Text), shift_code, remarks. Each line adds a Work Schedule version that follows the shift — the template's \"Shifts\" sheet lists the active shift codes and their weekly hours. Older files with rest_day, time_in and time_out still import (as hand-typed versions).",
   },
 ];
 

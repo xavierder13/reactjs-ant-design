@@ -66,6 +66,8 @@ import HolidayCalendarIndex from '../pages/record_management/holiday_calendar/Ho
 import LeaveApplicationIndex from '../pages/leave/LeaveApplicationIndex';
 import LeaveBalances from '../pages/leave/LeaveBalances';
 import LeaveTypeIndex from '../pages/leave/types/LeaveTypeIndex';
+import ShiftIndex from '../pages/shift/ShiftIndex';
+import ShiftAssignmentIndex from '../pages/shift/ShiftAssignmentIndex';
 import CompanyIndex from '../pages/record_management/company/CompanyIndex';
 import BranchIndex from '../pages/record_management/branch/BranchIndex';
 import DepartmentIndex from '../pages/record_management/department/DepartmentIndex';
@@ -127,6 +129,8 @@ const permissionRoutes = [
   { permissions: ['leave-list'],              path: '/leave',                      element: <LeaveApplicationIndex /> },
   { permissions: ['leave-balance-list', 'leave-balance-list-all'], path: '/leave/balances', element: <LeaveBalances /> },
   { permissions: ['leave-type-list'],         path: '/leave/types',                element: <LeaveTypeIndex /> },
+  { permissions: ['shift-list'],              path: '/shifts',                     element: <ShiftIndex /> },
+  { permissions: ['shift-assignment-list', 'shift-assignment-list-all'], path: '/shifting', element: <ShiftAssignmentIndex /> },
 
   // Record Management (org reference data)
   { permissions: ['company-list'],          path: '/companies',         element: <CompanyIndex /> },

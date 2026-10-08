@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import {
-  Table, Button, Modal, Form, Select, DatePicker, TimePicker, Input, Row, Col, Space,
-  Popconfirm, Tooltip, Tag, App,
+  Table, Button, Modal, Form, Select, DatePicker, Input, Space, Alert,
+  Popconfirm, Tooltip, Tag, Typography, App,
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -11,19 +11,27 @@ import dayjs from "dayjs";
 import useAuth from "../../../../hooks/useAuth";
 import handleApiError from "../../../../utils/handleApiError";
 import workScheduleApi from "../../../../services/employee/workScheduleApi";
+import shiftApi from "../../../../services/shift/shiftApi";
+import { patternSummary } from "../../../shift/shiftHelpers";
 import { formatDate, DISPLAY_DATE_FORMAT } from "../../../../utils/formatDate";
 
-// PH Labor Code rest-day vocabulary (Art. 91-93) — matches
-// EmployeeWorkScheduleController::REST_DAYS exactly (case must match).
-const REST_DAYS = [
-  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
-];
-const TIME_FORMAT = "HH:mm";
+// Next id for a staged (create-mode) row — unique among the staged rows.
+const nextLocalId = (rows = []) => `local-${Math.max(0, ...rows.map((r) => Number(String(r.id).replace("local-", "")) || 0)) + 1}`;
+
+// A version's schedule as text: its shift's weekly pattern, or for a
+// version typed in by hand (before Work Schedules picked a shift) its rest
+// day and hours.
+const scheduleText = (record) => (record.shift
+  ? patternSummary(record.shift.days)
+  : `Rest day: ${record.rest_day || "—"} · ${record.time_in || "—"}–${record.time_out || "—"}`);
 
 // New module — no vueportal Vue reference to port (unlike the sibling
 // Offboarding/NTE/Disciplinary tabs). Records an employee's work-schedule
-// history: rest day + time of duty, versioned by Effective Date so a
-// schedule change doesn't overwrite the prior one. Intended to later feed
+// history — the fixed schedule from the approved memo — versioned by
+// Effective Date so a schedule change doesn't overwrite the prior one. A
+// version picks a shift (Time & Leave → Setup → Shifts); older versions
+// typed in by hand (rest day + time in / out) stay as they are. Temporary
+// shifting (Time & Leave → Shifting) never changes this history. Intended to later feed
 // late/absence computation and the KPI Attendance component (currently a
 // stubbed AttendanceService) by giving that computation a schedule to
 // compare the read-only Attendance tab's BioBridge punches against — that
@@ -41,7 +49,9 @@ export default function WorkScheduleTab({ mode = "create", initialData, pendingR
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [shifts, setShifts] = useState([]);
   const [form] = Form.useForm();
+  const shiftId = Form.useWatch("shift_id", form);
 
   const readOnly = mode === "view";
   const isCreateMode = mode === "create";
@@ -83,27 +93,35 @@ export default function WorkScheduleTab({ mode = "create", initialData, pendingR
   // Form element" warning — confirmed live, not just theoretical. See
   // SubmitAcknowledgmentReportModal.jsx for the same afterOpenChange
   // pattern, done correctly from the start.
-  const handleAfterOpenChange = (isOpen) => {
+  const handleAfterOpenChange = async (isOpen) => {
     if (!isOpen) return;
     if (editing) {
       form.setFieldsValue({
         effective_date: editing.effective_date ? dayjs(editing.effective_date) : null,
-        rest_day: editing.rest_day || undefined,
-        time_in: editing.time_in ? dayjs(editing.time_in, TIME_FORMAT) : null,
-        time_out: editing.time_out ? dayjs(editing.time_out, TIME_FORMAT) : null,
+        shift_id: editing.shift_id || undefined,
         remarks: editing.remarks || "",
       });
     } else {
       form.resetFields();
     }
+    try {
+      const { data } = await shiftApi.options();
+      setShifts(data.shifts);
+    } catch (error) {
+      handleApiError(error, messageApi);
+    }
   };
+
+  // The edited version's own shift may be inactive now (not in options).
+  const shiftChoices = editing?.shift && !shifts.some((s) => s.id === editing.shift_id)
+    ? [...shifts, { ...editing.shift, inactive: true }]
+    : shifts;
+  const pickedShift = shiftChoices.find((s) => s.id === shiftId);
 
   const buildPayload = (values) => ({
     employee_id: employeeId,
     effective_date: values.effective_date.format("YYYY-MM-DD"),
-    rest_day: values.rest_day,
-    time_in: values.time_in.format(TIME_FORMAT),
-    time_out: values.time_out.format(TIME_FORMAT),
+    shift_id: values.shift_id,
     remarks: values.remarks || undefined,
   });
 
@@ -117,7 +135,8 @@ export default function WorkScheduleTab({ mode = "create", initialData, pendingR
 
     // No employee_id yet — the backend assigns it when store() creates the
     // employee. `id` is local-only; EmployeeForm strips it before sending.
-    const record = { ...buildPayload(values), remarks: values.remarks || null, id: editing?.id || `local-${Date.now()}` };
+    // `shift` is for display only (the backend reads shift_id)
+    const record = { ...buildPayload(values), remarks: values.remarks || null, shift: pickedShift, id: editing?.id || nextLocalId(pendingRecords) };
     delete record.employee_id;
     const updated = editing
       ? (pendingRecords || []).map((r) => (r.id === editing.id ? record : r))
@@ -154,10 +173,11 @@ export default function WorkScheduleTab({ mode = "create", initialData, pendingR
         closeModal();
       } else {
         const [field, fieldErrors] = Object.entries(data || {})[0] || [];
-        if (field) {
+        if (["effective_date", "shift_id", "remarks"].includes(field)) {
           form.setFields([{ name: field, errors: [].concat(fieldErrors) }]);
         } else {
-          messageApi.error(data.error || "Failed to save work schedule.");
+          // { error: "..." } or a field this form doesn't have
+          messageApi.error([].concat(data?.error || fieldErrors || "Failed to save work schedule.")[0]);
         }
       }
     } catch (error) {
@@ -183,13 +203,13 @@ export default function WorkScheduleTab({ mode = "create", initialData, pendingR
   const columns = [
     { title: "Effective Date", dataIndex: "effective_date", key: "effective_date", render: (v) => formatDate(v) },
     {
-      title: "Rest Day",
-      dataIndex: "rest_day",
-      key: "rest_day",
-      render: (v) => <Tag>{v}</Tag>,
+      title: "Shift",
+      key: "shift",
+      render: (_, record) => (record.shift
+        ? <Tooltip title={record.shift.name}><Tag color="blue">{record.shift.code}</Tag></Tooltip>
+        : <Tooltip title="Entered by hand before Work Schedules picked a shift"><Tag>Manual</Tag></Tooltip>),
     },
-    { title: "Time In", dataIndex: "time_in", key: "time_in" },
-    { title: "Time Out", dataIndex: "time_out", key: "time_out" },
+    { title: "Schedule", key: "schedule", render: (_, record) => scheduleText(record) },
     { title: "Remarks", dataIndex: "remarks", key: "remarks", render: (v) => v || "-" },
     ...(canEdit || canDelete ? [{
       title: "Actions",
@@ -247,21 +267,27 @@ export default function WorkScheduleTab({ mode = "create", initialData, pendingR
           <Form.Item name="effective_date" label="Effective Date" rules={[{ required: true, message: "Please select an effective date." }]}>
             <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} />
           </Form.Item>
-          <Form.Item name="rest_day" label="Rest Day" rules={[{ required: true, message: "Please select a rest day." }]}>
-            <Select options={REST_DAYS.map((d) => ({ label: d, value: d }))} />
+          {editing && !editing.shift_id && (
+            <Alert
+              type="info"
+              showIcon
+              title={`This version was entered by hand (${scheduleText(editing)}). Saving it picks a shift instead.`}
+              style={{ marginBottom: 12 }}
+            />
+          )}
+          <Form.Item
+            name="shift_id"
+            label="Shift"
+            extra={pickedShift ? patternSummary(pickedShift.days) : null}
+            rules={[{ required: true, message: "Please select a shift." }]}
+          >
+            <Select
+              showSearch={{ optionFilterProp: "label" }}
+              placeholder="Select the shift from the approved memo"
+              options={shiftChoices.map((s) => ({ value: s.id, label: `${s.code} — ${s.name}${s.inactive ? " (inactive)" : ""}` }))}
+              notFoundContent={<Typography.Text type="secondary">No active shifts — add one in Time &amp; Leave → Setup → Shifts.</Typography.Text>}
+            />
           </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="time_in" label="Time In" rules={[{ required: true, message: "Please select time in." }]}>
-                <TimePicker style={{ width: "100%" }} format={TIME_FORMAT} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="time_out" label="Time Out" rules={[{ required: true, message: "Please select time out." }]}>
-                <TimePicker style={{ width: "100%" }} format={TIME_FORMAT} />
-              </Form.Item>
-            </Col>
-          </Row>
           <Form.Item name="remarks" label="Remarks">
             <Input.TextArea rows={2} />
           </Form.Item>

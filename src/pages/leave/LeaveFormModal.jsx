@@ -178,11 +178,11 @@ const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
       {ready && preview && (
         <>
           {preview.error && <Alert type='error' showIcon title={preview.error} style={{ marginBottom: 12 }} />}
-          {preview.count.schedule_starts && (
+          {preview.count.unscheduled?.length > 0 && (
             <Alert
               type='warning'
               showIcon
-              title={`The employee's first Work Schedule starts ${formatDate(preview.count.schedule_starts)} — no rest day is skipped before that date.`}
+              title={`No Work Schedule or shifting on ${preview.count.unscheduled.map((d) => formatDate(d)).join(', ')} — counted as working days.`}
               style={{ marginBottom: 12 }}
             />
           )}
@@ -209,13 +209,13 @@ const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
                 ? 'No yearly balance'
                 : `${balance.balance} of ${balance.credits} left${balance.pending ? ` (${balance.pending} pending)` : ''}`}
             </Descriptions.Item>
-            <Descriptions.Item label='Approval' span={2}>
+            <Descriptions.Item label='Approval' span='filled'>
               {preview.approvers === null
                 ? 'No approval procedure set up — Leave approvers decide in one step.'
                 : `Level 1: ${preview.approvers.map((a) => a.name).join(', ') || '—'}`}
             </Descriptions.Item>
             {skipped.length > 0 && (
-              <Descriptions.Item label='Not counted' span={2}>
+              <Descriptions.Item label='Not counted' span='filled'>
                 <Space size={[4, 4]} wrap>
                   {skipped.map((d) => (
                     <Tag key={d.date} style={{ whiteSpace: 'normal', maxWidth: '100%' }}>
