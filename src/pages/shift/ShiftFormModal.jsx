@@ -4,7 +4,7 @@ import {
 } from 'antd';
 import shiftApi from '../../services/shift/shiftApi';
 import handleApiError from '../../utils/handleApiError';
-import { DAYS, toTime, applyErrors } from './shiftHelpers';
+import { DAYS, toTime, hhmm, applyErrors } from './shiftHelpers';
 
 const blankDays = () => DAYS.map((day) => ({ day, is_day_off: day === 'Sunday', time_in: null, time_out: null, break_minutes: 60 }));
 
@@ -58,7 +58,9 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
       description: values.description?.trim() || null,
       grace_minutes: values.grace_minutes ?? 0,
       active: values.active,
-      days: values.days.map((d, i) => ({
+      // the full stored rows — a locked shift renders its days as text, and
+      // validateFields() only returns values of rendered fields
+      days: (form.getFieldValue('days') || []).map((d, i) => ({
         day: DAYS[i],
         is_day_off: !!d.is_day_off,
         time_in: d.is_day_off ? null : d.time_in?.format('HH:mm') || null,
@@ -85,6 +87,20 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
     validator: (_, value) => (days[index]?.is_day_off || value ? Promise.resolve() : Promise.reject(new Error(`${label} is required`))),
   }];
 
+  // A locked shift shows its stored days as read-only text, not greyed
+  // controls (no fields render, so the watched form values are empty).
+  const storedDay = (i) => {
+    const d = shift?.days?.find((x) => x.day === DAYS[i]);
+    return d ? { ...d, is_day_off: !!d.is_day_off } : { is_day_off: true };
+  };
+  const lockedColumns = [
+    { title: 'Day', key: 'day', width: 110, render: (_, __, i) => DAYS[i] },
+    { title: 'Day Off', key: 'off', width: 80, render: (_, __, i) => (storedDay(i).is_day_off ? 'Yes' : 'No') },
+    { title: 'Time In', key: 'in', render: (_, __, i) => (storedDay(i).is_day_off ? '—' : hhmm(storedDay(i).time_in) || '—') },
+    { title: 'Time Out', key: 'out', render: (_, __, i) => (storedDay(i).is_day_off ? '—' : hhmm(storedDay(i).time_out) || '—') },
+    { title: 'Break (min)', key: 'break', width: 110, render: (_, __, i) => (storedDay(i).is_day_off ? '—' : storedDay(i).break_minutes ?? 0) },
+  ];
+
   const columns = [
     { title: 'Day', key: 'day', width: 110, render: (_, __, i) => DAYS[i] },
     {
@@ -94,7 +110,6 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
         <Form.Item name={[i, 'is_day_off']} valuePropName='checked' noStyle>
           <Switch
             size='small'
-            disabled={locked}
             // a day off needs no times — drop errors left on them
             onChange={() => form.setFields([{ name: ['days', i, 'time_in'], errors: [] }, { name: ['days', i, 'time_out'], errors: [] }])}
           />
@@ -105,7 +120,7 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
       title: 'Time In',
       render: (_, __, i) => (
         <Form.Item name={[i, 'time_in']} rules={requiredWhenWorking(i, 'Time in')} style={{ margin: 0 }}>
-          <TimePicker format='HH:mm' minuteStep={5} disabled={locked || days[i]?.is_day_off} style={{ width: '100%' }} />
+          <TimePicker format='HH:mm' minuteStep={5} disabled={days[i]?.is_day_off} style={{ width: '100%' }} />
         </Form.Item>
       ),
     },
@@ -113,7 +128,7 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
       title: 'Time Out',
       render: (_, __, i) => (
         <Form.Item name={[i, 'time_out']} rules={requiredWhenWorking(i, 'Time out')} style={{ margin: 0 }}>
-          <TimePicker format='HH:mm' minuteStep={5} disabled={locked || days[i]?.is_day_off} style={{ width: '100%' }} />
+          <TimePicker format='HH:mm' minuteStep={5} disabled={days[i]?.is_day_off} style={{ width: '100%' }} />
         </Form.Item>
       ),
     },
@@ -122,7 +137,7 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
       width: 110,
       render: (_, __, i) => (
         <Form.Item name={[i, 'break_minutes']} style={{ margin: 0 }}>
-          <InputNumber min={0} max={600} step={15} disabled={locked || days[i]?.is_day_off} style={{ width: '100%' }} />
+          <InputNumber min={0} max={600} step={15} disabled={days[i]?.is_day_off} style={{ width: '100%' }} />
         </Form.Item>
       ),
     },
@@ -154,7 +169,7 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
           </Col>
           <Col xs={12} md={3}>
             <Form.Item name='grace_minutes' label='Grace (min)' tooltip='Minutes after time in before it counts as late.'>
-              <InputNumber min={0} max={240} disabled={locked} style={{ width: '100%' }} />
+              <InputNumber min={0} max={240} readOnly={locked} style={{ width: '100%' }} />
             </Form.Item>
           </Col>
           <Col xs={12} md={3}>
@@ -180,7 +195,7 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
               size='small'
               pagination={false}
               dataSource={fields}
-              columns={columns}
+              columns={locked ? lockedColumns : columns}
               scroll={{ x: 560 }}
               style={{ margin: '8px 0 12px' }}
               footer={locked ? undefined : () => <Button size='small' onClick={copyMonday}>Copy Monday to the other working days</Button>}

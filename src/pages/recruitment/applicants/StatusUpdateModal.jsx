@@ -375,7 +375,8 @@ export default function StatusUpdateModal({
           )}
           {col(
             <Form.Item name="hiring_officer_position" label="Hiring Officer Position" rules={required(v.final_interview_status === 1, 'Hiring Officer Position is required.')}>
-              <Input readOnly placeholder="Based on the hiring officer" disabled={!v.final_interview_status} />
+              {/* filled from the officer — read-only, never the greyed disabled look */}
+              <Input readOnly placeholder="Based on the hiring officer" />
             </Form.Item>,
           )}
         </Row>

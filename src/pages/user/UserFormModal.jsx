@@ -123,7 +123,7 @@ const UserFormModal = ({ open, user, roles, branches, positions, onClose, onSave
                 { type: 'email', message: 'Enter a valid e-mail' },
               ]}
             >
-              <Input disabled={isEdit} autoComplete='off' />
+              <Input readOnly={isEdit} autoComplete='off' />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
@@ -181,7 +181,7 @@ const UserFormModal = ({ open, user, roles, branches, positions, onClose, onSave
             <Form.Item
               name='employee_id'
               label='Employee Record'
-              extra='Links this account to an employee — their profile then shows on My Profile. One account per employee.'
+              extra='Links this account to an employee — their profile then shows on My Profile. Several accounts may link the same employee.'
             >
               <EmployeeSelect
                 placeholder='Search employee code or name'

@@ -145,7 +145,7 @@ const ShiftAssignmentFormModal = ({ open, assignment, options, onClose, onSaved 
         {assignment ? (
           <>
             <Form.Item label='Employee'>
-              <Input disabled value={`${assignment.employee?.employee_code} - ${assignment.employee?.full_name}`} />
+              <Input readOnly value={`${assignment.employee?.employee_code} - ${assignment.employee?.full_name}`} />
             </Form.Item>
             <Form.Item name='employee_id' hidden><Input /></Form.Item>
           </>

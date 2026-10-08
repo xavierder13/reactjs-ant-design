@@ -144,7 +144,7 @@ const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
         {leave ? (
           <>
             <Form.Item label='Employee'>
-              <Input disabled value={`${leave.employee?.employee_code} - ${leave.employee?.full_name}`} />
+              <Input readOnly value={`${leave.employee?.employee_code} - ${leave.employee?.full_name}`} />
             </Form.Item>
             <Form.Item name='employee_id' hidden><Input /></Form.Item>
           </>
