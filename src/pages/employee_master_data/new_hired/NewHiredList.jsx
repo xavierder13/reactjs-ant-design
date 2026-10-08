@@ -69,7 +69,7 @@ export default function NewHiredList() {
     const selected = rows.filter((r) => selectedKeys.includes(r.id));
     modal.confirm({
       title: `Sync ${selected.length} hired applicant${selected.length === 1 ? "" : "s"}?`,
-      content: "Each will be added to Employee Master Data as a Probationary employee (skipped if an employee with the same name, birthdate and gender already exists) and removed from this list. Run Generate Referral Codes afterwards to give them referral codes.",
+      content: "Each will be added to Employee Master Data as a Probationary employee (skipped if an employee with the same name, birthdate and gender already exists) and removed from this list. New employees get a referral code and a \"Hired\" Branch Assignment row (date employed, branch, position).",
       okText: "Sync",
       onOk: async () => {
         setSyncing(true);

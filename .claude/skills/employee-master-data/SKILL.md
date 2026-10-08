@@ -602,8 +602,11 @@ signed up to today, not in `employee_new_hired_sync_logs`. Client-side search
 / sort; Sync posts the selected rows **as received** to
 `sync/new_hired`, which creates each as Probationary (`employee_code`
 `careers-<applicant id>`; skipped if name + birthdate + gender already exist)
-and logs it as synced either way. Sync does **not** assign referral codes —
-run Generate Referral Codes afterwards. The notification bell counts this list
+and logs it as synced either way. Like `store()`, each newly created employee
+also gets a referral code and a "Hired" Branch Assignment Position row (date
+employed, the employee's branch and position — incl. the sync's fallbacks:
+branch id 1 / Sales Staff when the portal's names don't match), all in one
+transaction per employee. The notification bell counts this list
 (`RecruitmentController::newHiredCount`).
 
 ## Referral Codes
