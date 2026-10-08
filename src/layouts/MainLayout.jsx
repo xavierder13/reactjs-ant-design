@@ -39,6 +39,7 @@ import {
   ScheduleOutlined,
   AuditOutlined,
   FileSearchOutlined,
+  WalletOutlined,
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
@@ -121,6 +122,7 @@ const titleMap = {
   '/access-charts':            { title: 'Access Charts',           breadcrumb: ['Approvals', 'Access Charts'] },
   '/approving-officers':       { title: 'Approving Officers',      breadcrumb: ['Approvals', 'Approving Officers'] },
   '/audit-trail':              { title: 'Audit Trail',             breadcrumb: ['Set Up & Authorizations', 'Audit Trail'] },
+  '/compensation':             { title: 'Salary History',          breadcrumb: ['Payroll', 'Salary History'] },
   '/shifts':                   { title: 'Shifts',                  breadcrumb: ['Time & Leave', 'Shifts'] },
   '/companies':                { title: 'Companies',               breadcrumb: ['Organization', 'Companies'] },
   '/branches':                 { title: 'Branches',                breadcrumb: ['Organization', 'Branches'] },
@@ -263,6 +265,16 @@ const menuData = [
               { key: 'holiday-calendar', title: 'Holiday Calendar', link: '/holiday-calendar', permissions: ['holiday-calendar-list'] },
             ],
           },
+        ],
+      },
+      // Pay records for payroll (salary now; allowances and the payroll run
+      // come next — docs/hris-roadmap.md in the workspace).
+      {
+        key: 'payroll',
+        title: 'Payroll',
+        icon: <WalletOutlined />,
+        children: [
+          { key: 'compensation', title: 'Salary History', link: '/compensation', permissions: ['compensation-list'] },
         ],
       },
       {

@@ -28,23 +28,27 @@ const { Dragger } = Upload;
 // Performance can also answer `collection_diff` (missing months), and a
 // caught server exception comes back as `{ error }`.
 
-export default function ImportDataModal({ open, onClose, onImported }) {
+// `types` (optional): only these document types — one is preselected (e.g.
+// the Salary page passes ['compensation']).
+export default function ImportDataModal({ open, onClose, onImported, types }) {
   const { message: messageApi } = App.useApp();
   const { hasRole, hasPermission } = useAuth();
-  const [documentType, setDocumentType] = useState(undefined);
+  const fixedType = types?.length === 1 ? types[0] : undefined;
+  const [documentType, setDocumentType] = useState(fixedType);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   // null = error-list modal closed; an array (possibly empty) = open.
   const [errorRows, setErrorRows] = useState(null);
 
   const isAdmin = hasRole('Administrator');
-  const options = DOCUMENT_TYPES.filter((type) => isAdmin || hasPermission(type.importPermission))
+  const options = DOCUMENT_TYPES.filter((type) => !types || types.includes(type.value))
+    .filter((type) => isAdmin || hasPermission(type.importPermission))
     .map(({ value, label }) => ({ value, label }));
   const selectedType = DOCUMENT_TYPES.find((t) => t.value === documentType);
   const messageRows = (messages) => [].concat(messages).map((msg, i) => ({ key: i, row: '-', column: '-', message: msg, value: '' }));
 
   const resetState = () => {
-    setDocumentType(undefined);
+    setDocumentType(fixedType);
     setFile(null);
   };
 

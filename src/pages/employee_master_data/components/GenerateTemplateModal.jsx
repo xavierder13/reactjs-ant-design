@@ -16,7 +16,8 @@ import { DOCUMENT_TYPES, BRANCH_POSITION_ROLES, MONTHS } from "./importDocumentT
 const YEARS = Array.from({ length: new Date().getFullYear() - 2019 }, (_, i) => 2020 + i).reverse();
 const STATUS_OPTIONS = ["All", "Active", "Inactive"].map((s) => ({ label: s, value: s }));
 
-export default function GenerateTemplateModal({ open, onClose }) {
+// `types` (optional): only these document types — one is preselected.
+export default function GenerateTemplateModal({ open, onClose, types }) {
   const { message: messageApi } = App.useApp();
   const { hasRole, hasPermission, hasAnyRole } = useAuth();
   const { branchOptions, positionOptions } = useEmployeeFormOptions();
@@ -25,7 +26,8 @@ export default function GenerateTemplateModal({ open, onClose }) {
   const documentType = Form.useWatch("document_type", form);
 
   const isAdmin = hasRole("Administrator");
-  const options = DOCUMENT_TYPES.filter((type) => isAdmin || hasPermission(type.templatePermission))
+  const options = DOCUMENT_TYPES.filter((type) => !types || types.includes(type.value))
+    .filter((type) => isAdmin || hasPermission(type.templatePermission))
     .map(({ value, label }) => ({ value, label }));
   const type = DOCUMENT_TYPES.find((t) => t.value === documentType);
   const showBranchPosition = type?.templateOptions?.branchPosition && hasAnyRole(...BRANCH_POSITION_ROLES);
@@ -76,7 +78,7 @@ export default function GenerateTemplateModal({ open, onClose }) {
       confirmLoading={downloading}
       destroyOnHidden
     >
-      <Form form={form} layout="vertical" initialValues={{ document_status: "All", month: "All", branch_id: 0, position_id: 0 }}>
+      <Form form={form} layout="vertical" initialValues={{ document_type: types?.length === 1 ? types[0] : undefined, document_status: "All", month: "All", branch_id: 0, position_id: 0 }}>
         <Form.Item name="document_type" label="Document Type" rules={[{ required: true, message: "Select a document type." }]}>
           <Select placeholder="Select document type" options={options} />
         </Form.Item>

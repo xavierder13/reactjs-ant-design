@@ -72,6 +72,7 @@ import TimeEntryIndex from '../pages/time_entry/TimeEntryIndex';
 import AccessChartIndex from '../pages/approval/AccessChartIndex';
 import PayrollCutoffIndex from '../pages/payroll_cutoff/PayrollCutoffIndex';
 import AuditTrailIndex from '../pages/audit_trail/AuditTrailIndex';
+import CompensationIndex from '../pages/compensation/CompensationIndex';
 import ApprovingOfficerIndex from '../pages/approval/ApprovingOfficerIndex';
 import CompanyIndex from '../pages/record_management/company/CompanyIndex';
 import BranchIndex from '../pages/record_management/branch/BranchIndex';
@@ -141,6 +142,7 @@ const permissionRoutes = [
   { permissions: ['payroll-cutoff-list'], path: '/payroll-cutoffs', element: <PayrollCutoffIndex /> },
   { permissions: ['access-chart-list'], path: '/approving-officers', element: <ApprovingOfficerIndex /> },
   { permissions: ['activity-logs'], path: '/audit-trail', element: <AuditTrailIndex /> },
+  { permissions: ['compensation-list'], path: '/compensation', element: <CompensationIndex /> },
 
   // Record Management (org reference data)
   { permissions: ['company-list'],          path: '/companies',         element: <CompanyIndex /> },

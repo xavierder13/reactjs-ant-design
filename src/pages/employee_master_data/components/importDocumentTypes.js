@@ -5,6 +5,7 @@ import keyPerformanceApi from "../../../services/employee/keyPerformanceApi";
 import nteApi from "../../../services/employee/nteApi";
 import disciplinaryApi from "../../../services/employee/disciplinaryApi";
 import offboardingApi from "../../../services/employee/offboardingApi";
+import compensationApi from "../../../services/compensation/compensationApi";
 
 // Bulk create/update document types — one list for GenerateTemplateModal
 // and ImportDataModal, matching vueportal's TemplateDownloadDialog.vue /
@@ -89,6 +90,17 @@ export const DOCUMENT_TYPES = [
     download: () => workScheduleApi.templateDownload(),
     upload: (file) => workScheduleApi.import(file),
     hint: "Columns: employee_code, effective_date (YYYY-MM-DD, format the cell as Text), shift_code, remarks. Each line adds a Work Schedule version that follows the shift — the template's \"Shifts\" sheet lists the active shift codes and their weekly hours. Older files with rest_day, time_in and time_out still import (as hand-typed versions).",
+  },
+  {
+    value: "compensation",
+    label: "Salary (Compensation)",
+    templatePermission: "compensation-template-download",
+    importPermission: "compensation-import",
+    filename: "EmployeeCompensationTemplate.xls",
+    download: (params) => compensationApi.templateDownload(params),
+    upload: (file) => compensationApi.import(file),
+    templateOptions: { status: true },
+    hint: "The template lists each employee with today's salary and a blank effective_date. Fill effective_date (YYYY-MM-DD, cell formatted as Text), pay_basis (Monthly / Daily), basic_rate and change_type on the lines to change — blank effective_date lines are skipped. The same employee and effective date as a saved salary updates it; otherwise a new salary is added. One wrong line stops the whole import.",
   },
 ];
 
