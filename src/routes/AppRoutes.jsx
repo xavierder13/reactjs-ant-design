@@ -63,6 +63,9 @@ import ViewManpowerRequest from '../pages/manpower_request/request/ViewManpowerR
 import ManpowerRequestPrint from '../pages/manpower_request/request/ManpowerRequestPrint';
 import AreaIndex from '../pages/area/AreaIndex';
 import HolidayCalendarIndex from '../pages/record_management/holiday_calendar/HolidayCalendarIndex';
+import LeaveApplicationIndex from '../pages/leave/LeaveApplicationIndex';
+import LeaveBalances from '../pages/leave/LeaveBalances';
+import LeaveTypeIndex from '../pages/leave/types/LeaveTypeIndex';
 import CompanyIndex from '../pages/record_management/company/CompanyIndex';
 import BranchIndex from '../pages/record_management/branch/BranchIndex';
 import DepartmentIndex from '../pages/record_management/department/DepartmentIndex';
@@ -121,6 +124,9 @@ const permissionRoutes = [
   { permissions: ['manpower-request-print'], path: '/manpower-requests/:id/print', element: <ManpowerRequestPrint /> },
   { permissions: ['area-list'],               path: '/areas',                      element: <AreaIndex /> },
   { permissions: ['holiday-calendar-list'],   path: '/holiday-calendar',           element: <HolidayCalendarIndex /> },
+  { permissions: ['leave-list'],              path: '/leave',                      element: <LeaveApplicationIndex /> },
+  { permissions: ['leave-balance-list', 'leave-balance-list-all'], path: '/leave/balances', element: <LeaveBalances /> },
+  { permissions: ['leave-type-list'],         path: '/leave/types',                element: <LeaveTypeIndex /> },
 
   // Record Management (org reference data)
   { permissions: ['company-list'],          path: '/companies',         element: <CompanyIndex /> },

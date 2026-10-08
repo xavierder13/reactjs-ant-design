@@ -34,7 +34,7 @@ import {
   FundOutlined,
   ToolOutlined,
   SyncOutlined,
-  CalendarOutlined,
+  ScheduleOutlined,
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
@@ -107,7 +107,10 @@ const titleMap = {
   '/manpower-requests':        { title: 'Manpower Requests',       breadcrumb: ['Manpower Request', 'All Requests'] },
   '/manpower-requests/create': { title: 'Create Manpower Request', breadcrumb: ['Manpower Request', 'Create'] },
   '/areas':                    { title: 'Area Assignment',         breadcrumb: ['Human Resource', 'Area Assignment'] },
-  '/holiday-calendar':         { title: 'Holiday Calendar',        breadcrumb: ['Human Resource', 'Holiday Calendar'] },
+  '/holiday-calendar':         { title: 'Holiday Calendar',        breadcrumb: ['Time & Leave', 'Holiday Calendar'] },
+  '/leave':                    { title: 'Leave Applications',      breadcrumb: ['Time & Leave', 'Leave Applications'] },
+  '/leave/balances':           { title: 'Leave Balances',          breadcrumb: ['Time & Leave', 'Leave Balances'] },
+  '/leave/types':              { title: 'Leave Types',             breadcrumb: ['Time & Leave', 'Leave Types'] },
   '/companies':                { title: 'Companies',               breadcrumb: ['Organization', 'Companies'] },
   '/branches':                 { title: 'Branches',                breadcrumb: ['Organization', 'Branches'] },
   '/departments':              { title: 'Departments',             breadcrumb: ['Organization', 'Departments'] },
@@ -209,6 +212,31 @@ const menuData = [
         ]
       },
       {
+        key: 'time-leave',
+        title: 'Time & Leave',
+        icon: <ScheduleOutlined />,
+        children: [
+          {
+            key: 'leave-group',
+            type: 'group',
+            label: 'Leave',
+            children: [
+              { key: 'leave-applications', title: 'Leave Applications', link: '/leave',          permissions: ['leave-list'] },
+              { key: 'leave-balances',     title: 'Leave Balances',     link: '/leave/balances', permissions: ['leave-balance-list', 'leave-balance-list-all'] },
+            ],
+          },
+          {
+            key: 'time-leave-setup',
+            type: 'group',
+            label: 'Setup',
+            children: [
+              { key: 'leave-types',      title: 'Leave Types',      link: '/leave/types',      permissions: ['leave-type-list'] },
+              { key: 'holiday-calendar', title: 'Holiday Calendar', link: '/holiday-calendar', permissions: ['holiday-calendar-list'] },
+            ],
+          },
+        ],
+      },
+      {
         key: 'recruitment',
         title: 'Recruitment',
         icon: <SolutionOutlined />,
@@ -248,7 +276,6 @@ const menuData = [
         ],
       },
       { key: 'area-assignment', title: 'Area Assignment', icon: <ApartmentOutlined />, link: '/areas', permissions: ['area-list'] },
-      { key: 'holiday-calendar', title: 'Holiday Calendar', icon: <CalendarOutlined />, link: '/holiday-calendar', permissions: ['holiday-calendar-list'] },
       // Every Human Resource report (employee, recruitment, …) goes here.
       {
         key: 'hr-reports',
