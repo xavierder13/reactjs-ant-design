@@ -3,6 +3,8 @@ import dayjs from 'dayjs';
 import { Modal, Form, Select, DatePicker, Input, Row, Col, Alert, Divider, App } from 'antd';
 
 import recruitmentApi from '../../../services/recruitment/recruitmentApi';
+import useHiringOfficerStore from '../../../store/hiringOfficerStore';
+import { officerName, ineligibleReason } from '../setup/hiring_officer/hiringOfficer';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { PIPELINE, STATUS_LABELS, currentStep } from './stageProgress';
 import {
@@ -25,10 +27,6 @@ import { typeAfterSave, SCHEDULE_DATE_FIELD } from './notifications';
 //                  dialog's watchers).
 
 const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ value: Number(value), label }));
-const HIRING_OFFICER_POSITIONS = [
-  'HR Director', 'General Manager', 'HR Division Manager', 'Recruitment Manager', 'Immediate Division Manager',
-  'Immediate Department Manager', 'Branch Manager', 'Immediate Branch Supervisor', 'Recruitment Staff',
-].map((v) => ({ value: v, label: v }));
 const OTHERS = 'Others (Specify)';
 const NON_COMPLIANT_REASONS = ['Hired in other organization', 'Back out due to Training', OTHERS].map((v) => ({ value: v, label: v }));
 
@@ -107,6 +105,12 @@ export default function StatusUpdateModal({
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
   const v = Form.useWatch([], form) || {};
+  // Hiring Officer Name options (Recruitment → Setup → Hiring Officers —
+  // employees, still eligible); picking one fills the employee's position
+  // (read-only). Loaded when the modal opens.
+  const officerRows = useHiringOfficerStore((state) => state.items);
+  const officerRule = useHiringOfficerStore((state) => state.rule);
+  const fetchHiringOfficers = useHiringOfficerStore((state) => state.fetchItems);
 
   const applicant = data?.applicant;
   const details = mode === 'details';
@@ -118,6 +122,22 @@ export default function StatusUpdateModal({
     .sort((a, b) => a.label.localeCompare(b.label));
   const positionOptions = options(maps?.positions);
   const branchOptions = options(maps?.branches);
+  // A name saved before the list existed (or since deleted) stays selectable
+  // with its saved position, so editing other fields doesn't drop it.
+  const savedOfficer = applicant?.hiring_officer_name;
+  const hiringOfficers = officerRows
+    .filter((o) => !ineligibleReason(o, officerRule))
+    .map((o) => ({ name: officerName(o.employee), position: o.employee.position?.name || null }))
+    .filter((o, i, all) => all.findIndex((x) => x.name === o.name) === i); // same name twice → one option
+  const hiringOfficerOptions = [
+    ...hiringOfficers.map((o) => ({ value: o.name, label: o.name })),
+    ...(savedOfficer && !hiringOfficers.some((o) => o.name === savedOfficer) ? [{ value: savedOfficer, label: savedOfficer }] : []),
+  ];
+  const officerPosition = (name) => {
+    const officer = hiringOfficers.find((o) => o.name === name);
+    if (officer) return officer.position;
+    return name && name === savedOfficer ? applicant.hiring_officer_position || null : null;
+  };
 
   // Required-file gates: only while the applicant is still on that step.
   const files = data?.applicant_files || [];
@@ -128,6 +148,7 @@ export default function StatusUpdateModal({
 
   const handleAfterOpenChange = (isOpen) => {
     if (!isOpen || !applicant) return;
+    fetchHiringOfficers();
     form.resetFields();
     form.setFieldsValue(formValuesOf(applicant));
   };
@@ -167,6 +188,7 @@ export default function StatusUpdateModal({
       }
     }
     if ('bi_status' in changed && !changed.bi_status) set.bi_date = null;
+    if ('hiring_officer_name' in changed) set.hiring_officer_position = officerPosition(changed.hiring_officer_name);
     if ('final_interview_status' in changed) {
       if (![1, 4].includes(changed.final_interview_status)) EMPLOYMENT_FIELDS.forEach((f) => { set[f] = null; });
       if (changed.final_interview_status !== 3) Object.assign(set, { final_reason: null, final_reason_other: null });
@@ -347,13 +369,13 @@ export default function StatusUpdateModal({
             </Form.Item>,
           )}
           {col(
-            <Form.Item name="hiring_officer_position" label="Hiring Officer Position" rules={required(v.final_interview_status === 1, 'Hiring Officer Position is required.')}>
-              <Select allowClear options={HIRING_OFFICER_POSITIONS} disabled={!v.final_interview_status} />
+            <Form.Item name="hiring_officer_name" label="Hiring Officer Name" rules={required(v.final_interview_status === 1, 'Hiring Officer Name is required.')}>
+              <Select allowClear options={hiringOfficerOptions} showSearch={{ optionFilterProp: 'label' }} disabled={!v.final_interview_status} />
             </Form.Item>,
           )}
           {col(
-            <Form.Item name="hiring_officer_name" label="Hiring Officer Name" rules={required(v.final_interview_status === 1, 'Hiring Officer Name is required.')}>
-              <Input maxLength={255} disabled={!v.final_interview_status} />
+            <Form.Item name="hiring_officer_position" label="Hiring Officer Position" rules={required(v.final_interview_status === 1, 'Hiring Officer Position is required.')}>
+              <Input readOnly placeholder="Based on the hiring officer" disabled={!v.final_interview_status} />
             </Form.Item>,
           )}
         </Row>

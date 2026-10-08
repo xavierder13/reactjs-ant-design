@@ -41,12 +41,13 @@ import AcknowledgmentReportIndex from '../pages/employee_master_data/acknowledgm
 import BranchManpowerReport from '../pages/employee_master_data/branch_manpower/BranchManpowerReport';
 import CareersPositionIndex from '../pages/recruitment/setup/position/CareersPositionIndex';
 import CareersRankIndex from '../pages/recruitment/setup/rank/CareersRankIndex';
+import HiringOfficerIndex from '../pages/recruitment/setup/hiring_officer/HiringOfficerIndex';
 import CareersBranchIndex from '../pages/recruitment/setup/branch/CareersBranchIndex';
 import JobVacancyIndex from '../pages/recruitment/setup/job_vacancy/JobVacancyIndex';
 import AcknowledgmentReportView from '../pages/employee_master_data/acknowledgment_report/AcknowledgmentReportView';
 import HiredThisMonth from '../pages/employee_master_data/lists/HiredThisMonth';
-import ForRegularization from '../pages/employee_master_data/lists/ForRegularization';
 import CareersSyncedList from '../pages/employee_master_data/lists/CareersSyncedList';
+import ForRegularization from '../pages/employee_master_data/lists/ForRegularization';
 import ResignedEmployees from '../pages/employee_master_data/lists/ResignedEmployees';
 import OpenNteList from '../pages/employee_master_data/lists/OpenNteList';
 import OpenDisciplinaryList from '../pages/employee_master_data/lists/OpenDisciplinaryList';
@@ -92,8 +93,8 @@ const permissionRoutes = [
   { permissions: ['employee-master-data-disciplinary-list'], path: '/employees/disciplinary', element: <OpenDisciplinaryList /> },
   { permissions: ['employee-referral-list'], path: '/employees/referral-codes', element: <ReferralCodeList /> },
   { permissions: ['employee-master-data-new-hired-list'], path: '/employees/new-hired', element: <NewHiredList /> },
-  { permissions: ['employee-master-data-list'], path: '/employees/:id', element: <ViewEmployee /> },
   { permissions: ['employee-master-data-list'], path: '/employees/careers-synced', element: <CareersSyncedList /> },
+  { permissions: ['employee-master-data-list'], path: '/employees/:id', element: <ViewEmployee /> },
   { permissions: ['employee-master-data-create'], path: '/employees/create', element: <CreateEmployee /> },
   { permissions: ['employee-master-data-create', 'employee-master-data-edit'], path: '/employees/:id/edit', element: <EditEmployee /> },
   { permissions: ['employee-acknowledgment-reports'], path: '/acknowledgment-reports', element: <AcknowledgmentReportIndex /> },
@@ -109,6 +110,7 @@ const permissionRoutes = [
   { permissions: ['careers-rank-list'], path: '/recruitment/setup/ranks', element: <CareersRankIndex /> },
   { permissions: ['careers-branch-list'], path: '/recruitment/setup/branches', element: <CareersBranchIndex /> },
   { permissions: ['careers-job-vacancy-list'], path: '/recruitment/setup/job-vacancies', element: <JobVacancyIndex /> },
+  { permissions: ['hiring-officer-list'], path: '/recruitment/setup/hiring-officers', element: <HiringOfficerIndex /> },
 
   // Manpower Request Routes
   { permissions: ['manpower-request-list', 'manpower-request-list-all'],   path: '/manpower-requests',        element: <ManpowerRequestIndex /> },

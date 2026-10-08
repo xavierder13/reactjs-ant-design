@@ -126,8 +126,11 @@ step:
   Managers. Passed needs a file titled **Exam**.
 - 3 B.I: `bi_date` required > 0.
 - 4 Final Interview: status disabled until the date is set; Passed requires
-  employment position/branch, hiring officer position (fixed list) and
-  name, and the final files (`finalRequiredFiles`: Background
+  employment position/branch, hiring officer name (picked from Setup →
+  Hiring Officers — employees) and position (read-only, the officer's
+  employee position;
+  a name saved before the list existed stays selectable with its saved
+  position), and the final files (`finalRequiredFiles`: Background
   Investigation, Final Interview Result, Birth Certificate, Police
   Clearance, Diploma or Certification, Health Declaration, SSS, Pag-IBIG,
   PhilHealth, + Driver's License for Logistics Driver / C.I Collector /
@@ -317,6 +320,36 @@ the portal's `position/PositionIndex.vue`, `rank/RankIndex.vue`,
   leaves its `job_vacancy_branches` rows (portal behaviour). The gateway
   answers update/delete of a vacancy deleted meanwhile with 404 (the
   portal method would 500).
+
+### Hiring Officers (`/recruitment/setup/hiring-officers`)
+
+Unlike the other Setup pages, this is **this HRIS's own table** (vueportal
+`hiring_officers`: `employee_id` unique), not a careers portal record — the
+portal has no officer table and the applicant keeps `hiring_officer_name` /
+`hiring_officer_position` as text, so editing/deleting an officer never
+changes saved applicants.
+- An officer is an **Employee Master Data** record: active, branch
+  `ADMINISTRATION`, position of rank `Managerial` (`HiringOfficer::BRANCH` /
+  `RANK`, `eligibleEmployees()`; checked on save). The form picks the
+  employee from `create`'s eligible list (ones already officers disabled);
+  Position is the employee's, read-only. The list flags an officer who no
+  longer qualifies (inactive, transferred, re-ranked — `hiringOfficer.js`
+  `ineligibleReason`); those are left out of the applicant picker.
+- On the applicant form, the saved name is "First Last" (`officerName` —
+  the format HR typed in the portal) and the position is the employee's
+  position name.
+- Files: `src/pages/recruitment/setup/hiring_officer/` (+ `hiringOfficer.js`),
+  `hiringOfficerApi.js` (contract in its header), `hiringOfficerStore.js`,
+  `useHiringOfficers.js`.
+- vueportal `HiringOfficerController`, POST
+  `/hiring_officer/{index|create|store|update/{id}|delete/{id}}`; validation
+  = HTTP 422 bags (Area style) → the modal maps them inline.
+- Permissions `hiring-officer-list/-create/-edit/-delete` (PermissionSeeder
+  → Administrator; the middleware also bypasses Administrator, like
+  RecruitmentMaintenance); `index` is also allowed with
+  `careers-update-status` / `careers-update-hiring-details`, because
+  `StatusUpdateModal` loads the officers (store `fetchItems` on open) for
+  the Hiring Officer Name select.
 
 
 **Phase 9 (optional) — live refresh** (portal uses a websocket on
