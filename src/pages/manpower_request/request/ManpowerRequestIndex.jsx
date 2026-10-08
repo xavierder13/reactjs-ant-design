@@ -264,8 +264,8 @@ const ManpowerRequestIndex = () => {
     <div>
       {contextHolder}
 
-      <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
-        <Space>
+      <Space wrap style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
+        <Space wrap>
           <Input.Search
             placeholder="Search MRF number or reason"
             allowClear
@@ -288,7 +288,7 @@ const ManpowerRequestIndex = () => {
           <RangePicker onChange={setDateRange} format={DISPLAY_DATE_FORMAT} />
         </Space>
 
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={refetch} loading={isLoading}>
             Refresh
           </Button>
@@ -317,6 +317,7 @@ const ManpowerRequestIndex = () => {
         columns={columns}
         dataSource={filteredItems}
         loading={isLoading}
+        scroll={{ x: 1000 }}
         pagination={tablePagination(10)}
       />
     </div>

@@ -107,6 +107,7 @@ const HiringOfficerIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
+        scroll={{ x: 700 }}
         pagination={tablePagination(10)}
       />
       <HiringOfficerFormModal open={modalOpen} hiringOfficer={editing} onClose={closeModal} onSaved={handleSaved} />

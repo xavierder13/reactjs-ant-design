@@ -127,7 +127,7 @@ const LeaveBalances = () => {
     <div>
       <Space wrap style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
         <Space wrap>
-          <div style={{ width: 380 }}>
+          <div style={{ width: 'min(380px, calc(100vw - 60px))' }}>
             {scope?.all ? (
               <EmployeeSelect value={employeeId} onChange={setEmployeeId} placeholder='Search employee' />
             ) : (

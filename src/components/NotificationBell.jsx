@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, Dropdown, Empty, Typography, Tooltip, theme } from "antd";
+import { Badge, Button, Drawer, Dropdown, Empty, Grid, Typography, Tooltip, theme } from "antd";
 import {
   BellOutlined, ReloadOutlined, FileDoneOutlined, AuditOutlined, UserAddOutlined, TeamOutlined,
   CommentOutlined, FormOutlined, SafetyOutlined, ScheduleOutlined, ExceptionOutlined, AlertOutlined,
@@ -49,6 +49,8 @@ export default function NotificationBell() {
   const [updatedAt, setUpdatedAt] = useState(null);
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState(false);
+  const screens = Grid.useBreakpoint();
+  const isPhone = screens.md === false;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,7 +99,7 @@ export default function NotificationBell() {
 
   const panel = (
     <div
-      style={{
+      style={isPhone ? { width: "100%", background: token.colorBgElevated } : {
         width: 380, maxWidth: "calc(100vw - 24px)", background: token.colorBgElevated,
         borderRadius: token.borderRadiusLG, boxShadow: token.boxShadowSecondary, overflow: "hidden",
       }}
@@ -176,8 +178,7 @@ export default function NotificationBell() {
     </div>
   );
 
-  return (
-    <Dropdown popupRender={() => panel} trigger={["click"]} placement="bottomRight" open={open} onOpenChange={setOpen}>
+  const bellButton = (
       <Badge count={summary.total} size="small" overflowCount={99} offset={[-2, 5]}>
         <Button
           type="text"
@@ -195,6 +196,31 @@ export default function NotificationBell() {
           }}
         />
       </Badge>
+  );
+
+  // Phones: a full-width drawer from the top — a dropdown anchored at the
+  // bell runs off the left edge there.
+  if (isPhone) {
+    return (
+      <>
+        <span onClick={() => setOpen(true)}>{bellButton}</span>
+        <Drawer
+          open={open}
+          onClose={() => setOpen(false)}
+          placement="top"
+          size="auto"
+          closable={false}
+          styles={{ body: { padding: 0 }, header: { display: "none" }, section: { maxHeight: "80vh" } }}
+        >
+          {panel}
+        </Drawer>
+      </>
+    );
+  }
+
+  return (
+    <Dropdown popupRender={() => panel} trigger={["click"]} placement="bottomRight" open={open} onOpenChange={setOpen}>
+      {bellButton}
     </Dropdown>
   );
 }

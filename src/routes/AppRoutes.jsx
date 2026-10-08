@@ -69,6 +69,9 @@ import LeaveTypeIndex from '../pages/leave/types/LeaveTypeIndex';
 import ShiftIndex from '../pages/shift/ShiftIndex';
 import ShiftAssignmentIndex from '../pages/shift/ShiftAssignmentIndex';
 import TimeEntryIndex from '../pages/time_entry/TimeEntryIndex';
+import AccessChartIndex from '../pages/approval/AccessChartIndex';
+import PayrollCutoffIndex from '../pages/payroll_cutoff/PayrollCutoffIndex';
+import ApprovingOfficerIndex from '../pages/approval/ApprovingOfficerIndex';
 import CompanyIndex from '../pages/record_management/company/CompanyIndex';
 import BranchIndex from '../pages/record_management/branch/BranchIndex';
 import DepartmentIndex from '../pages/record_management/department/DepartmentIndex';
@@ -133,6 +136,9 @@ const permissionRoutes = [
   { permissions: ['shift-list'],              path: '/shifts',                     element: <ShiftIndex /> },
   { permissions: ['shift-assignment-list', 'shift-assignment-list-all'], path: '/shifting', element: <ShiftAssignmentIndex /> },
   { permissions: ['time-entry-list', 'time-entry-list-all'], path: '/time-entries', element: <TimeEntryIndex /> },
+  { permissions: ['access-chart-list'], path: '/access-charts', element: <AccessChartIndex /> },
+  { permissions: ['payroll-cutoff-list'], path: '/payroll-cutoffs', element: <PayrollCutoffIndex /> },
+  { permissions: ['access-chart-list'], path: '/approving-officers', element: <ApprovingOfficerIndex /> },
 
   // Record Management (org reference data)
   { permissions: ['company-list'],          path: '/companies',         element: <CompanyIndex /> },

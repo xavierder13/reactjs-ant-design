@@ -121,6 +121,7 @@ const LeaveTypeIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
+        scroll={{ x: 760 }}
         pagination={tablePagination(20)}
         expandable={{
           expandIcon: (props) => <ExpandIcon {...props} />,

@@ -15,6 +15,8 @@ import {
   Spin,
   ConfigProvider,
   App,
+  Drawer,
+  Grid,
 } from 'antd';
 import {
   DashboardOutlined,
@@ -35,6 +37,7 @@ import {
   ToolOutlined,
   SyncOutlined,
   ScheduleOutlined,
+  AuditOutlined,
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
@@ -113,6 +116,9 @@ const titleMap = {
   '/leave/types':              { title: 'Leave Types',             breadcrumb: ['Time & Leave', 'Leave Types'] },
   '/shifting':                 { title: 'Shifting',                breadcrumb: ['Time & Leave', 'Shifting'] },
   '/time-entries':             { title: 'Manual Time Entries',     breadcrumb: ['Time & Leave', 'Manual Time Entries'] },
+  '/payroll-cutoffs':          { title: 'Payroll Cut-offs',        breadcrumb: ['Time & Leave', 'Payroll Cut-offs'] },
+  '/access-charts':            { title: 'Access Charts',           breadcrumb: ['Approvals', 'Access Charts'] },
+  '/approving-officers':       { title: 'Approving Officers',      breadcrumb: ['Approvals', 'Approving Officers'] },
   '/shifts':                   { title: 'Shifts',                  breadcrumb: ['Time & Leave', 'Shifts'] },
   '/companies':                { title: 'Companies',               breadcrumb: ['Organization', 'Companies'] },
   '/branches':                 { title: 'Branches',                breadcrumb: ['Organization', 'Branches'] },
@@ -251,6 +257,7 @@ const menuData = [
             children: [
               { key: 'leave-types',      title: 'Leave Types',      link: '/leave/types',      permissions: ['leave-type-list'] },
               { key: 'shifts',           title: 'Shifts',           link: '/shifts',           permissions: ['shift-list'] },
+              { key: 'payroll-cutoffs',  title: 'Payroll Cut-offs', link: '/payroll-cutoffs',  permissions: ['payroll-cutoff-list'] },
               { key: 'holiday-calendar', title: 'Holiday Calendar', link: '/holiday-calendar', permissions: ['holiday-calendar-list'] },
             ],
           },
@@ -404,6 +411,17 @@ const menuData = [
           },
         ],
       },
+      // Approval procedures shared by MRF, Leave, Manual Time Entries and
+      // the older modules (vueportal's Access Chart screens).
+      {
+        key: 'approvals',
+        title: 'Approvals',
+        icon: <AuditOutlined />,
+        children: [
+          { key: 'access-charts',      title: 'Access Charts',      link: '/access-charts',      permissions: ['access-chart-list'] },
+          { key: 'approving-officers', title: 'Approving Officers', link: '/approving-officers', permissions: ['access-chart-list'] },
+        ],
+      },
       {
         key: 'user-management',
         title: 'User Management',
@@ -496,6 +514,18 @@ const MainLayout = () => {
     });
   };
   const [collapsed, setCollapsed] = React.useState(false);
+  // Below lg (tablets / phones) the menu is a slide-in drawer over the page
+  // instead of the inline sidebar, and the header goes compact.
+  const screens = Grid.useBreakpoint();
+  const isMobile = screens.lg === false;
+  const isNarrow = screens.md === false;
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  // any navigation closes the drawer
+  const [drawerPath, setDrawerPath] = React.useState(pathname);
+  if (drawerPath !== pathname) {
+    setDrawerPath(pathname);
+    if (drawerOpen) setDrawerOpen(false);
+  }
 
   const getPageMeta = (pathname) => {
     if (titleMap[pathname]) return titleMap[pathname];
@@ -606,6 +636,13 @@ const MainLayout = () => {
   // ─── Avatar dropdown ──────────────────────────────────────────────────────────
   const avatarMenu = {
     items: [
+      // phones: who is signed in (the chip shows only the avatar) — a plain
+      // header, not a greyed disabled item
+      ...(isNarrow ? [{
+        type: 'group',
+        key: 'who',
+        label: <div style={{ lineHeight: 1.3, color: 'rgba(0,0,0,0.88)' }}><div style={{ fontWeight: 600 }}>{user?.name}</div><div style={{ fontSize: 11, color: '#8c8c8c' }}>{user?.role ?? 'User'}</div></div>,
+      }, { type: 'divider' }] : []),
       { key: 'profile', label: 'Profile', icon: <UserOutlined />,  onClick: () => navigate('/user/profile') },
       { type: 'divider' },
       { key: 'logout',  label: 'Logout',  icon: <LogoutOutlined />, onClick: handleLogout },
@@ -623,37 +660,8 @@ const MainLayout = () => {
   }));
 
   // ─── Loading state ────────────────────────────────────────────────────────────
-  if (!isLoaded) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  return (
-    <Layout style={{ minHeight: '100vh', overflow: 'hidden' }}>
-
-      {/* ── Sidebar ────────────────────────────────────────────────────────────── */}
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
-        breakpoint="lg"
-        collapsedWidth={0}
-        trigger={null}
-        width={240}
-        style={{
-          background: '#1a4d0f',
-          margin: 0,
-          padding: 0,
-          overflow: 'hidden',
-          height: '100vh',
-          position: 'sticky',
-          top: 0,
-          left: 0,
-        }}
-      >
+  const sidebarContent = (
+    <>
         {/* ── Brand ──────────────────────────────────────────── */}
         <div
           style={{
@@ -679,7 +687,7 @@ const MainLayout = () => {
                 HR
               </Typography.Text>
             </div>
-            {!collapsed && (
+            {(isMobile || !collapsed) && (
                 <div>
                 <Typography.Text style={{ color: '#fff', fontSize: 12, fontWeight: 600, display: 'block' }}>
                     ADDESSA Corp
@@ -740,16 +748,66 @@ const MainLayout = () => {
             selectedKeys={[activeKey]}
             defaultOpenKeys={openKeys}
             items={menuItems}
+            // a picked page closes the mobile drawer (the route change does too)
+            onClick={({ key }) => { if (isMobile && !menuItems.some((m) => m?.key === key && m.children)) setDrawerOpen(false); }}
             theme="dark"
             style={{
               background: '#1a4d0f',
               border: 'none',
-              height: 'calc(100vh - 180px)',
+              height: isMobile ? 'calc(100vh - 90px)' : 'calc(100vh - 180px)',
               overflowY: 'auto',
             }}
           />
         </ConfigProvider>
+    </>
+  );
+
+  if (!isLoaded) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  return (
+    <Layout style={{ minHeight: '100vh', overflow: 'hidden' }}>
+
+      {/* ── Sidebar ────────────────────────────────────────────────────────────── */}
+      {isMobile ? (
+        <Drawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          placement='left'
+          size={260}
+          closable={false}
+          styles={{ body: { padding: 0, background: '#1a4d0f' }, header: { display: 'none' } }}
+        >
+          {sidebarContent}
+        </Drawer>
+      ) : (
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+        breakpoint="lg"
+        collapsedWidth={0}
+        trigger={null}
+        width={240}
+        style={{
+          background: '#1a4d0f',
+          margin: 0,
+          padding: 0,
+          overflow: 'hidden',
+          height: '100vh',
+          position: 'sticky',
+          top: 0,
+          left: 0,
+        }}
+      >
+        {sidebarContent}
       </Sider>
+      )}
 
       <Layout>
 
@@ -757,7 +815,8 @@ const MainLayout = () => {
         <Header
           style={{
             height: 52,
-            padding: '0 16px',
+            padding: isNarrow ? '0 10px' : '0 16px',
+            gap: 8,
             background: '#fff',
             borderBottom: '2px solid #389e0d',
             display: 'flex',
@@ -767,11 +826,12 @@ const MainLayout = () => {
           }}
         >
           {/* Left: hamburger + breadcrumb */}
-          <Space align="center" size={12}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isNarrow ? 8 : 12, minWidth: 0, flex: 1 }}>
             <Button
               type="text"
+              aria-label="Menu"
               icon={<MenuOutlined style={{ color: '#389e0d' }} />}
-              onClick={() => setCollapsed(!collapsed)}
+              onClick={() => (isMobile ? setDrawerOpen(true) : setCollapsed(!collapsed))}
               style={{
                 background: '#f6ffed',
                 border: '0.5px solid #d9f7be',
@@ -782,18 +842,19 @@ const MainLayout = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginLeft: -5,
+                flexShrink: 0,
               }}
             />
-            <div>
-              <Text strong style={{ fontSize: 14, color: '#1a4d0f', display: 'block', lineHeight: 1.3 }}>
+            <div style={{ minWidth: 0 }}>
+              <Text strong ellipsis style={{ fontSize: 14, color: '#1a4d0f', display: 'block', lineHeight: 1.3, maxWidth: '100%' }}>
                 {pageMeta.title}
               </Text>
-              <Breadcrumb items={breadcrumbItems} style={{ fontSize: 11 }} />
+              {!isNarrow && <Breadcrumb items={breadcrumbItems} style={{ fontSize: 11 }} />}
             </div>
-          </Space>
+          </div>
 
           {/* Right: bell + user chip */}
-          <Space align="center" size={10}>
+          <Space align="center" size={isNarrow ? 6 : 10} style={{ flexShrink: 0 }}>
             <NotificationBell />
 
             <Dropdown menu={avatarMenu} placement="bottomRight" trigger={['click']}>
@@ -803,7 +864,11 @@ const MainLayout = () => {
                   alignItems: 'center',
                   gap: 8,
                   cursor: 'pointer',
-                  padding: '4px 10px 4px 4px',
+                  padding: isNarrow ? 4 : '4px 10px 4px 4px',
+                  height: 40, // fixed — the name never wraps the chip taller
+                  boxSizing: 'border-box',
+                  flexShrink: 0,
+                  maxWidth: 240,
                   borderRadius: 8,
                   border: '0.5px solid #d9f7be',
                   background: '#fff',
@@ -814,14 +879,19 @@ const MainLayout = () => {
               >
                 <Avatar
                   size={28}
+                  style={{ flexShrink: 0, background: '#d9f7be', color: '#276221', fontSize: 11, fontWeight: 600 }}
                   icon={<UserOutlined />}
-                  style={{ background: '#d9f7be', color: '#276221', fontSize: 11, fontWeight: 600 }}
                 />
-                <div style={{ lineHeight: 1.3 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: '#1a4d0f' }}>{user?.name}</div>
-                  <div style={{ fontSize: 11, color: '#8c8c8c' }}>{user?.role ?? 'User'}</div>
-                </div>
-                <DownOutlined style={{ fontSize: 10, color: '#8c8c8c', marginLeft: 2 }} />
+                {/* phones: avatar only (name / role in the menu) */}
+                {!isNarrow && (
+                  <>
+                    <div style={{ lineHeight: 1.3, minWidth: 0, whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: '#1a4d0f', overflow: 'hidden', textOverflow: 'ellipsis' }} title={user?.name}>{user?.name}</div>
+                      <div style={{ fontSize: 11, color: '#8c8c8c', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.role ?? 'User'}</div>
+                    </div>
+                    <DownOutlined style={{ fontSize: 10, color: '#8c8c8c', marginLeft: 2 }} />
+                  </>
+                )}
               </div>
             </Dropdown>
           </Space>
@@ -830,12 +900,12 @@ const MainLayout = () => {
         {/* ── Content ────────────────────────────────────────────────────────── */}
         <Content
           style={{
-            margin: 10,
+            margin: isNarrow ? 6 : 10,
             background: '#fff',
-            padding: 24,
+            padding: isNarrow ? 12 : 24,
             borderRadius: 8,
             overflow: 'auto',
-            height: 'calc(100vh - 52px - 20px)',
+            height: isNarrow ? 'calc(100vh - 52px - 12px)' : 'calc(100vh - 52px - 20px)',
           }}
         >
           <Outlet />

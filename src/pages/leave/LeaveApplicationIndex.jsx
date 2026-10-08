@@ -190,7 +190,7 @@ const LeaveApplicationIndex = () => {
             style={{ width: 220 }}
           />
         </Space>
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={openCreate}>File Leave</Button>}
         </Space>

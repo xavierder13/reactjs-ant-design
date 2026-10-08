@@ -183,7 +183,7 @@ const UserIndex = () => {
             showSearch={{ optionFilterProp: 'label' }}
           />
         </Space>
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={refetch} loading={isLoading}>Refresh</Button>
           {canCreate && (
             <Button type='primary' icon={<PlusOutlined />} onClick={openCreate}>Create User</Button>

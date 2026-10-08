@@ -200,7 +200,7 @@ const HolidayCalendarIndex = () => {
             options={[{ value: 'active', label: 'Active' }, { value: 'all', label: 'Incl. inactive' }]}
           />
         </Space>
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={refetch} loading={isLoading}>Refresh</Button>
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={() => openCreate()}>Create Holiday</Button>}
         </Space>

@@ -334,7 +334,7 @@ export default function EmployeeMasterData() {
                   allowClear
                   placeholder="Search..."
                   prefix={<SearchOutlined />}
-                  style={{ width: 280 }}
+                  style={{ width: 280, maxWidth: 'calc(100vw - 160px)' }}
                   onPressEnter={searchData}
                   onChange={(e) => {
                     // Clearing the box (x button or backspace) resets the list.

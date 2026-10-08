@@ -11,7 +11,7 @@ const RecordToolbar = ({ searchPlaceholder, onSearch, onRefresh, loading, canCre
       onChange={(e) => onSearch(e.target.value)}
       style={{ width: 280 }}
     />
-    <Space>
+    <Space wrap>
       <Button icon={<ReloadOutlined />} onClick={onRefresh} loading={loading}>Refresh</Button>
       {canCreate && (
         <Button type='primary' icon={<PlusOutlined />} onClick={onCreate}>{createLabel}</Button>

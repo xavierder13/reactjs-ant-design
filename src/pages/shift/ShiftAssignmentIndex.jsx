@@ -198,7 +198,7 @@ const ShiftAssignmentIndex = () => {
             style={{ width: 220 }}
           />
         </Space>
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canCreate && <Button icon={<TeamOutlined />} onClick={() => setBulkOpen(true)} disabled={!options}>Group Shift Allocation</Button>}
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={openCreate} disabled={!options}>Assign Shift</Button>}

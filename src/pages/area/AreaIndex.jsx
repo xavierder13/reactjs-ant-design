@@ -201,14 +201,14 @@ const AreaIndex = () => {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
+      <Space wrap style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
         <Input.Search
           placeholder='Search area, branch or employee'
           allowClear
           onChange={(e) => setSearchText(e.target.value)}
           style={{ width: 280 }}
         />
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={refetch} loading={isLoading}>Refresh</Button>
           {canEdit && (
             <Button icon={<UserAddOutlined />} onClick={() => openAssign()} disabled={!items.length}>
@@ -233,6 +233,7 @@ const AreaIndex = () => {
                 columns={areaColumns}
                 dataSource={filteredAreas}
                 loading={isLoading}
+                scroll={{ x: 800 }}
                 pagination={tablePagination(10)}
                 expandable={{
                   expandIcon: (props) => <ExpandIcon {...props} />,
@@ -256,6 +257,7 @@ const AreaIndex = () => {
                 columns={hrHeadColumns}
                 dataSource={hrHeadRows}
                 loading={isLoading}
+                scroll={{ x: 800 }}
                 pagination={tablePagination(10)}
                 expandable={{
                   expandIcon: (props) => <ExpandIcon {...props} />,
