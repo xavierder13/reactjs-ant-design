@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
-import { Modal, Table, Tag, Button, Space, Tooltip, Popconfirm, Descriptions, Typography, App } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { Modal, Table, Tag, Button, Space, Tooltip, Popconfirm, Avatar, Row, Col, Typography, App } from 'antd';
+import { EditOutlined, DeleteOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
 import compensationApi from '../../services/compensation/compensationApi';
 import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../utils/formatDate';
-import { CHANGE_TYPE_COLORS, peso } from './compensationHelpers';
+import { CHANGE_TYPE_COLORS, peso, rateLabel } from './compensationHelpers';
 import CompensationFormModal from './CompensationFormModal';
 
 // One employee's salary history, newest first: the version in force today
@@ -54,6 +54,7 @@ const CompensationHistoryModal = ({ employeeId, options, canCreate, canEdit, can
   const versions = data?.versions || [];
   const today = dayjs().format('YYYY-MM-DD');
   const employee = data?.employee;
+  const current = versions.find((v) => v.id === data?.current_id) || null;
   const employeeOption = employee ? { id: employee.id, label: `${employee.employee_code} - ${employee.name}` } : null;
 
   const columns = [
@@ -139,17 +140,49 @@ const CompensationHistoryModal = ({ employeeId, options, canCreate, canEdit, can
     <Modal
       open={!!employeeId}
       title='Salary History'
-      width={1050}
+      // wide on desktop (Reason gets room); near full width below that
+      width={{ xs: '100%', sm: '95%', md: '95%', lg: 1100, xl: 1250, xxl: 1400 }}
       footer={null}
       onCancel={onClose}
       destroyOnHidden
     >
       {employee && (
-        <Descriptions size='small' column={{ xs: 1, sm: 3 }} style={{ marginBottom: 12 }}>
-          <Descriptions.Item label='Employee'>{employee.employee_code} - {employee.name}</Descriptions.Item>
-          <Descriptions.Item label='Date Employed'>{formatDate(employee.date_employed)}</Descriptions.Item>
-          <Descriptions.Item label='Versions'>{versions.length}</Descriptions.Item>
-        </Descriptions>
+        <div
+          style={{
+            background: '#f6ffed',
+            border: '1px solid #d9f7be',
+            borderRadius: 8,
+            padding: '12px 16px',
+            marginBottom: 16,
+          }}
+        >
+          <Row gutter={[16, 12]} align='middle'>
+            <Col xs={24} md={10}>
+              <Space size={12} align='center'>
+                <Avatar size={44} icon={<UserOutlined />} style={{ background: '#d9f7be', color: '#276221', flexShrink: 0 }} />
+                <div style={{ minWidth: 0 }}>
+                  <Typography.Text strong style={{ fontSize: 15, color: '#1a4d0f', display: 'block' }}>
+                    {employee.name}
+                  </Typography.Text>
+                  <Tag style={{ marginTop: 2 }}>{employee.employee_code}</Tag>
+                </div>
+              </Space>
+            </Col>
+            {[
+              { label: 'Current Salary', value: current ? rateLabel(current.pay_basis, current.basic_rate) : 'No salary yet', strong: !!current },
+              { label: 'Since', value: current ? formatDate(current.effective_date) : '-' },
+              { label: 'Date Employed', value: formatDate(employee.date_employed) },
+              { label: 'Versions', value: versions.length },
+            ].map((item) => (
+              <Col key={item.label} xs={12} sm={6} md={item.label === 'Current Salary' ? 5 : 3}>
+                <Typography.Text type='secondary' style={{ fontSize: 11, display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  {item.label}
+                </Typography.Text>
+                <Typography.Text strong={item.strong} style={{ fontSize: 14 }}>{item.value}</Typography.Text>
+              </Col>
+            ))}
+          </Row>
+        </div>
       )}
       {canCreate && (
         <Button type='primary' icon={<PlusOutlined />} style={{ marginBottom: 12 }} disabled={!employee} onClick={() => setEditing({})}>
