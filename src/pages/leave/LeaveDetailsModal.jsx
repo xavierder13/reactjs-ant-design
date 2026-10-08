@@ -7,7 +7,7 @@ import handleApiError from '../../utils/handleApiError';
 import { formatDate } from '../../utils/formatDate';
 import { LEAVE_STATUS_COLORS, leaveDates, num } from './leaveHelpers';
 
-const STEP_STATUS = { Approved: 'finish', Pending: 'process', Disapproved: 'error', Waiting: 'wait' };
+const STEP_STATUS = { Approved: 'finish', Pending: 'process', Disapproved: 'error', Waiting: 'wait', 'Not reached': 'wait' };
 const ACTION_COLORS = { Approved: 'green', Disapproved: 'red', Cancelled: 'default' };
 
 // A leave's details (fetched: /leave/show), its approval route (Access Chart
@@ -133,7 +133,8 @@ const LeaveDetailsModal = ({ leaveId, canCancel, onClose, onActed }) => {
                 title: `Level ${l.level} — ${l.status}${l.required ? ` (${l.approved}/${l.required})` : ''}`,
                 content: (
                   <Space orientation='vertical' size={2}>
-                    {l.actions.map((a) => (
+                    {/* a cancellation is listed once, below */}
+                    {l.actions.filter((a) => a.action !== 'Cancelled').map((a) => (
                       <span key={`${a.name}-${a.acted_at}`}>
                         <Tag color={ACTION_COLORS[a.action]}>{a.action}</Tag>
                         {`${a.name || '—'} · ${formatDate(a.acted_at)}`}{a.remarks ? ` — ${a.remarks}` : ''}

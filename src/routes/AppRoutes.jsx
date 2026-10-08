@@ -68,6 +68,7 @@ import LeaveBalances from '../pages/leave/LeaveBalances';
 import LeaveTypeIndex from '../pages/leave/types/LeaveTypeIndex';
 import ShiftIndex from '../pages/shift/ShiftIndex';
 import ShiftAssignmentIndex from '../pages/shift/ShiftAssignmentIndex';
+import TimeEntryIndex from '../pages/time_entry/TimeEntryIndex';
 import CompanyIndex from '../pages/record_management/company/CompanyIndex';
 import BranchIndex from '../pages/record_management/branch/BranchIndex';
 import DepartmentIndex from '../pages/record_management/department/DepartmentIndex';
@@ -131,6 +132,7 @@ const permissionRoutes = [
   { permissions: ['leave-type-list'],         path: '/leave/types',                element: <LeaveTypeIndex /> },
   { permissions: ['shift-list'],              path: '/shifts',                     element: <ShiftIndex /> },
   { permissions: ['shift-assignment-list', 'shift-assignment-list-all'], path: '/shifting', element: <ShiftAssignmentIndex /> },
+  { permissions: ['time-entry-list', 'time-entry-list-all'], path: '/time-entries', element: <TimeEntryIndex /> },
 
   // Record Management (org reference data)
   { permissions: ['company-list'],          path: '/companies',         element: <CompanyIndex /> },

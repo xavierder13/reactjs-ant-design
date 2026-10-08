@@ -112,6 +112,7 @@ const titleMap = {
   '/leave/balances':           { title: 'Leave Balances',          breadcrumb: ['Time & Leave', 'Leave Balances'] },
   '/leave/types':              { title: 'Leave Types',             breadcrumb: ['Time & Leave', 'Leave Types'] },
   '/shifting':                 { title: 'Shifting',                breadcrumb: ['Time & Leave', 'Shifting'] },
+  '/time-entries':             { title: 'Manual Time Entries',     breadcrumb: ['Time & Leave', 'Manual Time Entries'] },
   '/shifts':                   { title: 'Shifts',                  breadcrumb: ['Time & Leave', 'Shifts'] },
   '/companies':                { title: 'Companies',               breadcrumb: ['Organization', 'Companies'] },
   '/branches':                 { title: 'Branches',                breadcrumb: ['Organization', 'Branches'] },
@@ -225,6 +226,14 @@ const menuData = [
             children: [
               { key: 'leave-applications', title: 'Leave Applications', link: '/leave',          permissions: ['leave-list'] },
               { key: 'leave-balances',     title: 'Leave Balances',     link: '/leave/balances', permissions: ['leave-balance-list', 'leave-balance-list-all'] },
+            ],
+          },
+          {
+            key: 'attendance-group',
+            type: 'group',
+            label: 'Attendance',
+            children: [
+              { key: 'time-entries', title: 'Manual Time Entries', link: '/time-entries', permissions: ['time-entry-list', 'time-entry-list-all'] },
             ],
           },
           {

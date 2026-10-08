@@ -21,7 +21,7 @@ import axios from '../../api/axiosInstance';
 //   yearly_credits }, filer: { id, name }, actor: { id, name }, current_level,
 //   submitted_at }. leave-list.
 // - show(id) → { leave, approval: { configured, routed, current_level,
-//   levels: [{ level, required, approved, status (Waiting|Pending|Approved|
+//   levels: [{ level, required, approved, status (Waiting|Pending|Approved|Not reached|
 //   Disapproved), approvers: [{ id, name }] (who can act, Pending level),
 //   actions: [{ name, action, remarks, acted_at }] }], history: [{ level,
 //   action, name, remarks, acted_at }], can_approve }, balance: a balances
