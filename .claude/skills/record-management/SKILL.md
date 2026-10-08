@@ -193,8 +193,8 @@ Replace vueportal's `company/`, `branch/`, `department/`, `position/`,
   approvals needed and officer count); create / edit = name, module, levels
   in order with approvals needed (Form.List; only the last level can be
   removed; a warning when a removed level still has officers). No expand
-  row (user preference): the row's **Approving Officers** action (green,
-  `UsergroupAddOutlined`) opens `ApprovingOfficersModal` — per level the
+  row (user preference): the row's **Approving Officers** action (blue —
+  user's choice, `UsergroupAddOutlined`) opens `ApprovingOfficersModal` — per level the
   officers (closable tag → Popconfirm → remove; `access-chart-delete`) and
   an add select (`access-chart-create`); saves at once and refetches.
 - Approving Officers: the same maps regrouped per user (the "what does this

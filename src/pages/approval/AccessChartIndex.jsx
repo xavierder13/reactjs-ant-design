@@ -14,7 +14,8 @@ import ApprovingOfficersModal from './ApprovingOfficersModal';
 
 // Access Charts — replaces vueportal's access_chart/AccessChartIndex.vue.
 // One row per approval procedure (MRF, Leave Application, Manual Time Entry,
-// older modules); the Approving Officers action (green, group icon) opens a
+// older modules); the Approving Officers action (blue, group icon — user's
+// choice) opens a
 // dialog to manage each level's officers.
 const AccessChartIndex = () => {
   const { message } = App.useApp();
@@ -81,7 +82,7 @@ const AccessChartIndex = () => {
       render: (_, record) => (
         <Space>
           <Tooltip title='Approving Officers'>
-            <Button color='green' variant='outlined' icon={<UsergroupAddOutlined />} size='small' onClick={() => setOfficersFor(record.id)} />
+            <Button color='blue' variant='outlined' icon={<UsergroupAddOutlined />} size='small' onClick={() => setOfficersFor(record.id)} />
           </Tooltip>
           <RecordRowActions
           canEdit={canEdit}
