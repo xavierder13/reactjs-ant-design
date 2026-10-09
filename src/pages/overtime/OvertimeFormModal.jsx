@@ -5,6 +5,8 @@ import overtimeApi from '../../services/overtime/overtimeApi';
 import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../utils/formatDate';
 import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
+import useAuth from '../../hooks/useAuth';
+import filingAccess from '../../utils/filingAccess';
 import { applyLeaveErrors } from '../leave/leaveHelpers';
 import { scheduleText, hhmm } from '../time_entry/timeEntryHelpers';
 import { DAY_TYPE_COLORS, hoursText, punchesText } from './overtimeHelpers';
@@ -17,6 +19,8 @@ const toTime = (t) => (t ? dayjs(`2000-01-01 ${hhmm(t)}`) : null);
 // schedule and biometric punches that day, the level-1 approver, warnings
 // (inside scheduled hours, an old date) and the rule that blocks saving.
 const OvertimeFormModal = ({ open, overtime, onClose, onSaved }) => {
+  const auth = useAuth();
+  const access = filingAccess(auth, 'overtime');
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
@@ -34,6 +38,7 @@ const OvertimeFormModal = ({ open, overtime, onClose, onSaved }) => {
     if (!isOpen) return;
     form.resetFields();
     setPreview(null);
+    if (!overtime && access.createOwnOnly && access.ownEmployeeId) form.setFieldsValue({ employee_id: access.ownEmployeeId });
     if (overtime) {
       form.setFieldsValue({
         employee_id: overtime.employee_id,
@@ -124,6 +129,17 @@ const OvertimeFormModal = ({ open, overtime, onClose, onSaved }) => {
               <Input readOnly value={`${overtime.employee?.employee_code} - ${overtime.employee?.full_name}`} />
             </Form.Item>
             <Form.Item name='employee_id' hidden><Input /></Form.Item>
+          </>
+        ) : access.createOwnOnly ? (
+          <>
+            {/* files only their own (overtime-create-own) */}
+            <Form.Item label='Employee'>
+              <Input readOnly value={access.ownEmployeeId ? `${auth.user?.name || ''} (yourself)` : ''} />
+            </Form.Item>
+            {!access.ownEmployeeId && (
+              <Alert type='error' showIcon style={{ marginBottom: 12 }} title='Your account is not linked to an employee record — ask HR to link it to file your own overtime.' />
+            )}
+            <Form.Item name='employee_id' hidden rules={[{ required: true, message: 'Your account is not linked to an employee record' }]}><Input /></Form.Item>
           </>
         ) : (
           <Form.Item name='employee_id' label='Employee' rules={[{ required: true, message: 'Employee is required' }]}>

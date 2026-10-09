@@ -4,6 +4,7 @@ import {
 } from 'antd';
 import { EyeOutlined, EditOutlined, CloseCircleOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import useAuth from '../../hooks/useAuth';
+import filingAccess from '../../utils/filingAccess';
 import overtimeApi from '../../services/overtime/overtimeApi';
 import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../utils/formatDate';
@@ -19,11 +20,11 @@ import OvertimeDetailsModal from './OvertimeDetailsModal';
 // like leave and manual time entries); "All" = everything they may see.
 const OvertimeIndex = () => {
   const { message } = App.useApp();
-  const { hasPermission, hasRole } = useAuth();
+  const auth = useAuth();
+  const { hasRole } = auth;
+  const access = filingAccess(auth, 'overtime');
   const isAdmin   = hasRole('Administrator');
-  const canCreate = isAdmin || hasPermission('overtime-create');
-  const canEdit   = isAdmin || hasPermission('overtime-edit');
-  const canCancel = isAdmin || hasPermission('overtime-cancel');
+  const canCreate  = access.canCreate;
 
   const [options, setOptions] = useState({ day_types: [], branches: [] });
   const [view, setView]       = useState('approval');
@@ -137,12 +138,12 @@ const OvertimeIndex = () => {
           <Tooltip title={view === 'approval' ? 'View / Approve' : 'View'}>
             <Button color='blue' variant='outlined' icon={<EyeOutlined />} size='small' onClick={() => setViewing(record.id)} />
           </Tooltip>
-          {canEdit && record.status === 'Pending' && (
+          {access.canEdit(record) && record.status === 'Pending' && (
             <Tooltip title='Edit'>
               <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
             </Tooltip>
           )}
-          {canCancel && ['Pending', 'Approved'].includes(record.status) && (isAdmin || (!record.paid_in && !record.pending_in)) && (
+          {access.canCancel(record) && ['Pending', 'Approved'].includes(record.status) && (isAdmin || (!record.paid_in && !record.pending_in)) && (
             <Popconfirm title='Cancel this overtime?' onConfirm={() => cancelOvertime(record)}>
               <Tooltip title='Cancel'>
                 <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} size='small' />
@@ -228,7 +229,6 @@ const OvertimeIndex = () => {
       <OvertimeFormModal open={formOpen} overtime={editing} onClose={closeForm} onSaved={handleSaved} />
       <OvertimeDetailsModal
         overtimeId={viewing}
-        canCancel={canCancel}
         onClose={() => setViewing(null)}
         onActed={() => { setViewing(null); fetchRows(); }}
       />

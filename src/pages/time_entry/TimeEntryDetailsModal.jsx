@@ -8,6 +8,7 @@ import FilingHistory from '../../components/approval/FilingHistory';
 import { TIME_ENTRY_STATUS_COLORS, scheduleText, timeRange, breakRange } from './timeEntryHelpers';
 import PaidTag from '../../components/approval/PaidTag';
 import useAuth from '../../hooks/useAuth';
+import filingAccess from '../../utils/filingAccess';
 import TimeComparison from './TimeComparison';
 
 // A time entry (fetched: /time_entry/show): a summary, its details with that
@@ -15,8 +16,9 @@ import TimeComparison from './TimeComparison';
 // history (filed, each decision, cancellation), and the actions this
 // user may take: Approve / Disapprove when the backend says can_approve,
 // Cancel with time-entry-cancel. Remarks required to disapprove.
-const TimeEntryDetailsModal = ({ entryId, canCancel, onClose, onActed }) => {
-  const isAdmin = useAuth().hasRole('Administrator');
+const TimeEntryDetailsModal = ({ entryId, onClose, onActed }) => {
+  const access = filingAccess(useAuth(), 'time-entry');
+  const { isAdmin } = access;
   const { message } = App.useApp();
   const [data, setData] = useState(null);
   const [remarks, setRemarks] = useState('');
@@ -54,7 +56,7 @@ const TimeEntryDetailsModal = ({ entryId, canCancel, onClose, onActed }) => {
   const entry = data?.entry;
   const decidable = !!data?.approval?.can_approve;
   // paid (retro adjustment instead) or in a payroll waiting for approval: Administrator only
-  const cancellable = canCancel && ['Pending', 'Approved'].includes(entry?.status) && (isAdmin || (!entry?.paid_in && !entry?.pending_in));
+  const cancellable = access.canCancel(entry) && ['Pending', 'Approved'].includes(entry?.status) && (isAdmin || (!entry?.paid_in && !entry?.pending_in));
 
   return (
     <Modal

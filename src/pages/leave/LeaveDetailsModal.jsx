@@ -8,6 +8,7 @@ import ApprovalSteps from '../../components/approval/ApprovalSteps';
 import FilingHistory from '../../components/approval/FilingHistory';
 import PaidTag from '../../components/approval/PaidTag';
 import useAuth from '../../hooks/useAuth';
+import filingAccess from '../../utils/filingAccess';
 import { LEAVE_STATUS_COLORS, leaveDates, num } from './leaveHelpers';
 
 // A leave (fetched: /leave/show): a summary, its details and balance, its
@@ -16,8 +17,9 @@ import { LEAVE_STATUS_COLORS, leaveDates, num } from './leaveHelpers';
 // user may take: Approve / Disapprove when the backend says can_approve
 // (current-level approver, once, not their own leave), Cancel with
 // leave-cancel. Remarks are optional except for Disapprove.
-const LeaveDetailsModal = ({ leaveId, canCancel, onClose, onActed }) => {
-  const isAdmin = useAuth().hasRole('Administrator');
+const LeaveDetailsModal = ({ leaveId, onClose, onActed }) => {
+  const access = filingAccess(useAuth(), 'leave');
+  const { isAdmin } = access;
   const { message } = App.useApp();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -67,7 +69,7 @@ const LeaveDetailsModal = ({ leaveId, canCancel, onClose, onActed }) => {
   const approval = data?.approval;
   const decidable = !!approval?.can_approve;
   // paid (retro adjustment instead) or in a payroll waiting for approval: Administrator only
-  const cancellable = canCancel && ['Pending', 'Approved'].includes(leave?.status) && (isAdmin || (!leave?.paid_in && !leave?.pending_in));
+  const cancellable = access.canCancel(leave) && ['Pending', 'Approved'].includes(leave?.status) && (isAdmin || (!leave?.paid_in && !leave?.pending_in));
 
   return (
     <Modal

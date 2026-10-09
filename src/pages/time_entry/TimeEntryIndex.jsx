@@ -4,6 +4,7 @@ import {
 } from 'antd';
 import { EyeOutlined, EditOutlined, CloseCircleOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import useAuth from '../../hooks/useAuth';
+import filingAccess from '../../utils/filingAccess';
 import timeEntryApi from '../../services/time_entry/timeEntryApi';
 import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../utils/formatDate';
@@ -19,11 +20,11 @@ import TimeEntryDetailsModal from './TimeEntryDetailsModal';
 // subordinates, like leave and MRF); "All" = everything they may see.
 const TimeEntryIndex = () => {
   const { message } = App.useApp();
-  const { hasPermission, hasRole } = useAuth();
+  const auth = useAuth();
+  const { hasRole } = auth;
+  const access = filingAccess(auth, 'time-entry');
   const isAdmin   = hasRole('Administrator');
-  const canCreate = isAdmin || hasPermission('time-entry-create');
-  const canEdit   = isAdmin || hasPermission('time-entry-edit');
-  const canCancel = isAdmin || hasPermission('time-entry-cancel');
+  const canCreate  = access.canCreate;
 
   const [options, setOptions] = useState({ types: [], branches: [] });
   const [view, setView]       = useState('approval');
@@ -138,12 +139,12 @@ const TimeEntryIndex = () => {
           <Tooltip title={view === 'approval' ? 'View / Approve' : 'View'}>
             <Button color='blue' variant='outlined' icon={<EyeOutlined />} size='small' onClick={() => setViewing(record.id)} />
           </Tooltip>
-          {canEdit && record.status === 'Pending' && (
+          {access.canEdit(record) && record.status === 'Pending' && (
             <Tooltip title='Edit'>
               <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
             </Tooltip>
           )}
-          {canCancel && ['Pending', 'Approved'].includes(record.status) && (isAdmin || (!record.paid_in && !record.pending_in)) && (
+          {access.canCancel(record) && ['Pending', 'Approved'].includes(record.status) && (isAdmin || (!record.paid_in && !record.pending_in)) && (
             <Popconfirm title='Cancel this time entry?' onConfirm={() => cancelEntry(record)}>
               <Tooltip title='Cancel'>
                 <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} size='small' />
@@ -229,7 +230,6 @@ const TimeEntryIndex = () => {
       <TimeEntryFormModal open={formOpen} entry={editing} types={options.types} onClose={closeForm} onSaved={handleSaved} />
       <TimeEntryDetailsModal
         entryId={viewing}
-        canCancel={canCancel}
         onClose={() => setViewing(null)}
         onActed={() => { setViewing(null); fetchRows(); }}
       />

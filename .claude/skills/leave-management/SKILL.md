@@ -117,7 +117,9 @@ Access Chart**, the Manpower Request way. Contracts are in
 balances, the list filters' `/leave/create` options), `leave-list-all`
 (see every leave), `leave-balance-list` / `leave-balance-list-all`
 (Leave Balances: subordinates / everyone), `leave-create`,
-`leave-edit`, `leave-approve`, `leave-cancel`, `leave-credits-edit`
+`leave-edit`, `leave-approve`, `leave-cancel`, `leave-credits-edit`,
+and `leave-create-own` / `-edit-own` / `-cancel-own` (own leave only,
+cancel while Pending — see the manual-time-entry skill's "Own vs. others")
 (PermissionSeeder → Administrator). `employee_master_data/option_list`
 admits `leave-create` / `leave-list` for the employee picker.
 `/leave/create` returns the branches for the filters (`/branch/index`

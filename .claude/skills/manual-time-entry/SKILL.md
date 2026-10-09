@@ -69,6 +69,15 @@ by the Leave, Time Entry and Overtime details modals.
 `time-entry-list`, `-list-all`, `-create`, `-edit`, `-approve`, `-cancel`
 (PermissionSeeder → Administrator). `option_list` admits time-entry-create.
 
+Own vs. others (vueportal `FilingAccess`, React `utils/filingAccess.js`):
+`*-list` = their own + what they filed / approve, `*-list-all` = everyone;
+`*-create / -edit / -cancel` = for any employee (HR), `*-create-own /
+-edit-own / -cancel-own` = only the user's own employee record
+(`users.employee_id`), cancel only while Pending — the form then has no
+employee picker ("Name (yourself)"). Same for leave and overtime. Roles:
+`PayrollRoleSeeder` (Employee Self-Service = list + the -own ones;
+Timekeeper = all).
+
 ## Next
 
 Overtime filing is built on the same helpers (`src/pages/overtime/`,

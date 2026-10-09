@@ -5,6 +5,8 @@ import leaveApi from '../../services/leave/leaveApi';
 import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../utils/formatDate';
 import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
+import useAuth from '../../hooks/useAuth';
+import filingAccess from '../../utils/filingAccess';
 import { applyLeaveErrors } from './leaveHelpers';
 
 // File (leave = null) or edit a pending leave. While the employee, type,
@@ -13,6 +15,8 @@ import { applyLeaveErrors } from './leaveHelpers';
 // Calendar for their branch), the type's balance for that year, and the
 // rule that would block saving — Save stays disabled until it's clear.
 const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
+  const auth = useAuth();
+  const access = filingAccess(auth, 'leave');
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
@@ -34,6 +38,7 @@ const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
     form.resetFields();
     setPreview(null);
     setBalance(null);
+    if (!leave && access.createOwnOnly && access.ownEmployeeId) form.setFieldsValue({ employee_id: access.ownEmployeeId });
     if (leave) {
       form.setFieldsValue({
         employee_id: leave.employee_id,
@@ -147,6 +152,17 @@ const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
               <Input readOnly value={`${leave.employee?.employee_code} - ${leave.employee?.full_name}`} />
             </Form.Item>
             <Form.Item name='employee_id' hidden><Input /></Form.Item>
+          </>
+        ) : access.createOwnOnly ? (
+          <>
+            {/* files only their own (leave-create-own) */}
+            <Form.Item label='Employee'>
+              <Input readOnly value={access.ownEmployeeId ? `${auth.user?.name || ''} (yourself)` : ''} />
+            </Form.Item>
+            {!access.ownEmployeeId && (
+              <Alert type='error' showIcon style={{ marginBottom: 12 }} title='Your account is not linked to an employee record — ask HR to link it to file your own leave.' />
+            )}
+            <Form.Item name='employee_id' hidden rules={[{ required: true, message: 'Your account is not linked to an employee record' }]}><Input /></Form.Item>
           </>
         ) : (
           <Form.Item name='employee_id' label='Employee' rules={[{ required: true, message: 'Employee is required' }]}>

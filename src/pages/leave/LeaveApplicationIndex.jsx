@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Table, Tag, Button, Space, Tooltip, Select, Input, DatePicker, Popconfirm, Segmented, Typography, App } from 'antd';
 import { EyeOutlined, EditOutlined, CloseCircleOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import useAuth from '../../hooks/useAuth';
+import filingAccess from '../../utils/filingAccess';
 import useLeaveTypes from '../../hooks/useLeaveTypes';
 import leaveApi from '../../services/leave/leaveApi';
 import handleApiError from '../../utils/handleApiError';
@@ -18,14 +19,14 @@ import LeaveDetailsModal from './LeaveDetailsModal';
 // filters: status, leave type, branch, dates overlapping a range, employee.
 const LeaveApplicationIndex = () => {
   const { message } = App.useApp();
-  const { hasPermission, hasRole } = useAuth();
+  const auth = useAuth();
+  const { hasRole } = auth;
+  const access = filingAccess(auth, 'leave');
   const { items: leaveTypes } = useLeaveTypes();
   const [branches, setBranches] = useState([]);
 
   const isAdmin    = hasRole('Administrator');
-  const canCreate  = isAdmin || hasPermission('leave-create');
-  const canEdit    = isAdmin || hasPermission('leave-edit');
-  const canCancel  = isAdmin || hasPermission('leave-cancel');
+  const canCreate  = access.canCreate;
 
   const [view, setView]       = useState('approval');
   const [filters, setFilters] = useState({});
@@ -138,12 +139,12 @@ const LeaveApplicationIndex = () => {
           <Tooltip title={view === 'approval' ? 'View / Approve' : 'View'}>
             <Button color='blue' variant='outlined' icon={<EyeOutlined />} size='small' onClick={() => setViewing(record.id)} />
           </Tooltip>
-          {canEdit && record.status === 'Pending' && (
+          {access.canEdit(record) && record.status === 'Pending' && (
             <Tooltip title='Edit'>
               <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
             </Tooltip>
           )}
-          {canCancel && ['Pending', 'Approved'].includes(record.status) && (isAdmin || (!record.paid_in && !record.pending_in)) && (
+          {access.canCancel(record) && ['Pending', 'Approved'].includes(record.status) && (isAdmin || (!record.paid_in && !record.pending_in)) && (
             <Popconfirm title='Cancel this leave?' description='The days go back to the balance.' onConfirm={() => cancelLeave(record)}>
               <Tooltip title='Cancel'>
                 <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} size='small' />
@@ -228,7 +229,6 @@ const LeaveApplicationIndex = () => {
       <LeaveFormModal open={formOpen} leave={editing} onClose={closeForm} onSaved={handleSaved} />
       <LeaveDetailsModal
         leaveId={viewing}
-        canCancel={canCancel}
         onClose={() => setViewing(null)}
         onActed={handleActed}
       />

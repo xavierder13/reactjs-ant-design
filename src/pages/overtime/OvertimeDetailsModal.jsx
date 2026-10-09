@@ -8,6 +8,7 @@ import FilingHistory from '../../components/approval/FilingHistory';
 import { TIME_ENTRY_STATUS_COLORS, scheduleText, timeRange } from '../time_entry/timeEntryHelpers';
 import PaidTag from '../../components/approval/PaidTag';
 import useAuth from '../../hooks/useAuth';
+import filingAccess from '../../utils/filingAccess';
 import { DAY_TYPE_COLORS, hoursText, punchesText } from './overtimeHelpers';
 
 // An overtime (fetched: /overtime/show): a summary, its details with that
@@ -15,8 +16,9 @@ import { DAY_TYPE_COLORS, hoursText, punchesText } from './overtimeHelpers';
 // and history (filed, each decision, cancellation), and the actions this
 // user may take: Approve / Disapprove when the backend says can_approve,
 // Cancel with overtime-cancel. Remarks required to disapprove.
-const OvertimeDetailsModal = ({ overtimeId, canCancel, onClose, onActed }) => {
-  const isAdmin = useAuth().hasRole('Administrator');
+const OvertimeDetailsModal = ({ overtimeId, onClose, onActed }) => {
+  const access = filingAccess(useAuth(), 'overtime');
+  const { isAdmin } = access;
   const { message } = App.useApp();
   const [data, setData] = useState(null);
   const [remarks, setRemarks] = useState('');
@@ -54,7 +56,7 @@ const OvertimeDetailsModal = ({ overtimeId, canCancel, onClose, onActed }) => {
   const ot = data?.overtime;
   const decidable = !!data?.approval?.can_approve;
   // paid (retro adjustment instead) or in a payroll waiting for approval: Administrator only
-  const cancellable = canCancel && ['Pending', 'Approved'].includes(ot?.status) && (isAdmin || (!ot?.paid_in && !ot?.pending_in));
+  const cancellable = access.canCancel(ot) && ['Pending', 'Approved'].includes(ot?.status) && (isAdmin || (!ot?.paid_in && !ot?.pending_in));
 
   return (
     <Modal
