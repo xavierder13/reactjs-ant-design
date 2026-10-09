@@ -126,7 +126,7 @@ const TimeEntryIndex = () => {
       render: (s, r) => (
         <>
           <Tag color={TIME_ENTRY_STATUS_COLORS[s]}>{s === 'Pending' && r.current_level ? `Pending · Level ${r.current_level}` : s}</Tag>
-          <PaidTag paidIn={r.paid_in} />
+          <PaidTag paidIn={r.paid_in} pendingIn={r.pending_in} />
         </>
       ),
     },
@@ -143,7 +143,7 @@ const TimeEntryIndex = () => {
               <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
             </Tooltip>
           )}
-          {canCancel && ['Pending', 'Approved'].includes(record.status) && !record.paid_in && (
+          {canCancel && ['Pending', 'Approved'].includes(record.status) && (isAdmin || (!record.paid_in && !record.pending_in)) && (
             <Popconfirm title='Cancel this time entry?' onConfirm={() => cancelEntry(record)}>
               <Tooltip title='Cancel'>
                 <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} size='small' />

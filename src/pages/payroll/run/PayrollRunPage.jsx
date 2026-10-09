@@ -102,8 +102,10 @@ const PayrollRunPage = () => {
   const canDecide = run?.status === 'Pending' && !!approval?.can_approve;
   const levelInfo = approval?.levels?.find((l) => l.level === run?.current_level);
   // the approval that will lock it: the last level's last required approval
+  // (an Administrator's approval completes the level — product rule)
+  const completesLevel = !!levelInfo && (isAdmin || levelInfo.approved + 1 >= levelInfo.required);
   const lastApproval = !approval?.levels?.length
-    || (levelInfo && levelInfo.level === approval.levels[approval.levels.length - 1].level && levelInfo.approved + 1 >= levelInfo.required);
+    || (completesLevel && levelInfo.level === approval.levels[approval.levels.length - 1].level);
   const returned = isDraft && run?.acted_at && run?.action_remarks;
   const rolledBack = isDraft && run?.rolled_back_at && !run?.submitted_at;
   const employees = (data?.employees || []).filter((e) => !search || `${e.employee_code} ${e.full_name}`.toLowerCase().includes(search.toLowerCase()));
@@ -258,7 +260,9 @@ const PayrollRunPage = () => {
             <div style={{ maxWidth: 340 }}>
               {lastApproval
                 ? 'This is the last approval: loan / deduction payments are posted, this cut-off\'s retro adjustments are marked Applied and its filing is turned off. An approved payroll is locked — corrections go through a retro adjustment, or a rollback to Draft.'
-                : `Your approval is recorded; it still needs ${levelInfo ? levelInfo.required - levelInfo.approved - 1 : 'more'} more.`}
+                : completesLevel
+                  ? `Your approval completes level ${levelInfo.level}; it then waits for the next level.`
+                  : `Your approval is recorded; it still needs ${levelInfo ? levelInfo.required - levelInfo.approved - 1 : 'more'} more.`}
             </div>
           )}
           okText='Approve'

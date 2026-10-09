@@ -127,11 +127,19 @@ Template / Import Data dialogs.
 
 ## Approval ("Payroll Run" Access Chart)
 
-Draft → Submit for Approval (payroll-run-generate) → Pending → the chart's
+Draft → Submit for Approval (payroll-run-generate; turns the cut-off's filing
+OFF — "Payroll X submitted for approval" — so nothing is filed, edited or
+approved inside it while it waits) → Pending → the chart's
 levels (local: level 1, 2 approvals, Lady Rose Lutrania + Marilou Baltazar,
 role "Payroll Approver" = payroll-run-list + -approve) → Approved on the last
 approval: Payroll payments posted (pay date), retros Applied, filing OFF.
-Disapprove (remarks required) → back to Draft with "Returned by …". Pending
+Disapprove (remarks required) → back to Draft with "Returned by …", filing ON
+again when the submit had turned it off (not when Payroll had). An approved
+leave / time entry / overtime inside a Pending or approved payslip can't be
+cancelled (`PayrollRunService::assertNotLocked`; rows carry `pending_in` /
+`paid_in`, `PaidTag`) — except by an Administrator. A scheduled deduction
+changed after generating (cancelled, paid manually) makes the approval fail
+naming the employee: return it, generate that employee again. Pending
 can't be regenerated; the submitter can't approve their own; an
 Administrator's approval completes a level (product rule); no levels =
 payroll-run-approve decides in one step. Engine: `ApprovalProcedure` with

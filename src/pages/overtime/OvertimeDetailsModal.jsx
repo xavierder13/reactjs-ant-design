@@ -7,6 +7,7 @@ import ApprovalSteps from '../../components/approval/ApprovalSteps';
 import FilingHistory from '../../components/approval/FilingHistory';
 import { TIME_ENTRY_STATUS_COLORS, scheduleText, timeRange } from '../time_entry/timeEntryHelpers';
 import PaidTag from '../../components/approval/PaidTag';
+import useAuth from '../../hooks/useAuth';
 import { DAY_TYPE_COLORS, hoursText, punchesText } from './overtimeHelpers';
 
 // An overtime (fetched: /overtime/show): a summary, its details with that
@@ -15,6 +16,7 @@ import { DAY_TYPE_COLORS, hoursText, punchesText } from './overtimeHelpers';
 // user may take: Approve / Disapprove when the backend says can_approve,
 // Cancel with overtime-cancel. Remarks required to disapprove.
 const OvertimeDetailsModal = ({ overtimeId, canCancel, onClose, onActed }) => {
+  const isAdmin = useAuth().hasRole('Administrator');
   const { message } = App.useApp();
   const [data, setData] = useState(null);
   const [remarks, setRemarks] = useState('');
@@ -51,7 +53,8 @@ const OvertimeDetailsModal = ({ overtimeId, canCancel, onClose, onActed }) => {
 
   const ot = data?.overtime;
   const decidable = !!data?.approval?.can_approve;
-  const cancellable = canCancel && ['Pending', 'Approved'].includes(ot?.status) && !ot?.paid_in; // paid: retro adjustment instead
+  // paid (retro adjustment instead) or in a payroll waiting for approval: Administrator only
+  const cancellable = canCancel && ['Pending', 'Approved'].includes(ot?.status) && (isAdmin || (!ot?.paid_in && !ot?.pending_in));
 
   return (
     <Modal
@@ -86,7 +89,7 @@ const OvertimeDetailsModal = ({ overtimeId, canCancel, onClose, onActed }) => {
             style={{ marginBottom: 16 }}
             items={[
               { key: 'employee', label: 'Employee', children: ot.employee ? `${ot.employee.employee_code} - ${ot.employee.full_name}` : '—' },
-              { key: 'status', label: 'Status', children: <><Tag color={TIME_ENTRY_STATUS_COLORS[ot.status]}>{ot.status}</Tag><PaidTag paidIn={ot.paid_in} /></> },
+              { key: 'status', label: 'Status', children: <><Tag color={TIME_ENTRY_STATUS_COLORS[ot.status]}>{ot.status}</Tag><PaidTag paidIn={ot.paid_in} pendingIn={ot.pending_in} /></> },
               { key: 'branch', label: 'Branch / Position', children: [ot.employee?.branch?.name, ot.employee?.position?.name].filter(Boolean).join(' / ') || '—' },
               { key: 'date', label: 'Date', children: formatDate(ot.date) },
               { key: 'time', label: 'Overtime', children: timeRange(ot.time_from, ot.time_to) },

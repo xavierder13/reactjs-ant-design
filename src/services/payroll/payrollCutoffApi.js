@@ -5,7 +5,9 @@ import axios from '../../api/axiosInstance';
 // overlap. The filing switch (`filing_open`): while OFF, leave and manual
 // time entries can't be filed, edited or approved for any date inside the
 // period (LeaveService / TimeEntryService → "Filing is turned off for
-// payroll cut-off …"); disapprove / cancel still work.
+// payroll cut-off …"); disapprove / cancel still work, except cancelling an
+// approved one inside a payroll waiting for approval or approved (only an
+// Administrator). Submitting a payroll turns it OFF; approving keeps it OFF.
 // - getAll({ year }) → { cutoffs: [{ id, code, date_from, date_to, pay_date,
 //   filing_open, remarks }] } (payroll-cutoff-list).
 // - create / update(id) { code, date_from, date_to, pay_date, remarks } → 422

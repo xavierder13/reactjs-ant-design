@@ -7,6 +7,7 @@ import handleApiError from '../../utils/handleApiError';
 import ApprovalSteps from '../../components/approval/ApprovalSteps';
 import FilingHistory from '../../components/approval/FilingHistory';
 import PaidTag from '../../components/approval/PaidTag';
+import useAuth from '../../hooks/useAuth';
 import { LEAVE_STATUS_COLORS, leaveDates, num } from './leaveHelpers';
 
 // A leave (fetched: /leave/show): a summary, its details and balance, its
@@ -16,6 +17,7 @@ import { LEAVE_STATUS_COLORS, leaveDates, num } from './leaveHelpers';
 // (current-level approver, once, not their own leave), Cancel with
 // leave-cancel. Remarks are optional except for Disapprove.
 const LeaveDetailsModal = ({ leaveId, canCancel, onClose, onActed }) => {
+  const isAdmin = useAuth().hasRole('Administrator');
   const { message } = App.useApp();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -64,7 +66,8 @@ const LeaveDetailsModal = ({ leaveId, canCancel, onClose, onActed }) => {
   const leave = data?.leave;
   const approval = data?.approval;
   const decidable = !!approval?.can_approve;
-  const cancellable = canCancel && ['Pending', 'Approved'].includes(leave?.status) && !leave?.paid_in; // paid: retro adjustment instead
+  // paid (retro adjustment instead) or in a payroll waiting for approval: Administrator only
+  const cancellable = canCancel && ['Pending', 'Approved'].includes(leave?.status) && (isAdmin || (!leave?.paid_in && !leave?.pending_in));
 
   return (
     <Modal
@@ -101,7 +104,7 @@ const LeaveDetailsModal = ({ leaveId, canCancel, onClose, onActed }) => {
             style={{ marginBottom: 16 }}
             items={[
               { key: 'employee', label: 'Employee', children: leave.employee ? `${leave.employee.employee_code} - ${leave.employee.full_name}` : '—' },
-              { key: 'status', label: 'Status', children: <><Tag color={LEAVE_STATUS_COLORS[leave.status]}>{leave.status}</Tag><PaidTag paidIn={leave.paid_in} /></> },
+              { key: 'status', label: 'Status', children: <><Tag color={LEAVE_STATUS_COLORS[leave.status]}>{leave.status}</Tag><PaidTag paidIn={leave.paid_in} pendingIn={leave.pending_in} /></> },
               { key: 'branch', label: 'Branch / Position', children: [leave.employee?.branch?.name, leave.employee?.position?.name].filter(Boolean).join(' / ') || '—' },
               {
                 key: 'type',

@@ -2,7 +2,8 @@ import axios from '../../api/axiosInstance';
 
 // Payroll runs — vueportal PayrollRunController + PayrollRunService
 // (payroll_run.maintenance; Administrator bypasses). One run per cut-off:
-// Draft (generate again as often as needed) → submit → Pending (the "Payroll
+// Draft (generate again as often as needed) → submit (turns the cut-off's
+// filing off; a disapproval turns it back on if the submit did) → Pending (the "Payroll
 // Run" Access Chart: every approver mapped at a level acts, its required
 // approvals complete it; the submitter can't approve their own) → Approved
 // on the last approval (locked: scheduled deductions get a Payroll payment,

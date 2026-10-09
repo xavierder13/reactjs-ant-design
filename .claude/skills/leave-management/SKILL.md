@@ -90,8 +90,10 @@ Access Chart**, the Manpower Request way. Contracts are in
 - **Status flow**: Pending (at a level) → … → Approved / Disapproved
   (remarks required); Pending/Approved → Cancelled (days return). An
   Approved leave paid by an approved payslip (`paid_in` = its cut-off, set
-  by `PayrollRunService::markPaid`; "Paid · <cut-off>" `PaidTag`) can't be
-  cancelled — a correction is a retro adjustment. Only
+  by `PayrollRunService::markPaid`; "Paid · <cut-off>" `PaidTag`) or inside
+  a payroll waiting for approval (`pending_in`, "For approval · <cut-off>")
+  can't be cancelled except by an Administrator — a correction of a paid
+  one is a retro adjustment. Only
   Pending, not-yet-acted-on leave is editable; the employee can't change.
 - Leave type delete is refused once applications use it (set inactive).
 

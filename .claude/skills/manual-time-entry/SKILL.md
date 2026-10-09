@@ -43,8 +43,9 @@ MRF — viewing by subordinates, approver and permission.
   subordinates, once per approver, no self-approval, approve re-checks the
   rules, Disapprove needs remarks, no edit after an approver acted, Cancel
   Pending / Approved (time-entry-cancel) — except an Approved entry paid by
-  an approved payslip (`paid_in`, `PaidTag`; same for overtime): correct it
-  with a retro adjustment. No levels set up → time-entry-
+  an approved payslip (`paid_in`) or inside a payroll waiting for approval
+  (`pending_in`) — `PaidTag`, same for overtime; Administrators may. A paid
+  one is corrected with a retro adjustment. No levels set up → time-entry-
   approve decides in one step.
 
 ## Shared approval helpers (for the next documents)

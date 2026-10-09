@@ -7,6 +7,7 @@ import ApprovalSteps from '../../components/approval/ApprovalSteps';
 import FilingHistory from '../../components/approval/FilingHistory';
 import { TIME_ENTRY_STATUS_COLORS, scheduleText, timeRange, breakRange } from './timeEntryHelpers';
 import PaidTag from '../../components/approval/PaidTag';
+import useAuth from '../../hooks/useAuth';
 import TimeComparison from './TimeComparison';
 
 // A time entry (fetched: /time_entry/show): a summary, its details with that
@@ -15,6 +16,7 @@ import TimeComparison from './TimeComparison';
 // user may take: Approve / Disapprove when the backend says can_approve,
 // Cancel with time-entry-cancel. Remarks required to disapprove.
 const TimeEntryDetailsModal = ({ entryId, canCancel, onClose, onActed }) => {
+  const isAdmin = useAuth().hasRole('Administrator');
   const { message } = App.useApp();
   const [data, setData] = useState(null);
   const [remarks, setRemarks] = useState('');
@@ -51,7 +53,8 @@ const TimeEntryDetailsModal = ({ entryId, canCancel, onClose, onActed }) => {
 
   const entry = data?.entry;
   const decidable = !!data?.approval?.can_approve;
-  const cancellable = canCancel && ['Pending', 'Approved'].includes(entry?.status) && !entry?.paid_in; // paid: retro adjustment instead
+  // paid (retro adjustment instead) or in a payroll waiting for approval: Administrator only
+  const cancellable = canCancel && ['Pending', 'Approved'].includes(entry?.status) && (isAdmin || (!entry?.paid_in && !entry?.pending_in));
 
   return (
     <Modal
@@ -86,7 +89,7 @@ const TimeEntryDetailsModal = ({ entryId, canCancel, onClose, onActed }) => {
             style={{ marginBottom: 16 }}
             items={[
               { key: 'employee', label: 'Employee', children: entry.employee ? `${entry.employee.employee_code} - ${entry.employee.full_name}` : '—' },
-              { key: 'status', label: 'Status', children: <><Tag color={TIME_ENTRY_STATUS_COLORS[entry.status]}>{entry.status}</Tag><PaidTag paidIn={entry.paid_in} /></> },
+              { key: 'status', label: 'Status', children: <><Tag color={TIME_ENTRY_STATUS_COLORS[entry.status]}>{entry.status}</Tag><PaidTag paidIn={entry.paid_in} pendingIn={entry.pending_in} /></> },
               { key: 'branch', label: 'Branch / Position', children: [entry.employee?.branch?.name, entry.employee?.position?.name].filter(Boolean).join(' / ') || '—' },
               { key: 'date', label: 'Date', children: formatDate(entry.date) },
               { key: 'type', label: 'Type', children: entry.entry_type },
