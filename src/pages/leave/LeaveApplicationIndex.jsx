@@ -8,6 +8,7 @@ import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../utils/formatDate';
 import { LEAVE_STATUS_COLORS, LEAVE_STATUSES, leaveDates, num } from './leaveHelpers';
 import LeaveFormModal from './LeaveFormModal';
+import PaidTag from '../../components/approval/PaidTag';
 import LeaveDetailsModal from './LeaveDetailsModal';
 
 // Leave applications. "For My Approval" = leaves waiting for this user's
@@ -112,7 +113,10 @@ const LeaveApplicationIndex = () => {
       dataIndex: 'status',
       width: 130,
       render: (s, r) => (
-        <Tag color={LEAVE_STATUS_COLORS[s]}>{s === 'Pending' && r.current_level ? `Pending · Level ${r.current_level}` : s}</Tag>
+        <>
+          <Tag color={LEAVE_STATUS_COLORS[s]}>{s === 'Pending' && r.current_level ? `Pending · Level ${r.current_level}` : s}</Tag>
+          <PaidTag paidIn={r.paid_in} />
+        </>
       ),
     },
     { title: 'Filed By', key: 'filer', width: 150, render: (_, r) => r.filer?.name || '—' },
@@ -129,7 +133,7 @@ const LeaveApplicationIndex = () => {
               <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
             </Tooltip>
           )}
-          {canCancel && ['Pending', 'Approved'].includes(record.status) && (
+          {canCancel && ['Pending', 'Approved'].includes(record.status) && !record.paid_in && (
             <Popconfirm title='Cancel this leave?' description='The days go back to the balance.' onConfirm={() => cancelLeave(record)}>
               <Tooltip title='Cancel'>
                 <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} size='small' />

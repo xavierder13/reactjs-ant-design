@@ -88,7 +88,10 @@ Access Chart**, the Manpower Request way. Contracts are in
   `max_days_per_filing`, enough balance, not crossing a year. Approve
   re-runs them. Rule failures → 422 `{ message }`; field errors → 422 bag.
 - **Status flow**: Pending (at a level) → … → Approved / Disapproved
-  (remarks required); Pending/Approved → Cancelled (days return). Only
+  (remarks required); Pending/Approved → Cancelled (days return). An
+  Approved leave paid by an approved payslip (`paid_in` = its cut-off, set
+  by `PayrollRunService::markPaid`; "Paid · <cut-off>" `PaidTag`) can't be
+  cancelled — a correction is a retro adjustment. Only
   Pending, not-yet-acted-on leave is editable; the employee can't change.
 - Leave type delete is refused once applications use it (set inactive).
 

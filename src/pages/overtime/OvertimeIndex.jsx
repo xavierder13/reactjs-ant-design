@@ -11,6 +11,7 @@ import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../utils/tablePagination'
 import { TIME_ENTRY_STATUS_COLORS, TIME_ENTRY_STATUSES, timeRange } from '../time_entry/timeEntryHelpers';
 import { DAY_TYPE_COLORS, hoursText } from './overtimeHelpers';
 import OvertimeFormModal from './OvertimeFormModal';
+import PaidTag from '../../components/approval/PaidTag';
 import OvertimeDetailsModal from './OvertimeDetailsModal';
 
 // Overtime filings — only Approved overtime is paid. "For My Approval" =
@@ -121,7 +122,12 @@ const OvertimeIndex = () => {
       title: 'Status',
       dataIndex: 'status',
       width: 140,
-      render: (s, r) => <Tag color={TIME_ENTRY_STATUS_COLORS[s]}>{s === 'Pending' && r.current_level ? `Pending · Level ${r.current_level}` : s}</Tag>,
+      render: (s, r) => (
+        <>
+          <Tag color={TIME_ENTRY_STATUS_COLORS[s]}>{s === 'Pending' && r.current_level ? `Pending · Level ${r.current_level}` : s}</Tag>
+          <PaidTag paidIn={r.paid_in} />
+        </>
+      ),
     },
     {
       title: 'Actions',
@@ -136,7 +142,7 @@ const OvertimeIndex = () => {
               <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
             </Tooltip>
           )}
-          {canCancel && ['Pending', 'Approved'].includes(record.status) && (
+          {canCancel && ['Pending', 'Approved'].includes(record.status) && !record.paid_in && (
             <Popconfirm title='Cancel this overtime?' onConfirm={() => cancelOvertime(record)}>
               <Tooltip title='Cancel'>
                 <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} size='small' />

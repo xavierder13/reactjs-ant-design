@@ -6,6 +6,7 @@ import leaveApi from '../../services/leave/leaveApi';
 import handleApiError from '../../utils/handleApiError';
 import ApprovalSteps from '../../components/approval/ApprovalSteps';
 import FilingHistory from '../../components/approval/FilingHistory';
+import PaidTag from '../../components/approval/PaidTag';
 import { LEAVE_STATUS_COLORS, leaveDates, num } from './leaveHelpers';
 
 // A leave (fetched: /leave/show): a summary, its details and balance, its
@@ -63,7 +64,7 @@ const LeaveDetailsModal = ({ leaveId, canCancel, onClose, onActed }) => {
   const leave = data?.leave;
   const approval = data?.approval;
   const decidable = !!approval?.can_approve;
-  const cancellable = canCancel && ['Pending', 'Approved'].includes(leave?.status);
+  const cancellable = canCancel && ['Pending', 'Approved'].includes(leave?.status) && !leave?.paid_in; // paid: retro adjustment instead
 
   return (
     <Modal
@@ -100,7 +101,7 @@ const LeaveDetailsModal = ({ leaveId, canCancel, onClose, onActed }) => {
             style={{ marginBottom: 16 }}
             items={[
               { key: 'employee', label: 'Employee', children: leave.employee ? `${leave.employee.employee_code} - ${leave.employee.full_name}` : '—' },
-              { key: 'status', label: 'Status', children: <Tag color={LEAVE_STATUS_COLORS[leave.status]}>{leave.status}</Tag> },
+              { key: 'status', label: 'Status', children: <><Tag color={LEAVE_STATUS_COLORS[leave.status]}>{leave.status}</Tag><PaidTag paidIn={leave.paid_in} /></> },
               { key: 'branch', label: 'Branch / Position', children: [leave.employee?.branch?.name, leave.employee?.position?.name].filter(Boolean).join(' / ') || '—' },
               {
                 key: 'type',

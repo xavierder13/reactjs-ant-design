@@ -42,7 +42,9 @@ MRF — viewing by subordinates, approver and permission.
   leave-management skill): Pending at the first level, level 1 by
   subordinates, once per approver, no self-approval, approve re-checks the
   rules, Disapprove needs remarks, no edit after an approver acted, Cancel
-  Pending / Approved (time-entry-cancel). No levels set up → time-entry-
+  Pending / Approved (time-entry-cancel) — except an Approved entry paid by
+  an approved payslip (`paid_in`, `PaidTag`; same for overtime): correct it
+  with a retro adjustment. No levels set up → time-entry-
   approve decides in one step.
 
 ## Shared approval helpers (for the next documents)

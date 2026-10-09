@@ -10,6 +10,7 @@ import { DISPLAY_DATE_FORMAT, formatDate } from '../../utils/formatDate';
 import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../utils/tablePagination';
 import { TIME_ENTRY_STATUS_COLORS, TIME_ENTRY_STATUSES, timeRange, breakRange } from './timeEntryHelpers';
 import TimeEntryFormModal from './TimeEntryFormModal';
+import PaidTag from '../../components/approval/PaidTag';
 import TimeEntryDetailsModal from './TimeEntryDetailsModal';
 
 // Manual time-in / time-out for days the biometric device couldn't record
@@ -122,7 +123,12 @@ const TimeEntryIndex = () => {
       title: 'Status',
       dataIndex: 'status',
       width: 140,
-      render: (s, r) => <Tag color={TIME_ENTRY_STATUS_COLORS[s]}>{s === 'Pending' && r.current_level ? `Pending · Level ${r.current_level}` : s}</Tag>,
+      render: (s, r) => (
+        <>
+          <Tag color={TIME_ENTRY_STATUS_COLORS[s]}>{s === 'Pending' && r.current_level ? `Pending · Level ${r.current_level}` : s}</Tag>
+          <PaidTag paidIn={r.paid_in} />
+        </>
+      ),
     },
     {
       title: 'Actions',
@@ -137,7 +143,7 @@ const TimeEntryIndex = () => {
               <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
             </Tooltip>
           )}
-          {canCancel && ['Pending', 'Approved'].includes(record.status) && (
+          {canCancel && ['Pending', 'Approved'].includes(record.status) && !record.paid_in && (
             <Popconfirm title='Cancel this time entry?' onConfirm={() => cancelEntry(record)}>
               <Tooltip title='Cancel'>
                 <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} size='small' />

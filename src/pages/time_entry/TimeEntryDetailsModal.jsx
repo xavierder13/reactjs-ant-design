@@ -6,6 +6,7 @@ import { formatDate } from '../../utils/formatDate';
 import ApprovalSteps from '../../components/approval/ApprovalSteps';
 import FilingHistory from '../../components/approval/FilingHistory';
 import { TIME_ENTRY_STATUS_COLORS, scheduleText, timeRange, breakRange } from './timeEntryHelpers';
+import PaidTag from '../../components/approval/PaidTag';
 import TimeComparison from './TimeComparison';
 
 // A time entry (fetched: /time_entry/show): a summary, its details with that
@@ -50,7 +51,7 @@ const TimeEntryDetailsModal = ({ entryId, canCancel, onClose, onActed }) => {
 
   const entry = data?.entry;
   const decidable = !!data?.approval?.can_approve;
-  const cancellable = canCancel && ['Pending', 'Approved'].includes(entry?.status);
+  const cancellable = canCancel && ['Pending', 'Approved'].includes(entry?.status) && !entry?.paid_in; // paid: retro adjustment instead
 
   return (
     <Modal
@@ -85,7 +86,7 @@ const TimeEntryDetailsModal = ({ entryId, canCancel, onClose, onActed }) => {
             style={{ marginBottom: 16 }}
             items={[
               { key: 'employee', label: 'Employee', children: entry.employee ? `${entry.employee.employee_code} - ${entry.employee.full_name}` : '—' },
-              { key: 'status', label: 'Status', children: <Tag color={TIME_ENTRY_STATUS_COLORS[entry.status]}>{entry.status}</Tag> },
+              { key: 'status', label: 'Status', children: <><Tag color={TIME_ENTRY_STATUS_COLORS[entry.status]}>{entry.status}</Tag><PaidTag paidIn={entry.paid_in} /></> },
               { key: 'branch', label: 'Branch / Position', children: [entry.employee?.branch?.name, entry.employee?.position?.name].filter(Boolean).join(' / ') || '—' },
               { key: 'date', label: 'Date', children: formatDate(entry.date) },
               { key: 'type', label: 'Type', children: entry.entry_type },

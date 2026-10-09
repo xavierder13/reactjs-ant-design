@@ -6,6 +6,7 @@ import { formatDate } from '../../utils/formatDate';
 import ApprovalSteps from '../../components/approval/ApprovalSteps';
 import FilingHistory from '../../components/approval/FilingHistory';
 import { TIME_ENTRY_STATUS_COLORS, scheduleText, timeRange } from '../time_entry/timeEntryHelpers';
+import PaidTag from '../../components/approval/PaidTag';
 import { DAY_TYPE_COLORS, hoursText, punchesText } from './overtimeHelpers';
 
 // An overtime (fetched: /overtime/show): a summary, its details with that
@@ -50,7 +51,7 @@ const OvertimeDetailsModal = ({ overtimeId, canCancel, onClose, onActed }) => {
 
   const ot = data?.overtime;
   const decidable = !!data?.approval?.can_approve;
-  const cancellable = canCancel && ['Pending', 'Approved'].includes(ot?.status);
+  const cancellable = canCancel && ['Pending', 'Approved'].includes(ot?.status) && !ot?.paid_in; // paid: retro adjustment instead
 
   return (
     <Modal
@@ -85,7 +86,7 @@ const OvertimeDetailsModal = ({ overtimeId, canCancel, onClose, onActed }) => {
             style={{ marginBottom: 16 }}
             items={[
               { key: 'employee', label: 'Employee', children: ot.employee ? `${ot.employee.employee_code} - ${ot.employee.full_name}` : '—' },
-              { key: 'status', label: 'Status', children: <Tag color={TIME_ENTRY_STATUS_COLORS[ot.status]}>{ot.status}</Tag> },
+              { key: 'status', label: 'Status', children: <><Tag color={TIME_ENTRY_STATUS_COLORS[ot.status]}>{ot.status}</Tag><PaidTag paidIn={ot.paid_in} /></> },
               { key: 'branch', label: 'Branch / Position', children: [ot.employee?.branch?.name, ot.employee?.position?.name].filter(Boolean).join(' / ') || '—' },
               { key: 'date', label: 'Date', children: formatDate(ot.date) },
               { key: 'time', label: 'Overtime', children: timeRange(ot.time_from, ot.time_to) },
