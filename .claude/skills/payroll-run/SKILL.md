@@ -139,7 +139,12 @@ leave / time entry / overtime inside a Pending or approved payslip can't be
 cancelled (`PayrollRunService::assertNotLocked`; rows carry `pending_in` /
 `paid_in`, `PaidTag`) — except by an Administrator. A scheduled deduction
 changed after generating (cancelled, paid manually) makes the approval fail
-naming the employee: return it, generate that employee again. Pending
+naming the employee: return it, generate that employee again. A month's
+payrolls are approved in order (the later cut-off's tax true-up and
+daily-paid contribution base read the earlier ones): submit / approve is
+refused while an earlier cut-off of the same month is Draft / Pending, and
+generating is refused while a later one of the month is Pending / Approved
+(or keeps approved payslips). Pending
 can't be regenerated; the submitter can't approve their own; an
 Administrator's approval completes a level (product rule); no levels =
 payroll-run-approve decides in one step. Engine: `ApprovalProcedure` with
