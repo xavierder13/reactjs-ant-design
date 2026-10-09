@@ -111,6 +111,10 @@ Template / Import Data dialogs.
   day; a worked holiday adds (holiday rate − 100%).
 - Daily-paid: hours worked × hourly (holiday worked × its regular rate),
   paid leave × daily, unworked holiday × its "paid if unworked" rate.
+- Overtime counted (DtrService::payableOvertime, Payroll Settings →
+  Overtime): a filing under `ot_minimum_minutes` (default 30) = 0, the rest
+  rounded down to `ot_rounding_minutes` blocks (default 15); a DTR remark
+  shows filed vs. counted. Pre-shift overtime counts when approved.
 - Overtime: scheduled day → the day type's overtime rate; day off → first
   `hours_per_day` at its regular rate, beyond at its overtime rate. Night
   differential = night minutes × hourly × the hour's rate × night %.

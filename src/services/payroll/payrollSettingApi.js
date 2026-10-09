@@ -10,7 +10,9 @@ import axios from '../../api/axiosInstance';
 //   semi-monthly cut-off starts), pay_day_first / pay_day_second (0 = last
 //   day of the month), pay_day_adjust ('Previous working day' | 'Next
 //   working day' | 'None' — off a Sunday / holiday),
-//   holiday_pay_needs_prior_day (bool), updater { name }, updated_at },
+//   holiday_pay_needs_prior_day (bool), ot_minimum_minutes (0–240),
+//   ot_rounding_minutes (1|5|10|15|30|60 — approved overtime rounded down),
+//   updater { name }, updated_at },
 //   rates: [{ day_type, regular_rate, overtime_rate, night_diff_rate,
 //   unworked_rate }] (8 day types, DOLE order), deduction_schedules,
 //   daily_rate_factors, pay_day_adjustments } (payroll-setting-view).

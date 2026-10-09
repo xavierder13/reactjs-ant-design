@@ -272,6 +272,23 @@ const PayrollSettingsPage = () => {
                     <Switch />
                   </Form.Item>
                 </Card>
+                <Card size='small' title='Overtime' style={{ marginTop: 16 }}>
+                  <Typography.Paragraph type='secondary' style={{ marginTop: 0 }}>
+                    Only approved overtime is paid. Each filing under the minimum counts 0; the rest is rounded down to whole blocks (e.g. 1 h 50 min per 15 minutes = 1 h 45 min). Overtime before the shift counts when it is approved.
+                  </Typography.Paragraph>
+                  <Row gutter={16}>
+                    <Col xs={24} md={12}>
+                      <Form.Item name='ot_minimum_minutes' label='Minimum per filing (minutes)' extra='0 = no minimum' rules={[{ required: true, message: 'Required' }]}>
+                        <InputNumber min={0} max={240} precision={0} style={{ width: '100%' }} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} md={12}>
+                      <Form.Item name='ot_rounding_minutes' label='Round down to blocks of' rules={[{ required: true, message: 'Required' }]}>
+                        <Select options={[1, 5, 10, 15, 30, 60].map((v) => ({ value: v, label: v === 1 ? 'Every minute (no rounding)' : `${v} minutes` }))} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </Card>
                 <Card size='small' title='Employer (government forms)' style={{ marginTop: 16 }}>
                   <Typography.Paragraph type='secondary' style={{ marginTop: 0 }}>
                     Printed on the BIR 2316, the alphalist and the remittance reports (Payroll → Reports &amp; Compliance).
