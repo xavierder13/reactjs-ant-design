@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { Card, Spin, Descriptions, Table, Tag, Button, Space, Tooltip, Popconfirm, Typography, Alert, Input, Row, Col, Result, App } from 'antd';
-import { ArrowLeftOutlined, EyeOutlined, ReloadOutlined, CheckCircleOutlined, CloseCircleOutlined, SendOutlined, StopOutlined, FileExcelOutlined, BankOutlined, UsergroupAddOutlined, RollbackOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, EyeOutlined, ReloadOutlined, CheckCircleOutlined, CloseCircleOutlined, SendOutlined, StopOutlined, FileExcelOutlined, BankOutlined, UsergroupAddOutlined, RollbackOutlined, LockOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import payrollRunApi from '../../../services/payroll/payrollRunApi';
 import payrollReportApi from '../../../services/payroll/payrollReportApi';
@@ -30,8 +30,11 @@ const when = (v) => (v ? dayjs(v).format(`${DISPLAY_DATE_FORMAT} hh:mm A`) : '�
 // employee's payslip (PayslipModal). Draft: Cancel, Regenerate All,
 // Generate Selected (ticked rows / RegenerateEmployeesModal), Submit for
 // Approval; Pending, for a current approver: Approve (the last approval
-// locks it) / Disapprove (remarks — back to Draft); Approved: Roll Back to
-// Draft (payroll-run-rollback, reason). Payroll Register (Excel)
+// locks it) / Disapprove (remarks — back to Draft). Approved payslips
+// (posted, "Approved" tag on a Draft) are locked: Roll Back Selected / All
+// (payroll-run-rollback, reason) on an Approved run or a Draft that still has
+// some — the run goes back to Draft, the others stay approved; Generate
+// Selected leaves them out. Payroll Register (Excel)
 // and the Bank File (preview; CSV once approved) with payroll-report-view.
 const PayrollRunPage = () => {
   const { id } = useParams();
@@ -55,7 +58,7 @@ const PayrollRunPage = () => {
   const [bank, setBank] = useState(null);
   const [picked, setPicked] = useState([]); // ticked payslip rows (employee ids)
   const [regenerating, setRegenerating] = useState(null);
-  const [rollingBack, setRollingBack] = useState(false);
+  const [rollingBack, setRollingBack] = useState(null); // { employeeIds: [..] | null (all) }
 
   const load = async (runId = id) => {
     try {
@@ -105,6 +108,12 @@ const PayrollRunPage = () => {
   const rolledBack = isDraft && run?.rolled_back_at && !run?.submitted_at;
   const employees = (data?.employees || []).filter((e) => !search || `${e.employee_code} ${e.full_name}`.toLowerCase().includes(search.toLowerCase()));
   const withWarnings = (data?.employees || []).filter((e) => e.warnings.length).length;
+  // approved (posted) payslips are locked: only a rollback reopens them
+  const approvedIds = new Set((data?.employees || []).filter((e) => e.approved).map((e) => e.employee_id));
+  const canRollback = perms.canRollback && (run?.status === 'Approved' || (isDraft && approvedIds.size > 0));
+  const canPickGenerate = isDraft && perms.canGenerate;
+  const pickedGenerate = picked.filter((eid) => !approvedIds.has(eid));
+  const pickedRollback = picked.filter((eid) => approvedIds.has(eid));
 
   const columns = [
     {
@@ -114,7 +123,14 @@ const PayrollRunPage = () => {
       width: 230,
       render: (_, r) => (
         <div>
-          <div>{r.full_name}</div>
+          <div>
+            {r.full_name}
+            {r.approved && run.status !== 'Approved' && (
+              <Tooltip title='Approved and locked — roll it back to change it'>
+                <Tag color='green' icon={<LockOutlined />} style={{ marginLeft: 6 }}>Approved</Tag>
+              </Tooltip>
+            )}
+          </div>
           <Typography.Text type='secondary' style={{ fontSize: 12 }}>{`${r.employee_code} · ${r.branch || '—'}`}</Typography.Text>
         </div>
       ),
@@ -179,22 +195,33 @@ const PayrollRunPage = () => {
     </Space>
   ) : null;
 
-  const canRollback = run?.status === 'Approved' && perms.canRollback;
   const actions = run && ((isDraft && (perms.canGenerate || perms.canCancel)) || canDecide || canRollback) ? (
     <Space wrap>
-      {canRollback && (
-        <Button color='orange' variant='outlined' icon={<RollbackOutlined />} onClick={() => setRollingBack(true)}>Roll Back to Draft</Button>
+      {canRollback && pickedRollback.length > 0 && (
+        <Button color='orange' variant='outlined' icon={<RollbackOutlined />} onClick={() => setRollingBack({ employeeIds: pickedRollback })}>
+          {`Roll Back Selected (${pickedRollback.length})`}
+        </Button>
       )}
-      {isDraft && perms.canCancel && <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} onClick={() => setCancelling(true)}>Cancel Payroll</Button>}
+      {canRollback && (
+        <Button color='orange' variant='outlined' icon={<RollbackOutlined />} onClick={() => setRollingBack({ employeeIds: null })}>
+          {run.status === 'Approved' ? 'Roll Back All' : `Roll Back All Approved (${approvedIds.size})`}
+        </Button>
+      )}
+      {isDraft && perms.canCancel && !approvedIds.size && <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} onClick={() => setCancelling(true)}>Cancel Payroll</Button>}
       {isDraft && perms.canGenerate && (
-        <Button icon={<UsergroupAddOutlined />} onClick={() => setRegenerating({ run, preselected: picked })}>
-          {picked.length ? `Generate Selected (${picked.length})` : 'Generate Selected'}
+        <Button icon={<UsergroupAddOutlined />} onClick={() => setRegenerating({ run, preselected: pickedGenerate })}>
+          {pickedGenerate.length ? `Generate Selected (${pickedGenerate.length})` : 'Generate Selected'}
         </Button>
       )}
       {isDraft && perms.canGenerate && (
         <Popconfirm
           title='Generate every employee again?'
-          description={<div style={{ maxWidth: 320 }}>The whole payroll is computed again from today&apos;s attendance, leave, overtime, salary, deductions and Payroll Settings.</div>}
+          description={(
+            <div style={{ maxWidth: 320 }}>
+              The whole payroll is computed again from today&apos;s attendance, leave, overtime, salary, deductions and Payroll Settings.
+              {approvedIds.size > 0 && ` The ${approvedIds.size} approved payslip(s) are kept as they are.`}
+            </div>
+          )}
           okText='Regenerate All'
           onConfirm={() => act('regenerate', () => payrollRunApi.generate({ payroll_cutoff_id: run.payroll_cutoff_id, remarks: run.remarks }))}
         >
@@ -319,6 +346,7 @@ const PayrollRunPage = () => {
           {isDraft && (
             <Typography.Paragraph type='secondary' style={{ fontSize: 12 }}>
               A draft: after a change to attendance, leave, overtime, salary or deductions, generate the employees it affects again (tick them, then Generate Selected) or Regenerate All. Submit it for approval when the figures are final.
+              {approvedIds.size > 0 && ` ${approvedIds.size} payslip(s) are still approved and locked — roll them back first to change them.`}
             </Typography.Paragraph>
           )}
           {run.submitted_at && (
@@ -350,7 +378,7 @@ const PayrollRunPage = () => {
           <Space style={{ marginBottom: 8, width: '100%', justifyContent: 'space-between' }} wrap>
             <Space>
               <Typography.Text strong>Pay Register</Typography.Text>
-              {isDraft && perms.canGenerate && picked.length > 0 && (
+              {picked.length > 0 && (canPickGenerate || canRollback) && (
                 <Typography.Text type='secondary'>{picked.length} ticked — <Typography.Link onClick={() => setPicked([])}>clear</Typography.Link></Typography.Text>
               )}
             </Space>
@@ -361,9 +389,11 @@ const PayrollRunPage = () => {
             size='small'
             columns={columns}
             dataSource={employees}
-            rowSelection={isDraft && perms.canGenerate ? {
+            rowSelection={canPickGenerate || canRollback ? {
               selectedRowKeys: (data?.employees || []).filter((e) => picked.includes(e.employee_id)).map((e) => e.id),
               preserveSelectedRowKeys: true,
+              // approved rows are ticked to roll back, the others to generate again
+              getCheckboxProps: (r) => ({ disabled: r.approved ? !canRollback : !canPickGenerate }),
               onChange: (keys) => setPicked((data?.employees || []).filter((e) => keys.includes(e.id)).map((e) => e.employee_id)),
             } : undefined}
             pagination={{ defaultPageSize: 20, showSizeChanger: true, showTotal: (t) => `${t} employee(s)` }}
@@ -389,8 +419,10 @@ const PayrollRunPage = () => {
         onDone={async () => { setRegenerating(null); setPicked([]); await load(run.id); }}
       />
       <ReasonModal
-        open={rollingBack}
-        title={`Roll Back Payroll ${run?.cutoff?.code || ''} to Draft`}
+        open={!!rollingBack}
+        title={rollingBack?.employeeIds
+          ? `Roll Back ${rollingBack.employeeIds.length} Payslip(s) — ${run?.cutoff?.code || ''}`
+          : `Roll Back Payroll ${run?.cutoff?.code || ''} to Draft`}
         label='Reason for rolling back'
         okText='Roll Back'
         danger
@@ -399,12 +431,14 @@ const PayrollRunPage = () => {
             type='warning'
             showIcon
             style={{ marginBottom: 12 }}
-            title='The payroll is unlocked so it can be corrected and approved again.'
+            title={rollingBack?.employeeIds
+              ? 'These payslips are unlocked so they can be corrected; the payroll goes back to Draft and the other payslips stay approved.'
+              : 'The payroll is unlocked so it can be corrected and approved again.'}
             description={(
               <ul style={{ margin: 0, paddingLeft: 18 }}>
-                <li>The loan / deduction payments it posted are removed (balances return).</li>
-                <li>Its retro adjustments are Open again.</li>
-                <li>Payslips, remittances, the bank file and reports leave out this cut-off until it is approved again.</li>
+                <li>The loan / deduction payments posted for them are removed (balances return).</li>
+                <li>Their retro adjustments are Open again.</li>
+                <li>Payslips, remittances, the bank file and reports leave them out until the payroll is approved again.</li>
                 <li>Not allowed while a later payroll, or the year&apos;s 13th month, is approved or waiting for approval.</li>
               </ul>
             )}
@@ -412,16 +446,17 @@ const PayrollRunPage = () => {
         )}
         onSubmit={async (reason) => {
           try {
-            const { data: res } = await payrollRunApi.rollback(run.id, reason);
+            const { data: res } = await payrollRunApi.rollback(run.id, reason, rollingBack.employeeIds);
             message.success(res.message);
-            setRollingBack(false);
+            setRollingBack(null);
+            setPicked([]);
             await load(run.id);
           } catch (error) {
             handleApiError(error, message);
             throw error; // keeps the reason dialog open
           }
         }}
-        onClose={() => setRollingBack(false)}
+        onClose={() => setRollingBack(null)}
       />
       <ReasonModal
         open={cancelling}

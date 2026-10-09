@@ -7,6 +7,8 @@ import handleApiError from '../../../utils/handleApiError';
 // keep their lines. The list is everyone in the payroll plus every eligible
 // employee not in it yet (e.g. a salary saved after it was generated); one
 // chosen but no longer eligible (inactive / no salary) leaves the payroll.
+// Approved (posted) payslips are shown but can't be chosen — roll them back
+// first.
 // `target`: { run, preselected: [employee_id] } | null.
 const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
   const { message } = App.useApp();
@@ -26,13 +28,14 @@ const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
     try {
       const { data } = await payrollRunApi.candidates(target.run.id);
       setCandidates(data.employees);
+      setSelected((s) => s.filter((eid) => !data.employees.some((c) => c.id === eid && c.approved)));
     } catch (error) {
       handleApiError(error, message);
     }
   };
 
   const run = shown?.run;
-  const notIn = (candidates || []).filter((c) => !c.in_run && c.eligible);
+  const notIn = (candidates || []).filter((c) => !c.in_run && c.eligible && !c.approved);
   const leaving = (candidates || []).filter((c) => selected.includes(c.id) && !c.eligible);
 
   const handleOk = async () => {
@@ -56,6 +59,7 @@ const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
     value: c.id,
     label: `${c.employee_code} - ${c.full_name}`,
     search: `${c.employee_code} ${c.full_name} ${c.branch || ''}`,
+    disabled: c.approved,
     c,
   }));
 
@@ -76,7 +80,7 @@ const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
         Only the chosen employees are computed again from today&apos;s attendance, leave, overtime, salary and deductions; everyone else keeps their figures.
       </Typography.Paragraph>
       <Space wrap style={{ marginBottom: 8 }}>
-        <Button size='small' disabled={!candidates} onClick={() => setSelected((candidates || []).filter((c) => c.in_run).map((c) => c.id))}>All in payroll</Button>
+        <Button size='small' disabled={!candidates} onClick={() => setSelected((candidates || []).filter((c) => c.in_run && !c.approved).map((c) => c.id))}>All in payroll</Button>
         <Button size='small' disabled={!notIn.length} onClick={() => setSelected((s) => [...new Set([...s, ...notIn.map((c) => c.id)])])}>
           Add not in payroll ({notIn.length})
         </Button>
@@ -98,6 +102,7 @@ const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
             <Typography.Text type='secondary' style={{ fontSize: 12 }}>{o.data.c.branch || ''}</Typography.Text>
             {!o.data.c.in_run && o.data.c.eligible && <Tag color='blue'>Not in payroll</Tag>}
             {!o.data.c.eligible && <Tag color='orange'>No longer eligible</Tag>}
+            {o.data.c.approved && <Tag color='green'>Approved — locked</Tag>}
           </Space>
         )}
       />

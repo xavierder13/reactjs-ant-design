@@ -134,6 +134,8 @@ const titleMap = {
   '/timekeeping':              { title: 'Timekeeping',             breadcrumb: ['Payroll', 'Timekeeping'] },
   '/payroll-runs':             { title: 'Payroll Runs',            breadcrumb: ['Payroll', 'Payroll Runs'] },
   '/remittances':              { title: 'Remittances',             breadcrumb: ['Payroll', 'Reports & Compliance', 'Remittances'] },
+  '/contribution-history':     { title: 'Contribution History',    breadcrumb: ['Payroll', 'Reports & Compliance', 'Contribution History'] },
+  '/pay-sheet':                { title: 'Pay Sheet',               breadcrumb: ['Payroll', 'Reports & Compliance', 'Pay Sheet'] },
   '/thirteenth-month':         { title: '13th Month Pay',          breadcrumb: ['Payroll', 'Reports & Compliance', '13th Month Pay'] },
   '/year-end-tax':             { title: 'Year-end Tax',            breadcrumb: ['Payroll', 'Reports & Compliance', 'Year-end Tax'] },
   '/final-pay':                { title: 'Final Pay',               breadcrumb: ['Payroll', 'Reports & Compliance', 'Final Pay'] },
@@ -312,7 +314,9 @@ const menuData = [
             type: 'group',
             label: 'Reports & Compliance',
             children: [
+              { key: 'pay-sheet',        title: 'Pay Sheet',      link: '/pay-sheet',        permissions: ['payroll-report-view'] },
               { key: 'remittances',      title: 'Remittances',    link: '/remittances',      permissions: ['payroll-report-view'] },
+              { key: 'contribution-history', title: 'Contribution History', link: '/contribution-history', permissions: ['payroll-report-view'] },
               { key: 'thirteenth-month', title: '13th Month Pay', link: '/thirteenth-month', permissions: ['thirteenth-month-list'] },
               { key: 'year-end-tax',     title: 'Year-end Tax',   link: '/year-end-tax',     permissions: ['payroll-report-view'] },
               { key: 'final-pay',        title: 'Final Pay',      link: '/final-pay',        permissions: ['final-pay-view'] },

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
-import { Table, Tag, Button, Space, Select, Tooltip, Modal, Form, Input, Typography, Alert, App } from 'antd';
+import { Table, Tag, Button, Space, Select, Tooltip, Modal, Form, Input, Radio, Typography, Alert, App } from 'antd';
 import { EyeOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../../hooks/useAuth';
@@ -15,7 +15,8 @@ const YEARS = Array.from({ length: 4 }, (_, i) => dayjs().year() + 1 - i);
 
 // Payroll runs, one per cut-off: Generate makes (or re-makes) the Draft from
 // Salary History, the DTR, allowances, retro adjustments, contributions /
-// tax and scheduled deductions; View opens its page (/payroll-runs/:id —
+// tax and scheduled deductions — for everyone, or only the employees chosen
+// (cutoff_candidates; approved payslips can't be chosen); View opens its page (/payroll-runs/:id —
 // pay register, payslips, approval). Permissions payroll-run-list /
 // -generate / -approve / -cancel (Administrator bypasses).
 const PayrollRunIndex = () => {
@@ -30,9 +31,27 @@ const PayrollRunIndex = () => {
   const [genOpen, setGenOpen] = useState(false);
   const [cutoffs, setCutoffs] = useState([]);
   const [generating, setGenerating] = useState(false);
+  const [candidates, setCandidates] = useState(null); // the picked cut-off's, for "Selected employees"
   const [form] = Form.useForm();
   const pickedId = Form.useWatch('payroll_cutoff_id', form);
+  const scope = Form.useWatch('scope', form);
   const picked = cutoffs.find((c) => c.id === pickedId);
+
+  const loadCandidates = async (cutoffId) => {
+    setCandidates(null);
+    if (!cutoffId) return;
+    try {
+      const { data } = await payrollRunApi.cutoffCandidates(cutoffId);
+      setCandidates(data.employees);
+    } catch (error) {
+      handleApiError(error, message);
+    }
+  };
+
+  const handleValuesChange = (changed, all) => {
+    if ('payroll_cutoff_id' in changed) form.setFieldsValue({ employee_ids: [] });
+    if (all.scope === 'selected' && ('payroll_cutoff_id' in changed || 'scope' in changed)) loadCandidates(all.payroll_cutoff_id);
+  };
 
   const fetchRuns = async () => {
     setLoading(true);
@@ -54,6 +73,7 @@ const PayrollRunIndex = () => {
 
   const openGenerate = async () => {
     form.resetFields();
+    setCandidates(null);
     setGenOpen(true);
     try {
       const { data } = await payrollRunApi.options();
@@ -72,7 +92,11 @@ const PayrollRunIndex = () => {
     try { values = await form.validateFields(); } catch { return; }
     setGenerating(true);
     try {
-      const { data } = await payrollRunApi.generate({ payroll_cutoff_id: values.payroll_cutoff_id, remarks: values.remarks?.trim() || null });
+      const { data } = await payrollRunApi.generate({
+        payroll_cutoff_id: values.payroll_cutoff_id,
+        remarks: values.remarks?.trim() || null,
+        ...(values.scope === 'selected' ? { employee_ids: values.employee_ids } : {}),
+      });
       message.success(data.message);
       setGenOpen(false);
       navigate(`/payroll-runs/${data.run.id}`);
@@ -145,7 +169,7 @@ const PayrollRunIndex = () => {
         onCancel={() => setGenOpen(false)}
         forceRender
       >
-        <Form form={form} layout='vertical'>
+        <Form form={form} layout='vertical' initialValues={{ scope: 'all' }} onValuesChange={handleValuesChange}>
           <Form.Item name='payroll_cutoff_id' label='Cut-off' rules={[{ required: true, message: 'Choose the cut-off' }]}>
             <Select
               showSearch={{ optionFilterProp: 'label' }}
@@ -162,7 +186,49 @@ const PayrollRunIndex = () => {
             />
           )}
           {picked?.draft_run_id && (
-            <Alert type='info' showIcon style={{ marginBottom: 12 }} title='A draft already exists — generating again replaces its figures.' />
+            <Alert
+              type='info'
+              showIcon
+              style={{ marginBottom: 12 }}
+              title={scope === 'selected'
+                ? 'A draft already exists — only the chosen employees are computed again; the others keep their figures.'
+                : 'A draft already exists — generating again replaces its figures (approved payslips are kept).'}
+            />
+          )}
+          <Form.Item name='scope' label='Employees'>
+            <Radio.Group
+              options={[
+                { value: 'all', label: 'All employees' },
+                { value: 'selected', label: 'Selected employees' },
+              ]}
+            />
+          </Form.Item>
+          {scope === 'selected' && (
+            <Form.Item name='employee_ids' rules={[{ required: true, message: 'Choose the employees' }]}>
+              <Select
+                mode='multiple'
+                loading={!candidates}
+                disabled={!pickedId}
+                maxTagCount={10}
+                placeholder='Search employees'
+                showSearch={{ filterOption: (input, o) => o.search.toLowerCase().includes(input.toLowerCase()) }}
+                options={(candidates || []).filter((c) => c.eligible || c.in_run).map((c) => ({
+                  value: c.id,
+                  label: `${c.employee_code} - ${c.full_name}`,
+                  search: `${c.employee_code} ${c.full_name} ${c.branch || ''} ${c.position || ''}`,
+                  disabled: c.approved,
+                  c,
+                }))}
+                optionRender={(o) => (
+                  <Space>
+                    <span>{o.data.label}</span>
+                    <Typography.Text type='secondary' style={{ fontSize: 12 }}>{o.data.c.branch || ''}</Typography.Text>
+                    {o.data.c.approved && <Tag color='green'>Approved — locked</Tag>}
+                    {!o.data.c.eligible && <Tag color='orange'>No longer eligible</Tag>}
+                  </Space>
+                )}
+              />
+            </Form.Item>
           )}
           <Form.Item name='remarks' label='Remarks'>
             <Input.TextArea rows={2} maxLength={2000} />

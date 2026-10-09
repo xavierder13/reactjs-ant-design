@@ -86,6 +86,8 @@ import AllowanceIndex from '../pages/payroll/allowance/AllowanceIndex';
 import AllowanceTypeIndex from '../pages/payroll/allowance/AllowanceTypeIndex';
 import PayrollSettingsPage from '../pages/payroll/settings/PayrollSettingsPage';
 import RemittanceReport from '../pages/payroll/reports/RemittanceReport';
+import ContributionHistoryReport from '../pages/payroll/reports/ContributionHistoryReport';
+import PaySheetReport from '../pages/payroll/reports/PaySheetReport';
 import ThirteenthMonthIndex from '../pages/payroll/reports/ThirteenthMonthIndex';
 import YearEndTaxReport from '../pages/payroll/reports/YearEndTaxReport';
 import FinalPayReport from '../pages/payroll/reports/FinalPayReport';
@@ -171,6 +173,8 @@ const permissionRoutes = [
   { permissions: ['payroll-run-list'], path: '/payroll-runs', element: <PayrollRunIndex /> },
   { permissions: ['payroll-run-list'], path: '/payroll-runs/:id', element: <PayrollRunPage /> },
   { permissions: ['payroll-report-view'], path: '/remittances', element: <RemittanceReport /> },
+  { permissions: ['payroll-report-view'], path: '/contribution-history', element: <ContributionHistoryReport /> },
+  { permissions: ['payroll-report-view'], path: '/pay-sheet', element: <PaySheetReport /> },
   { permissions: ['thirteenth-month-list'], path: '/thirteenth-month', element: <ThirteenthMonthIndex /> },
   { permissions: ['payroll-report-view'], path: '/year-end-tax', element: <YearEndTaxReport /> },
   { permissions: ['final-pay-view'], path: '/final-pay', element: <FinalPayReport /> },

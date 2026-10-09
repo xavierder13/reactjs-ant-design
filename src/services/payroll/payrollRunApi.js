@@ -17,13 +17,21 @@ import axios from '../../api/axiosInstance';
 // - generate({ payroll_cutoff_id, remarks, employee_ids? }) → { message, run }
 //   (payroll-run-generate); 422 { message } when approved / pending.
 //   employee_ids: only those again on the existing Draft (the rest keep
-//   their lines; 422 when Payroll Settings / premium rates changed since).
-// - candidates(id) → { employees: [{ id, employee_code, full_name, branch,
-//   position, in_run, eligible }] } (payroll-run-generate).
-// - rollback(id, reason) (payroll-run-rollback) — Approved → Draft: removes
-//   the cut-off's Payroll deduction payments, reopens its retros; 422 while
-//   a later payroll is Approved / Pending or the year's 13th month is
-//   Approved / Pending. run.rolled_back_at / roller / rollback_reason.
+//   their lines; 422 when Payroll Settings / premium rates changed since),
+//   or a new run with just those when the cut-off has none. Approved
+//   (posted) employees are never recomputed: choosing one is refused and
+//   Regenerate All skips them.
+// - candidates(id) / cutoffCandidates(cutoffId) → { employees: [{ id,
+//   employee_code, full_name, branch, position, in_run, eligible, approved }] }
+//   (payroll-run-generate) — approved = posted, locked until rolled back.
+// - rollback(id, reason, employeeIds?) (payroll-run-rollback; employeeIds
+//   omitted = all) — those approved payslips → unposted: removes their
+//   Payroll deduction payments of the cut-off, reopens their retros; the run
+//   goes back to Draft, the other payslips stay approved. On an Approved
+//   run, or a Draft that still has approved payslips; 422 while a later
+//   payroll is Approved / Pending or the year's 13th month is Approved /
+//   Pending. run.rolled_back_at / roller / rollback_reason. Cancel is
+//   refused while approved payslips remain.
 // - show(id) → { approval: { configured, current_level, levels, history,
 //   can_approve } (ApprovalSteps / FilingHistory), run (+ cutoff, generator,
 //   submitter, actor, approver, canceller, settings, current_level,
@@ -31,7 +39,7 @@ import axios from '../../api/axiosInstance';
 //   employees: [{ id (payslip id), employee_id, employee_code, full_name,
 //   branch, position, pay_basis, basic_rate, gross_pay, total_deductions,
 //   net_pay, employer_share, absent_days, late_minutes, undertime_minutes,
-//   ot_minutes, warnings }] }.
+//   ot_minutes, warnings, approved (posted) }] }.
 // - payslip(id) → { payslip: { …, earnings [{ code, label, category,
 //   amount, taxable, detail [] }], deductions [{ label, category, amount,
 //   detail [] }], employer [{ label, amount }], summary (DTR summary +
@@ -51,7 +59,8 @@ const payrollRunApi = {
   disapprove: (id, remarks) => axios.post(`/payroll_run/disapprove/${id}`, { remarks }),
   cancel:   (id, reason) => axios.post(`/payroll_run/cancel/${id}`, { reason }),
   candidates: (id)       => axios.post(`/payroll_run/candidates/${id}`),
-  rollback: (id, reason) => axios.post(`/payroll_run/rollback/${id}`, { reason }),
+  cutoffCandidates: (cutoffId) => axios.post(`/payroll_run/cutoff_candidates/${cutoffId}`),
+  rollback: (id, reason, employeeIds) => axios.post(`/payroll_run/rollback/${id}`, employeeIds ? { reason, employee_ids: employeeIds } : { reason }),
 };
 
 export default payrollRunApi;

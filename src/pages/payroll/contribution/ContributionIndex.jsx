@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Table, Tag, Button, Space, Tooltip, Select, Input, Checkbox, Typography, App } from 'antd';
-import { EditOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons';
+import { EditOutlined, EyeOutlined, HistoryOutlined, ReloadOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import contributionProfileApi from '../../../services/payroll/contributionProfileApi';
 import handleApiError from '../../../utils/handleApiError';
@@ -8,6 +8,7 @@ import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../../utils/tablePaginati
 import { MODE_COLORS, employeeName } from '../payrollHelpers';
 import ContributionProfileModal from './ContributionProfileModal';
 import ContributionComputeModal from './ContributionComputeModal';
+import ContributionHistoryModal from './ContributionHistoryModal';
 
 const STATUSES = [
   { value: 1, label: 'Active employees' },
@@ -25,13 +26,15 @@ const govNumber = (v) => (!v || v === '-' ? <Tag color='red'>Missing</Tag> : v);
 
 // Employees with their government numbers and how each statutory deduction
 // applies (Computed from the tables / Fixed / Exempt). Edit opens the
-// profile; View shows the monthly computation. Server-side filters and
-// pagination.
+// profile; View shows the monthly computation; History (payroll-report-view)
+// the contributions actually deducted per cut-off from approved payslips.
+// Server-side filters and pagination.
 const ContributionIndex = () => {
   const { message } = App.useApp();
   const { hasPermission, hasRole } = useAuth();
   const isAdmin = hasRole('Administrator');
   const canEdit = isAdmin || hasPermission('contribution-profile-edit');
+  const canHistory = isAdmin || hasPermission('payroll-report-view');
 
   const [branches, setBranches] = useState([]);
   const [filters, setFilters]   = useState({ status: 1 });
@@ -42,6 +45,7 @@ const ContributionIndex = () => {
   const [loading, setLoading]   = useState(false);
   const [editing, setEditing]   = useState(null);
   const [computing, setComputing] = useState(null);
+  const [history, setHistory] = useState(null);
 
   const fetchRows = async () => {
     setLoading(true);
@@ -137,7 +141,7 @@ const ContributionIndex = () => {
     {
       title: 'Actions',
       key: 'actions',
-      width: 90,
+      width: canHistory ? 125 : 90,
       fixed: 'right',
       render: (_, r) => (
         <Space>
@@ -150,6 +154,17 @@ const ContributionIndex = () => {
               onClick={() => setComputing({ id: r.id, label: `${r.employee_code} - ${employeeName(r)}` })}
             />
           </Tooltip>
+          {canHistory && (
+            <Tooltip title='Contribution history (approved payslips)'>
+              <Button
+                size='small'
+                color='blue'
+                variant='outlined'
+                icon={<HistoryOutlined />}
+                onClick={() => setHistory({ id: r.id, label: `${r.employee_code} - ${employeeName(r)}` })}
+              />
+            </Tooltip>
+          )}
           <Tooltip title={canEdit ? 'Edit profile' : 'View profile'}>
             <Button
               size='small'
@@ -233,6 +248,7 @@ const ContributionIndex = () => {
         onSaved={() => { setEditing(null); fetchRows(); }}
       />
       <ContributionComputeModal employee={computing} onClose={() => setComputing(null)} />
+      <ContributionHistoryModal employee={history} onClose={() => setHistory(null)} />
     </div>
   );
 };

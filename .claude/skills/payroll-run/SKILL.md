@@ -39,8 +39,11 @@ has its own % (the premium rates' overtime column per day type).
   MyPayslipsIndex` (`/my-payslips`, open route, user menu),
   `reports/RemittanceReport` (`/remittances`), `ThirteenthMonthIndex`
   (`/thirteenth-month`), `YearEndTaxReport` (`/year-end-tax`),
-  `FinalPayReport` (`/final-pay`); `payrollReportApi`, `thirteenthMonthApi`,
-  `myPayslipApi`. Menu: Payroll → Reports & Compliance.
+  `FinalPayReport` (`/final-pay`), `PaySheetReport` (`/pay-sheet`),
+  `ContributionHistoryReport` (`/contribution-history`) — both on the shared
+  `RangeFilters` + `rangeHelpers` — and `contribution/ContributionHistoryModal`
+  (Contributions → History row action); `payrollReportApi`,
+  `thirteenthMonthApi`, `myPayslipApi`. Menu: Payroll → Reports & Compliance.
 
 ## Cut-offs (Payroll Settings → Cut-offs & Pay Days)
 
@@ -139,35 +142,51 @@ Seeder `PayrollRunApprovalProcedureSeeder`.
 
 ## Generate selected / roll back
 
-- **Generate Selected** (Draft, payroll-run-generate):
-  - `generate` takes `employee_ids`. Only those employees are computed
-    again; the others keep their lines, and the totals are re-summed from
-    every line.
-  - A selected employee who is no longer eligible (inactive, or no salary
-    for the cut-off) leaves the run. An eligible one not in the run is
-    added.
-  - Refused when Payroll Settings (pay fields only — not `employer_*`) or
-    the premium rates changed since the run was generated (stored
-    `settings` / `rates`, compared recursively): then use Regenerate All.
-  - `candidates/{id}` lists the employees in the run plus the eligible ones
-    not in it.
-  - Each partial generate adds an audit entry ('Payroll', attributes
-    `regenerated` / `removed`).
-  - UI: tick rows in the Pay Register, then Generate Selected
-    (`RegenerateEmployeesModal`). Regenerate All asks for confirmation.
-- **Roll Back to Draft** (Approved, payroll-run-rollback, reason):
-  - `PayrollRunService::rollback` removes this cut-off's `source = Payroll`
-    deduction payments (`DeductionService::removePayrollPayments` settles
-    each one: Fully Paid → Active) and sets its Applied retros to Open.
-  - It clears the approval and submission fields (the old ApprovedLog rows
-    no longer count after a resubmit) and sets `rolled_back_by / _at`,
-    `rollback_reason` (migration `2026_10_14_110000`).
-  - Refused while a later cut-off's run is Approved or Pending (only the
-    latest approved payroll can be rolled back), or while the year's 13th
-    month is Approved or Pending.
+A payslip is **approved** when `payroll_run_employees.posted_at` is set
+(migration `2026_10_14_130000`, backfilled for approved runs).
+`PayrollRunEmployee::approved()` (posted, run not Cancelled) is what reports,
+My Payslips, 13th month and final pay read, so a payslip kept through a
+rollback stays visible. Approval (`finalize`) posts only unposted rows, so
+deduction payments are never duplicated.
+
+- **Generate** (payroll-run-generate):
+  - `generate` takes `employee_ids`: on a Draft only those are computed
+    again (the others keep their lines, totals re-summed); on a cut-off with
+    no run it makes a run with just those. A chosen employee no longer
+    eligible (inactive / no salary) leaves the run; an eligible one not in it
+    is added.
+  - Approved (posted) employees are never recomputed: choosing one is
+    refused ("roll their payslips back first"), Regenerate All skips them.
+  - Refused when Payroll Settings (pay fields only — not `employer_*`) or the
+    premium rates changed since the run was generated: then Regenerate All.
+    With posted rows kept, such a change blocks generating.
+  - `candidates/{runId}` (the run's employees + eligible not in it) and
+    `cutoff_candidates/{cutoffId}` (the cut-off's run, or the eligible when
+    there is none) rows carry `in_run`, `eligible`, `approved`.
+  - Each partial generate adds an audit entry ('Payroll', `regenerated` /
+    `removed`).
+  - UI: Payroll Runs → Generate Payroll has All / Selected employees
+    (`cutoff_candidates`, approved ones disabled). On the run page, tick
+    rows then Generate Selected (`RegenerateEmployeesModal`, approved options
+    disabled); Regenerate All asks for confirmation.
+- **Roll back** (payroll-run-rollback, reason, `employee_ids` or none = all
+  approved):
+  - On an Approved run, or a Draft that still has approved payslips.
+  - Removes those employees' `source = Payroll` deduction payments of the
+    cut-off (`DeductionService::removePayrollPayments`: Fully Paid → Active),
+    reopens their Applied retros and unposts them. The run goes back to Draft
+    (submit and approve again); the other payslips stay approved.
+  - Clears the approval and submission fields and sets `rolled_back_by /
+    _at`, `rollback_reason` (migration `2026_10_14_110000`); the page shows
+    "Rolled back … by …" until it is submitted again.
+  - Refused while a later cut-off's run is Approved or Pending, or while the
+    year's 13th month is Approved or Pending. Cancel is refused while
+    approved payslips remain.
   - The cut-off's filing stays off: reopen it on Payroll Cut-offs if late
     filings are needed.
-  - The page shows "Rolled back … by …" until it is submitted again.
+  - UI: approved rows show an "Approved" lock tag on a Draft; ticking them
+    gives Roll Back Selected (n); Roll Back All (Approved run) / Roll Back All
+    Approved (n) (Draft). Cancel Payroll is hidden while any are approved.
 
 ## Reports & compliance rules
 
@@ -187,6 +206,18 @@ Seeder `PayrollRunApprovalProcedureSeeder`.
   be regenerated / cancelled; the submitter can't decide their own.
 - Year-end tax: (taxable − contributions + 13th month over ₱90k) ÷ 12 on the
   BIR monthly table × 12 vs. withheld; minimum wage earners exempt.
+- Range reports (`payroll_report/contribution_history`, `pay_sheet`,
+  `payslips`): `{ date_from, date_to }` = approved payslips whose cut-off
+  ENDS in it (≤ 1 year; the cut-off range sends the first cut-off's start and
+  the last one's end), filtered by company / branch / position (the
+  employee's **current** ones — a payslip keeps no branch) and
+  `employee_ids`. Contribution History: per employee SSS EE / ER / EC,
+  PhilHealth EE / ER, Pag-IBIG EE / voluntary / ER, tax, EE / ER totals,
+  expandable per cut-off; the Contributions page's History modal is the same
+  endpoint with one employee (default this year). Pay Sheet: one line per
+  employee summed over the cut-offs, tabs By Company / Branch / Position /
+  Cut-off; Print Payslips joins `payslipHtml` with a page break (≤ 500, else
+  422). Both download Excel.
 - Final pay: unpaid days split by the saved cut-offs and prorated against
   each full cut-off; SIL / VL balance × daily rate (VL over 10 days
   taxable); posts nothing.
