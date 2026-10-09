@@ -1,18 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, Select, Form, App } from "antd";
+import { Modal, Select, Form, DatePicker, App } from "antd";
 import useAuth from "../../../hooks/useAuth";
 import useEmployeeFormOptions from "../../../hooks/useEmployeeFormOptions";
+import EmployeeSelect from "../../manpower_request/request/EmployeeSelect";
 import handleApiError from "../../../utils/handleApiError";
 import downloadBlobResponse from "../../../utils/downloadBlobResponse";
+import { DISPLAY_DATE_FORMAT } from "../../../utils/formatDate";
 import { DOCUMENT_TYPES, BRANCH_POSITION_ROLES, MONTHS } from "./importDocumentTypes";
 
 // Matches vueportal's TemplateDownloadDialog.vue: a Document Type dropdown
 // (shared list in importDocumentTypes.js) plus the options the chosen
 // template's backend reads — Document Status, Branch / Position for HR
 // roles (0 = ALL; Branch Assignment Position and Monthly Key Performance),
-// and Year / Month for Monthly Key Performance.
+// Year / Month for Monthly Key Performance, Branch / Position / Employees
+// for Salary and Attendance Logs (blank = everyone matching the other
+// filters), and a date range (≤ 31 days) for Attendance Logs.
 const YEARS = Array.from({ length: new Date().getFullYear() - 2019 }, (_, i) => 2020 + i).reverse();
 const STATUS_OPTIONS = ["All", "Active", "Inactive"].map((s) => ({ label: s, value: s }));
 
@@ -30,7 +34,10 @@ export default function GenerateTemplateModal({ open, onClose, types }) {
     .filter((type) => isAdmin || hasPermission(type.templatePermission))
     .map(({ value, label }) => ({ value, label }));
   const type = DOCUMENT_TYPES.find((t) => t.value === documentType);
-  const showBranchPosition = type?.templateOptions?.branchPosition && hasAnyRole(...BRANCH_POSITION_ROLES);
+  const showEmployees = !!type?.templateOptions?.employees;
+  const showBranchPosition = showEmployees || (type?.templateOptions?.branchPosition && hasAnyRole(...BRANCH_POSITION_ROLES));
+  const branchId = Form.useWatch("branch_id", form);
+  const positionId = Form.useWatch("position_id", form);
 
   const handleClose = () => {
     if (downloading) return;
@@ -55,6 +62,8 @@ export default function GenerateTemplateModal({ open, onClose, types }) {
         position_id: values.position_id ?? "",
         period: values.period ?? "",
         month: values.month ?? "",
+        ...(showEmployees ? { employee_ids: (values.employee_ids || []).map((e) => e.value) } : {}),
+        ...(type.templateOptions?.dateRange ? { date_from: values.dates[0].format("YYYY-MM-DD"), date_to: values.dates[1].format("YYYY-MM-DD") } : {}),
       });
       const downloaded = await downloadBlobResponse(response, type.filename, messageApi);
       if (downloaded) {
@@ -100,6 +109,39 @@ export default function GenerateTemplateModal({ open, onClose, types }) {
               />
             </Form.Item>
           </>
+        )}
+
+        {showEmployees && (
+          <Form.Item
+            name="employee_ids"
+            label="Employees"
+            extra="Blank = every employee of the branch / position above."
+          >
+            <EmployeeSelect
+              multiple
+              placeholder="All employees"
+              branchId={branchId || undefined}
+              positionId={positionId || undefined}
+            />
+          </Form.Item>
+        )}
+
+        {type?.templateOptions?.dateRange && (
+          <Form.Item
+            name="dates"
+            label="Dates"
+            extra="One line per employee per date — at most 31 days."
+            rules={[
+              { required: true, message: "Choose the dates." },
+              {
+                validator: (_, v) => (!v?.[0] || !v?.[1] || v[1].diff(v[0], "day") < 31
+                  ? Promise.resolve()
+                  : Promise.reject(new Error("At most 31 days."))),
+              },
+            ]}
+          >
+            <DatePicker.RangePicker format={DISPLAY_DATE_FORMAT} />
+          </Form.Item>
         )}
 
         {type?.templateOptions?.kpi && (

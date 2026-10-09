@@ -16,7 +16,8 @@ const blankNumber = (v) => (!v || v === '-' ? <Typography.Text type='danger'>Mis
 
 // How SSS / PhilHealth / Pag-IBIG and withholding tax apply to one
 // employee: Computed from the table in force, a Fixed monthly amount, or
-// Exempt. The government numbers are read-only here (Employee Master Data).
+// Exempt — and the payroll bank account the net pay is credited to. The
+// government numbers are read-only here (Employee Master Data).
 const ContributionProfileModal = ({ employeeId, canEdit, onClose, onSaved }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
@@ -52,6 +53,7 @@ const ContributionProfileModal = ({ employeeId, canEdit, onClose, onSaved }) => 
       return;
     }
     const payload = { ...values, remarks: values.remarks?.trim() || null };
+    ['bank_name', 'bank_account_no', 'bank_account_name'].forEach((k) => { payload[k] = payload[k]?.trim() || null; });
     AMOUNT_KEYS.forEach((k) => { payload[k] = payload[k] ?? null; });
     setSaving(true);
     try {
@@ -158,6 +160,37 @@ const ContributionProfileModal = ({ employeeId, canEdit, onClose, onSaved }) => 
           >
             <Switch />
           </Form.Item>
+          <Divider titlePlacement='start' style={{ margin: '8px 0' }}>Payroll Bank Account</Divider>
+          <Row gutter={12}>
+            <Col xs={24} md={8}>
+              <Form.Item name='bank_name' label='Bank'>
+                <Input maxLength={100} placeholder='e.g. BDO' />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name='bank_account_no'
+                label='Account No.'
+                dependencies={['bank_name']}
+                rules={[
+                  { pattern: /^[0-9 -]*$/, message: 'Digits, spaces and dashes only' },
+                  ({ getFieldValue }) => ({
+                    validator: (_, v) => (getFieldValue('bank_name')?.trim() && !v?.trim() ? Promise.reject(new Error('Account No. is required with a bank')) : Promise.resolve()),
+                  }),
+                ]}
+              >
+                <Input maxLength={50} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name='bank_account_name' label='Account Name' extra='Blank = the employee name.'>
+                <Input maxLength={150} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Typography.Paragraph type='secondary' style={{ fontSize: 12, marginTop: -8 }}>
+            Net pay is credited here in the payroll bank file; without an account the employee is listed for cash / check.
+          </Typography.Paragraph>
           <Form.Item name='remarks' label='Remarks'>
             <Input.TextArea rows={2} maxLength={1000} />
           </Form.Item>

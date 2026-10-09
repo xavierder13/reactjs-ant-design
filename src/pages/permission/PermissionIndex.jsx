@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Card, Row, Col, Typography, Button,
-  Table, Space, Popconfirm, Tooltip,
+  Table, Space, Tag, Popconfirm, Tooltip,
   Input, Form, Breadcrumb, Modal, App,
 } from 'antd';
 import {
@@ -121,6 +121,12 @@ const PermissionIndex = () => {
 
   const columns = [
     { title: 'Permission', dataIndex: 'name', key: 'name' },
+    {
+      title: 'Guard',
+      dataIndex: 'guard_name',
+      key: 'guard_name',
+      render: (guard) => <Tag>{guard}</Tag>,
+    },
     {
       title: 'Actions',
       key: 'actions',

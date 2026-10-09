@@ -68,6 +68,7 @@ import LeaveBalances from '../pages/leave/LeaveBalances';
 import LeaveTypeIndex from '../pages/leave/types/LeaveTypeIndex';
 import ShiftIndex from '../pages/shift/ShiftIndex';
 import ShiftAssignmentIndex from '../pages/shift/ShiftAssignmentIndex';
+import GroupScheduleIndex from '../pages/shift/GroupScheduleIndex';
 import TimeEntryIndex from '../pages/time_entry/TimeEntryIndex';
 import AccessChartIndex from '../pages/approval/AccessChartIndex';
 import PayrollCutoffIndex from '../pages/payroll_cutoff/PayrollCutoffIndex';
@@ -78,9 +79,17 @@ import ContributionTableIndex from '../pages/payroll/contribution/ContributionTa
 import DeductionIndex from '../pages/payroll/deduction/DeductionIndex';
 import DeductionTypeIndex from '../pages/payroll/deduction/DeductionTypeIndex';
 import RetroIndex from '../pages/payroll/retro/RetroIndex';
+import TimekeepingIndex from '../pages/payroll/timekeeping/TimekeepingIndex';
+import PayrollRunIndex from '../pages/payroll/run/PayrollRunIndex';
+import PayrollRunPage from '../pages/payroll/run/PayrollRunPage';
 import AllowanceIndex from '../pages/payroll/allowance/AllowanceIndex';
 import AllowanceTypeIndex from '../pages/payroll/allowance/AllowanceTypeIndex';
 import PayrollSettingsPage from '../pages/payroll/settings/PayrollSettingsPage';
+import RemittanceReport from '../pages/payroll/reports/RemittanceReport';
+import ThirteenthMonthIndex from '../pages/payroll/reports/ThirteenthMonthIndex';
+import YearEndTaxReport from '../pages/payroll/reports/YearEndTaxReport';
+import FinalPayReport from '../pages/payroll/reports/FinalPayReport';
+import MyPayslipsIndex from '../pages/payroll/my_payslips/MyPayslipsIndex';
 import OvertimeIndex from '../pages/overtime/OvertimeIndex';
 import ApprovingOfficerIndex from '../pages/approval/ApprovingOfficerIndex';
 import CompanyIndex from '../pages/record_management/company/CompanyIndex';
@@ -146,6 +155,7 @@ const permissionRoutes = [
   { permissions: ['leave-type-list'],         path: '/leave/types',                element: <LeaveTypeIndex /> },
   { permissions: ['shift-list'],              path: '/shifts',                     element: <ShiftIndex /> },
   { permissions: ['shift-assignment-list', 'shift-assignment-list-all'], path: '/shifting', element: <ShiftAssignmentIndex /> },
+  { permissions: ['group-schedule-list'],     path: '/default-schedules',          element: <GroupScheduleIndex /> },
   { permissions: ['time-entry-list', 'time-entry-list-all'], path: '/time-entries', element: <TimeEntryIndex /> },
   { permissions: ['access-chart-list'], path: '/access-charts', element: <AccessChartIndex /> },
   { permissions: ['payroll-cutoff-list'], path: '/payroll-cutoffs', element: <PayrollCutoffIndex /> },
@@ -157,6 +167,13 @@ const permissionRoutes = [
   { permissions: ['deduction-list'], path: '/deductions', element: <DeductionIndex /> },
   { permissions: ['deduction-type-list'], path: '/deduction-types', element: <DeductionTypeIndex /> },
   { permissions: ['retro-list'], path: '/retro', element: <RetroIndex /> },
+  { permissions: ['dtr-list'], path: '/timekeeping', element: <TimekeepingIndex /> },
+  { permissions: ['payroll-run-list'], path: '/payroll-runs', element: <PayrollRunIndex /> },
+  { permissions: ['payroll-run-list'], path: '/payroll-runs/:id', element: <PayrollRunPage /> },
+  { permissions: ['payroll-report-view'], path: '/remittances', element: <RemittanceReport /> },
+  { permissions: ['thirteenth-month-list'], path: '/thirteenth-month', element: <ThirteenthMonthIndex /> },
+  { permissions: ['payroll-report-view'], path: '/year-end-tax', element: <YearEndTaxReport /> },
+  { permissions: ['final-pay-view'], path: '/final-pay', element: <FinalPayReport /> },
   { permissions: ['allowance-list'], path: '/allowances', element: <AllowanceIndex /> },
   { permissions: ['allowance-type-list'], path: '/allowance-types', element: <AllowanceTypeIndex /> },
   { permissions: ['payroll-setting-view', 'payroll-setting-edit'], path: '/payroll-settings', element: <PayrollSettingsPage /> },
@@ -223,6 +240,7 @@ const AppRoutes = () => {
           <Route element={<MainLayout />}>
             <Route path='/'             element={<SmartRedirect />} />
             <Route path='/user/profile' element={<UserProfile />} />
+            <Route path='/my-payslips'  element={<MyPayslipsIndex />} />
           </Route>
         </Route>
 

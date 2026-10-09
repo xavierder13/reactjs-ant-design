@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import {
-  Tabs, Form, InputNumber, Select, TimePicker, Button, Row, Col, Card, Table, Tag, Alert, Typography, Spin, App,
+  Tabs, Form, Input, InputNumber, Select, TimePicker, Button, Row, Col, Card, Table, Tag, Alert, Typography, Spin, Switch, App,
 } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
@@ -23,11 +23,24 @@ const AGENCIES = [
   { key: 'tax_deduction', label: 'Withholding Tax' },
 ];
 const toTime = (t) => (t ? dayjs(`2000-01-01 ${String(t).slice(0, 5)}`) : null);
+const DAYS_1_28 = Array.from({ length: 28 }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
+const PAY_DAYS = [{ value: 0, label: 'Last day of the month' }, ...Array.from({ length: 31 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }))];
+const ordinal = (n) => `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : (n % 10 < 4 ? n % 10 : 0)]}`;
+const payDayText = (d) => (d === 0 ? 'the last day of the month' : `the ${ordinal(d)}`);
+
+// "1–15 and 16–end" / "26–10 and 11–25" for the two start days.
+const cutoffPatternText = (a, b) => {
+  if (!a || !b || a === b) return '…';
+  const end = (start) => (start === 1 ? 'end' : String(start - 1));
+  return `${a}–${b - 1} and ${b}–${end(a)}`;
+};
 
 // Payroll rules the payroll run reads: the daily-rate factor, hours per day,
-// the night-differential window and when each statutory deduction is taken
-// (General), and the premium pay per day type (Premium Rates). Paid twice a
-// month — the 15th and the end of the month (Payroll Cut-offs).
+// the night-differential window, when each statutory deduction is taken,
+// the cut-off pattern and pay days the cut-off generator uses, and the
+// holiday-pay rule and the employer's registration on government forms
+// (General), and the premium pay per day type (Premium
+// Rates).
 const PayrollSettingsPage = () => {
   const { message } = App.useApp();
   const { hasPermission, hasRole } = useAuth();
@@ -40,6 +53,10 @@ const PayrollSettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [savingRates, setSavingRates] = useState(false);
   const factor = Form.useWatch('daily_rate_factor', form);
+  const firstDay = Form.useWatch('cutoff_first_day', form);
+  const secondDay = Form.useWatch('cutoff_second_day', form);
+  const payFirst = Form.useWatch('pay_day_first', form);
+  const paySecond = Form.useWatch('pay_day_second', form);
 
   useEffect(() => {
     const load = async () => {
@@ -145,7 +162,7 @@ const PayrollSettingsPage = () => {
                   type='info'
                   showIcon
                   style={{ marginBottom: 16 }}
-                  title='Paid twice a month — on the 15th and the end of the month (Time & Leave → Setup → Payroll Cut-offs). The payroll run keeps a copy of these settings, so a change applies to runs made after it.'
+                  title='The payroll run keeps a copy of these settings, so a change applies to runs made after it. Cut-offs are made from the pattern below (Time & Leave → Setup → Payroll Cut-offs → Generate Year).'
                 />
                 <Card size='small' title='Rates' style={{ marginBottom: 16 }}>
                   <Row gutter={16}>
@@ -192,6 +209,104 @@ const PayrollSettingsPage = () => {
                         </Form.Item>
                       </Col>
                     ))}
+                  </Row>
+                </Card>
+                <Card size='small' title='Cut-offs & Pay Days' style={{ marginTop: 16 }}>
+                  <Typography.Paragraph type='secondary' style={{ marginTop: 0 }}>
+                    {`Semi-monthly: ${cutoffPatternText(firstDay, secondDay)}, paid on ${payFirst === undefined ? '…' : payDayText(payFirst)} and ${paySecond === undefined ? '…' : payDayText(paySecond)} (the first such date on or after the period ends).`}
+                  </Typography.Paragraph>
+                  <Row gutter={16}>
+                    <Col xs={12} md={6}>
+                      <Form.Item name='cutoff_first_day' label='1st cut-off starts on day' rules={[{ required: true, message: 'Required' }]}>
+                        <Select options={DAYS_1_28} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Form.Item
+                        name='cutoff_second_day'
+                        label='2nd cut-off starts on day'
+                        dependencies={['cutoff_first_day']}
+                        rules={[
+                          { required: true, message: 'Required' },
+                          ({ getFieldValue }) => ({
+                            validator: (_, v) => (v && v === getFieldValue('cutoff_first_day') ? Promise.reject(new Error('Must differ from the 1st')) : Promise.resolve()),
+                          }),
+                        ]}
+                      >
+                        <Select options={DAYS_1_28} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Form.Item name='pay_day_first' label='1st cut-off paid on' rules={[{ required: true, message: 'Required' }]}>
+                        <Select options={PAY_DAYS} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Form.Item name='pay_day_second' label='2nd cut-off paid on' rules={[{ required: true, message: 'Required' }]}>
+                        <Select options={PAY_DAYS} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={16}>
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        name='pay_day_adjust'
+                        label='Pay day on a Sunday or holiday'
+                        rules={[{ required: true, message: 'Required' }]}
+                      >
+                        <Select options={(data?.pay_day_adjustments || []).map((v) => ({ value: v, label: v === 'None' ? 'Keep the date' : `Move to the ${v.toLowerCase()}` }))} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </Card>
+                <Card size='small' title='Holiday Pay' style={{ marginTop: 16 }}>
+                  <Typography.Paragraph type='secondary' style={{ marginTop: 0 }}>
+                    A holiday not worked is never an absence — no deduction, even when on leave (leave credits aren&apos;t used on a holiday). Monthly-paid: covered by the salary. Daily-paid: paid at the day type&apos;s &quot;Paid if Unworked&quot; rate (regular holiday 100%, special holiday 0% — no work, no pay). Work on a holiday is paid at its own regular / overtime rates (Premium Rates).
+                  </Typography.Paragraph>
+                  <Form.Item
+                    name='holiday_pay_needs_prior_day'
+                    label='Unworked regular holiday is paid only if present or on paid leave the workday before'
+                    valuePropName='checked'
+                    extra='The Labor Code rule. Off = always paid.'
+                  >
+                    <Switch />
+                  </Form.Item>
+                </Card>
+                <Card size='small' title='Employer (government forms)' style={{ marginTop: 16 }}>
+                  <Typography.Paragraph type='secondary' style={{ marginTop: 0 }}>
+                    Printed on the BIR 2316, the alphalist and the remittance reports (Payroll → Reports &amp; Compliance).
+                  </Typography.Paragraph>
+                  <Row gutter={12}>
+                    <Col xs={24} md={16}>
+                      <Form.Item name='employer_name' label='Registered Name'><Input maxLength={150} /></Form.Item>
+                    </Col>
+                    <Col xs={24} md={8}>
+                      <Form.Item
+                        name='employer_tin'
+                        label='TIN'
+                        rules={[{ pattern: /^[0-9-]*$/, message: 'Digits and dashes only (e.g. 000-123-456-000)' }]}
+                      >
+                        <Input maxLength={30} placeholder='000-123-456-000' />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} md={16}>
+                      <Form.Item name='employer_address' label='Registered Address'><Input maxLength={255} /></Form.Item>
+                    </Col>
+                    <Col xs={12} md={4}>
+                      <Form.Item name='employer_zip' label='ZIP Code'><Input maxLength={10} /></Form.Item>
+                    </Col>
+                    <Col xs={12} md={4}>
+                      <Form.Item name='employer_rdo' label='RDO Code'><Input maxLength={10} /></Form.Item>
+                    </Col>
+                    <Col xs={24} md={8}>
+                      <Form.Item name='employer_sss_no' label='SSS Employer No.'><Input maxLength={30} /></Form.Item>
+                    </Col>
+                    <Col xs={24} md={8}>
+                      <Form.Item name='employer_philhealth_no' label='PhilHealth Employer No.'><Input maxLength={30} /></Form.Item>
+                    </Col>
+                    <Col xs={24} md={8}>
+                      <Form.Item name='employer_pagibig_no' label='Pag-IBIG Employer No.'><Input maxLength={30} /></Form.Item>
+                    </Col>
                   </Row>
                 </Card>
                 <Row justify='space-between' align='middle' style={{ marginTop: 16 }} gutter={[8, 8]}>

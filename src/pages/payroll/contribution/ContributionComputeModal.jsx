@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import dayjs from 'dayjs';
-import { Modal, Form, DatePicker, InputNumber, Button, Table, Tag, Alert, Row, Col, Statistic, Spin, App } from 'antd';
+import { Modal, Form, DatePicker, InputNumber, Button, Table, Tag, Alert, Row, Col, Statistic, Spin, Grid, Typography, App } from 'antd';
 import { CalculatorOutlined } from '@ant-design/icons';
 import contributionProfileApi from '../../../services/payroll/contributionProfileApi';
 import handleApiError from '../../../utils/handleApiError';
@@ -11,15 +11,22 @@ import { rateLabel } from '../../compensation/compensationHelpers';
 // Preview of one employee's MONTHLY contributions and withholding tax on a
 // date, from their profile and the tables in force. The base is the salary
 // in force (monthly rate, for users who may see salaries) unless another
-// monthly compensation is typed — needed for a daily rate.
+// monthly compensation is typed — needed for a daily rate. Recomputes when
+// the date or the compensation changes (the compensation after a short
+// pause), and says which base and date the totals are for.
 const ContributionComputeModal = ({ employee, onClose }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
+  const screens = Grid.useBreakpoint();
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const requestNo = useRef(0); // only the latest request's answer is shown
+  const typingTimer = useRef(null);
 
   const compute = async () => {
+    clearTimeout(typingTimer.current);
     const { date, base } = form.getFieldsValue();
+    const no = ++requestNo.current;
     setLoading(true);
     try {
       const { data } = await contributionProfileApi.compute({
@@ -27,16 +34,23 @@ const ContributionComputeModal = ({ employee, onClose }) => {
         date: (date || dayjs()).format('YYYY-MM-DD'),
         base: base ?? null,
       });
-      setResult(data.computation);
+      if (no === requestNo.current) setResult({ ...data.computation, typedBase: base !== null && base !== undefined });
     } catch (error) {
-      handleApiError(error, message);
+      if (no === requestNo.current) handleApiError(error, message);
     } finally {
-      setLoading(false);
+      if (no === requestNo.current) setLoading(false);
     }
   };
 
+  // a new date recomputes at once; a typed compensation once typing pauses
+  const handleValuesChange = (changed) => {
+    clearTimeout(typingTimer.current);
+    if ('date' in changed) compute();
+    else if ('base' in changed) typingTimer.current = setTimeout(compute, 500);
+  };
+
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { clearTimeout(typingTimer.current); return; }
     form.setFieldsValue({ date: dayjs(), base: null });
     setResult(null);
     compute();
@@ -89,8 +103,11 @@ const ContributionComputeModal = ({ employee, onClose }) => {
       width={{ xs: '100%', sm: '95%', lg: 1000 }}
       destroyOnHidden
     >
-      <Form form={form} layout='vertical'>
-        <Row gutter={12} align='bottom'>
+      <Form form={form} layout='vertical' onValuesChange={handleValuesChange}>
+        {/* top-aligned, the button under an empty label beside the fields
+            (md+): the hint under Monthly compensation would otherwise push
+            the other controls down */}
+        <Row gutter={12} align='top'>
           <Col xs={12} md={6}>
             <Form.Item name='date' label='As of'>
               <DatePicker format={DISPLAY_DATE_FORMAT} style={{ width: '100%' }} allowClear={false} />
@@ -102,7 +119,7 @@ const ContributionComputeModal = ({ employee, onClose }) => {
             </Form.Item>
           </Col>
           <Col xs={24} md={6}>
-            <Form.Item>
+            <Form.Item label={screens.md ? ' ' : null} colon={false}>
               <Button type='primary' icon={<CalculatorOutlined />} onClick={compute} loading={loading}>Compute</Button>
             </Form.Item>
           </Col>
@@ -132,7 +149,12 @@ const ContributionComputeModal = ({ employee, onClose }) => {
         {result && !result.needs_base && (
           <>
             <Table rowKey='key' size='small' columns={columns} dataSource={rows} pagination={false} scroll={{ x: 860 }} />
-            <Row gutter={16} style={{ marginTop: 16 }}>
+            <Typography.Text type='secondary' style={{ display: 'block', marginTop: 16 }}>
+              {result.typedBase
+                ? `Monthly totals on ${peso(result.base)} (typed monthly compensation) as of ${formatDate(result.date)}`
+                : `Monthly totals on the salary in force, ${peso(result.base)} / month, as of ${formatDate(result.date)}`}
+            </Typography.Text>
+            <Row gutter={16} style={{ marginTop: 8 }}>
               <Col xs={12} md={6}><Statistic title='Employee share' value={peso(result.totals.ee)} /></Col>
               <Col xs={12} md={6}><Statistic title='Withholding tax' value={peso(result.totals.tax)} /></Col>
               <Col xs={12} md={6}><Statistic title='Total employee deductions' value={peso(result.totals.employee_deductions)} /></Col>

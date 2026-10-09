@@ -5,7 +5,7 @@ import shiftAssignmentApi from '../../services/shift/shiftAssignmentApi';
 import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../utils/formatDate';
 import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
-import { dayText, patternSummary, applyErrors } from './shiftHelpers';
+import { dayText, patternSummary, applyErrors, scheduleSourceLabel } from './shiftHelpers';
 
 // Assign (assignment = null) or change a temporary shifting. Takes effect
 // directly (no approval). The preview lists each date's current schedule
@@ -114,7 +114,7 @@ const ShiftAssignmentFormModal = ({ open, assignment, options, onClose, onSaved 
       key: 'current',
       render: (_, r) => {
         if (!r.source) return <Tag>No schedule</Tag>;
-        const from = r.source === 'shift' ? <Tag color='blue'>{r.shift_code}</Tag> : <Tag>Work Schedule</Tag>;
+        const from = r.source === 'shift' ? <Tag color='blue'>{r.shift_code}</Tag> : <Tag>{scheduleSourceLabel(r)}</Tag>;
         return <span>{from} {dayText(r)}</span>;
       },
     },

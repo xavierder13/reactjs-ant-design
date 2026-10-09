@@ -61,6 +61,9 @@ export default function ImportDataModal({ open, onClose, onImported, types }) {
   // Flattens the backend's `{ "<rowIndex>.<column>": ["message", ...] }`
   // shape (matching ImportDialog.vue's own row/col parsing of the same
   // response) into one row per (row, column, message) for the table below.
+  // rowIndex counts the data lines from 0 (every import controller:
+  // `$fields[$x - 1]` / `slice(1)`), so the Excel row is rowIndex + 2 —
+  // row 1 is the heading.
   const buildErrorRows = (errorRowData, fieldValues) => {
     const rows = [];
     Object.entries(errorRowData).forEach(([key, messages]) => {
@@ -68,7 +71,7 @@ export default function ImportDataModal({ open, onClose, onImported, types }) {
       messages.forEach((msg) => {
         rows.push({
           key: `${key}-${rows.length}`,
-          row: Number(rowIndex) + 1,
+          row: Number(rowIndex) + 2,
           column,
           message: msg,
           value: fieldValues?.[rowIndex]?.[column] ?? '',
@@ -174,7 +177,7 @@ export default function ImportDataModal({ open, onClose, onImported, types }) {
           dataSource={errorRows || []}
           pagination={false}
           columns={[
-            { title: 'Row', dataIndex: 'row', width: 70 },
+            { title: 'Excel Row', dataIndex: 'row', width: 90 },
             { title: 'Column', dataIndex: 'column' },
             { title: 'Message', dataIndex: 'message' },
             { title: 'Value', dataIndex: 'value' },

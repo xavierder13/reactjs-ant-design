@@ -83,6 +83,7 @@ const titleMap = {
   '/workforce-dashboard':    { title: 'Workforce Dashboard', breadcrumb: ['Dashboards', 'Workforce Dashboard'] },
   '/users':                  { title: 'User Accounts',       breadcrumb: ['User Management', 'User Accounts'] },
   '/user/profile':           { title: 'My Profile',          breadcrumb: ['User Management', 'My Profile'] },
+  '/my-payslips':            { title: 'My Payslips',         breadcrumb: ['My Payslips'] },
   '/roles':                  { title: 'Roles',               breadcrumb: ['Authorizations', 'Roles'] },
   '/roles/create':           { title: 'Create Role',         breadcrumb: ['Authorizations', 'Roles', 'Create'] },
   '/permissions':            { title: 'Permissions',         breadcrumb: ['Authorizations', 'Permissions'] },
@@ -120,6 +121,7 @@ const titleMap = {
   '/leave/balances':           { title: 'Leave Balances',          breadcrumb: ['Time & Leave', 'Leave Balances'] },
   '/leave/types':              { title: 'Leave Types',             breadcrumb: ['Time & Leave', 'Leave Types'] },
   '/shifting':                 { title: 'Shifting',                breadcrumb: ['Time & Leave', 'Shifting'] },
+  '/default-schedules':        { title: 'Default Schedules',       breadcrumb: ['Time & Leave', 'Default Schedules'] },
   '/time-entries':             { title: 'Manual Time Entries',     breadcrumb: ['Time & Leave', 'Manual Time Entries'] },
   '/payroll-cutoffs':          { title: 'Payroll Cut-offs',        breadcrumb: ['Time & Leave', 'Payroll Cut-offs'] },
   '/access-charts':            { title: 'Access Charts',           breadcrumb: ['Approvals', 'Access Charts'] },
@@ -129,6 +131,12 @@ const titleMap = {
   '/contributions':            { title: 'Contributions',           breadcrumb: ['Payroll', 'Contributions'] },
   '/deductions':               { title: 'Deductions',              breadcrumb: ['Payroll', 'Deductions'] },
   '/retro':                    { title: 'Retro Adjustments',       breadcrumb: ['Payroll', 'Retro Adjustments'] },
+  '/timekeeping':              { title: 'Timekeeping',             breadcrumb: ['Payroll', 'Timekeeping'] },
+  '/payroll-runs':             { title: 'Payroll Runs',            breadcrumb: ['Payroll', 'Payroll Runs'] },
+  '/remittances':              { title: 'Remittances',             breadcrumb: ['Payroll', 'Reports & Compliance', 'Remittances'] },
+  '/thirteenth-month':         { title: '13th Month Pay',          breadcrumb: ['Payroll', 'Reports & Compliance', '13th Month Pay'] },
+  '/year-end-tax':             { title: 'Year-end Tax',            breadcrumb: ['Payroll', 'Reports & Compliance', 'Year-end Tax'] },
+  '/final-pay':                { title: 'Final Pay',               breadcrumb: ['Payroll', 'Reports & Compliance', 'Final Pay'] },
   '/contribution-tables':      { title: 'Contribution Tables',     breadcrumb: ['Payroll', 'Setup', 'Contribution Tables'] },
   '/deduction-types':          { title: 'Deduction Types',         breadcrumb: ['Payroll', 'Setup', 'Deduction Types'] },
   '/allowances':               { title: 'Allowances',              breadcrumb: ['Payroll', 'Allowances'] },
@@ -265,6 +273,7 @@ const menuData = [
             label: 'Schedule',
             children: [
               { key: 'shifting', title: 'Shifting', link: '/shifting', permissions: ['shift-assignment-list', 'shift-assignment-list-all'] },
+              { key: 'default-schedules', title: 'Default Schedules', link: '/default-schedules', permissions: ['group-schedule-list'] },
             ],
           },
           {
@@ -280,14 +289,35 @@ const menuData = [
           },
         ],
       },
-      // Pay records the payroll run reads: salary, allowances, statutory
-      // contributions, scheduled deductions and retro adjustments, plus the
-      // payroll settings and setup tables.
+      // Payroll processing (Timekeeping = the DTR per cut-off, Payroll Runs),
+      // reports & compliance (remittances, 13th month, year-end tax, final
+      // pay), the pay records the run reads (salary, allowances, statutory
+      // contributions, scheduled deductions, retro adjustments) and setup.
       {
         key: 'payroll',
         title: 'Payroll',
         icon: <WalletOutlined />,
         children: [
+          {
+            key: 'payroll-processing',
+            type: 'group',
+            label: 'Processing',
+            children: [
+              { key: 'timekeeping',  title: 'Timekeeping',  link: '/timekeeping',  permissions: ['dtr-list'] },
+              { key: 'payroll-runs', title: 'Payroll Runs', link: '/payroll-runs', permissions: ['payroll-run-list'] },
+            ],
+          },
+          {
+            key: 'payroll-reports',
+            type: 'group',
+            label: 'Reports & Compliance',
+            children: [
+              { key: 'remittances',      title: 'Remittances',    link: '/remittances',      permissions: ['payroll-report-view'] },
+              { key: 'thirteenth-month', title: '13th Month Pay', link: '/thirteenth-month', permissions: ['thirteenth-month-list'] },
+              { key: 'year-end-tax',     title: 'Year-end Tax',   link: '/year-end-tax',     permissions: ['payroll-report-view'] },
+              { key: 'final-pay',        title: 'Final Pay',      link: '/final-pay',        permissions: ['final-pay-view'] },
+            ],
+          },
           {
             key: 'payroll-records',
             type: 'group',
@@ -586,6 +616,8 @@ const MainLayout = () => {
     if (titleMap[pathname]) return titleMap[pathname];
     if (/^\/kpi-templates\/\d+\/edit$/.test(pathname))
       return { title: 'Edit KPI Template', breadcrumb: ['KPI Management', 'KPI Templates', 'Edit'] };
+    if (/^\/payroll-runs\/\d+$/.test(pathname))
+      return { title: 'Payroll Run', breadcrumb: ['Payroll', 'Payroll Runs', 'View'] };
     if (/^\/roles\/\d+\/edit$/.test(pathname))
       return { title: 'Edit Role', breadcrumb: ['Authorizations', 'Roles', 'Edit'] };
     if (/^\/employees\/\d+$/.test(pathname))
@@ -691,6 +723,11 @@ const MainLayout = () => {
           icon:  <StarOutlined style={{ color: 'rgba(255,255,255,0.65)', fontSize: 14 }} />,
           label: <Link to='/my-evaluations' style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>My Evaluations</Link>,
         },
+        {
+          key:   'my-payslips',
+          icon:  <WalletOutlined style={{ color: 'rgba(255,255,255,0.65)', fontSize: 14 }} />,
+          label: <Link to='/my-payslips' style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>My Payslips</Link>,
+        },
       ]
     : tidyDividers(menuData.map(generateMenuItem).filter(Boolean));
 
@@ -706,7 +743,7 @@ const MainLayout = () => {
   });
 
   const searchItems = isEmployeeOnly
-    ? [{ key: 'my-evaluations', title: 'My Evaluations', path: [], link: '/my-evaluations' }]
+    ? [{ key: 'my-evaluations', title: 'My Evaluations', path: [], link: '/my-evaluations' }, { key: 'my-payslips', title: 'My Payslips', path: [], link: '/my-payslips' }]
     : collectSearchItems(menuData);
 
   const openSearchItem = (item) => {
@@ -728,6 +765,7 @@ const MainLayout = () => {
         label: <div style={{ lineHeight: 1.3, color: 'rgba(0,0,0,0.88)' }}><div style={{ fontWeight: 600 }}>{user?.name}</div><div style={{ fontSize: 11, color: '#8c8c8c' }}>{user?.role ?? 'User'}</div></div>,
       }, { type: 'divider' }] : []),
       { key: 'profile', label: 'Profile', icon: <UserOutlined />,  onClick: () => navigate('/user/profile') },
+      { key: 'my-payslips', label: 'My Payslips', icon: <WalletOutlined />, onClick: () => navigate('/my-payslips') },
       { type: 'divider' },
       { key: 'logout',  label: 'Logout',  icon: <LogoutOutlined />, onClick: handleLogout },
     ],

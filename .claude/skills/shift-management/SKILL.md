@@ -46,13 +46,25 @@ with the permission change it directly. The system keeps every change.
   Updated / Cancelled with a JSON snapshot of the state after it (period,
   status, relieved employee, shift code / name / grace and its 7 days) +
   who / when / remarks — the trail payroll needs. Period locking (payroll
-  cutoffs) comes with the DTR phase.
-- **ScheduleService::forRange / forDate** — the schedule in force: an
-  Active shifting covering the date (its shift's day), else the Work
-  Schedule version in effect (rest day ⇒ day off), else none. Per date:
-  source (`shift` | `work_schedule` | null), shift_code, day_off, time_in,
-  time_out, break_minutes, grace_minutes. **Use it for anything that needs
-  "the employee's schedule on a date"** (LeaveService::countDays does).
+  cutoffs) comes with the DTR phase. The snapshot keeps the relieved
+  employee as an id; `history` also returns `relieved` ({ id: full_name }).
+  `ShiftHistoryModal`: a summary banner (what applies now), then the
+  revisions oldest first — Created in full ("As first saved", no status
+  row), each later one only the fields that differ from the previous
+  snapshot (Previous → New), the day grid on creation and when the shift /
+  pattern changed. A saved value no later revision changed is tagged
+  Current (while the shifting is Active); replaced values stay plain text. An edit
+  replaces the period (one shifting = one date range), it doesn't add one.
+- **ScheduleService::forRange / forDate** — the schedule in force, the
+  first that applies: (1) the employee's Active shifting covering the date
+  (`shift`), (2) a group shifting covering it (`group_shift`), (3) the
+  employee's Work Schedule version in effect, rest day ⇒ day off
+  (`work_schedule`), (4) a group default Work Schedule (`group_schedule`),
+  (5) none (null = No Schedule). Per date: source, shift_code, group (null |
+  { id, scope, name }), day_off, time_in, time_out, break_minutes,
+  grace_minutes. **Use it for anything that needs "the employee's schedule
+  on a date"** — leave counting, time entries, overtime, the DTR and retro
+  do. React labels the source with `scheduleSourceLabel` (shiftHelpers).
 - **Scope**: `shift-assignment-list-all` (or Administrator) = every
   employee; otherwise the user's **direct** subordinates (position_subs of
   their user position), own branch outside ADMINISTRATION. Enforced on
@@ -95,9 +107,40 @@ each employee who can't take it (same rules + scope) and Save stays off
 until removed; `bulk_store` is all or nothing — each employee gets their
 own shifting and a Created revision ("Bulk assignment"). Max 500 at once.
 
+## Default schedules per company / branch / position
+
+`group_schedules` (`GroupSchedule`, `GroupScheduleService`,
+`GroupScheduleController`, prefix `group_schedule` under
+`shift.maintenance`; migration `2026_10_14_100000`). React:
+`GroupScheduleIndex` + `GroupScheduleFormModal` (`/default-schedules`,
+Time & Leave → Schedule → Default Schedules), `groupScheduleApi.js`.
+
+- **Default rules, not copies:** nothing is written per employee. Every
+  employee follows a default automatically, new hires and transfers too,
+  through their **current** `branch_id` / `position_id` and the branch's
+  `company_id`. Among groups the most specific wins: position, then
+  branch, then company.
+- **kind `schedule`** = a default Work Schedule from `date_from` (no
+  date_to). A later date_from is the next version. One Active per group per
+  date_from. It applies only to employees with **no** Work Schedule version
+  of their own in effect.
+- **kind `shifting`** = a temporary group shift for `date_from..date_to`
+  (at most 366 days). It replaces everyone's Work Schedule for the period;
+  only an employee's own shifting comes first. Active ones may not overlap
+  within the same group.
+- Change: Active only; shift, dates and reason change, kind and group stay.
+  Cancel needs a reason, and the row is kept. No approval. The Audit Trail
+  ('Attendance', `AuditsActivity`) keeps the history.
+- `preview` returns the blocking rule, plus `reach`: how many active
+  employees follow it on its first day, how many keep their own schedule,
+  and how many follow a more specific default (up to 20 names each).
+- A shift used by a group default counts as used: delete is refused and its
+  pattern / grace are locked.
+
 ## Permissions
 
 `shift-list/-create/-edit/-delete` (Shifts), `shift-assignment-list`,
 `-list-all`, `-create`, `-edit`, `-cancel` (Shifting; options also open to
-create/edit). `employee_master_data/option_list` admits
+create/edit), `group-schedule-list/-create/-edit/-cancel` (Default
+Schedules; `/shift/options` is open to group-schedule-create/-edit too). `employee_master_data/option_list` admits
 shift-assignment-create/-edit (employee + relieved-employee pickers).

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
-import { Table, Tag, Button, Space, Select, DatePicker, Typography, App } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { Table, Tag, Button, Space, Select, DatePicker, Typography, Tooltip, Modal, Descriptions, App } from 'antd';
+import { ReloadOutlined, EyeOutlined } from '@ant-design/icons';
 import auditTrailApi from '../../services/audit/auditTrailApi';
 import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
 import ExpandIcon from '../../components/ExpandIcon';
@@ -46,9 +46,22 @@ const CHANGE_COLUMNS = [
   { title: 'After', dataIndex: 'new', render: (v, c) => showValue(v, c.field) },
 ];
 
+// An added record has no before, a deleted one no after.
+const changeColumns = (action, columns = CHANGE_COLUMNS) => (action === 'updated'
+  ? columns
+  : columns.filter((c) => c.dataIndex !== (action === 'created' ? 'old' : 'new')));
+
+// The viewer: previous value tinted red, new value green.
+const VIEWER_COLUMNS = [
+  CHANGE_COLUMNS[0],
+  { ...CHANGE_COLUMNS[1], title: 'Previous Data', onCell: () => ({ style: { background: 'rgba(255, 77, 79, 0.06)' } }) },
+  { ...CHANGE_COLUMNS[2], title: 'New Data', onCell: () => ({ style: { background: 'rgba(82, 196, 26, 0.08)' } }) },
+];
+
 // Audit trail of leave, attendance and payroll records: who added, edited
 // or deleted what and when, with every changed field's before / after
-// value (expand a row). Newest first; server-side filters and pagination.
+// value (expand a row, or View for the Previous / New Data viewer). Newest
+// first; server-side filters and pagination.
 const AuditTrailIndex = () => {
   const { message } = App.useApp();
   const [options, setOptions] = useState({ modules: [], records: [], users: [] });
@@ -57,6 +70,9 @@ const AuditTrailIndex = () => {
   const [rows, setRows]       = useState([]);
   const [total, setTotal]     = useState(0);
   const [loading, setLoading] = useState(false);
+  // the entry in the viewer — kept while it closes, so it doesn't blank out
+  const [viewing, setViewing] = useState(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   const fetchRows = async () => {
     setLoading(true);
@@ -112,6 +128,25 @@ const AuditTrailIndex = () => {
       title: 'Changed Fields',
       dataIndex: 'changes',
       render: (changes) => changes.map((c) => fieldLabel(c.field)).join(', '),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 80,
+      render: (_, r) => (
+        <Space>
+          <Tooltip title='View'>
+            <Button
+              color='blue'
+              variant='outlined'
+              icon={<EyeOutlined />}
+              size='small'
+              disabled={r.changes.length === 0}
+              onClick={() => { setViewing(r); setViewerOpen(true); }}
+            />
+          </Tooltip>
+        </Space>
+      ),
     },
   ];
 
@@ -183,7 +218,7 @@ const AuditTrailIndex = () => {
             <Table
               rowKey='field'
               size='small'
-              columns={r.action === 'updated' ? CHANGE_COLUMNS : CHANGE_COLUMNS.filter((c) => c.dataIndex !== (r.action === 'created' ? 'old' : 'new'))}
+              columns={changeColumns(r.action)}
               dataSource={r.changes}
               pagination={false}
             />
@@ -199,6 +234,40 @@ const AuditTrailIndex = () => {
           onChange: (current, pageSize) => setPage({ current, pageSize }),
         }}
       />
+      <Modal
+        title={viewing && `${viewing.record} #${viewing.record_id}`}
+        open={viewerOpen}
+        onCancel={() => setViewerOpen(false)}
+        footer={<Button onClick={() => setViewerOpen(false)}>Close</Button>}
+        width={{ xs: '100%', sm: '95%', md: 820 }}
+        destroyOnHidden
+      >
+        {viewing && (
+          <>
+            <Descriptions
+              size='small'
+              column={{ xs: 1, sm: 2 }}
+              style={{ marginBottom: 16 }}
+              items={[
+                { key: 'action', label: 'Action', children: <Tag color={ACTIONS[viewing.action]?.color}>{ACTIONS[viewing.action]?.label || viewing.action}</Tag> },
+                { key: 'when', label: 'Date & Time', children: viewing.created_at ? dayjs(viewing.created_at).format(`${DISPLAY_DATE_FORMAT} hh:mm:ss A`) : '-' },
+                { key: 'user', label: 'User', children: viewing.user || <Typography.Text type='secondary'>System</Typography.Text> },
+                { key: 'module', label: 'Module', children: viewing.module },
+                { key: 'employee', label: 'Employee', children: viewing.employee || '-' },
+              ]}
+            />
+            <Table
+              rowKey='field'
+              size='small'
+              bordered
+              columns={changeColumns(viewing.action, VIEWER_COLUMNS)}
+              dataSource={viewing.changes}
+              pagination={false}
+              scroll={{ x: 'max-content' }}
+            />
+          </>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -54,7 +54,11 @@ current-level approver, logs, level advance; the caller locks employee →
 document, re-checks its rules on approve, and saves). A document needs
 `employee_id`, `status`, `current_level`, `submitted_at`, `acted_by`,
 `acted_at`, `action_remarks` and an `employee` relation. LeaveService keeps
-its own (older) copies of these. React: `ApprovalSteps` renders `status()`.
+its own (older) copies of these. React: `ApprovalSteps` renders `status()`'s
+levels (status, progress, who decided, who it waits for) and `FilingHistory`
+the timeline (filed, each decision with time and remarks, cancellation;
+falls back to the record's `acted_*` fields when there are no levels) — used
+by the Leave, Time Entry and Overtime details modals.
 
 ## Permissions
 

@@ -23,9 +23,13 @@ import { Select, Spin } from 'antd';
 // initialOption ({ value, label }, optional) labels an already-saved value
 // that may not be on the first loaded page (e.g. editing a user linked to an
 // employee) — without it the Select would show the bare id.
+//
+// multiple (optional): pick several; value / onChange are then arrays of
+// { value, label } (labelInValue), so a picked employee keeps its label
+// after the search moves on (Generate Template's employee filter).
 const EmployeeSelect = ({
   value, onChange, placeholder = 'Search employee', activeOnly = false, status,
-  branchId, positionId, hiredOnOrAfter, initialOption,
+  branchId, positionId, hiredOnOrAfter, initialOption, multiple = false,
 }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading]     = useState(false);
@@ -132,6 +136,7 @@ const EmployeeSelect = ({
         ? [initialOption, ...employees]
         : employees}
       notFoundContent={loading ? <Spin size="small" /> : null}
+      {...(multiple ? { mode: 'multiple', labelInValue: true, maxTagCount: 'responsive' } : {})}
       allowClear
       status={status}
       style={{ width: '100%' }}

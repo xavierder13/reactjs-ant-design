@@ -283,6 +283,14 @@ Dated change history for each lives in `docs/<module>-history.md`.
   the careers portal through vueportal's gateway (one route + permission
   per stage); gateway dates are `MM/DD/YYYY` strings; several gateway
   routes the Vue page calls don't exist.
+- **Payroll processing** (`src/pages/payroll/run/`, `timekeeping/`,
+  `reports/`, `my_payslips/`, routes `/timekeeping`, `/payroll-runs`,
+  `/remittances`, `/thirteenth-month`, `/year-end-tax`, `/final-pay`,
+  `/my-payslips`) — `.claude/skills/payroll-run/SKILL.md`.
+  Key traps: the DTR is computed live (DtrService) and copied onto the run;
+  a holiday is never an absence; rest-day work pays only through approved
+  overtime; approved runs are locked (corrections = retro adjustments);
+  reports read approved runs only.
 - **Record management pages / Area Assignment / Organization** (`src/pages/area/`,
   `src/pages/record_management/`, routes `/areas`, `/companies`, `/branches`,
   `/departments`, `/positions`, `/ranks`, `/promodizer-brands`) —

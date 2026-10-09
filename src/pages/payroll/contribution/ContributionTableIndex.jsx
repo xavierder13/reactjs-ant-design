@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { Table, Tabs, Tag, Button, Space, Tooltip, Typography, Alert, App } from 'antd';
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined, UploadOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import contributionTableApi from '../../../services/payroll/contributionTableApi';
 import handleApiError from '../../../utils/handleApiError';
@@ -10,11 +10,13 @@ import ExpandIcon from '../../../components/ExpandIcon';
 import RecordRowActions from '../../record_management/RecordRowActions';
 import { AGENCY_NOTES, FIELD_LABELS, formatCell } from './contributionColumns';
 import ContributionTableFormModal from './ContributionTableFormModal';
+import ContributionTableImportModal from './ContributionTableImportModal';
 
 // Government contribution / tax tables (SSS, PhilHealth, Pag-IBIG, BIR), one
 // tab per agency: each version is in force from its effective date until
 // the next one (tagged In Force / Upcoming / Past). Expand a version to see
-// its brackets. A new version starts as a copy of the latest one.
+// its brackets. A new version starts as a copy of the latest one, or comes
+// from Excel (Import Version: template → upload with the effective date).
 const ContributionTableIndex = () => {
   const { message } = App.useApp();
   const { hasPermission, hasRole } = useAuth();
@@ -29,6 +31,7 @@ const ContributionTableIndex = () => {
   const [loading, setLoading] = useState(false);
   const [agency, setAgency]   = useState('SSS');
   const [editing, setEditing] = useState(null); // {} = new version
+  const [importing, setImporting] = useState(false);
 
   const fetchTables = async () => {
     setLoading(true);
@@ -129,6 +132,11 @@ const ContributionTableIndex = () => {
           <Space wrap>
             <Button icon={<ReloadOutlined />} onClick={fetchTables} loading={loading}>Refresh</Button>
             {canCreate && (
+              <Button icon={<UploadOutlined />} onClick={() => setImporting(true)} disabled={!fields.length}>
+                Import Version
+              </Button>
+            )}
+            {canCreate && (
               <Tooltip title={versions.length ? 'Starts as a copy of the latest version' : undefined}>
                 <Button type='primary' icon={<PlusOutlined />} onClick={() => setEditing({})} disabled={!fields.length}>
                   New Version
@@ -170,6 +178,14 @@ const ContributionTableIndex = () => {
         fields={fields}
         onClose={() => setEditing(null)}
         onSaved={() => { setEditing(null); fetchTables(); }}
+      />
+      <ContributionTableImportModal
+        open={importing}
+        agency={agency}
+        agencies={options.agencies}
+        rowFields={options.row_fields}
+        onClose={() => setImporting(false)}
+        onImported={(a) => { setImporting(false); setAgency(a); fetchTables(); }}
       />
     </div>
   );

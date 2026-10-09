@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Modal, Form, Input } from 'antd';
 
 // Asks for a required reason (cancel a deduction / retro, dismiss a retro
-// suggestion). onSubmit(reason) resolves when saved; a rejection keeps the
-// dialog open (the caller shows the error).
-const ReasonModal = ({ open, title, label = 'Reason', okText = 'Save', danger = false, onSubmit, onClose }) => {
+// suggestion, roll back a payroll); `description` is shown above it.
+// onSubmit(reason) resolves when saved; a rejection keeps the dialog open
+// (the caller shows the error).
+const ReasonModal = ({ open, title, label = 'Reason', okText = 'Save', danger = false, description = null, onSubmit, onClose }) => {
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
 
@@ -37,6 +38,7 @@ const ReasonModal = ({ open, title, label = 'Reason', okText = 'Save', danger = 
       afterOpenChange={(isOpen) => { if (isOpen) form.resetFields(); }}
       destroyOnHidden
     >
+      {description}
       <Form form={form} layout='vertical'>
         <Form.Item name='reason' label={label} rules={[{ required: true, whitespace: true, message: 'Reason is required' }]}>
           <Input.TextArea rows={3} maxLength={1000} autoFocus />

@@ -30,7 +30,9 @@ import axios from '../../api/axiosInstance';
 //   { employee_id: message }, warnings }; bulkStore(+ reason) → { message,
 //   count } or 422 { message, errors } — all or nothing.
 // - cancel(id, reason) (reason required) · history(id) → { revisions:
-//   [{ action, snapshot, remarks, changer { name }, created_at }] }.
+//   [{ action, snapshot, remarks, changer { name }, created_at }] oldest
+//   first, relieved: { employee_id: full_name } for the snapshots'
+//   relieved_employee_id }.
 const shiftAssignmentApi = {
   getAll:  (params)      => axios.post('/shift_assignment/index', params),
   options: ()            => axios.post('/shift_assignment/options'),

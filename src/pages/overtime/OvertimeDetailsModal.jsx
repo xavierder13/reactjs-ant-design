@@ -4,11 +4,13 @@ import overtimeApi from '../../services/overtime/overtimeApi';
 import handleApiError from '../../utils/handleApiError';
 import { formatDate } from '../../utils/formatDate';
 import ApprovalSteps from '../../components/approval/ApprovalSteps';
+import FilingHistory from '../../components/approval/FilingHistory';
 import { TIME_ENTRY_STATUS_COLORS, scheduleText, timeRange } from '../time_entry/timeEntryHelpers';
 import { DAY_TYPE_COLORS, hoursText, punchesText } from './overtimeHelpers';
 
-// An overtime (fetched: /overtime/show) with that day's schedule, biometric
-// reading and classification, its approval route, and the actions this
+// An overtime (fetched: /overtime/show): a summary, its details with that
+// day's schedule, biometric reading and classification, its approval route
+// and history (filed, each decision, cancellation), and the actions this
 // user may take: Approve / Disapprove when the backend says can_approve,
 // Cancel with overtime-cancel. Remarks required to disapprove.
 const OvertimeDetailsModal = ({ overtimeId, canCancel, onClose, onActed }) => {
@@ -57,7 +59,7 @@ const OvertimeDetailsModal = ({ overtimeId, canCancel, onClose, onActed }) => {
       onCancel={onClose}
       afterOpenChange={handleAfterOpenChange}
       destroyOnHidden
-      width={{ xs: '100%', sm: '95%', md: 760 }}
+      width={{ xs: '100%', sm: '95%', md: 820 }}
       footer={(
         <Space wrap>
           <Button onClick={onClose}>Close</Button>
@@ -77,39 +79,48 @@ const OvertimeDetailsModal = ({ overtimeId, canCancel, onClose, onActed }) => {
     >
       {!ot ? <Spin style={{ display: 'block', margin: '32px auto' }} /> : (
         <>
-          <Descriptions size='small' bordered column={1} styles={{ label: { width: 180 } }}>
-            <Descriptions.Item label='Employee'>
-              {ot.employee ? `${ot.employee.employee_code} - ${ot.employee.full_name}` : '—'}
-            </Descriptions.Item>
-            <Descriptions.Item label='Branch / Position'>
-              {[ot.employee?.branch?.name, ot.employee?.position?.name].filter(Boolean).join(' / ') || '—'}
-            </Descriptions.Item>
-            <Descriptions.Item label='Date'>{formatDate(ot.date)}</Descriptions.Item>
-            <Descriptions.Item label='Overtime'>
-              {timeRange(ot.time_from, ot.time_to)}
-              {ot.break_minutes > 0 && ` · ${ot.break_minutes} min break`}
-              {' · '}<strong>{hoursText(ot.hours)}</strong>
-            </Descriptions.Item>
-            <Descriptions.Item label='Day (when filed)'>
-              <Tag color={DAY_TYPE_COLORS[ot.day_type]}>{ot.day_type}</Tag>
-              {data.day?.day_type !== ot.day_type && (
-                <Typography.Text type='warning'>Now counts as {data.day?.day_type} (schedule / holidays changed)</Typography.Text>
-              )}
-            </Descriptions.Item>
-            <Descriptions.Item label='Schedule that day'>{scheduleText(data.schedule)}</Descriptions.Item>
-            <Descriptions.Item label='Biometric'>{punchesText(data.punches)}</Descriptions.Item>
-            <Descriptions.Item label='Reason'>{ot.reason}</Descriptions.Item>
-            <Descriptions.Item label='Status'><Tag color={TIME_ENTRY_STATUS_COLORS[ot.status]}>{ot.status}</Tag></Descriptions.Item>
-            <Descriptions.Item label='Filed'>{`${formatDate(ot.created_at)} by ${ot.filer?.name || '—'}`}</Descriptions.Item>
-            {ot.acted_at && (
-              <Descriptions.Item label={ot.status}>
-                {`${formatDate(ot.acted_at)} by ${ot.actor?.name || '—'}`}
-                {ot.action_remarks && <div>{ot.action_remarks}</div>}
-              </Descriptions.Item>
-            )}
-          </Descriptions>
-          <Typography.Title level={5} style={{ marginTop: 16 }}>Approval</Typography.Title>
+          <Descriptions
+            size='small'
+            column={{ xs: 1, sm: 2 }}
+            style={{ marginBottom: 16 }}
+            items={[
+              { key: 'employee', label: 'Employee', children: ot.employee ? `${ot.employee.employee_code} - ${ot.employee.full_name}` : '—' },
+              { key: 'status', label: 'Status', children: <Tag color={TIME_ENTRY_STATUS_COLORS[ot.status]}>{ot.status}</Tag> },
+              { key: 'branch', label: 'Branch / Position', children: [ot.employee?.branch?.name, ot.employee?.position?.name].filter(Boolean).join(' / ') || '—' },
+              { key: 'date', label: 'Date', children: formatDate(ot.date) },
+              { key: 'time', label: 'Overtime', children: timeRange(ot.time_from, ot.time_to) },
+              { key: 'hours', label: 'Hours', children: <strong>{hoursText(ot.hours)}</strong> },
+            ]}
+          />
+          <Typography.Title level={5}>Details</Typography.Title>
+          <Descriptions
+            size='small'
+            bordered
+            column={1}
+            styles={{ label: { width: 180 } }}
+            items={[
+              {
+                key: 'day',
+                label: 'Day (when filed)',
+                children: (
+                  <>
+                    <Tag color={DAY_TYPE_COLORS[ot.day_type]}>{ot.day_type}</Tag>
+                    {data.day?.day_type !== ot.day_type && (
+                      <Typography.Text type='warning'>Now counts as {data.day?.day_type} (schedule / holidays changed)</Typography.Text>
+                    )}
+                  </>
+                ),
+              },
+              { key: 'break', label: 'Break', children: ot.break_minutes > 0 ? `${ot.break_minutes} min` : '—' },
+              { key: 'schedule', label: 'Schedule that day', children: scheduleText(data.schedule) },
+              { key: 'biometric', label: 'Biometric', children: punchesText(data.punches) },
+              { key: 'reason', label: 'Reason', children: ot.reason || '—' },
+            ]}
+          />
+          <Typography.Title level={5} style={{ marginTop: 16 }}>Approval Route</Typography.Title>
           <ApprovalSteps approval={data.approval} chartName='Overtime' />
+          <Typography.Title level={5} style={{ marginTop: 16 }}>History</Typography.Title>
+          <FilingHistory record={ot} history={data.approval?.history} />
           {(decidable || cancellable) && (
             <Input.TextArea
               rows={2}

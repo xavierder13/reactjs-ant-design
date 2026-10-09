@@ -9,7 +9,7 @@ import { tablePagination } from '../../utils/tablePagination';
 import RecordToolbar from '../record_management/RecordToolbar';
 import RecordRowActions from '../record_management/RecordRowActions';
 import AccessChartFormModal from './AccessChartFormModal';
-import { isSystemChart, levelsOf, approversAt } from './approvalHelpers';
+import { isSystemChart, levelsOf, levelStatus } from './approvalHelpers';
 import ApprovingOfficersModal from './ApprovingOfficersModal';
 
 // Access Charts — replaces vueportal's access_chart/AccessChartIndex.vue.
@@ -69,11 +69,38 @@ const AccessChartIndex = () => {
     },
     { title: 'Module', key: 'module', render: (_, r) => r.access_module?.name || '—' },
     {
-      title: 'Levels',
+      title: 'Levels & Approving Officers',
       key: 'levels',
-      render: (_, r) => (levelsOf(r).length
-        ? levelsOf(r).map((l) => <Tag key={l.level}>{`L${l.level}: ${l.num_of_approvers} needed · ${approversAt(r, l.level).length} officer(s)`}</Tag>)
-        : <Typography.Text type='secondary'>Not set up</Typography.Text>),
+      render: (_, r) => {
+        const levels = levelsOf(r);
+        if (!levels.length) return <Typography.Text type='secondary'>Not set up — no levels</Typography.Text>;
+        return (
+          <Space orientation='vertical' size={4} style={{ width: '100%' }}>
+            {levels.map((l) => {
+              const { officers, required, short, empty } = levelStatus(r, l);
+              const names = officers.map((m) => m.user?.name || `User #${m.user_id}`);
+              return (
+                <div key={l.level} style={{ display: 'flex', gap: 6, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                  <Tag style={{ marginInlineEnd: 0 }}>{`Level ${l.level}`}</Tag>
+                  {empty
+                    ? <Tag color='red' style={{ marginInlineEnd: 0 }}>No officers</Tag>
+                    : short
+                      ? <Tag color='orange' style={{ marginInlineEnd: 0 }}>{`${required - officers.length} more needed`}</Tag>
+                      : <Tag color='green' style={{ marginInlineEnd: 0 }}>Ready</Tag>}
+                  <Typography.Text type='secondary' style={{ fontSize: 12 }}>{`${required} needed`}</Typography.Text>
+                  {names.length > 0 && (
+                    <Tooltip title={names.join(', ')}>
+                      <Typography.Text style={{ fontSize: 12 }}>
+                        {names.slice(0, 3).join(', ')}{names.length > 3 ? ` +${names.length - 3} more` : ''}
+                      </Typography.Text>
+                    </Tooltip>
+                  )}
+                </div>
+              );
+            })}
+          </Space>
+        );
+      },
     },
     {
       title: 'Actions',
@@ -115,7 +142,7 @@ const AccessChartIndex = () => {
         columns={columns}
         dataSource={filtered}
         loading={isLoading}
-        scroll={{ x: 800 }}
+        scroll={{ x: 900 }}
         pagination={tablePagination(10)}
       />
       <AccessChartFormModal open={modalOpen} chart={editing} modules={modules} onClose={closeModal} onSaved={handleSaved} />

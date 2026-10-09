@@ -11,8 +11,9 @@ import axios from '../../api/axiosInstance';
 // - create / update(id) { code, date_from, date_to, pay_date, remarks } → 422
 //   bag (code unique, end ≥ start, pay ≥ end, "Overlaps cut-off X"); dates
 //   can't change and delete is refused while filing is OFF (422 { message }).
-// - generate({ year, pattern: 'semi-monthly'|'monthly', pay_day_offset })
-//   → { message, result: { created, skipped } } (payroll-cutoff-create).
+// - generate({ year, pattern: 'semi-monthly'|'monthly', update_pay_dates })
+//   → { message, result: { created, skipped, updated } } — periods and pay
+//   days from Payroll Settings' cut-off rules (payroll-cutoff-create).
 // - toggle(id, filing_open, reason) — reason required to turn OFF →
 //   { message, cutoff } (payroll-cutoff-filing-toggle). logs(id) → { logs:
 //   [{ filing_open, reason, changer { name }, created_at }] }.

@@ -6,6 +6,7 @@ import nteApi from "../../../services/employee/nteApi";
 import disciplinaryApi from "../../../services/employee/disciplinaryApi";
 import offboardingApi from "../../../services/employee/offboardingApi";
 import compensationApi from "../../../services/compensation/compensationApi";
+import attendanceLogApi from "../../../services/payroll/attendanceLogApi";
 
 // Bulk create/update document types — one list for GenerateTemplateModal
 // and ImportDataModal, matching vueportal's TemplateDownloadDialog.vue /
@@ -17,6 +18,9 @@ import compensationApi from "../../../services/compensation/compensationApi";
 //   branchPosition: Branch + Position (0 = ALL), for BRANCH_POSITION_ROLES
 //                   only — other users' templates are scoped server-side
 //   kpi:            Year + Month
+//   employees:      Branch + Position + Employees (any user who may download
+//                   the template — the salary template is already HR-only)
+//   dateRange:      Date From – To (required; date_from / date_to)
 //
 // Not offered: Classroom / OJT Performance Rating — vueportal lists them,
 // but their controllers have no import()/template_download(), so both fail
@@ -99,8 +103,19 @@ export const DOCUMENT_TYPES = [
     filename: "EmployeeCompensationTemplate.xls",
     download: (params) => compensationApi.templateDownload(params),
     upload: (file) => compensationApi.import(file),
-    templateOptions: { status: true },
+    templateOptions: { status: true, employees: true },
     hint: "The template lists each employee with today's salary and a blank effective_date. Fill effective_date (YYYY-MM-DD, cell formatted as Text), pay_basis (Monthly / Daily), basic_rate and change_type on the lines to change — blank effective_date lines are skipped. The same employee and effective date as a saved salary updates it; otherwise a new salary is added. One wrong line stops the whole import.",
+  },
+  {
+    value: "attendance_log",
+    label: "Attendance Logs",
+    templatePermission: "attendance-log-template-download",
+    importPermission: "attendance-log-import",
+    filename: "AttendanceLogTemplate.xls",
+    download: (params) => attendanceLogApi.templateDownload(params),
+    upload: (file) => attendanceLogApi.import(file),
+    templateOptions: { status: true, employees: true, dateRange: true },
+    hint: "For employees whose punches don't come from the biometric device (or to correct a day). One line per employee per date (YYYY-MM-DD): time_in, break_out, break_in, time_out as HH:MM, 24-hour (cells formatted as Text); any may be blank. A time earlier than the one before it is the next day (a night shift's time out). A line replaces that employee's imported times for the date — blank times clear them — and the DTR uses them instead of that date's biometric punches. Future dates and dates inside an approved or pending payroll are refused. One wrong line stops the whole import.",
   },
 ];
 

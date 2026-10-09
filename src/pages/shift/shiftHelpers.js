@@ -39,3 +39,28 @@ export const applyErrors = (error, form, message, handleApiError, fieldFor = (k)
   }
   handleApiError(error, message);
 };
+
+export const GROUP_SCOPES = [
+  { value: 'company', label: 'Company' },
+  { value: 'branch', label: 'Branch' },
+  { value: 'position', label: 'Position' },
+];
+
+export const GROUP_KINDS = [
+  { value: 'schedule', label: 'Default Work Schedule' },
+  { value: 'shifting', label: 'Group Shifting' },
+];
+
+export const scopeLabel = (scope) => GROUP_SCOPES.find((s) => s.value === scope)?.label || scope || '';
+
+// Where a day's schedule (ScheduleService) came from, for display.
+export const scheduleSourceLabel = (s) => {
+  if (!s?.source) return 'No schedule';
+  const group = s.group ? `${scopeLabel(s.group.scope)}: ${s.group.name || '—'}` : '';
+  switch (s.source) {
+    case 'shift': return 'Shifting';
+    case 'group_shift': return `Group shifting · ${group}`;
+    case 'group_schedule': return `Default · ${group}`;
+    default: return 'Work Schedule';
+  }
+};

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import {
-  Table, Tag, Button, Space, Select, Modal, Form, Input, InputNumber, DatePicker, Radio, Tooltip, Timeline, Typography, Popconfirm, App,
+  Table, Tag, Button, Space, Select, Modal, Form, Input, DatePicker, Radio, Checkbox, Tooltip, Typography, Popconfirm, App,
 } from 'antd';
 import { PlusOutlined, ReloadOutlined, ThunderboltOutlined, EyeOutlined } from '@ant-design/icons';
 import useAuth from '../../hooks/useAuth';
@@ -11,6 +11,7 @@ import { DISPLAY_DATE_FORMAT, formatDate } from '../../utils/formatDate';
 import { tablePagination } from '../../utils/tablePagination';
 import RecordRowActions from '../record_management/RecordRowActions';
 import { applyLeaveErrors } from '../leave/leaveHelpers';
+import CutoffFilingHistoryModal from './CutoffFilingHistoryModal';
 
 const YEARS = [-1, 0, 1].map((d) => dayjs().year() + d);
 
@@ -122,7 +123,7 @@ const PayrollCutoffIndex = () => {
     setLogs(null);
     try {
       const { data } = await payrollCutoffApi.logs(record.id);
-      setLogs(data.logs);
+      setLogs({ cutoff: record, items: data.logs });
     } catch (error) {
       handleApiError(error, message);
     }
@@ -192,7 +193,7 @@ const PayrollCutoffIndex = () => {
         <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canCreate && (
-            <Button icon={<ThunderboltOutlined />} onClick={() => { genForm.resetFields(); genForm.setFieldsValue({ year, pattern: 'semi-monthly', pay_day_offset: 5 }); setGenOpen(true); }}>
+            <Button icon={<ThunderboltOutlined />} onClick={() => { genForm.resetFields(); genForm.setFieldsValue({ year, pattern: 'semi-monthly', update_pay_dates: false }); setGenOpen(true); }}>
               Generate Year
             </Button>
           )}
@@ -246,15 +247,17 @@ const PayrollCutoffIndex = () => {
           <Form.Item name='pattern' label='Pattern' rules={[{ required: true }]}>
             <Radio.Group
               options={[
-                { value: 'semi-monthly', label: 'Semi-monthly (1–15, 16–end)' },
+                { value: 'semi-monthly', label: 'Semi-monthly' },
                 { value: 'monthly', label: 'Monthly' },
               ]}
             />
           </Form.Item>
-          <Form.Item name='pay_day_offset' label='Pay date (days after the period ends)' extra='Blank = no pay date.'>
-            <InputNumber min={0} max={31} precision={0} style={{ width: '100%' }} />
+          <Form.Item name='update_pay_dates' valuePropName='checked' extra='Re-applies the pay-day rule to the cut-offs of this year that already exist (filing on only).'>
+            <Checkbox>Update the pay dates of existing cut-offs</Checkbox>
           </Form.Item>
-          <Typography.Text type='secondary'>Periods that already exist or would overlap one are skipped.</Typography.Text>
+          <Typography.Paragraph type='secondary' style={{ marginBottom: 0 }}>
+            The periods and pay days come from Payroll Settings → General → Cut-offs &amp; Pay Days. Periods that already exist or would overlap one are skipped.
+          </Typography.Paragraph>
         </Form>
       </Modal>
 
@@ -273,23 +276,7 @@ const PayrollCutoffIndex = () => {
         <Input.TextArea rows={2} maxLength={2000} value={reason} onChange={(e) => setReason(e.target.value)} placeholder='Reason (required), e.g. Payroll processing' />
       </Modal>
 
-      <Modal open={!!logsFor} title={`Filing History — ${logsFor?.code || ''}`} footer={null} onCancel={() => setLogsFor(null)} destroyOnHidden>
-        {logs && !logs.length && <Typography.Text type='secondary'>Filing has never been switched for this cut-off.</Typography.Text>}
-        {logs?.length > 0 && (
-          <Timeline
-            items={logs.map((l) => ({
-              color: l.filing_open ? 'green' : 'red',
-              content: (
-                <div>
-                  <Tag color={l.filing_open ? 'green' : 'red'}>{l.filing_open ? 'Turned ON' : 'Turned OFF'}</Tag>
-                  <Typography.Text type='secondary'>{`${dayjs(l.created_at).format(`${DISPLAY_DATE_FORMAT} HH:mm`)} · ${l.changer?.name || '—'}`}</Typography.Text>
-                  {l.reason && <div>{l.reason}</div>}
-                </div>
-              ),
-            }))}
-          />
-        )}
-      </Modal>
+      <CutoffFilingHistoryModal open={!!logsFor} cutoff={logs?.cutoff} logs={logs?.items} onClose={() => setLogsFor(null)} />
     </div>
   );
 };

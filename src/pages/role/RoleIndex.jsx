@@ -55,6 +55,12 @@ const RoleIndex = () => {
   const columns = [
     { title: 'Role', dataIndex: 'name', key: 'name' },
     {
+      title: 'Guard',
+      dataIndex: 'guard_name',
+      key: 'guard_name',
+      render: (guard) => <Tag>{guard}</Tag>,
+    },
+    {
       title: 'Permissions',
       dataIndex: 'permissions',
       key: 'permissions',
