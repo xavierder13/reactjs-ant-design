@@ -35,7 +35,9 @@ import axios from '../../api/axiosInstance';
 //   employee [{ id, name }] ([] = nobody covers them; null = no procedure),
 //   balance: that type's balances row for the year (so filers needn't hold
 //   the balance permissions), error: the rule that blocks saving |
-//   null }. Rest days come from the employee's Work Schedule in effect each
+//   null, unpaid_days: days beyond the balance — filed, but unpaid and
+//   deducted like an absence (the last days of the leave) }. Rows also carry
+//   unpaid_days. Rest days come from the employee's Work Schedule in effect each
 //   day; holidays from the Holiday Calendar for the employee's branch.
 // - balances({ employee_id, year }) → { balances: [{ leave_type, credits
 //   (null = no yearly balance), is_override, remarks, used, pending, balance,

@@ -41,7 +41,8 @@ MRF — viewing by subordinates, approver and permission.
 - Approval / visibility / editing exactly like leave (see the
   leave-management skill): Pending at the first level, level 1 by
   subordinates, once per approver, no self-approval, approve re-checks the
-  rules, Disapprove needs remarks, no edit after an approver acted, Cancel
+  rules (incl. no filing on a Pending / Approved FULL-day leave's day — same
+  for overtime; a half-day leave is fine), Disapprove needs remarks, no edit after an approver acted, Cancel
   Pending / Approved (time-entry-cancel) — except an Approved entry paid by
   an approved payslip (`paid_in`) or inside a payroll waiting for approval
   (`pending_in`) — `PaidTag`, same for overtime; Administrators may. A paid

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Tag, Button, Space, Tooltip, Select, Input, DatePicker, Popconfirm, Segmented, App } from 'antd';
+import { Table, Tag, Button, Space, Tooltip, Select, Input, DatePicker, Popconfirm, Segmented, Typography, App } from 'antd';
 import { EyeOutlined, EditOutlined, CloseCircleOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import useAuth from '../../hooks/useAuth';
 import useLeaveTypes from '../../hooks/useLeaveTypes';
@@ -107,7 +107,17 @@ const LeaveApplicationIndex = () => {
     },
     { title: 'Leave Type', key: 'type', render: (_, r) => r.leave_type?.name || '—' },
     { title: 'Dates', key: 'dates', render: (_, r) => leaveDates(r) },
-    { title: 'Days', dataIndex: 'days', width: 70, render: num },
+    {
+      title: 'Days',
+      dataIndex: 'days',
+      width: 90,
+      render: (v, r) => (
+        <>
+          {num(v)}
+          {Number(r.unpaid_days) > 0 && <div><Typography.Text type='warning' style={{ fontSize: 12 }}>{`${num(r.unpaid_days)} unpaid`}</Typography.Text></div>}
+        </>
+      ),
+    },
     {
       title: 'Status',
       dataIndex: 'status',

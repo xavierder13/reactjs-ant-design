@@ -60,7 +60,9 @@ to existing (filing on) cut-offs.
   their next-morning OUT. An approved manual time entry replaces in / out.
 - Paid day = scheduled span − break, at most `hours_per_day` (hand-typed
   schedules have no break). Late (past grace, counted from the start),
-  undertime, Absent (no punch, no leave), half-day leave 0.5, Incomplete
+  undertime, Absent (no punch, no leave), half-day leave 0.5 (a leave day
+  without credit is split paid / unpaid — `unpaid_days`, the last days of the
+  leave — and the unpaid part is deducted like an absence), Incomplete
   (one punch — flagged, not deducted), No Schedule (flagged).
 - Holiday (not a Special Working Day) not worked = Holiday, never Absent,
   leave not used; worked = minutes worked, no late / undertime. Prior-day

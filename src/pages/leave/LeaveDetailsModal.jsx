@@ -117,7 +117,18 @@ const LeaveDetailsModal = ({ leaveId, canCancel, onClose, onActed }) => {
                 ),
               },
               { key: 'dates', label: 'Dates', children: leaveDates(leave) },
-              { key: 'days', label: 'Days', children: <strong>{num(leave.days)}</strong> },
+              {
+                key: 'days',
+                label: 'Days',
+                children: (
+                  <>
+                    <strong>{num(leave.days)}</strong>
+                    {Number(leave.unpaid_days) > 0 && (
+                      <Typography.Text type='warning'>{` — ${num(leave.unpaid_days)} without credit, unpaid (deducted like an absence)`}</Typography.Text>
+                    )}
+                  </>
+                ),
+              },
             ]}
           />
           <Typography.Title level={5}>Details</Typography.Title>

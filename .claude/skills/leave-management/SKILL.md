@@ -81,12 +81,26 @@ Access Chart**, the Manpower Request way. Contracts are in
 - **Balance** per type and year (year of `date_from`): credits = the
   employee's `employee_leave_credits` row, else the type's
   `yearly_credits` (null = no yearly balance, nothing checked); used =
-  Approved days, pending = Pending days (reserved); balance = credits −
-  used − pending.
-- **Save checks** (`check()`): active employee, no overlap with the
-  employee's Pending/Approved leave, not all rest days/holidays, within
-  `max_days_per_filing`, enough balance, not crossing a year. Approve
-  re-runs them. Rule failures → 422 `{ message }`; field errors → 422 bag.
+  Approved paid days, pending = Pending paid days (reserved); balance =
+  credits − used − pending (`days − unpaid_days` are counted).
+- **No credit = unpaid** (user rule 2026-10-09): a typed-credit leave longer
+  than the balance is NOT refused — `LeaveService::assess` stores
+  `unpaid_days` (migration `2026_10_15_100000`). Credits are used from the
+  first counted day, so the last days are unpaid; the DTR splits each day
+  into `paid_leave_days` / `unpaid_leave_days` and the payroll deducts the
+  unpaid part like an absence ("Unpaid Leave"). Approve re-splits (the
+  balance may have changed). The form warns; the list / details show "x
+  unpaid".
+- **Leave vs. work on the same day**: a full-day leave is refused when a
+  Pending / Approved manual time entry or overtime is filed on one of its
+  counted days ("the employee worked that day — cancel it first, or file a
+  half-day leave"); a half-day leave is allowed. The reverse lives in
+  `TimeEntryService::check` / `OvertimeService::check`
+  (`LeaveService::fullDayLeaveOn`).
+- **Save checks** (`assess()` / `check()`): active employee, no overlap with
+  the employee's Pending/Approved leave, not all rest days/holidays, within
+  `max_days_per_filing`, no time entry / overtime on a full-day leave's day,
+  not crossing a year. Approve re-runs them. Rule failures → 422 `{ message }`; field errors → 422 bag.
 - **Status flow**: Pending (at a level) → … → Approved / Disapproved
   (remarks required); Pending/Approved → Cancelled (days return). An
   Approved leave paid by an approved payslip (`paid_in` = its cut-off, set

@@ -194,6 +194,15 @@ const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
               style={{ marginBottom: 12 }}
             />
           )}
+          {!preview.error && Number(preview.unpaid_days) > 0 && (
+            <Alert
+              type='warning'
+              showIcon
+              title={`${Number(preview.unpaid_days)} of ${preview.count.days} day(s) have no ${balance?.leave_type?.name || 'leave'} credit left — those days are unpaid and deducted like an absence.`}
+              description='Credits are used from the first day, so the unpaid days are the last ones.'
+              style={{ marginBottom: 12 }}
+            />
+          )}
           {preview.approvers && preview.approvers.length === 0 && (
             <Alert
               type='warning'
