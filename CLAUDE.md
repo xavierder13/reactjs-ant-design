@@ -32,9 +32,12 @@ unrelated, non-deprecated `message` from `App.useApp()`. Before using an
 AntD prop from memory, check the installed source: `node_modules/antd/es/
 <component>/index.js` or its `.d.ts` (`grep -rn "@deprecated"` across every `.d.ts` in the component's folder,
 not just `index.d.ts`; whole-component deprecations like `List` only show
-in the runtime `.js`). There's no
-browser automation here, so console deprecation warnings won't surface on
-their own.
+in the runtime `.js`). `npm run lint` fails on a
+deprecated prop (`local/antd-deprecated-props`, `eslint-rules/`): it reads
+the `@deprecated` notes of the installed antd's `<Component>Props`, so an
+upgrade brings its new deprecations in by itself. It can't see spread props,
+destructured components (`const { Text } = Typography`) or whole-component
+deprecations — those still only warn in the browser console.
 
 ## Project Architecture
 
