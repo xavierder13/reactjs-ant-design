@@ -8,14 +8,18 @@ import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { applyFormErrors, cutoffOptions, pesoInputProps, toNumber } from '../payrollHelpers';
 
 // Add or edit a scheduled deduction: total amount, amount per cut-off, the
-// first cut-off and which cut-offs of the month. `deduction` = edit (the
-// employee can't change); balance and status are handled on its details.
+// first cut-off and which cut-offs of the month — or One-time (the whole
+// total on the start cut-off). `deduction` = edit (the employee can't
+// change); balance and status are handled on its details.
 const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
   const total = Form.useWatch('total_amount', form);
   const perCutoff = Form.useWatch('amount_per_cutoff', form);
+  const oneTime = Form.useWatch('schedule', form) === 'One-time';
+  const typeId = Form.useWatch('deduction_type_id', form);
+  const needsDescription = !!(options.types || []).find((t) => t.id === typeId)?.needs_description;
 
   const handleAfterOpenChange = (isOpen) => {
     if (!isOpen) return;
@@ -24,6 +28,7 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
       form.setFieldsValue({
         deduction_type_id: deduction.deduction_type_id,
         reference_no: deduction.reference_no,
+        description: deduction.description,
         date_granted: deduction.date_granted ? dayjs(deduction.date_granted) : null,
         total_amount: toNumber(deduction.total_amount),
         amount_per_cutoff: toNumber(deduction.amount_per_cutoff),
@@ -47,9 +52,10 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
     const payload = {
       deduction_type_id: values.deduction_type_id,
       reference_no: values.reference_no?.trim() || null,
+      description: needsDescription ? values.description?.trim() || null : null,
       date_granted: values.date_granted ? values.date_granted.format('YYYY-MM-DD') : null,
       total_amount: values.total_amount,
-      amount_per_cutoff: values.amount_per_cutoff,
+      amount_per_cutoff: oneTime ? values.total_amount : values.amount_per_cutoff,
       start_cutoff_id: values.start_cutoff_id,
       schedule: values.schedule,
       remarks: values.remarks?.trim() || null,
@@ -72,7 +78,7 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
   const typeOptions = (options.types || [])
     .filter((t) => t.active || t.id === deduction?.deduction_type_id)
     .map((t) => ({ value: t.id, label: `${t.name}${t.active ? '' : ' (inactive)'}`, category: t.category }));
-  const installments = total > 0 && perCutoff > 0 ? Math.ceil(total / perCutoff) : null;
+  const installments = !oneTime && total > 0 && perCutoff > 0 ? Math.ceil(total / perCutoff) : null;
 
   return (
     <Modal
@@ -108,6 +114,16 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
             </Form.Item>
           </Col>
         </Row>
+        {needsDescription && (
+          <Form.Item
+            name='description'
+            label='Description'
+            rules={[{ required: true, whitespace: true, message: 'Say what this deduction is for' }]}
+            extra='Shown on the payslip after the type.'
+          >
+            <Input maxLength={150} placeholder='e.g. Damaged company phone' />
+          </Form.Item>
+        )}
         <Row gutter={12}>
           <Col xs={24} sm={8}>
             <Form.Item name='date_granted' label='Date Granted'>
@@ -119,6 +135,7 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
               <InputNumber {...pesoInputProps} min={0.01} />
             </Form.Item>
           </Col>
+          {!oneTime && (
           <Col xs={12} sm={8}>
             <Form.Item
               name='amount_per_cutoff'
@@ -136,7 +153,13 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
               <InputNumber {...pesoInputProps} min={0.01} />
             </Form.Item>
           </Col>
+          )}
         </Row>
+        {oneTime && (
+          <Typography.Paragraph type='secondary' style={{ marginTop: -8 }}>
+            The whole amount is deducted on the start cut-off (or the next one, if it isn't taken there).
+          </Typography.Paragraph>
+        )}
         {installments && (
           <Typography.Paragraph type='secondary' style={{ marginTop: -8 }}>
             About {installments} deduction{installments === 1 ? '' : 's'} to pay it off.

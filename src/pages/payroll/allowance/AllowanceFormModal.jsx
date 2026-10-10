@@ -9,6 +9,7 @@ import { applyFormErrors, peso, pesoInputProps, toNumber } from '../payrollHelpe
 
 const BASIS_HINTS = {
   'Per cut-off': 'Paid in full every cut-off.',
+  'Per week': '× 52 weeks ÷ 12 a month, split across the month\'s cut-offs.',
   'Per month': 'Split across the month\'s cut-offs.',
   'Per day worked': '× the days worked in the cut-off (from the DTR).',
 };

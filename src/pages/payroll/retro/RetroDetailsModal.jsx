@@ -5,7 +5,7 @@ import { CloseCircleOutlined, EditOutlined } from '@ant-design/icons';
 import retroApi from '../../../services/payroll/retroApi';
 import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../../utils/formatDate';
-import { ADJUSTMENT_COLORS, RETRO_STATUS_COLORS, cutoffLabel, peso } from '../payrollHelpers';
+import { ADJUSTMENT_COLORS, RETRO_STATUS_COLORS, cutoffLabel, peso, retroLabel } from '../payrollHelpers';
 import { rateLabel } from '../../compensation/compensationHelpers';
 import ReasonModal from '../ReasonModal';
 
@@ -94,7 +94,16 @@ const RetroDetailsModal = ({ retroId, refreshKey, perms, onClose, onChanged, onE
               items={[
                 { key: 'employee', label: 'Employee', children: `${retro.employee?.employee_code || ''} - ${retro.employee?.full_name || ''}` },
                 { key: 'status', label: 'Status', children: <Tag color={RETRO_STATUS_COLORS[retro.status]}>{retro.status}</Tag> },
-                { key: 'type', label: 'Type', children: retro.retro_type },
+                {
+                  key: 'type',
+                  label: 'Type',
+                  children: (
+                    <Space size={4} wrap>
+                      {retro.retro_type === 'Other Adjustment' ? `Other — ${retroLabel(retro)}` : retro.retro_type}
+                      <Tag>{retro.taxable ? 'Taxable' : 'Non-taxable'}</Tag>
+                    </Space>
+                  ),
+                },
                 {
                   key: 'amount',
                   label: 'Amount',

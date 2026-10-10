@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Table, Tag, App } from 'antd';
+import { Table, Tag, Space, App } from 'antd';
 import useAuth from '../../../hooks/useAuth';
 import deductionTypeApi from '../../../services/payroll/deductionTypeApi';
 import handleApiError from '../../../utils/handleApiError';
@@ -63,7 +63,12 @@ const DeductionTypeIndex = () => {
 
   const columns = [
     { title: 'Code', dataIndex: 'code', width: 130, sorter: (a, b) => a.code.localeCompare(b.code) },
-    { title: 'Name', dataIndex: 'name', sorter: (a, b) => a.name.localeCompare(b.name) },
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name),
+      render: (v, r) => <Space size={4} wrap>{v}{r.needs_description && <Tag>Needs description</Tag>}</Space>,
+    },
     { title: 'Category', dataIndex: 'category', width: 160, render: (v) => <Tag color={CATEGORY_COLORS[v]}>{v}</Tag> },
     { title: 'Deductions', dataIndex: 'deductions_count', width: 110, align: 'right' },
     { title: 'Status', dataIndex: 'active', width: 100, render: (v) => <ActiveTag active={v ? 'Y' : 'N'} /> },

@@ -33,6 +33,16 @@ export const RETRO_STATUS_COLORS = { Open: 'green', Applied: 'blue', Cancelled: 
 
 export const ADJUSTMENT_COLORS = { Earning: 'green', Deduction: 'volcano' };
 
+// A retro's name as the payslip shows it: the type, or what an Other
+// Adjustment is for (+ the allowance, or the text typed for Others).
+// Takes a list row (allowance_type_name) or a full retro (allowance_type).
+export const retroLabel = (r) => {
+  if (r.retro_type !== 'Other Adjustment' || !r.other_type) return r.retro_type;
+  if (r.other_type === 'Others (specify)') return r.other_specify || 'Other Adjustment';
+  const allowance = r.allowance_type_name || r.allowance_type?.name;
+  return `${r.other_type}${allowance ? ` (${allowance})` : ''}`;
+};
+
 // 422 bag → inline field errors (fieldFor maps an API field to the form
 // field, e.g. period_from → period); a { message } → toast.
 export const applyFormErrors = (error, form, message, handleApiError, fieldFor = (k) => k) => {

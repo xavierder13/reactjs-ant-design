@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Table, Tag, Button, Space, Tooltip, Select, Input, Popconfirm, Segmented, Typography, App } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import allowanceApi from '../../../services/payroll/allowanceApi';
 import handleApiError from '../../../utils/handleApiError';
 import { formatDate } from '../../../utils/formatDate';
 import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../../utils/tablePagination';
 import { employeeName, peso } from '../payrollHelpers';
+import GenerateTemplateModal from '../../employee_master_data/components/GenerateTemplateModal';
+import ImportDataModal from '../../employee_master_data/components/ImportDataModal';
 import AllowanceFormModal from './AllowanceFormModal';
 
 const STATES = [
@@ -16,9 +18,11 @@ const STATES = [
   { value: 'all', label: 'All' },
 ];
 
-// Employee allowances by effective dates (per cut-off / per month / per day
-// worked). A change of amount = end the current one, add the new one. No
-// approval — saved by permission. Server-side filters and pagination.
+// Employee allowances by effective dates (per cut-off / per week / per month
+// / per day worked). A change of amount = end the current one, add the new
+// one. No approval — saved by permission. Bulk changes: Generate Template →
+// fill effective_from + the new amount → Import. Server-side filters and
+// pagination.
 const AllowanceIndex = () => {
   const { message } = App.useApp();
   const { hasPermission, hasRole } = useAuth();
@@ -26,6 +30,8 @@ const AllowanceIndex = () => {
   const canCreate = isAdmin || hasPermission('allowance-create');
   const canEdit   = isAdmin || hasPermission('allowance-edit');
   const canDelete = isAdmin || hasPermission('allowance-delete');
+  const canTemplate = isAdmin || hasPermission('allowance-template-download');
+  const canImport = isAdmin || hasPermission('allowance-import');
 
   const [options, setOptions] = useState({ types: [], bases: [], branches: [] });
   const [filters, setFilters] = useState({ state: 'current' });
@@ -35,6 +41,8 @@ const AllowanceIndex = () => {
   const [total, setTotal]     = useState(0);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(null); // {} = add
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [importOpen, setImportOpen]     = useState(false);
 
   const fetchRows = async () => {
     setLoading(true);
@@ -184,6 +192,8 @@ const AllowanceIndex = () => {
         </Space>
         <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
+          {canTemplate && <Button icon={<DownloadOutlined />} onClick={() => setTemplateOpen(true)}>Generate Template</Button>}
+          {canImport && <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>}
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={() => setEditing({})}>Add Allowance</Button>}
         </Space>
       </Space>
@@ -211,6 +221,8 @@ const AllowanceIndex = () => {
         onClose={() => setEditing(null)}
         onSaved={() => { setEditing(null); fetchRows(); }}
       />
+      <GenerateTemplateModal open={templateOpen} types={['allowance']} onClose={() => setTemplateOpen(false)} />
+      <ImportDataModal open={importOpen} types={['allowance']} onClose={() => setImportOpen(false)} onImported={fetchRows} />
     </div>
   );
 };

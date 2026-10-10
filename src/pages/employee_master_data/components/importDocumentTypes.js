@@ -7,6 +7,9 @@ import disciplinaryApi from "../../../services/employee/disciplinaryApi";
 import offboardingApi from "../../../services/employee/offboardingApi";
 import compensationApi from "../../../services/compensation/compensationApi";
 import attendanceLogApi from "../../../services/payroll/attendanceLogApi";
+import allowanceApi from "../../../services/payroll/allowanceApi";
+import deductionApi from "../../../services/payroll/deductionApi";
+import contributionProfileApi from "../../../services/payroll/contributionProfileApi";
 
 // Bulk create/update document types — one list for GenerateTemplateModal
 // and ImportDataModal, matching vueportal's TemplateDownloadDialog.vue /
@@ -105,6 +108,39 @@ export const DOCUMENT_TYPES = [
     upload: (file) => compensationApi.import(file),
     templateOptions: { status: true, employees: true },
     hint: "The template lists each employee with today's salary and a blank effective_date. Fill effective_date (YYYY-MM-DD, cell formatted as Text), pay_basis (Monthly / Daily), basic_rate and change_type on the lines to change — blank effective_date lines are skipped. The same employee and effective date as a saved salary updates it; otherwise a new salary is added. One wrong line stops the whole import.",
+  },
+  {
+    value: "allowance",
+    label: "Allowances",
+    templatePermission: "allowance-template-download",
+    importPermission: "allowance-import",
+    filename: "EmployeeAllowanceTemplate.xls",
+    download: (params) => allowanceApi.templateDownload(params),
+    upload: (file) => allowanceApi.import(file),
+    templateOptions: { status: true, employees: true },
+    hint: "The template lists each employee's allowances in force today (current_from / current_to are for reference) with a blank effective_from. Fill allowance_type_code (see the Values sheet), basis, amount and effective_from (YYYY-MM-DD, cell formatted as Text) on the lines to add or change — blank effective_from lines are skipped. A new effective_from adds the allowance and ends the same type running then on the day before. The same employee, type and effective_from as a saved allowance updates it (copy current_from into effective_from and fill effective_to to end one). One wrong line stops the whole import.",
+  },
+  {
+    value: "deduction",
+    label: "Deductions",
+    templatePermission: "deduction-template-download",
+    importPermission: "deduction-import",
+    filename: "EmployeeDeductionTemplate.xls",
+    download: (params) => deductionApi.templateDownload(params),
+    upload: (file) => deductionApi.import(file),
+    templateOptions: { status: true, employees: true },
+    hint: "One line per deduction (loan, cash advance, …): deduction_type_code, total_amount, amount_per_cutoff, start_cutoff (cut-off code) and schedule — codes and schedules are on the Values sheet; amount_per_cutoff may be blank for One-time; description is required for a type marked \"needs description\" (e.g. Other Deduction). Lines with a blank deduction_type_code are skipped. The same type and reference_no as a saved, not cancelled deduction updates it; otherwise it's added (a line without reference_no that matches a saved one's type, total and start cut-off is refused). One wrong line stops the whole import.",
+  },
+  {
+    value: "contribution_profile",
+    label: "Contribution Profiles",
+    templatePermission: "contribution-profile-template-download",
+    importPermission: "contribution-profile-import",
+    filename: "ContributionProfileTemplate.xls",
+    download: (params) => contributionProfileApi.templateDownload(params),
+    upload: (file) => contributionProfileApi.import(file),
+    templateOptions: { status: true, employees: true },
+    hint: "The template lists each employee's saved profile (or the Computed defaults). Edit the lines to change: modes Computed / Fixed / Exempt (Fixed needs its EE and ER amounts, tax_fixed for tax — monthly), pagibig_ee_additional, minimum_wage_earner Yes / No, and the payroll bank account (digits, spaces and dashes; keep the cell as Text). Every line replaces that employee's whole profile; unchanged lines are skipped. One wrong line stops the whole import.",
   },
   {
     value: "attendance_log",

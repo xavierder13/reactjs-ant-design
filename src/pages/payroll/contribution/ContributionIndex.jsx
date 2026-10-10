@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Table, Tag, Button, Space, Tooltip, Select, Input, Checkbox, Typography, App } from 'antd';
-import { EditOutlined, EyeOutlined, HistoryOutlined, ReloadOutlined } from '@ant-design/icons';
+import { EditOutlined, EyeOutlined, HistoryOutlined, ReloadOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import contributionProfileApi from '../../../services/payroll/contributionProfileApi';
 import handleApiError from '../../../utils/handleApiError';
@@ -9,6 +9,8 @@ import { MODE_COLORS, employeeName } from '../payrollHelpers';
 import ContributionProfileModal from './ContributionProfileModal';
 import ContributionComputeModal from './ContributionComputeModal';
 import ContributionHistoryModal from './ContributionHistoryModal';
+import GenerateTemplateModal from '../../employee_master_data/components/GenerateTemplateModal';
+import ImportDataModal from '../../employee_master_data/components/ImportDataModal';
 
 const STATUSES = [
   { value: 1, label: 'Active employees' },
@@ -28,13 +30,16 @@ const govNumber = (v) => (!v || v === '-' ? <Tag color='red'>Missing</Tag> : v);
 // applies (Computed from the tables / Fixed / Exempt). Edit opens the
 // profile; View shows the monthly computation; History (payroll-report-view)
 // the contributions actually deducted per cut-off from approved payslips.
-// Server-side filters and pagination.
+// Bulk: Generate Template (every profile) → edit → Import. Server-side
+// filters and pagination.
 const ContributionIndex = () => {
   const { message } = App.useApp();
   const { hasPermission, hasRole } = useAuth();
   const isAdmin = hasRole('Administrator');
   const canEdit = isAdmin || hasPermission('contribution-profile-edit');
   const canHistory = isAdmin || hasPermission('payroll-report-view');
+  const canTemplate = isAdmin || hasPermission('contribution-profile-template-download');
+  const canImport = isAdmin || hasPermission('contribution-profile-import');
 
   const [branches, setBranches] = useState([]);
   const [filters, setFilters]   = useState({ status: 1 });
@@ -46,6 +51,8 @@ const ContributionIndex = () => {
   const [editing, setEditing]   = useState(null);
   const [computing, setComputing] = useState(null);
   const [history, setHistory] = useState(null);
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [importOpen, setImportOpen]     = useState(false);
 
   const fetchRows = async () => {
     setLoading(true);
@@ -219,7 +226,11 @@ const ContributionIndex = () => {
             style={{ width: 220 }}
           />
         </Space>
-        <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
+        <Space wrap>
+          <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
+          {canTemplate && <Button icon={<DownloadOutlined />} onClick={() => setTemplateOpen(true)}>Generate Template</Button>}
+          {canImport && <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>}
+        </Space>
       </Space>
       <Typography.Paragraph type='secondary' style={{ fontSize: 12 }}>
         No profile saved = everything Computed from the tables in force (Set Up → Contribution Tables).
@@ -249,6 +260,8 @@ const ContributionIndex = () => {
       />
       <ContributionComputeModal employee={computing} onClose={() => setComputing(null)} />
       <ContributionHistoryModal employee={history} onClose={() => setHistory(null)} />
+      <GenerateTemplateModal open={templateOpen} types={['contribution_profile']} onClose={() => setTemplateOpen(false)} />
+      <ImportDataModal open={importOpen} types={['contribution_profile']} onClose={() => setImportOpen(false)} onImported={fetchRows} />
     </div>
   );
 };

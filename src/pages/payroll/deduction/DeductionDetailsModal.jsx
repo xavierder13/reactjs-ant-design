@@ -170,7 +170,7 @@ const DeductionDetailsModal = ({ deductionId, refreshKey, options, perms, onClos
               <Descriptions.Item label='Status'>
                 <Tag color={DEDUCTION_STATUS_COLORS[deduction.status]}>{deduction.status}</Tag>
               </Descriptions.Item>
-              <Descriptions.Item label='Type'>{deduction.type?.name}</Descriptions.Item>
+              <Descriptions.Item label='Type'>{deduction.type?.name}{deduction.description ? ` — ${deduction.description}` : ''}</Descriptions.Item>
               <Descriptions.Item label='Reference No.'>{deduction.reference_no || '-'}</Descriptions.Item>
               <Descriptions.Item label='Date Granted'>{formatDate(deduction.date_granted)}</Descriptions.Item>
               <Descriptions.Item label='Total'>{peso(deduction.total_amount)}</Descriptions.Item>

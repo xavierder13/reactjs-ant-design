@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Table, Tag, Button, Space, Tooltip, Select, Input, Progress, Popconfirm, Typography, App } from 'antd';
-import { EditOutlined, EyeOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { EditOutlined, EyeOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import deductionApi from '../../../services/payroll/deductionApi';
 import handleApiError from '../../../utils/handleApiError';
@@ -8,11 +8,13 @@ import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../../utils/tablePaginati
 import { DEDUCTION_STATUS_COLORS, employeeName, peso } from '../payrollHelpers';
 import DeductionFormModal from './DeductionFormModal';
 import DeductionDetailsModal from './DeductionDetailsModal';
+import GenerateTemplateModal from '../../employee_master_data/components/GenerateTemplateModal';
+import ImportDataModal from '../../employee_master_data/components/ImportDataModal';
 
 // Scheduled deductions (loans, cash advances, …) with their balance. View
 // opens the details and payment ledger (record payment, hold / resume,
-// cancel). No approval — saved by permission. Server-side filters and
-// pagination.
+// cancel). No approval — saved by permission. Bulk: Generate Template →
+// one line per deduction → Import. Server-side filters and pagination.
 const DeductionIndex = () => {
   const { message } = App.useApp();
   const { hasPermission, hasRole } = useAuth();
@@ -24,6 +26,8 @@ const DeductionIndex = () => {
     canDelete: isAdmin || hasPermission('deduction-delete'),
     canPay:    isAdmin || hasPermission('deduction-payment'),
   };
+  const canTemplate = isAdmin || hasPermission('deduction-template-download');
+  const canImport = isAdmin || hasPermission('deduction-import');
 
   const [options, setOptions] = useState({ types: [], cutoffs: [], branches: [], schedules: [], statuses: [] });
   const [filters, setFilters] = useState({});
@@ -35,6 +39,8 @@ const DeductionIndex = () => {
   const [viewing, setViewing] = useState(null);
   const [editing, setEditing] = useState(null); // {} = add
   const [savedCount, setSavedCount] = useState(0); // reloads the open details after an edit
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [importOpen, setImportOpen]     = useState(false);
 
   const fetchRows = async () => {
     setLoading(true);
@@ -108,7 +114,7 @@ const DeductionIndex = () => {
       width: 210,
       render: (_, r) => (
         <div>
-          <div>{r.type_name}</div>
+          <div>{r.type_name}{r.description ? ` — ${r.description}` : ''}</div>
           {r.reference_no && <Typography.Text type='secondary' style={{ fontSize: 12 }}>Ref. {r.reference_no}</Typography.Text>}
         </div>
       ),
@@ -218,6 +224,8 @@ const DeductionIndex = () => {
         </Space>
         <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
+          {canTemplate && <Button icon={<DownloadOutlined />} onClick={() => setTemplateOpen(true)}>Generate Template</Button>}
+          {canImport && <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>}
           {perms.canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={() => setEditing({})}>Add Deduction</Button>}
         </Space>
       </Space>
@@ -254,6 +262,8 @@ const DeductionIndex = () => {
         onChanged={fetchRows}
         onEdit={(d) => setEditing(d)}
       />
+      <GenerateTemplateModal open={templateOpen} types={['deduction']} onClose={() => setTemplateOpen(false)} />
+      <ImportDataModal open={importOpen} types={['deduction']} onClose={() => setImportOpen(false)} onImported={fetchRows} />
     </div>
   );
 };

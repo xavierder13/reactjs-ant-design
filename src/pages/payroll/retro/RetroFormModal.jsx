@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import dayjs from 'dayjs';
-import { Modal, Form, Input, InputNumber, DatePicker, Select, Radio, Row, Col, Alert, App } from 'antd';
+import { Modal, Form, Input, InputNumber, DatePicker, Select, Radio, Row, Col, Alert, Switch, Typography, App } from 'antd';
 import retroApi from '../../../services/payroll/retroApi';
 import EmployeeSelect from '../../manpower_request/request/EmployeeSelect';
 import handleApiError from '../../../utils/handleApiError';
@@ -9,7 +9,10 @@ import { applyFormErrors, cutoffOptions, pesoInputProps, toNumber } from '../pay
 import { rateLabel } from '../../compensation/compensationHelpers';
 
 // Add or edit a retro adjustment: type, earning / deduction, the period it
-// covers, the amount and the cut-off that pays / recovers it. `suggestion`
+// covers, the amount and the cut-off that pays / recovers it. An Other
+// Adjustment says what it is for (options.other_types): that fixes earning /
+// deduction for most, and whether the payroll taxes it — from the type, the
+// allowance picked, or the Taxable switch for Others (specify). `suggestion`
 // prefills a new one from a back-dated salary change (its computation is
 // kept with it); `retro` = edit (Open only).
 const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) => {
@@ -17,7 +20,12 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
   const retroType = Form.useWatch('retro_type', form);
-  const fixedAdjustment = retroType ? options.types?.[retroType] : null;
+  const otherTypeName = Form.useWatch('other_type', form);
+  const allowanceTypeId = Form.useWatch('allowance_type_id', form);
+  const isOther = retroType === 'Other Adjustment';
+  const otherType = isOther ? (options.other_types || []).find((t) => t.name === otherTypeName) : null;
+  const fixedAdjustment = isOther ? otherType?.adjustment : (retroType ? options.types?.[retroType] : null);
+  const allowanceType = (options.allowance_types || []).find((t) => t.id === allowanceTypeId);
   const today = dayjs().format('YYYY-MM-DD');
 
   const handleAfterOpenChange = (isOpen) => {
@@ -27,6 +35,10 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
     if (source) {
       form.setFieldsValue({
         retro_type: source.retro_type,
+        other_type: retro?.other_type || undefined,
+        allowance_type_id: retro?.allowance_type_id || undefined,
+        other_specify: retro?.other_specify || null,
+        taxable: retro ? !!retro.taxable : true,
         adjustment: source.adjustment,
         period: [dayjs(source.period_from), dayjs(source.period_to)],
         amount: toNumber(source.amount),
@@ -35,12 +47,17 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
         reason: retro?.reason || null,
       });
     } else {
-      form.setFieldsValue({ retro_type: 'Retro Salary', adjustment: 'Earning', payroll_cutoff_id: options.next_cutoff_id });
+      form.setFieldsValue({ retro_type: 'Retro Salary', adjustment: 'Earning', taxable: true, payroll_cutoff_id: options.next_cutoff_id });
     }
   };
 
   const onTypeChange = (type) => {
     const only = options.types?.[type];
+    if (only) form.setFieldsValue({ adjustment: only });
+  };
+
+  const onOtherTypeChange = (name) => {
+    const only = (options.other_types || []).find((t) => t.name === name)?.adjustment;
     if (only) form.setFieldsValue({ adjustment: only });
   };
 
@@ -53,6 +70,10 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
     }
     const payload = {
       retro_type: values.retro_type,
+      other_type: isOther ? values.other_type : null,
+      allowance_type_id: isOther && otherType?.taxable === 'allowance' ? values.allowance_type_id : null,
+      other_specify: isOther && values.other_type === 'Others (specify)' ? values.other_specify?.trim() || null : null,
+      taxable: isOther && values.other_type === 'Others (specify)' ? !!values.taxable : null,
       adjustment: values.adjustment,
       period_from: values.period[0].format('YYYY-MM-DD'),
       period_to: values.period[1].format('YYYY-MM-DD'),
@@ -132,6 +153,50 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
             </Form.Item>
           </Col>
         </Row>
+        {isOther && (
+          <Row gutter={12}>
+            <Col xs={24} sm={12}>
+              <Form.Item name='other_type' label='Adjustment For' rules={[{ required: true, message: 'Pick what the adjustment is for' }]}>
+                <Select
+                  placeholder='Select'
+                  options={(options.other_types || []).map((t) => ({ value: t.name, label: t.name }))}
+                  onChange={onOtherTypeChange}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              {otherType?.taxable === 'allowance' && (
+                <Form.Item name='allowance_type_id' label='Allowance' rules={[{ required: true, message: 'Pick the allowance' }]}>
+                  <Select
+                    placeholder='Select'
+                    showSearch={{ optionFilterProp: 'label' }}
+                    options={(options.allowance_types || [])
+                      .filter((t) => t.active || t.id === retro?.allowance_type_id)
+                      .map((t) => ({ value: t.id, label: t.name }))}
+                  />
+                </Form.Item>
+              )}
+              {otherTypeName === 'Others (specify)' && (
+                <Form.Item name='other_specify' label='Specify' rules={[{ required: true, whitespace: true, message: 'Say what the adjustment is for' }]}>
+                  <Input maxLength={150} placeholder='e.g. Sales incentive correction' />
+                </Form.Item>
+              )}
+            </Col>
+            <Col xs={24}>
+              {otherTypeName === 'Others (specify)' ? (
+                <Form.Item name='taxable' label='Taxable' valuePropName='checked' extra="Off only when the law exempts it (e.g. a refund of the employee's own money).">
+                  <Switch checkedChildren='Taxable' unCheckedChildren='Non-taxable' />
+                </Form.Item>
+              ) : otherType && (
+                <Typography.Paragraph type='secondary' style={{ marginTop: -8 }}>
+                  {otherType.taxable === 'allowance'
+                    ? (allowanceType ? `${allowanceType.taxable && !allowanceType.de_minimis ? 'Taxable' : 'Non-taxable'} — follows ${allowanceType.name}.` : 'Taxable or not follows the allowance picked.')
+                    : (otherType.taxable ? 'Taxable.' : 'Non-taxable.')}
+                </Typography.Paragraph>
+              )}
+            </Col>
+          </Row>
+        )}
         <Row gutter={12}>
           <Col xs={24} sm={12}>
             <Form.Item name='period' label='Period Covered' rules={[{ required: true, message: 'Select the period' }]}>

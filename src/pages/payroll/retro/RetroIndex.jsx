@@ -6,7 +6,7 @@ import retroApi from '../../../services/payroll/retroApi';
 import handleApiError from '../../../utils/handleApiError';
 import { formatDate } from '../../../utils/formatDate';
 import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../../utils/tablePagination';
-import { ADJUSTMENT_COLORS, RETRO_STATUS_COLORS, cutoffOptions, employeeName, peso } from '../payrollHelpers';
+import { ADJUSTMENT_COLORS, RETRO_STATUS_COLORS, cutoffOptions, employeeName, peso, retroLabel } from '../payrollHelpers';
 import RetroFormModal from './RetroFormModal';
 import RetroDetailsModal from './RetroDetailsModal';
 import RetroSuggestionsModal from './RetroSuggestionsModal';
@@ -120,10 +120,11 @@ const RetroIndex = () => {
     {
       title: 'Type',
       dataIndex: 'retro_type',
-      width: 190,
+      width: 230,
       render: (v, r) => (
         <Space size={4} wrap>
-          {v}
+          {retroLabel(r)}
+          {!Number(r.taxable) && <Tag>Non-taxable</Tag>}
           {r.compensation_id && <Tooltip title='From a back-dated salary change'><Tag color='cyan'>Salary</Tag></Tooltip>}
         </Space>
       ),

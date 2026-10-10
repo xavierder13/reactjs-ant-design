@@ -27,6 +27,7 @@ const DeductionTypeFormModal = ({ open, type, categories, onClose, onSaved }) =>
       code: values.code.trim(),
       name: values.name.trim(),
       category: values.category,
+      needs_description: !!values.needs_description,
       active: !!values.active,
       remarks: values.remarks?.trim() || null,
     };
@@ -78,6 +79,14 @@ const DeductionTypeFormModal = ({ open, type, categories, onClose, onSaved }) =>
             </Form.Item>
           </Col>
         </Row>
+        <Form.Item
+          name='needs_description'
+          label='Needs Description'
+          valuePropName='checked'
+          extra='For a generic type (e.g. Other Deduction): each deduction must say what it is for — shown on the payslip.'
+        >
+          <Switch />
+        </Form.Item>
         <Form.Item name='remarks' label='Remarks'>
           <Input.TextArea rows={2} maxLength={1000} />
         </Form.Item>

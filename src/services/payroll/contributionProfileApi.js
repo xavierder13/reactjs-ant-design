@@ -25,12 +25,24 @@ import axios from '../../api/axiosInstance';
 //   totals { ee, er, ec, tax, employee_deductions }, salary_visible } }.
 //   Monthly amounts. The salary in force is used only with compensation-list;
 //   otherwise (or for a daily rate) needs_base → send base.
+// - templateDownload({ document_status, branch_id, position_id,
+//   employee_ids }) → .xls blob, every profile incl. bank accounts
+//   (contribution-profile-template-download); import(file) → the shared 200
+//   contract — see ImportDataModal.jsx (contribution-profile-import).
 const contributionProfileApi = {
   getAll:     (params)              => axios.post('/contribution_profile/index', params),
   getOptions: ()                    => axios.post('/contribution_profile/options'),
   show:       (employeeId)          => axios.post(`/contribution_profile/show/${employeeId}`),
   save:       (employeeId, payload) => axios.post(`/contribution_profile/save/${employeeId}`, payload),
   compute:    (payload)             => axios.post('/contribution_profile/compute', payload),
+  templateDownload: (params) => axios.post('/contribution_profile/template/download', params, { responseType: 'blob' }),
+  import: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return axios.post('/contribution_profile/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export default contributionProfileApi;
