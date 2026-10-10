@@ -5,10 +5,12 @@ description: The Workforce Dashboard (/workforce-dashboard) — HR analytics ove
 
 # Workforce Dashboard
 
-HR analytics page, separate from the Recruitment Dashboard (`/dashboard`,
-`DashboardPage.jsx`) — one page per audience, not tabs. Both sit under the
-**Dashboards** menu group; `/dashboard` stays the recruitment page because
-login lands there (`GuestRoute`).
+HR analytics page, separate from the Recruitment Dashboard
+(`/recruitment-dashboard`, `DashboardPage.jsx`) — one page per audience, not
+tabs. Both sit under the **Dashboards** menu group; dashboard routes are
+named `/<audience>-dashboard`. Login lands on `/` (`SmartRedirect`: the first
+`permissionRoutes` entry the user can open, the Recruitment Dashboard for
+`hr-payroll-dashboard`); the old `/dashboard` redirects to the recruitment one.
 
 
 ## Exit Interview Analysis (Offboarding KPI 6a)

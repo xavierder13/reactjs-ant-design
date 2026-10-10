@@ -61,7 +61,7 @@ export default function DashboardNav({
       />
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', padding: '8px 0' }}>
-        {period && <Tag icon={<CalendarOutlined />} bordered={false} style={{ marginInlineEnd: 0, background: token.colorFillTertiary }}>{period}</Tag>}
+        {period && <Tag icon={<CalendarOutlined />} variant='filled' style={{ marginInlineEnd: 0, background: token.colorFillTertiary }}>{period}</Tag>}
         {chips.length === 0
           ? <Text type='secondary' style={{ fontSize: 12 }}>{emptyText}</Text>
           : chips.map((c) => (

@@ -1,6 +1,6 @@
 // src/routes/AppRoutes.jsx
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 
 // Guards
@@ -108,7 +108,7 @@ import NotFoundPage from '../pages/errors/NotFoundPage';
 
 // ─── Permission-based routes config ───────────────────────────────────────────
 const permissionRoutes = [
-  { permissions: ['hr-payroll-dashboard'],      path: '/dashboard',        element: <DashboardPage /> },
+  { permissions: ['hr-payroll-dashboard'],      path: '/recruitment-dashboard', element: <DashboardPage /> },
   { permissions: ['hr-payroll-dashboard'],      path: '/workforce-dashboard', element: <WorkforceDashboardPage /> },
   { permissions: ['user-list'],                 path: '/users',       element: <UserIndex /> },
   { permissions: ['role-list'],                 path: '/roles',       element: <RoleIndex /> },
@@ -229,6 +229,13 @@ const SmartRedirect = () => {
     : <Navigate to='/unauthorize' replace />;
 };
 
+// The Recruitment Dashboard's old address (before /recruitment-dashboard):
+// bookmarks and shared links keep working, ?tab= included.
+const OldDashboardRedirect = () => {
+  const { search, hash } = useLocation();
+  return <Navigate to={`/recruitment-dashboard${search}${hash}`} replace />;
+};
+
 // ─── App Routes ───────────────────────────────────────────────────────────────
 const AppRoutes = () => {
   return (
@@ -244,6 +251,7 @@ const AppRoutes = () => {
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
             <Route path='/'             element={<SmartRedirect />} />
+            <Route path='/dashboard'    element={<OldDashboardRedirect />} />
             <Route path='/user/profile' element={<UserProfile />} />
             <Route path='/my-payslips'  element={<MyPayslipsIndex />} />
             <Route path='/my-attendance' element={<MyAttendanceIndex />} />

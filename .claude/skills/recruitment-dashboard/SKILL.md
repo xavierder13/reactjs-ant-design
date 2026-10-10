@@ -1,6 +1,6 @@
 ---
 name: recruitment-dashboard
-description: The Recruitment Dashboard (/dashboard) — must show the same numbers as vueportal's Dashboard.vue. Where its logic lives, the component map, and the parity check that proves it matches vueportal. Use before changing any Recruitment Dashboard metric/section, or when vueportal's dashboard changes.
+description: The Recruitment Dashboard (/recruitment-dashboard; /dashboard redirects there) — must show the same numbers as vueportal's Dashboard.vue. Where its logic lives, the component map, and the parity check that proves it matches vueportal. Use before changing any Recruitment Dashboard metric/section, or when vueportal's dashboard changes.
 ---
 
 # Recruitment Dashboard

@@ -83,7 +83,7 @@ const { Title } = Typography;
 
 // ─── Page title map ────────────────────────────────────────────────────────────
 const titleMap = {
-  '/dashboard':              { title: 'Recruitment Dashboard', breadcrumb: ['Dashboards', 'Recruitment Dashboard'] },
+  '/recruitment-dashboard':  { title: 'Recruitment Dashboard', breadcrumb: ['Dashboards', 'Recruitment Dashboard'] },
   '/workforce-dashboard':    { title: 'Workforce Dashboard', breadcrumb: ['Dashboards', 'Workforce Dashboard'] },
   '/users':                  { title: 'User Accounts',       breadcrumb: ['User Management', 'User Accounts'] },
   '/user/profile':           { title: 'My Profile',          breadcrumb: ['User Management', 'My Profile'] },
@@ -185,7 +185,7 @@ const menuData = [
     icon: <DashboardOutlined />,
     children: [
       { key: 'workforce-dashboard', title: 'Workforce Dashboard',   link: '/workforce-dashboard', permissions: ['hr-payroll-dashboard'] },
-      { key: 'dashboard',           title: 'Recruitment Dashboard', link: '/dashboard',           permissions: ['hr-payroll-dashboard'] },
+      { key: 'recruitment-dashboard', title: 'Recruitment Dashboard', link: '/recruitment-dashboard', permissions: ['hr-payroll-dashboard'] },
       { key: 'kpi-dashboard',       title: 'KPI Dashboard',         link: '/kpi-dashboard',       permissions: ['kpi-report-view'] },
     ],
   },

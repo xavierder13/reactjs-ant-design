@@ -283,7 +283,8 @@ Dated change history for each lives in `docs/<module>-history.md`.
   `/workforce-dashboard`) — `.claude/skills/workforce-dashboard/SKILL.md`.
   HR analytics over Employee Master Data; aggregated backend endpoint,
   `hr-payroll-dashboard` gate, data caveats, phase plan.
-- **Recruitment Dashboard** (`src/pages/dashboard/`, route `/dashboard`) —
+- **Recruitment Dashboard** (`src/pages/dashboard/`, route
+  `/recruitment-dashboard`; the old `/dashboard` redirects there) —
   `.claude/skills/recruitment-dashboard/SKILL.md`. Must match vueportal's
   Dashboard.vue number-for-number; metrics module, component map, parity check.
 - **KPI Management** (`src/pages/kpi/`, routes `/kpi-templates…`,
