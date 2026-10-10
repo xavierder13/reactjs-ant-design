@@ -68,7 +68,8 @@ const toPayload = (values) => ({
 // provider and an optional fee. Location is required for In-Person.
 // Records need a saved employee, like Offboarding.
 export default function TrainingProgramTab({ mode, initialData }) {
-  const { departmentOptions } = useEmployeeFormOptions();
+  // only the add / edit form needs the list (view mode has no form)
+  const { departmentOptions } = useEmployeeFormOptions({ enabled: mode !== "view" });
 
   if (mode === "create") {
     return <Empty description="Save the employee first before adding records here." style={{ padding: "24px 0" }} />;

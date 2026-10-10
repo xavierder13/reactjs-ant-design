@@ -51,8 +51,9 @@ Management", `titleMap`, regex cases for `:id` pages):
 | `/my-evaluations/:id` | `kpi-self-evaluation-create` or `-edit` |
 
 - Role `KPI Self Evaluation`: `SmartRedirect` sends them to
-  `/my-evaluations`; `MainLayout`'s `isEmployeeOnly` (that role without
-  `hr-payroll-dashboard`) shows a one-item menu. These accounts are created
+  `/my-evaluations`. The menu is the normal permission-driven one (My
+  Workspace → My Evaluations first) — an account that also has Employee
+  Self-Service sees its leave / time entry / overtime pages too. These accounts are created
   by the backend (`<employee_code>@hr_evaluation.ac`) when a `self`
   evaluation is created.
 

@@ -27,7 +27,9 @@ const TimeEntryIndex = () => {
   const canCreate  = access.canCreate;
 
   const [options, setOptions] = useState({ types: [], branches: [] });
-  const [view, setView]       = useState('approval');
+  // an employee who only files for themself starts on All (their own
+  // filings, plus any they approve); approvers / HR on For My Approval
+  const [view, setView]       = useState(access.createOwnOnly ? 'all' : 'approval');
   const [filters, setFilters] = useState({});
   const [search, setSearch]   = useState('');
   const [page, setPage]       = useState({ current: 1, pageSize: 20 });

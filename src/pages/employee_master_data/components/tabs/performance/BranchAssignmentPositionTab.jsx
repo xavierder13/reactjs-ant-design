@@ -39,7 +39,8 @@ const agencyValues = (values) => ({
 export default function BranchAssignmentPositionTab({ employeeId, mode, initialRecords, pendingRecords, onPendingRecordsChange, onEmployeeChange }) {
   const { message: messageApi } = App.useApp();
   // Same options as the Employee Details tab (/employee_master_data/create).
-  const { branchOptions, positionOptions } = useEmployeeFormOptions();
+  // only the add / edit form needs the lists (view mode has no form)
+  const { branchOptions, positionOptions } = useEmployeeFormOptions({ enabled: mode !== "view" });
   // The backend matches branch/position by NAME, not id (confirmed from
   // EmployeeBranchAssignmentPositionController — it looks rows up via
   // Branch::where('name', ...)/Position::where('name', ...)) — reuse the

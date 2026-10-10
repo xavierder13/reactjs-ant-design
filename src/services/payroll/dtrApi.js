@@ -15,7 +15,7 @@ import axios from '../../api/axiosInstance';
 // A day: { date, day, schedule { source, shift_code, day_off, time_in,
 //   time_out, break_minutes, grace_minutes }, day_type, holidays [{ title,
 //   holiday_type }], time_in / time_out ('HH:mm', out may end ' (+1)'),
-//   in_source / out_source ('biometric' | 'time entry'), leave { type, code,
+//   in_source / out_source ('biometric' | 'imported' | 'time entry'), leave { type, code,
 //   paid, half_day } | null, status (Present | Absent | On Leave | Half-day
 //   Leave | Half-day Leave, Absent | Incomplete | Holiday | Holiday Worked |
 //   Holiday Worked (day off) | Rest Day | Rest Day Worked | No Schedule |

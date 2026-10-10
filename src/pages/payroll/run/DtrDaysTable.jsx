@@ -10,6 +10,24 @@ const empty = <Typography.Text type='secondary'>—</Typography.Text>;
 // schedule used, the day type and holidays, the times in / out (and where
 // they came from), the status and the minutes that pay or deduct. Shared by
 // the Timekeeping viewer and the payslip.
+// Where a time in / out came from: the biometric device, an Attendance Logs
+// import, or an approved manual time entry.
+const PUNCH_SOURCES = {
+  biometric:    { label: 'Bio',      color: 'blue',   title: 'Biometric device (BioBridge)' },
+  imported:     { label: 'Imported', color: 'purple', title: 'Attendance Logs import' },
+  'time entry': { label: 'Manual',   color: 'orange', title: 'Approved manual time entry' },
+};
+
+const PunchSourceTag = ({ source }) => {
+  const s = PUNCH_SOURCES[source];
+  if (!s) return null;
+  return (
+    <Tooltip title={s.title}>
+      <Tag color={s.color} style={{ marginInlineEnd: 0, fontSize: 11, lineHeight: '16px', paddingInline: 5 }}>{s.label}</Tag>
+    </Tooltip>
+  );
+};
+
 const DtrDaysTable = ({ days }) => {
   const columns = [
     {
@@ -56,14 +74,21 @@ const DtrDaysTable = ({ days }) => {
     {
       title: 'In / Out',
       key: 'times',
-      width: 120,
+      width: 150,
       render: (_, d) => {
         if (!d.time_in && !d.time_out) return empty;
-        const src = [...new Set([d.in_source, d.out_source].filter(Boolean))];
+        // each time with where it came from (biometric / imported / manual)
+        const line = (label, time, source) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+            <Typography.Text type='secondary' style={{ fontSize: 11, width: 24 }}>{label}</Typography.Text>
+            <span>{time || '—'}</span>
+            {time && <PunchSourceTag source={source} />}
+          </div>
+        );
         return (
           <div>
-            <div>{`${d.time_in || '—'} – ${d.time_out || '—'}`}</div>
-            <Typography.Text type='secondary' style={{ fontSize: 12 }}>{src.join(' / ')}</Typography.Text>
+            {line('In', d.time_in, d.in_source)}
+            {line('Out', d.time_out, d.out_source)}
           </div>
         );
       },

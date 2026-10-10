@@ -92,6 +92,7 @@ import ThirteenthMonthIndex from '../pages/payroll/reports/ThirteenthMonthIndex'
 import YearEndTaxReport from '../pages/payroll/reports/YearEndTaxReport';
 import FinalPayReport from '../pages/payroll/reports/FinalPayReport';
 import MyPayslipsIndex from '../pages/payroll/my_payslips/MyPayslipsIndex';
+import MyAttendanceIndex from '../pages/payroll/my_attendance/MyAttendanceIndex';
 import OvertimeIndex from '../pages/overtime/OvertimeIndex';
 import ApprovingOfficerIndex from '../pages/approval/ApprovingOfficerIndex';
 import CompanyIndex from '../pages/record_management/company/CompanyIndex';
@@ -245,6 +246,7 @@ const AppRoutes = () => {
             <Route path='/'             element={<SmartRedirect />} />
             <Route path='/user/profile' element={<UserProfile />} />
             <Route path='/my-payslips'  element={<MyPayslipsIndex />} />
+            <Route path='/my-attendance' element={<MyAttendanceIndex />} />
           </Route>
         </Route>
 
