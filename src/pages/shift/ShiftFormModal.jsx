@@ -145,6 +145,7 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={shift ? 'Edit Shift' : 'Create Shift'}
       okText='Save'

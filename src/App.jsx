@@ -9,6 +9,12 @@ const App = () => {
       // Every paged table offers records per page — also the ones that keep
       // AntD's default pagination (see src/utils/tablePagination.js).
       pagination={{ showSizeChanger: true }}
+      // Every dialog and drawer is persistent: a click outside never closes it —
+      // only its close icon, Cancel or its own buttons do (Esc: keyboard={false}
+      // on each Modal / Drawer, which ConfigProvider can't set; lint rule
+      // local/modal-persistent).
+      modal={{ mask: { closable: false } }}
+      drawer={{ mask: { closable: false } }}
       theme={{
         token: {
           colorPrimary: '#389e0d',

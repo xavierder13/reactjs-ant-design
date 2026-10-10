@@ -15,6 +15,7 @@ const CutoffFilingHistoryModal = ({ open, cutoff, logs, onClose }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={`Filing History — ${cutoff?.code || ''}`}
       footer={null}

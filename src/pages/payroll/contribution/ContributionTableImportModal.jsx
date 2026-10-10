@@ -113,6 +113,7 @@ const ContributionTableImportModal = ({ open, agency: defaultAgency, agencies, r
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title='Import Contribution Table'
       onCancel={onClose}

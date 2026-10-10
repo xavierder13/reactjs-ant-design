@@ -132,6 +132,7 @@ const ShiftBulkAssignModal = ({ open, options, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title='Group Shift Allocation'
       okText={employeeIds.length ? `Assign to ${employeeIds.length}` : 'Assign'}

@@ -28,6 +28,7 @@ const ReasonModal = ({ open, title, label = 'Reason', okText = 'Save', danger = 
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={title}
       okText={okText}

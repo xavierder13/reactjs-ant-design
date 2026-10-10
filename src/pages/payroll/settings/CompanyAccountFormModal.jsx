@@ -65,6 +65,7 @@ const CompanyAccountFormModal = ({ open, account, banks, onClose, onSaved }) => 
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={account ? 'Edit Payroll Account' : 'Add Payroll Account'}
       okText='Save'

@@ -174,6 +174,7 @@ const ShiftHistoryModal = ({ assignment, onClose }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={!!assignment}
       title={employee ? `Shifting History — ${employee.full_name}` : 'Shifting History'}
       onCancel={onClose}

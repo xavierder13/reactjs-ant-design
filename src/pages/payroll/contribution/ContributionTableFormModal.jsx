@@ -62,6 +62,7 @@ const ContributionTableFormModal = ({ open, agency, table, copyFrom, fields, onC
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={`${table ? 'Edit' : 'New'} ${agency} Table`}
       okText='Save'

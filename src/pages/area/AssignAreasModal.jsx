@@ -55,6 +55,7 @@ const AssignAreasModal = ({ open, hrHead, areas, areaAssignments, onClose, onSav
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={hrHead ? 'Edit Area Assignment' : 'Assign Areas'}
       okText='Save'

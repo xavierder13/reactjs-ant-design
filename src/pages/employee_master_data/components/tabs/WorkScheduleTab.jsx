@@ -254,6 +254,7 @@ export default function WorkScheduleTab({ mode = "create", initialData, pendingR
       <Table rowKey="id" size="small" dataSource={displayedRecords} columns={columns} pagination={false} scroll={{ x: "max-content" }} />
 
       <Modal
+        keyboard={false}
         title={editing ? "Edit Work Schedule" : "Add Work Schedule"}
         open={modalOpen}
         onCancel={closeModal}

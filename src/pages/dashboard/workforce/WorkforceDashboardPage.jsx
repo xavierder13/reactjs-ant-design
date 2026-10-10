@@ -233,6 +233,8 @@ const WorkforceDashboardPage = () => {
       <WorkforceFilters filters={filters} options={options} onChange={setFilters} />
 
       <Drawer
+
+        keyboard={false}
         title='Filters'
         placement='right'
         size={screens.sm ? 400 : '100%'}

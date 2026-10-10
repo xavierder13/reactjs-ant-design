@@ -46,6 +46,7 @@ const LeaveCreditModal = ({ row, employeeId, year, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={!!row}
       title={row ? `${row.leave_type.name} Credits — ${year}` : ''}
       okText='Save'

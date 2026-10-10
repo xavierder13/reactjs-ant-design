@@ -117,6 +117,7 @@ export default function ExportEmployeesModal({ open, onClose, presetValues, extr
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={`Export ${title}`}
       onCancel={handleClose}

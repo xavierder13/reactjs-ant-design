@@ -298,6 +298,7 @@ const ThirteenthMonthIndex = () => {
       />
 
       <Modal
+        keyboard={false}
         open={genOpen}
         title='Generate 13th-month Pay'
         okText='Generate'
@@ -323,6 +324,7 @@ const ThirteenthMonthIndex = () => {
       </Modal>
 
       <Modal
+        keyboard={false}
         open={!!viewId}
         title={run ? `13th-month Pay — ${run.year}` : '13th-month Pay'}
         onCancel={() => setViewId(null)}

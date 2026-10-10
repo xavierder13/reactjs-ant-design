@@ -60,6 +60,7 @@ const TimeEntryDetailsModal = ({ entryId, onClose, onActed }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={!!entryId}
       title='Time Entry Details'
       onCancel={onClose}

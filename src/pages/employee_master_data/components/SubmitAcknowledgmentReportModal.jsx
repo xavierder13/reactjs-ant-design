@@ -59,6 +59,7 @@ export default function SubmitAcknowledgmentReportModal({ open, employees, onClo
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title="Submit Branch Report"
       onCancel={onClose}

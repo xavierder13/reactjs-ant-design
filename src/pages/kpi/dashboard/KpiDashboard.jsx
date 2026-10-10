@@ -318,6 +318,8 @@ export default function KpiDashboard() {
       <Card size='small' style={{ borderRadius: 8, marginBottom: 16 }}>{filterFields(false)}</Card>
 
       <Drawer
+
+        keyboard={false}
         title='Filters'
         placement='right'
         size={screens.sm ? 380 : '100%'}

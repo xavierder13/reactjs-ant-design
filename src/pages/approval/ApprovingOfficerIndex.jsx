@@ -158,6 +158,7 @@ const ApprovingOfficerIndex = () => {
         pagination={tablePagination(20)}
       />
       <Modal
+        keyboard={false}
         open={assignOpen}
         title='Assign Approving Officers'
         okText='Assign'

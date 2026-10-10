@@ -45,6 +45,7 @@ const DepartmentFormModal = ({ open, department, divisions, onClose, onSaved }) 
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={department ? 'Edit Department' : 'Create Department'}
       okText='Save'

@@ -106,6 +106,7 @@ const RetroSuggestionsModal = ({ open, refreshKey, onClose, onCreate, onChanged 
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title='Retro Suggestions'
       footer={null}

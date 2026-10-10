@@ -226,6 +226,7 @@ const GroupScheduleIndex = () => {
       />
       <GroupScheduleFormModal open={formOpen} record={editing} options={options} onClose={closeForm} onSaved={handleSaved} />
       <Modal
+        keyboard={false}
         open={!!cancelling}
         title='Cancel Default Schedule'
         okText='Cancel Default'

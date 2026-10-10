@@ -95,6 +95,7 @@ const ContributionComputeModal = ({ employee, onClose }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={!!employee}
       title={employee ? `Contributions — ${employee.label}` : 'Contributions'}
       footer={null}

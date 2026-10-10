@@ -239,6 +239,7 @@ export default function PerformanceRecordTab({
       />
 
       <Modal
+        keyboard={false}
         title={editing ? `Edit ${title}` : `Add ${title}`}
         open={modalOpen}
         onCancel={closeModal}

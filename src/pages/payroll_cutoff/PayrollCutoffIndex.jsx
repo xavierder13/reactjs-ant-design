@@ -211,6 +211,7 @@ const PayrollCutoffIndex = () => {
       />
 
       <Modal
+        keyboard={false}
         open={!!editing}
         title={editing?.id ? 'Edit Cut-off' : 'Create Cut-off'}
         okText='Save'
@@ -239,7 +240,7 @@ const PayrollCutoffIndex = () => {
         </Form>
       </Modal>
 
-      <Modal open={genOpen} title='Generate a Year of Cut-offs' okText='Generate' onOk={generate} onCancel={() => setGenOpen(false)} forceRender>
+      <Modal keyboard={false} open={genOpen} title='Generate a Year of Cut-offs' okText='Generate' onOk={generate} onCancel={() => setGenOpen(false)} forceRender>
         <Form form={genForm} layout='vertical'>
           <Form.Item name='year' label='Year' rules={[{ required: true }]}>
             <Select options={YEARS.map((y) => ({ value: y, label: y }))} />
@@ -262,6 +263,7 @@ const PayrollCutoffIndex = () => {
       </Modal>
 
       <Modal
+        keyboard={false}
         open={!!switching}
         title={`Turn filing OFF — ${switching?.code || ''}`}
         okText='Turn off'

@@ -130,6 +130,7 @@ const GroupScheduleFormModal = ({ open, record, options, onClose, onSaved }) => 
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={record ? 'Change Default Schedule' : 'Set Default Schedule'}
       okText='Save'

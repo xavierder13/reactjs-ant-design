@@ -170,6 +170,7 @@ function UploadModal({ open, applicantId, onClose, onUploaded }) {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title="Attach Applicant's File"
       destroyOnHidden

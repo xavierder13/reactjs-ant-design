@@ -59,6 +59,7 @@ const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={!!target}
       title={`Generate Selected Employees — ${run?.cutoff?.code || ''}`}
       okText={`Generate ${selected.length || ''} Employee${selected.length === 1 ? '' : 's'}`}

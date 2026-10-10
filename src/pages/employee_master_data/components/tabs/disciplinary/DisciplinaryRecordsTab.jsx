@@ -289,6 +289,7 @@ export default function DisciplinaryRecordsTab({ employeeId, mode, initialRecord
       <Table rowKey="id" size="small" dataSource={displayedRecords} columns={columns} pagination={false} scroll={{ x: "max-content" }} />
 
       <Modal
+        keyboard={false}
         title={editing ? "Edit Disciplinary Action" : "Add Disciplinary Action"}
         open={modalOpen}
         onCancel={closeModal}

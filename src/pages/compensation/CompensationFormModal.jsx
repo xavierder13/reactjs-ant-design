@@ -83,6 +83,7 @@ const CompensationFormModal = ({ open, employee, version, options, onClose, onSa
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={version ? 'Edit Salary' : 'Add Salary Change'}
       okText='Save'

@@ -38,6 +38,7 @@ const CareersBranchFormModal = ({ open, branch, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={branch ? 'Edit Careers Branch' : 'Create Careers Branch'}
       okText='Save'

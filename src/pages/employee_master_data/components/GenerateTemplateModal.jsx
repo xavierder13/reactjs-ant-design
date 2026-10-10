@@ -79,6 +79,7 @@ export default function GenerateTemplateModal({ open, onClose, types }) {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title="Generate Template"
       onCancel={handleClose}

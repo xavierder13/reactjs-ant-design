@@ -230,6 +230,7 @@ const ShiftAssignmentIndex = () => {
         onSaved={() => { setBulkOpen(false); fetchRows(); }}
       />
       <Modal
+        keyboard={false}
         open={!!cancelling}
         title='Cancel Shifting'
         okText='Cancel Shifting'

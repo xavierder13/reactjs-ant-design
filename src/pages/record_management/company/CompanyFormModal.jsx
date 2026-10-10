@@ -38,6 +38,7 @@ const CompanyFormModal = ({ open, company, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={company ? 'Edit Company' : 'Create Company'}
       okText='Save'

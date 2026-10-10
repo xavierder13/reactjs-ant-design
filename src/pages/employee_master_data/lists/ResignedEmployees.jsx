@@ -328,6 +328,7 @@ export default function ResignedEmployees() {
       </Card>
 
       <Modal
+        keyboard={false}
         title={editing ? `${editing.employee_code ? `${editing.employee_code} - ` : ""}${editing.name || ""}` : ""}
         open={Boolean(editing)}
         onCancel={closeModal}

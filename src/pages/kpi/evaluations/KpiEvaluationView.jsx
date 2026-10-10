@@ -728,6 +728,7 @@ const KpiEvaluationView = () => {
 
           {/* Rejection Modal */}
           <Modal
+            keyboard={false}
             title='Reject Evaluation'
             open={rejectModalOpen}
             onCancel={() => {

@@ -107,6 +107,7 @@ function NteEditModal({ record, onClose, onSaved }) {
 
   return (
     <Modal
+      keyboard={false}
       title={record ? `Edit Issued NTE — ${record.employee_name}` : ""}
       open={Boolean(record)}
       onCancel={onClose}

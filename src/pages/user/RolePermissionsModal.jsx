@@ -45,6 +45,7 @@ const RolePermissionsModal = ({ open, user, onClose }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={`Roles & Permissions — ${user?.name || ''}`}
       onCancel={onClose}

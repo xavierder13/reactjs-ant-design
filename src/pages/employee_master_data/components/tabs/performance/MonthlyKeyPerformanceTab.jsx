@@ -238,6 +238,7 @@ export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialReco
       />
 
       <Modal
+        keyboard={false}
         title={periodModalMode === "add" ? "Add Period" : "Delete Period"}
         open={periodModalOpen}
         onCancel={() => setPeriodModalOpen(false)}
@@ -259,6 +260,7 @@ export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialReco
       </Modal>
 
       <Modal
+        keyboard={false}
         title={`Edit Grade — ${editingRow?.month} ${editingRow?.year}`}
         open={gradeModalOpen}
         onCancel={() => setGradeModalOpen(false)}

@@ -130,6 +130,7 @@ const ShiftAssignmentFormModal = ({ open, assignment, options, onClose, onSaved 
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={assignment ? 'Change Shifting' : 'Assign Shift'}
       okText='Save'

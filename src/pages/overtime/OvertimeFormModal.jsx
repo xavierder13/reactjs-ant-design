@@ -111,6 +111,7 @@ const OvertimeFormModal = ({ open, overtime, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={overtime ? 'Edit Overtime' : 'File Overtime'}
       okText='Save'

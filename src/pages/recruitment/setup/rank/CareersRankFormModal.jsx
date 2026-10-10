@@ -38,6 +38,7 @@ const CareersRankFormModal = ({ open, rank, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={rank ? 'Edit Careers Rank' : 'Create Careers Rank'}
       okText='Save'

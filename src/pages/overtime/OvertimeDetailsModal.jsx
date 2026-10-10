@@ -60,6 +60,7 @@ const OvertimeDetailsModal = ({ overtimeId, onClose, onActed }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={!!overtimeId}
       title='Overtime Details'
       onCancel={onClose}

@@ -133,6 +133,7 @@ const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={leave ? 'Edit Leave' : 'File Leave'}
       okText='Save'

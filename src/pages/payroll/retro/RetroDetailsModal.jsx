@@ -72,6 +72,7 @@ const RetroDetailsModal = ({ retroId, refreshKey, perms, onClose, onChanged, onE
 
   return (
     <Modal
+      keyboard={false}
       open={!!retroId}
       title='Retro Adjustment'
       onCancel={onClose}

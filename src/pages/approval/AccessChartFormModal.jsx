@@ -55,6 +55,7 @@ const AccessChartFormModal = ({ open, chart, modules, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={chart ? 'Edit Access Chart' : 'Create Access Chart'}
       okText='Save'

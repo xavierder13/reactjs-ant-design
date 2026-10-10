@@ -83,6 +83,7 @@ const BankFileModal = ({ target, onClose }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={!!target}
       title={(target || shown)?.title}
       onCancel={onClose}

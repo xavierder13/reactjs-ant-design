@@ -29,6 +29,7 @@ const DtrModal = ({ target, onClose }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={!!target}
       title={`Daily Time Record — ${(e || target?.employee)?.full_name || ''}`}
       onCancel={onClose}

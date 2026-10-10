@@ -70,6 +70,7 @@ const ContributionProfileModal = ({ employeeId, canEdit, onClose, onSaved }) => 
 
   return (
     <Modal
+      keyboard={false}
       open={!!employeeId}
       title='Contribution Profile'
       okText='Save'

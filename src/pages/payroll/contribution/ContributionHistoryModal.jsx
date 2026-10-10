@@ -56,6 +56,7 @@ const ContributionHistoryModal = ({ employee, onClose }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={!!employee}
       title={`Contribution History — ${employee?.label || ''}`}
       footer={null}

@@ -96,6 +96,7 @@ const UserFormModal = ({ open, user, roles, branches, positions, onClose, onSave
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={isEdit ? 'Edit User' : 'Create User'}
       okText='Save'

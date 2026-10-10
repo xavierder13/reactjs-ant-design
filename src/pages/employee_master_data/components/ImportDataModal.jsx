@@ -126,6 +126,7 @@ export default function ImportDataModal({ open, onClose, onImported, types }) {
   return (
     <>
       <Modal
+        keyboard={false}
         open={open}
         title="Import Data"
         onCancel={handleClose}
@@ -164,6 +165,7 @@ export default function ImportDataModal({ open, onClose, onImported, types }) {
       </Modal>
 
       <Modal
+        keyboard={false}
         open={!!errorRows}
         title="Error List"
         onCancel={() => setErrorRows(null)}

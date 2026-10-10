@@ -44,6 +44,7 @@ const BankFormModal = ({ open, bank, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={bank ? 'Edit Bank' : 'Create Bank'}
       okText='Save'

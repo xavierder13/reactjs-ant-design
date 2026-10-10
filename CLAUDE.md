@@ -225,6 +225,16 @@ PDF (headless Edge `Page.printToPDF`), not by reading the CSS.
 
 ## Error / Loading / Notification Conventions
 
+- **Every Modal and Drawer is persistent** (product rule): it closes only by
+  its close icon, Cancel or its own buttons. An outside click is off app-wide
+  (`App.jsx` ConfigProvider `modal` / `drawer` `mask: { closable: false }`);
+  Esc can't be set there, so each `<Modal>` / `<Drawer>` carries
+  `keyboard={false}` (and `modal.confirm` calls `keyboard: false`). A Drawer
+  with `closable={false}` (mobile menu, phone bell) renders its own close
+  button. `npm run lint` enforces it
+  (`local/modal-persistent`): no `keyboard={false}`, or a `maskClosable` /
+  `mask={{ closable: true }}`, fails.
+
 - Loading: AntD `Spin` for full-page/blocking loads; `loading` prop on
   `Table`/`Button` for scoped loading states.
 - Errors: always route through `handleApiError(error, messageApi)`.

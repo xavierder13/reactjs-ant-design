@@ -299,6 +299,7 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps, onAp
 
   return (
     <Drawer
+      keyboard={false}
       open={open}
       onClose={onClose}
       destroyOnHidden

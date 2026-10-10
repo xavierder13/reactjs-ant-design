@@ -138,6 +138,7 @@ const CompensationHistoryModal = ({ employeeId, options, canCreate, canEdit, can
 
   return (
     <Modal
+      keyboard={false}
       open={!!employeeId}
       title='Salary History'
       // wide on desktop (Reason gets room); near full width below that

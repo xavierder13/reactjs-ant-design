@@ -99,6 +99,7 @@ export default function SendNotificationModal({
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={afterSave ? 'Status updated — notify the applicant?' : 'Send Notification'}
       width={needsSchedule ? 680 : 480}

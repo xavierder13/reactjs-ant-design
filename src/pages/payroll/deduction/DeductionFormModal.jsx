@@ -82,6 +82,7 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={deduction ? 'Edit Deduction' : 'Add Deduction'}
       okText='Save'

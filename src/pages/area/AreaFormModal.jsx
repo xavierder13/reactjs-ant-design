@@ -81,6 +81,7 @@ const AreaFormModal = ({ open, area, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={area ? 'Edit Area' : 'Create Area'}
       okText='Save'

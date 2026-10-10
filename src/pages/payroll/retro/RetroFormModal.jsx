@@ -109,6 +109,7 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={retro ? 'Edit Retro Adjustment' : 'Add Retro Adjustment'}
       okText='Save'

@@ -153,6 +153,7 @@ const DeductionDetailsModal = ({ deductionId, refreshKey, options, perms, onClos
 
   return (
     <Modal
+      keyboard={false}
       open={!!deductionId}
       title='Deduction'
       footer={null}

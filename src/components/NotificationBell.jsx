@@ -4,7 +4,7 @@ import {
   BellOutlined, ReloadOutlined, FileDoneOutlined, AuditOutlined, UserAddOutlined, TeamOutlined,
   CommentOutlined, FormOutlined, SafetyOutlined, ScheduleOutlined, ExceptionOutlined, AlertOutlined,
   CalendarOutlined, SafetyCertificateOutlined, FieldTimeOutlined, LinkOutlined, RightOutlined, CheckCircleOutlined, TrophyOutlined, UserDeleteOutlined,
-  CarryOutOutlined, ClockCircleOutlined, HourglassOutlined, WalletOutlined, GiftOutlined, DollarOutlined, RollbackOutlined, IdcardOutlined, FlagOutlined, BankOutlined,
+  CarryOutOutlined, ClockCircleOutlined, HourglassOutlined, WalletOutlined, GiftOutlined, DollarOutlined, RollbackOutlined, IdcardOutlined, FlagOutlined, BankOutlined, CloseOutlined,
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
@@ -129,9 +129,13 @@ export default function NotificationBell() {
             </Text>
           </div>
         </div>
-        <Tooltip title={updatedAt ? `Updated ${updatedAt.format("h:mm A")}` : "Refresh"}>
-          <Button type="text" size="small" icon={<ReloadOutlined />} loading={loading} onClick={load} aria-label="Refresh notifications" />
-        </Tooltip>
+        <div style={{ display: "flex", gap: 4 }}>
+          <Tooltip title={updatedAt ? `Updated ${updatedAt.format("h:mm A")}` : "Refresh"}>
+            <Button type="text" size="small" icon={<ReloadOutlined />} loading={loading} onClick={load} aria-label="Refresh notifications" />
+          </Tooltip>
+          {/* the phone drawer closes only by this button (persistent) */}
+          {isPhone && <Button type="text" size="small" icon={<CloseOutlined />} onClick={() => setOpen(false)} aria-label="Close notifications" />}
+        </div>
       </div>
 
       <div style={{ maxHeight: 460, overflowY: "auto", padding: "4px 0" }}>
@@ -210,6 +214,7 @@ export default function NotificationBell() {
       <>
         <span onClick={() => setOpen(true)}>{bellButton}</span>
         <Drawer
+          keyboard={false}
           open={open}
           onClose={() => setOpen(false)}
           placement="top"

@@ -230,6 +230,7 @@ const PermissionIndex = () => {
       </Card>
 
       <Modal
+        keyboard={false}
         title={editing ? 'Edit Permission' : 'New Permission'}
         open={modalOpen}
         onCancel={closeModal}

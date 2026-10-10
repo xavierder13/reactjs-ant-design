@@ -251,6 +251,7 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords, pendin
       <Table rowKey="id" size="small" dataSource={displayedRecords} columns={columns} pagination={false} scroll={{ x: "max-content" }} />
 
       <Modal
+        keyboard={false}
         title={editing ? "Edit Issued NTE" : "Add Issued NTE"}
         open={modalOpen}
         onCancel={closeModal}

@@ -91,6 +91,7 @@ const PayslipModal = ({ target, onClose, loadPayslip = payrollRunApi.payslip, se
 
   return (
     <Modal
+      keyboard={false}
       open={!!target}
       title={`Payslip — ${e?.full_name || target?.full_name || ''}`}
       onCancel={onClose}

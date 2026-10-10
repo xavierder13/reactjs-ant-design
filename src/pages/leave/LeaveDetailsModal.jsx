@@ -73,6 +73,7 @@ const LeaveDetailsModal = ({ leaveId, onClose, onActed }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={!!leaveId}
       title='Leave Details'
       onCancel={onClose}

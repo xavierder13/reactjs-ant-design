@@ -75,6 +75,7 @@ const ApprovingOfficersModal = ({ chart, users, canAdd, canRemove, onClose, onCh
 
   return (
     <Modal
+      keyboard={false}
       open={!!chart}
       title={chart ? `Approving Officers — ${chart.name}` : ''}
       onCancel={onClose}

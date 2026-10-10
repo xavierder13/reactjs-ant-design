@@ -75,6 +75,7 @@ const HolidayCalendarFormModal = ({ open, holiday, defaultDate, branches, onClos
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={holiday ? 'Edit Holiday' : 'Create Holiday'}
       okText='Save'

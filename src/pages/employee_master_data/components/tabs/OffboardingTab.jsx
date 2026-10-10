@@ -301,6 +301,7 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
 
       <ConfigProvider componentDisabled={false}>
         <Modal
+          keyboard={false}
           title={viewOnly ? "Offboarding Record" : editing ? "Edit Offboarding Record" : "Add Offboarding Record"}
           open={modalOpen}
           onCancel={closeModal}

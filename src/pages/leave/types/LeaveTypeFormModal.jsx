@@ -56,6 +56,7 @@ const LeaveTypeFormModal = ({ open, leaveType, employmentTypes, onClose, onSaved
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={leaveType ? 'Edit Leave Type' : 'Create Leave Type'}
       okText='Save'

@@ -131,6 +131,7 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={entry ? 'Edit Time Entry' : 'File Time Entry'}
       okText='Save'

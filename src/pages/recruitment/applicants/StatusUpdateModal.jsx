@@ -257,6 +257,7 @@ export default function StatusUpdateModal({
       return;
     }
     modal.confirm({
+      keyboard: false,
       title: 'Are you sure?',
       content: details ? 'Save the hiring details?' : `Update the ${PIPELINE[step].label} status?`,
       okText: 'Save',
@@ -394,6 +395,7 @@ export default function StatusUpdateModal({
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={details ? 'Hiring Details' : `${PIPELINE[step]?.label} Status`}
       width={details ? 900 : 520}

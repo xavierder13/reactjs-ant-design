@@ -891,6 +891,7 @@ const ViewManpowerRequest = () => {
 
         {/* ── Disapprove / Return Remarks Modal ─────────────────────────── */}
         <Modal
+          keyboard={false}
           title={remarksModalMode === 'reject' ? 'Disapprove Request' : 'Return Request for Revision'}
           open={remarksModalMode !== null}
           onCancel={closeRemarksModal}
@@ -923,6 +924,7 @@ const ViewManpowerRequest = () => {
 
         {/* ── Approval History Modal ────────────────────────────────────── */}
         <Modal
+          keyboard={false}
           title="Approval History"
           open={historyOpen}
           onCancel={() => setHistoryOpen(false)}
@@ -965,6 +967,7 @@ const ViewManpowerRequest = () => {
 
         {/* ── Record Hires Modal — "FOR HR USE ONLY" step ───────────────── */}
         <Modal
+          keyboard={false}
           title="Record Hires"
           open={hireModalOpen}
           onCancel={closeHireModal}

@@ -26,6 +26,7 @@ export default function DashboardFilterDrawer({
 
   return (
     <Drawer
+      keyboard={false}
       title='Filters'
       placement='right'
       size={screens.sm ? 380 : '100%'}

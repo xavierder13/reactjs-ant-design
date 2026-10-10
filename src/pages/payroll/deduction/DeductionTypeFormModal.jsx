@@ -45,6 +45,7 @@ const DeductionTypeFormModal = ({ open, type, categories, onClose, onSaved }) =>
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={type ? 'Edit Deduction Type' : 'Create Deduction Type'}
       okText='Save'

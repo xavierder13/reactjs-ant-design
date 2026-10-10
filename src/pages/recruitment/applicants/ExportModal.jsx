@@ -97,6 +97,7 @@ export default function ExportModal({ open, stageKey, branches, can, isBranchMan
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title="Export Records"
       destroyOnHidden

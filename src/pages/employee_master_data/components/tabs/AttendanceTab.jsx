@@ -204,6 +204,7 @@ export default function AttendanceTab({ initialData }) {
       />
 
       <Modal
+        keyboard={false}
         title={<>Break Logs — <Tag color="blue">{breakLogsRow ? formatDate(breakLogsRow.date) : ""}</Tag></>}
         open={!!breakLogsRow}
         onCancel={() => setBreakLogsRow(null)}

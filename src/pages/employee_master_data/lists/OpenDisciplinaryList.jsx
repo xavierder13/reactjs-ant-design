@@ -113,6 +113,7 @@ function DisciplinaryEditModal({ record, onClose, onSaved }) {
 
   return (
     <Modal
+      keyboard={false}
       title={record ? `Edit Disciplinary Action — ${record.employee_name}` : ""}
       open={Boolean(record)}
       onCancel={onClose}

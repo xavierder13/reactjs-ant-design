@@ -641,6 +641,7 @@ const MainLayout = () => {
   const runSyncAction = (name) => {
     const { title, content, request } = SYNC_ACTIONS[name];
     modal.confirm({
+      keyboard: false,
       title,
       content,
       okText: 'Proceed',
@@ -829,6 +830,16 @@ const MainLayout = () => {
             <div className="app-sidebar__tagline">HR Information System</div>
           </div>
         )}
+        {/* drawers close only by their own button (persistent) */}
+        {isMobile && (
+          <Button
+            type="text"
+            aria-label="Close menu"
+            icon={<CloseOutlined />}
+            onClick={() => setDrawerOpen(false)}
+            style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.82)' }}
+          />
+        )}
       </div>
 
       <div className="app-sidebar__menu">
@@ -889,6 +900,7 @@ const MainLayout = () => {
       {/* ── Sidebar ────────────────────────────────────────────────────────────── */}
       {isMobile ? (
         <Drawer
+          keyboard={false}
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           placement='left'

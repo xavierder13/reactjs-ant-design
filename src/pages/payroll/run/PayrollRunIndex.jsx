@@ -162,6 +162,7 @@ const PayrollRunIndex = () => {
         locale={{ emptyText: `No payroll for ${year} yet` }}
       />
       <Modal
+        keyboard={false}
         open={genOpen}
         title='Generate Payroll'
         okText={picked?.draft_run_id ? 'Regenerate' : 'Generate'}

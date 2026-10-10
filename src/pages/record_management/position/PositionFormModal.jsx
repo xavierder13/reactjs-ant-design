@@ -180,6 +180,7 @@ const PositionFormModal = ({ open, position, positions, ranks, branches, departm
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={position ? 'Edit Position' : 'Create Position'}
       okText='Save'

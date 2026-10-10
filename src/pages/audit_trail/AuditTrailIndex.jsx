@@ -235,6 +235,7 @@ const AuditTrailIndex = () => {
         }}
       />
       <Modal
+        keyboard={false}
         title={viewing && `${viewing.record} #${viewing.record_id}`}
         open={viewerOpen}
         onCancel={() => setViewerOpen(false)}

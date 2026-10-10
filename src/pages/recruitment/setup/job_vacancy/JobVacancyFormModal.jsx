@@ -97,6 +97,7 @@ const JobVacancyFormModal = ({ open, vacancyId, positions, branches, onClose, on
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={isEdit ? 'Edit Job Vacancy Status' : 'Create Job Vacancy'}
       okText='Save'

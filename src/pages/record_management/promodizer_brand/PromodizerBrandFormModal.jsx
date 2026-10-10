@@ -37,6 +37,7 @@ const PromodizerBrandFormModal = ({ open, brand, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={brand ? 'Edit Promodizer Brand' : 'Create Promodizer Brand'}
       okText='Save'

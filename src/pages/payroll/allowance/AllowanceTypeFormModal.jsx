@@ -52,6 +52,7 @@ const AllowanceTypeFormModal = ({ open, type, periods, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={type ? 'Edit Allowance Type' : 'Create Allowance Type'}
       okText='Save'

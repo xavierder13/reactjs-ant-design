@@ -87,6 +87,7 @@ const HiringOfficerFormModal = ({ open, hiringOfficer, onClose, onSaved }) => {
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={hiringOfficer ? 'Edit Hiring Officer' : 'Create Hiring Officer'}
       okText='Save'

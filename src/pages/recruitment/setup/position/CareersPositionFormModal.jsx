@@ -88,6 +88,7 @@ const CareersPositionFormModal = ({ open, position, departments, ranks, onClose,
 
   return (
     <Modal
+      keyboard={false}
       open={open}
       title={position ? 'Edit Careers Position' : 'Create Careers Position'}
       okText='Save'
