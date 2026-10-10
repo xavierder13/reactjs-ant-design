@@ -9,6 +9,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import notificationApi from "../services/notification/notificationApi";
+import { PASSIVE_HEADERS } from "../utils/session";
 
 const { Text } = Typography;
 
@@ -66,10 +67,12 @@ export default function NotificationBell() {
   const screens = Grid.useBreakpoint();
   const isPhone = screens.md === false;
 
-  const load = useCallback(async () => {
+  // passive = the timed refresh: checked by the backend but not counted as
+  // activity, so an open tab doesn't keep an idle session alive.
+  const load = useCallback(async (passive = false) => {
     setLoading(true);
     try {
-      const { data } = await notificationApi.getSummary();
+      const { data } = await notificationApi.getSummary(passive ? { headers: PASSIVE_HEADERS } : undefined);
       if (data?.success) {
         setSummary({ total: data.total || 0, items: data.items || [] });
         setUpdatedAt(dayjs());
@@ -90,7 +93,7 @@ export default function NotificationBell() {
   }, [load, pathname]);
 
   useEffect(() => {
-    const timer = setInterval(load, REFRESH_MS);
+    const timer = setInterval(() => load(true), REFRESH_MS);
     return () => clearInterval(timer);
   }, [load]);
 
@@ -131,7 +134,7 @@ export default function NotificationBell() {
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           <Tooltip title={updatedAt ? `Updated ${updatedAt.format("h:mm A")}` : "Refresh"}>
-            <Button type="text" size="small" icon={<ReloadOutlined />} loading={loading} onClick={load} aria-label="Refresh notifications" />
+            <Button type="text" size="small" icon={<ReloadOutlined />} loading={loading} onClick={() => load()} aria-label="Refresh notifications" />
           </Tooltip>
           {/* the phone drawer closes only by this button (persistent) */}
           {isPhone && <Button type="text" size="small" icon={<CloseOutlined />} onClick={() => setOpen(false)} aria-label="Close notifications" />}

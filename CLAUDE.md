@@ -145,8 +145,18 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
   themselves do **not**, so action gates still need the explicit bypass.
 - Tokens live in `localStorage` via `src/utils/tokenHelper.js`
   (`access_token`, `refresh_token`).
-- Note: the 401 handling in `axiosInstance`'s response interceptor is
-  currently commented out (no auto-redirect/clear on 401).
+- **Session expiry** (vueportal `CheckSessionActivity`: 8 h token
+  lifetime + 30 min idle window per token, refreshed by every API call):
+  `axiosInstance` clears the token and goes to `/login` (which shows why)
+  only on a session 401 — "Unauthenticated." or "…expired due to
+  inactivity." — never on a permission 401 ("Unauthorized" from a
+  `<Module>Maintenance` middleware); `useSessionTimeout` (MainLayout) is the
+  30-min idle logout, synced across tabs via localStorage, with a
+  5-min-throttled heartbeat while the user is active; Logout calls
+  `authApi.logout()` to revoke the token. **A timed / automatic API call
+  (polling, auto-refresh) must send `{ headers: PASSIVE_HEADERS }`**
+  (`utils/session.js`), or an open tab keeps an idle session alive (see
+  NotificationBell).
 
 ## Form and Validation Conventions
 

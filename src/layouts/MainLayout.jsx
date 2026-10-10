@@ -49,6 +49,8 @@ import {
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
+import useSessionTimeout from '../hooks/useSessionTimeout';
+import authApi from '../services/auth/authApi';
 import NotificationBell from '../components/NotificationBell';
 import MenuSearch from '../components/MenuSearch';
 import syncApi from '../services/employee/syncApi';
@@ -706,7 +708,16 @@ const MainLayout = () => {
 
   const { activeKey, openKeys } = getMenuState(menuData, pathname);
 
-  const handleLogout = () => {
+  // signed-in pages: 30-min idle logout, synced across tabs (utils/session.js)
+  useSessionTimeout();
+
+  // revoke the token on the server too (it also ends the idle window)
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // already expired / offline: clearing it here is enough
+    }
     clearAuth();
     navigate('/login');
   };

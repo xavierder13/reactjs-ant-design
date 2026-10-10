@@ -13,6 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import axios from '../../api/axiosInstance'
 import useAuth from '../../hooks/useAuth'
+import { takeEndReason } from '../../utils/session'
 
 const { Title, Text } = Typography
 
@@ -20,6 +21,8 @@ const LoginForm = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [isInvalid, setIsInvalid] = useState(false);
+  // why the last session ended (expired / idle), set by the axios interceptor
+  const [endReason] = useState(takeEndReason);
 
   const navigate = useNavigate();
   const { setAuth, setTokens } = useAuth();
@@ -132,6 +135,15 @@ const LoginForm = () => {
           </Title>
           <Text type="secondary">Enter your credentials to continue</Text>
         </div>
+
+        {endReason && !isInvalid && (
+          <Alert
+            type="warning"
+            showIcon
+            title={endReason}
+            style={{ marginBottom: 20, borderRadius: 8 }}
+          />
+        )}
 
         {isInvalid && (
           <Alert
