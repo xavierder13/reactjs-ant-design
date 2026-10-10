@@ -4,6 +4,7 @@ import {
   BellOutlined, ReloadOutlined, FileDoneOutlined, AuditOutlined, UserAddOutlined, TeamOutlined,
   CommentOutlined, FormOutlined, SafetyOutlined, ScheduleOutlined, ExceptionOutlined, AlertOutlined,
   CalendarOutlined, SafetyCertificateOutlined, FieldTimeOutlined, LinkOutlined, RightOutlined, CheckCircleOutlined, TrophyOutlined, UserDeleteOutlined,
+  CarryOutOutlined, ClockCircleOutlined, HourglassOutlined, WalletOutlined, GiftOutlined, DollarOutlined, RollbackOutlined, IdcardOutlined, FlagOutlined,
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
@@ -13,7 +14,7 @@ const { Text } = Typography;
 
 // How often the count refreshes while the app is open (no live push).
 const REFRESH_MS = 5 * 60 * 1000;
-const GROUP_ORDER = ["For approval", "Recruitment", "Employee relations", "Recommended"];
+const GROUP_ORDER = ["For approval", "Payroll", "Recruitment", "Employee relations", "Recommended"];
 
 // One icon per NotificationService item key; unknown keys fall back to the bell.
 const ICONS = {
@@ -34,6 +35,18 @@ const ICONS = {
   for_regularization: <SafetyCertificateOutlined />,
   mrf_overdue: <FieldTimeOutlined />,
   referral_codes: <LinkOutlined />,
+  leave_approval: <CarryOutOutlined />,
+  time_entry_approval: <ClockCircleOutlined />,
+  overtime_approval: <HourglassOutlined />,
+  payroll_run_approval: <WalletOutlined />,
+  thirteenth_month_approval: <GiftOutlined />,
+  payroll_due: <DollarOutlined />,
+  pending_filings_due: <HourglassOutlined />,
+  retro_missed: <RollbackOutlined />,
+  no_salary: <IdcardOutlined />,
+  thirteenth_month_due: <GiftOutlined />,
+  next_year_cutoffs: <FlagOutlined />,
+  next_year_holidays: <CalendarOutlined />,
 };
 
 // The header bell: the user's to-dos as counts, grouped; each row opens the
@@ -179,21 +192,12 @@ export default function NotificationBell() {
   );
 
   const bellButton = (
-      <Badge count={summary.total} size="small" overflowCount={99} offset={[-2, 5]}>
+      <Badge count={summary.total} size="small" overflowCount={99} offset={[-4, 6]}>
         <Button
           type="text"
+          className="app-navbar__icon-btn"
           aria-label={`Notifications${summary.total ? ` (${summary.total})` : ""}`}
-          icon={<BellOutlined style={{ color: "#389e0d", fontSize: 16 }} />}
-          style={{
-            background: "#f6ffed",
-            border: "0.5px solid #d9f7be",
-            borderRadius: 6,
-            width: 34,
-            height: 34,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          icon={<BellOutlined />}
         />
       </Badge>
   );

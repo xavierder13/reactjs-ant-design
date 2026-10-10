@@ -36,14 +36,24 @@ has its own % (the premium rates' overtime column per day type).
   (13th-month approval).
   React: `run/BankFileModal` (shared by runs and 13th month), PayslipModal
   Print (`utils/printDocument` + `reports/printTemplates`), `my_payslips/
-  MyPayslipsIndex` (`/my-payslips`, open route, user menu),
+  MyPayslipsIndex` (`/my-payslips`, open route, My Workspace + user menu;
+  a date / cut-off range — the cut-offs of the employee's own payslips —
+  narrows the list and drives Print Pay Sheet (one line per cut-off + total,
+  `my_payslip/pay_sheet`), Export Pay Sheet (`/pay_sheet/download`, .xls) and
+  Print Payslips (`my_payslip/payslips`, ≤ 100) — own data only, no permission),
+  `my_attendance/MyAttendanceIndex` (`/my-attendance`, open route, My
+  Workspace — vueportal `MyAttendanceController`: the linked employee's own
+  DTR per cut-off, no permission), `timekeeping/DtrSummary` (the DTR banner,
+  shared with `DtrModal`). Each DTR time in / out carries its source —
+  `biometric` (Bio), `imported` (Attendance Logs import) or `time entry`
+  (Manual) — shown as a tag in `DtrDaysTable`,
   `reports/RemittanceReport` (`/remittances`), `ThirteenthMonthIndex`
   (`/thirteenth-month`), `YearEndTaxReport` (`/year-end-tax`),
   `FinalPayReport` (`/final-pay`), `PaySheetReport` (`/pay-sheet`),
   `ContributionHistoryReport` (`/contribution-history`) — both on the shared
   `RangeFilters` + `rangeHelpers` — and `contribution/ContributionHistoryModal`
   (Contributions → History row action); `payrollReportApi`,
-  `thirteenthMonthApi`, `myPayslipApi`. Menu: Payroll → Reports & Compliance.
+  `thirteenthMonthApi`, `myPayslipApi`. Menu: Payroll → Payroll Reports (Pay Sheet, Contribution History), Government Compliance (Remittances, Year-end Tax), Special Pay (13th Month Pay, Final Pay).
 
 ## Cut-offs (Payroll Settings → Cut-offs & Pay Days)
 
@@ -118,16 +128,21 @@ Template / Import Data dialogs.
 - Overtime: scheduled day → the day type's overtime rate; day off → first
   `hours_per_day` at its regular rate, beyond at its overtime rate. Night
   differential = night minutes × hourly × the hour's rate × night %.
-- Allowances prorated by days covered (per cut-off / per month ÷ cut-offs /
-  per day worked); de minimis non-taxable (monthly excess over the limit
-  taxable). Open retros of the cut-off (Deduction ones negative).
+- Allowances prorated by days covered (per cut-off / per week × 52 ÷ 12 ÷
+  cut-offs / per month ÷ cut-offs / per day worked); de minimis non-taxable
+  (monthly excess over the limit taxable; a weekly one by its × 52 ÷ 12). Open retros of the cut-off (Deduction ones negative),
+  labelled "Retro — <type>" or, for an Other Adjustment, what it is for (+
+  the allowance, or the Others text); taxable per the retro's `taxable`
+  (salary retros always; Other: from `EmployeeRetroAdjustment::OTHER_TYPES`,
+  the allowance type — taxable and not de minimis — or the form's switch).
 - Contributions: ContributionService::compute on the month base (monthly
   rate; daily-paid: the month's basic earnings, later cut-offs projected),
   taken per settings (Every cut-off ÷ count, or all on the 1st / last).
   Tax: taxOn() monthly — every cut-off: (taxable × count − mandatory EE) ÷
   count; 2nd cut-off: the month's taxable less tax already withheld.
 - Scheduled deductions due (DeductionService::dueOn skips a cut-off already
-  paid) only while the net stays ≥ 0, else a warning. Lines rounded once.
+  paid; a One-time one is its whole total, from its start cut-off until taken;
+  labelled "<type> — <description>" when the deduction has one) only while the net stays ≥ 0, else a warning. Lines rounded once.
 - Run: one non-cancelled per cut-off; employees = active with a salary
   saved by the cut-off's end; settings + rates copied onto it.
 

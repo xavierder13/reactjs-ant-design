@@ -104,8 +104,8 @@ own filters use `filterOptions` from the index response instead.
 Registered in both `AppRoutes.jsx` (`permissionRoutes`) and
 `MainLayout.jsx` (`menuData` + `titleMap`/`getPageMeta`). Sidebar: the list pages
 sit under Human Resource → Employee; Branch Reports and Branch Manpower Fill
-Rate sit under the generic Human Resource → **Reports** submenu (`hr-reports`,
-meant for every HR report — employee, recruitment, …):
+Rate sit in Employee's **Workforce Reports** group (`emp-workforce-reports`) —
+reports live inside the process they belong to, like Payroll's and KPI's:
 
 ```
 /employees                 → EmployeeMasterData         (employee-master-data-list)

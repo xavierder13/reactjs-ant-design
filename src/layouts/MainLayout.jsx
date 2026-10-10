@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import './sidebar.css';
+import './navbar.css';
 import {
   Layout,
   Menu,
@@ -10,7 +12,7 @@ import {
   Dropdown,
   Button,
   Divider,
-  Space,
+  Tooltip,
   Breadcrumb,
   Spin,
   ConfigProvider,
@@ -25,16 +27,18 @@ import {
   SettingOutlined,
   LogoutOutlined,
   MenuOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   DownOutlined,
   IdcardOutlined,
   SolutionOutlined,
   StarOutlined,
+  FieldTimeOutlined,
   BarChartOutlined,
   FileTextOutlined,
   ApartmentOutlined,
   ClusterOutlined,
   FundOutlined,
-  ToolOutlined,
   SyncOutlined,
   ScheduleOutlined,
   AuditOutlined,
@@ -75,7 +79,7 @@ const SYNC_ACTIONS = {
 };
 
 const { Header, Sider, Content } = Layout;
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 // ─── Page title map ────────────────────────────────────────────────────────────
 const titleMap = {
@@ -83,19 +87,20 @@ const titleMap = {
   '/workforce-dashboard':    { title: 'Workforce Dashboard', breadcrumb: ['Dashboards', 'Workforce Dashboard'] },
   '/users':                  { title: 'User Accounts',       breadcrumb: ['User Management', 'User Accounts'] },
   '/user/profile':           { title: 'My Profile',          breadcrumb: ['User Management', 'My Profile'] },
-  '/my-payslips':            { title: 'My Payslips',         breadcrumb: ['My Payslips'] },
+  '/my-payslips':            { title: 'My Payslips',         breadcrumb: ['My Workspace', 'My Payslips'] },
+  '/my-attendance':          { title: 'My Attendance',       breadcrumb: ['My Workspace', 'My Attendance'] },
   '/roles':                  { title: 'Roles',               breadcrumb: ['Authorizations', 'Roles'] },
   '/roles/create':           { title: 'Create Role',         breadcrumb: ['Authorizations', 'Roles', 'Create'] },
   '/permissions':            { title: 'Permissions',         breadcrumb: ['Authorizations', 'Permissions'] },
   '/employees':              { title: 'Employee Master Data', breadcrumb: ['Employee', 'Master Data'] },
   '/employees/create':       { title: 'Create Employee',     breadcrumb: ['Employee', 'Create'] },
-  '/acknowledgment-reports': { title: 'Branch Reports', breadcrumb: ['Reports', 'Branch Reports'] },
+  '/acknowledgment-reports': { title: 'Branch Reports', breadcrumb: ['Employee', 'Workforce Reports', 'Branch Reports'] },
   '/recruitment/setup/positions':     { title: 'Careers Positions', breadcrumb: ['Recruitment', 'Setup', 'Positions'] },
   '/recruitment/setup/ranks':         { title: 'Careers Ranks', breadcrumb: ['Recruitment', 'Setup', 'Ranks'] },
   '/recruitment/setup/branches':      { title: 'Careers Branches', breadcrumb: ['Recruitment', 'Setup', 'Branches'] },
   '/recruitment/setup/job-vacancies': { title: 'Job Vacancies', breadcrumb: ['Recruitment', 'Setup', 'Job Vacancies'] },
   '/recruitment/setup/hiring-officers': { title: 'Hiring Officers', breadcrumb: ['Recruitment', 'Setup', 'Hiring Officers'] },
-  '/reports/branch-manpower': { title: 'Branch Manpower Fill Rate', breadcrumb: ['Reports', 'Branch Manpower Fill Rate'] },
+  '/reports/branch-manpower': { title: 'Branch Manpower Fill Rate', breadcrumb: ['Employee', 'Workforce Reports', 'Branch Manpower Fill Rate'] },
   '/employees/hired-this-month':    { title: 'Employees Hired This Month', breadcrumb: ['Employee', 'Hired This Month'] },
   '/employees/for-regularization':  { title: 'For Regularization', breadcrumb: ['Employee', 'For Regularization'] },
   '/employees/resigned':            { title: 'Resigned', breadcrumb: ['Employee', 'Resigned'] },
@@ -133,12 +138,12 @@ const titleMap = {
   '/retro':                    { title: 'Retro Adjustments',       breadcrumb: ['Payroll', 'Retro Adjustments'] },
   '/timekeeping':              { title: 'Timekeeping',             breadcrumb: ['Payroll', 'Timekeeping'] },
   '/payroll-runs':             { title: 'Payroll Runs',            breadcrumb: ['Payroll', 'Payroll Runs'] },
-  '/remittances':              { title: 'Remittances',             breadcrumb: ['Payroll', 'Reports & Compliance', 'Remittances'] },
-  '/contribution-history':     { title: 'Contribution History',    breadcrumb: ['Payroll', 'Reports & Compliance', 'Contribution History'] },
-  '/pay-sheet':                { title: 'Pay Sheet',               breadcrumb: ['Payroll', 'Reports & Compliance', 'Pay Sheet'] },
-  '/thirteenth-month':         { title: '13th Month Pay',          breadcrumb: ['Payroll', 'Reports & Compliance', '13th Month Pay'] },
-  '/year-end-tax':             { title: 'Year-end Tax',            breadcrumb: ['Payroll', 'Reports & Compliance', 'Year-end Tax'] },
-  '/final-pay':                { title: 'Final Pay',               breadcrumb: ['Payroll', 'Reports & Compliance', 'Final Pay'] },
+  '/remittances':              { title: 'Remittances',             breadcrumb: ['Payroll', 'Government Compliance', 'Remittances'] },
+  '/contribution-history':     { title: 'Contribution History',    breadcrumb: ['Payroll', 'Payroll Reports', 'Contribution History'] },
+  '/pay-sheet':                { title: 'Pay Sheet',               breadcrumb: ['Payroll', 'Payroll Reports', 'Pay Sheet'] },
+  '/thirteenth-month':         { title: '13th Month Pay',          breadcrumb: ['Payroll', 'Special Pay', '13th Month Pay'] },
+  '/year-end-tax':             { title: 'Year-end Tax',            breadcrumb: ['Payroll', 'Government Compliance', 'Year-end Tax'] },
+  '/final-pay':                { title: 'Final Pay',               breadcrumb: ['Payroll', 'Special Pay', 'Final Pay'] },
   '/contribution-tables':      { title: 'Contribution Tables',     breadcrumb: ['Payroll', 'Setup', 'Contribution Tables'] },
   '/deduction-types':          { title: 'Deduction Types',         breadcrumb: ['Payroll', 'Setup', 'Deduction Types'] },
   '/allowances':               { title: 'Allowances',              breadcrumb: ['Payroll', 'Allowances'] },
@@ -186,6 +191,23 @@ const menuData = [
   },
   { type: 'divider' },
 
+  // ── My Workspace ────────────────────────────────────────────────────────────
+  // The signed-in employee's own records (self-service). requiresEmployee =
+  // shown only to an account linked to an employee (users.employee_id); no
+  // permission needed, like the endpoints. Filing leave / time entries /
+  // overtime stays under Time & Leave (gated by the *-own permissions).
+  {
+    key: 'my-workspace',
+    type: 'group',
+    label: 'My Workspace',
+    children: [
+      { key: 'my-attendance',  title: 'My Attendance',  icon: <FieldTimeOutlined />, link: '/my-attendance',  requiresEmployee: true },
+      { key: 'my-payslips',    title: 'My Payslips',    icon: <WalletOutlined />,    link: '/my-payslips',    requiresEmployee: true },
+      { key: 'my-evaluations', title: 'My Evaluations', icon: <StarOutlined />,      link: '/my-evaluations', permissions: ['kpi-self-evaluation-list'] },
+    ],
+  },
+  { type: 'divider' },
+
   // ── Human Resource ──────────────────────────────────────────────────────────
   {
     key: 'human-resource',
@@ -197,7 +219,8 @@ const menuData = [
         title: 'Employee',
         icon: <IdcardOutlined />,
         // Grouped by the employee lifecycle, like Set Up → Organization:
-        // the records, then joining, conduct, leaving, and programs.
+        // the records, then joining, conduct, leaving, programs, and the
+        // workforce reports (branch headcount: acknowledgment + fill rate).
         children: [
           {
             key: 'emp-records',
@@ -242,6 +265,15 @@ const menuData = [
             label: 'Programs',
             children: [
               { key: 'referral-codes', title: 'Referral Codes', link: '/employees/referral-codes', permissions: ['employee-referral-list'] },
+            ],
+          },
+          {
+            key: 'emp-workforce-reports',
+            type: 'group',
+            label: 'Workforce Reports',
+            children: [
+              { key: 'acknowledgment-reports', title: 'Branch Reports', link: '/acknowledgment-reports', permissions: ['employee-acknowledgment-reports'] },
+              { key: 'hr-report-branch-manpower', title: 'Branch Manpower Fill Rate', link: '/reports/branch-manpower', permissions: ['employee-master-data-branch-manpower-export'] },
             ],
           },
         ]
@@ -292,9 +324,11 @@ const menuData = [
         ],
       },
       // Payroll processing (Timekeeping = the DTR per cut-off, Payroll Runs),
-      // reports & compliance (remittances, 13th month, year-end tax, final
-      // pay), the pay records the run reads (salary, allowances, statutory
-      // contributions, scheduled deductions, retro adjustments) and setup.
+      // reports by process — payroll reports (pay sheet, contribution
+      // history), government compliance (remittances, year-end tax), special
+      // pay (13th month, final pay) — the pay records the run reads (salary,
+      // allowances, statutory contributions, scheduled deductions, retro
+      // adjustments) and setup.
       {
         key: 'payroll',
         title: 'Payroll',
@@ -312,13 +346,27 @@ const menuData = [
           {
             key: 'payroll-reports',
             type: 'group',
-            label: 'Reports & Compliance',
+            label: 'Payroll Reports',
             children: [
-              { key: 'pay-sheet',        title: 'Pay Sheet',      link: '/pay-sheet',        permissions: ['payroll-report-view'] },
-              { key: 'remittances',      title: 'Remittances',    link: '/remittances',      permissions: ['payroll-report-view'] },
+              { key: 'pay-sheet',            title: 'Pay Sheet',            link: '/pay-sheet',            permissions: ['payroll-report-view'] },
               { key: 'contribution-history', title: 'Contribution History', link: '/contribution-history', permissions: ['payroll-report-view'] },
+            ],
+          },
+          {
+            key: 'payroll-compliance',
+            type: 'group',
+            label: 'Government Compliance',
+            children: [
+              { key: 'remittances',  title: 'Remittances',  link: '/remittances',  permissions: ['payroll-report-view'] },
+              { key: 'year-end-tax', title: 'Year-end Tax', link: '/year-end-tax', permissions: ['payroll-report-view'] },
+            ],
+          },
+          {
+            key: 'payroll-special-pay',
+            type: 'group',
+            label: 'Special Pay',
+            children: [
               { key: 'thirteenth-month', title: '13th Month Pay', link: '/thirteenth-month', permissions: ['thirteenth-month-list'] },
-              { key: 'year-end-tax',     title: 'Year-end Tax',   link: '/year-end-tax',     permissions: ['payroll-report-view'] },
               { key: 'final-pay',        title: 'Final Pay',      link: '/final-pay',        permissions: ['final-pay-view'] },
             ],
           },
@@ -351,21 +399,37 @@ const menuData = [
         key: 'recruitment',
         title: 'Recruitment',
         icon: <SolutionOutlined />,
+        // Grouped like Payroll (flat group headers, no nested dropdown): the
+        // applicant pipeline in stage order, vacancies, then setup.
         children: [
-          { key: 'job-applicants',    title: 'Job Applicants',    link: '/recruitment/applicant-list',         permissions: ['careers-applicant-list'] },
-          { key: 'screening',         title: 'Screening',         link: '/recruitment/screening-list',         permissions: ['careers-screening-list'] },
-          { key: 'initial-interview', title: 'Initial Interview', link: '/recruitment/initial-interview-list', permissions: ['careers-initial-interview-list'] },
-          { key: 'exam',              title: 'Exam',              link: '/recruitment/iq-test-list',           permissions: ['careers-iq-test-list'] },
-          { key: 'bi-basic-req',      title: 'B.I & Basic Req.',  link: '/recruitment/bi-list',                permissions: ['careers-bi-list'] },
-          { key: 'final-interview',   title: 'Final Interview',   link: '/recruitment/final-interview-list',   permissions: ['careers-final-interview-list'] },
-          { key: 'orientation',       title: 'Orientation',       link: '/recruitment/orientation-list',       permissions: ['careers-orientation-list'] },
-          { key: 'hired',             title: 'Hired',             link: '/recruitment/hired-list',             permissions: ['careers-hired-list'] },
-          { key: 'vacancies',         title: 'Vacancies',         link: '/vacancies',                          permissions: ['vacancy-list'] },
+          {
+            key: 'recruitment-pipeline',
+            type: 'group',
+            label: 'Applicant Pipeline',
+            children: [
+              { key: 'job-applicants',    title: 'Job Applicants',    link: '/recruitment/applicant-list',         permissions: ['careers-applicant-list'] },
+              { key: 'screening',         title: 'Screening',         link: '/recruitment/screening-list',         permissions: ['careers-screening-list'] },
+              { key: 'initial-interview', title: 'Initial Interview', link: '/recruitment/initial-interview-list', permissions: ['careers-initial-interview-list'] },
+              { key: 'exam',              title: 'Exam',              link: '/recruitment/iq-test-list',           permissions: ['careers-iq-test-list'] },
+              { key: 'bi-basic-req',      title: 'B.I & Basic Req.',  link: '/recruitment/bi-list',                permissions: ['careers-bi-list'] },
+              { key: 'final-interview',   title: 'Final Interview',   link: '/recruitment/final-interview-list',   permissions: ['careers-final-interview-list'] },
+              { key: 'orientation',       title: 'Orientation',       link: '/recruitment/orientation-list',       permissions: ['careers-orientation-list'] },
+              { key: 'hired',             title: 'Hired',             link: '/recruitment/hired-list',             permissions: ['careers-hired-list'] },
+            ],
+          },
+          {
+            key: 'recruitment-openings',
+            type: 'group',
+            label: 'Openings',
+            children: [
+              { key: 'vacancies', title: 'Vacancies', link: '/vacancies', permissions: ['vacancy-list'] },
+            ],
+          },
           // Careers portal record maintenance (recruitment-portal data, via the gateway).
           {
             key: 'recruitment-setup',
-            title: 'Setup',
-            icon: <ToolOutlined />,
+            type: 'group',
+            label: 'Setup',
             children: [
               { key: 'careers-positions',     title: 'Positions',     link: '/recruitment/setup/positions',     permissions: ['careers-position-list'] },
               { key: 'careers-ranks',         title: 'Ranks',         link: '/recruitment/setup/ranks',         permissions: ['careers-rank-list'] },
@@ -387,16 +451,6 @@ const menuData = [
         ],
       },
       { key: 'area-assignment', title: 'Area Assignment', icon: <ApartmentOutlined />, link: '/areas', permissions: ['area-list'] },
-      // Every Human Resource report (employee, recruitment, …) goes here.
-      {
-        key: 'hr-reports',
-        title: 'Reports',
-        icon: <FundOutlined />,
-        children: [
-          { key: 'acknowledgment-reports', title: 'Branch Reports', link: '/acknowledgment-reports', permissions: ['employee-acknowledgment-reports'] },
-          { key: 'hr-report-branch-manpower', title: 'Branch Manpower Fill Rate', link: '/reports/branch-manpower', permissions: ['employee-master-data-branch-manpower-export'] },
-        ],
-      },
       // Manual triggers, same group as vueportal's "Sync & Updates" menu:
       // `action` items confirm, then call SYNC_ACTIONS[action] (no route).
       // Permissions are the backend middleware's own gates; `[]` means
@@ -577,7 +631,7 @@ function getMenuState(items, path) {
 const MainLayout = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, isLoaded, hasPermission, hasRole, hasAnyPermission, clearAuth } = useAuth();
+  const { user, roles, isLoaded, hasPermission, hasRole, clearAuth } = useAuth();
   const { modal, message: messageApi } = App.useApp();
 
   const runSyncAction = (name) => {
@@ -629,7 +683,7 @@ const MainLayout = () => {
     if (/^\/employees\/\d+\/edit$/.test(pathname))
       return { title: 'Edit Employee', breadcrumb: ['Employee', 'Edit'] };
     if (/^\/acknowledgment-reports\/\d+$/.test(pathname))
-      return { title: 'View Branch Report', breadcrumb: ['Reports', 'Branch Reports', 'View'] };
+      return { title: 'View Branch Report', breadcrumb: ['Employee', 'Workforce Reports', 'Branch Reports', 'View'] };
     if (/^\/kpi-evaluations\/\d+$/.test(pathname))
       return { title: 'View Evaluation', breadcrumb: ['KPI Management', 'Evaluations', 'View'] };
     if (/^\/my-evaluations\/\d+$/.test(pathname))
@@ -655,6 +709,7 @@ const MainLayout = () => {
   // Product rule: the Administrator sees every menu entry
   const isAdmin = hasRole('Administrator');
   const canSeeItem = (item) => {
+    if (item.requiresEmployee && !user?.employee_id) return false;
     if (isAdmin) return true;
     if (item.permission && !hasPermission(item.permission)) return false;
     if (item.permissions && !item.permissions.some((p) => hasPermission(p))) return false;
@@ -673,17 +728,7 @@ const MainLayout = () => {
       return {
         type: 'group',
         key: item.key,
-        label: (
-          <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: 'rgba(255,255,255,0.35)',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-          }}>
-            {item.label}
-          </span>
-        ),
+        label: item.label,
         children,
       };
     }
@@ -695,45 +740,25 @@ const MainLayout = () => {
       if (!children.length) return null;
       return {
         key: item.key,
-        icon: React.isValidElement(item.icon)
-          ? React.cloneElement(item.icon, { style: { color: 'rgba(255,255,255,0.65)', fontSize: 14 } })
-          : item.icon,
-        label: <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>{item.title}</span>,
+        icon: item.icon,
+        label: item.title,
         children,
       };
     }
 
-    const isActive = item.key === activeKey;
+    // colours come from sidebar.css (selected / hover / module trail)
     return {
       key: item.key,
       ...(item.action ? { onClick: () => runSyncAction(item.action) } : {}),
-      icon: React.isValidElement(item.icon)
-        ? React.cloneElement(item.icon, {
-            style: { color: isActive ? '#fff' : 'rgba(255,255,255,0.65)', fontSize: 14 },
-          })
-        : item.icon,
-      label: item.link
-        ? <Link to={item.link} style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.85)', fontSize: 13 }}>{item.title}</Link>
-        : <span style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.85)', fontSize: 13 }}>{item.title}</span>,
+      icon: item.icon,
+      label: item.link ? <Link to={item.link}>{item.title}</Link> : item.title,
     };
   };
 
-  const isEmployeeOnly = hasRole('KPI Self Evaluation') && !hasAnyPermission('hr-payroll-dashboard');
-  
-  const menuItems = isEmployeeOnly
-    ? [
-        {
-          key:   'my-evaluations',
-          icon:  <StarOutlined style={{ color: 'rgba(255,255,255,0.65)', fontSize: 14 }} />,
-          label: <Link to='/my-evaluations' style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>My Evaluations</Link>,
-        },
-        {
-          key:   'my-payslips',
-          icon:  <WalletOutlined style={{ color: 'rgba(255,255,255,0.65)', fontSize: 14 }} />,
-          label: <Link to='/my-payslips' style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>My Payslips</Link>,
-        },
-      ]
-    : tidyDividers(menuData.map(generateMenuItem).filter(Boolean));
+  // Everyone gets the same permission-driven menu (My Workspace first for
+  // linked employees) — a KPI Self Evaluation account also sees its leave /
+  // time entry / overtime pages when it has their permissions.
+  const menuItems = tidyDividers(menuData.map(generateMenuItem).filter(Boolean));
 
   // ─── Menu search entries ──────────────────────────────────────────────────────
   // The same entries the sidebar shows (same permission check), flattened
@@ -746,9 +771,7 @@ const MainLayout = () => {
     return item.link || item.action ? [{ key: item.key, title: item.title, path, link: item.link, action: item.action }] : [];
   });
 
-  const searchItems = isEmployeeOnly
-    ? [{ key: 'my-evaluations', title: 'My Evaluations', path: [], link: '/my-evaluations' }, { key: 'my-payslips', title: 'My Payslips', path: [], link: '/my-payslips' }]
-    : collectSearchItems(menuData);
+  const searchItems = collectSearchItems(menuData);
 
   const openSearchItem = (item) => {
     setSearchOpen(false);
@@ -759,6 +782,12 @@ const MainLayout = () => {
   const searchWidth = screens.xl ? 260 : isMobile ? 180 : 220;
 
   // ─── Avatar dropdown ──────────────────────────────────────────────────────────
+  // The chip shows the main role (Administrator first) — the account record
+  // has no single `role` field — and initials for the avatar.
+  const mainRole = (roles || []).includes('Administrator') ? 'Administrator' : (roles || [])[0];
+  const roleLabel = mainRole ? `${mainRole}${roles.length > 1 ? ` +${roles.length - 1}` : ''}` : 'User';
+  const initials = (user?.name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+
   const avatarMenu = {
     items: [
       // phones: who is signed in (the chip shows only the avatar) — a plain
@@ -766,7 +795,7 @@ const MainLayout = () => {
       ...(isNarrow ? [{
         type: 'group',
         key: 'who',
-        label: <div style={{ lineHeight: 1.3, color: 'rgba(0,0,0,0.88)' }}><div style={{ fontWeight: 600 }}>{user?.name}</div><div style={{ fontSize: 11, color: '#8c8c8c' }}>{user?.role ?? 'User'}</div></div>,
+        label: <div style={{ lineHeight: 1.3, color: 'rgba(0,0,0,0.88)' }}><div style={{ fontWeight: 600 }}>{user?.name}</div><div style={{ fontSize: 11, color: '#8c8c8c' }} title={(roles || []).join(', ')}>{(roles || []).join(', ') || 'User'}</div></div>,
       }, { type: 'divider' }] : []),
       { key: 'profile', label: 'Profile', icon: <UserOutlined />,  onClick: () => navigate('/user/profile') },
       { key: 'my-payslips', label: 'My Payslips', icon: <WalletOutlined />, onClick: () => navigate('/my-payslips') },
@@ -776,116 +805,70 @@ const MainLayout = () => {
   };
 
   // ─── Breadcrumb items ─────────────────────────────────────────────────────────
-  const breadcrumbItems = pageMeta.breadcrumb.map((segment, i) => ({
-    title:
-      i < pageMeta.breadcrumb.length - 1 ? (
-        <span style={{ color: '#8c8c8c' }}>{segment}</span>
-      ) : (
-        <span style={{ color: '#389e0d' }}>{segment}</span>
-      ),
-  }));
+  // The title already names the page: the trail shows its parents (the last
+  // item only when it differs from the title, e.g. "View").
+  const crumbs = pageMeta.breadcrumb.length > 1 && pageMeta.breadcrumb[pageMeta.breadcrumb.length - 1] === pageMeta.title
+    ? pageMeta.breadcrumb.slice(0, -1)
+    : pageMeta.breadcrumb;
+  const breadcrumbItems = crumbs.map((segment) => ({ title: segment }));
 
   // ─── Loading state ────────────────────────────────────────────────────────────
+  // Brand, the menu (fills the height, scrolls on its own) and a footer —
+  // styled by sidebar.css (scoped to .app-sidebar).
   const sidebarContent = (
-    <>
-        {/* ── Brand ──────────────────────────────────────────── */}
-        <div
-          style={{
-          padding: '20px 16px 12px',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          marginBottom: 8,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div
-              style={{
-              width: 32,
-              height: 32,
-              background: '#389e0d',
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              }}
-            >
-              <Typography.Text style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>
-                HR
-              </Typography.Text>
-            </div>
-            {(isMobile || !collapsed) && (
-                <div>
-                <Typography.Text style={{ color: '#fff', fontSize: 12, fontWeight: 600, display: 'block' }}>
-                    ADDESSA Corp
-                </Typography.Text>
-                <Typography.Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>
-                    HRIS
-                </Typography.Text>
-                </div>
-            )}
+    <div className="app-sidebar">
+      <div className="app-sidebar__brand">
+        <div className="app-sidebar__logo">HR</div>
+        {(isMobile || !collapsed) && (
+          <div style={{ minWidth: 0 }}>
+            <div className="app-sidebar__name">ADDESSA Corp</div>
+            <div className="app-sidebar__tagline">HR Information System</div>
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* ── User info ──────────────────────────────────────── */}
-        {/* {!collapsed && (
-          <div
-            style={{
-                padding: '8px 16px 12px',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                marginBottom: 8,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Avatar
-              size={32}
-              icon={<UserOutlined />}
-              style={{ background: '#389e0d', flexShrink: 0 }}
-              />
-              <div style={{ overflow: 'hidden' }}>
-                <Typography.Text style={{ color: '#fff', fontSize: 12, fontWeight: 600, display: 'block' }} ellipsis>
-                    {user?.name}
-                </Typography.Text>
-                <Typography.Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>
-                    {user?.role ?? 'User'}
-                </Typography.Text>
-              </div>
-            </div>
-          </div>
-        )} */}
-
-        {/* ── Menu ───────────────────────────────────────────── */}
+      <div className="app-sidebar__menu">
         <ConfigProvider
           theme={{
             components: {
               Menu: {
-                darkItemBg:             '#1a4d0f',
-                darkSubMenuItemBg:      '#163d0b',    // ← submenu expanded bg
-                darkItemSelectedBg:     '#389e0d',    // ← active item bg
-                darkItemHoverBg:        '#215c12',    // ← hover bg
-                darkItemSelectedColor:  '#ffffff',
-                darkItemColor:          'rgba(255,255,255,0.85)',
-                darkGroupTitleColor:    'rgba(255,255,255,0.35)',
+                darkItemBg:            'transparent',
+                darkSubMenuItemBg:     'transparent',
+                darkPopupBg:           '#1a4d0f',
+                darkItemSelectedBg:    'rgba(149,222,100,0.18)',
+                darkItemHoverBg:       'rgba(255,255,255,0.08)',
+                darkItemSelectedColor: '#ffffff',
+                darkItemHoverColor:    '#ffffff',
+                darkItemColor:         'rgba(255,255,255,0.82)',
+                darkGroupTitleColor:   'rgba(255,255,255,0.45)',
+                itemHeight:            36,
+                itemBorderRadius:      8,
+                itemMarginInline:      8,
+                itemMarginBlock:       2,
+                iconSize:              15,
               },
             },
           }}
         >
           <Menu
             mode="inline"
+            inlineIndent={14}
             selectedKeys={[activeKey]}
             defaultOpenKeys={openKeys}
             items={menuItems}
             // a picked page closes the mobile drawer (the route change does too)
             onClick={({ key }) => { if (isMobile && !menuItems.some((m) => m?.key === key && m.children)) setDrawerOpen(false); }}
             theme="dark"
-            style={{
-              background: '#1a4d0f',
-              border: 'none',
-              height: isMobile ? 'calc(100vh - 90px)' : 'calc(100vh - 180px)',
-              overflowY: 'auto',
-            }}
+            style={{ background: 'transparent', border: 'none' }}
           />
         </ConfigProvider>
-    </>
+      </div>
+
+      <div className="app-sidebar__footer">
+        <span>Search pages <kbd>Ctrl</kbd> <kbd>K</kbd></span>
+        <span>HRIS</span>
+      </div>
+    </div>
   );
 
   if (!isLoaded) {
@@ -907,7 +890,7 @@ const MainLayout = () => {
           placement='left'
           size={260}
           closable={false}
-          styles={{ body: { padding: 0, background: '#1a4d0f' }, header: { display: 'none' } }}
+          styles={{ body: { padding: 0, background: '#12370a', height: '100%' }, header: { display: 'none' } }}
         >
           {sidebarContent}
         </Drawer>
@@ -921,7 +904,7 @@ const MainLayout = () => {
         trigger={null}
         width={240}
         style={{
-          background: '#1a4d0f',
+          background: '#12370a',
           margin: 0,
           padding: 0,
           overflow: 'hidden',
@@ -938,112 +921,74 @@ const MainLayout = () => {
       <Layout>
 
         {/* ── Header ─────────────────────────────────────────────────────────── */}
-        <Header
-          style={{
-            height: 52,
-            padding: isNarrow ? '0 10px' : '0 16px',
-            gap: 8,
-            background: '#fff',
-            borderBottom: '2px solid #389e0d',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexShrink: 0,
-          }}
-        >
+        <Header className={`app-navbar${isNarrow ? ' app-navbar--narrow' : ''}`} style={{ height: 56, padding: undefined, background: undefined }}>
           {isNarrow && searchOpen ? (
             <>
-              <MenuSearch
-                items={searchItems}
-                onPick={openSearchItem}
-                autoFocus
-                popupWidth
-                style={{ flex: 1, minWidth: 0 }}
-              />
-              <Button type="text" aria-label="Close search" icon={<CloseOutlined />} onClick={() => setSearchOpen(false)} style={{ flexShrink: 0 }} />
+              <div className="app-navbar__search" style={{ flex: 1, minWidth: 0 }}>
+                <MenuSearch
+                  items={searchItems}
+                  onPick={openSearchItem}
+                  autoFocus
+                  popupWidth
+                  placeholder="Search pages…"
+                  style={{ width: '100%', height: 38 }}
+                />
+              </div>
+              <Button className="app-navbar__icon-btn" type="text" aria-label="Close search" icon={<CloseOutlined />} onClick={() => setSearchOpen(false)} />
             </>
           ) : (
           <>
-          {/* Left: hamburger + breadcrumb */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: isNarrow ? 8 : 12, minWidth: 0, flex: 1 }}>
-            <Button
-              type="text"
-              aria-label="Menu"
-              icon={<MenuOutlined style={{ color: '#389e0d' }} />}
-              onClick={() => (isMobile ? setDrawerOpen(true) : setCollapsed(!collapsed))}
-              style={{
-                background: '#f6ffed',
-                border: '0.5px solid #d9f7be',
-                borderRadius: 6,
-                width: 34,
-                height: 34,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginLeft: -5,
-                flexShrink: 0,
-              }}
-            />
-            <div style={{ minWidth: 0 }}>
-              <Text strong ellipsis style={{ fontSize: 14, color: '#1a4d0f', display: 'block', lineHeight: 1.3, maxWidth: '100%' }}>
-                {pageMeta.title}
-              </Text>
-              {!isNarrow && <Breadcrumb items={breadcrumbItems} style={{ fontSize: 11 }} />}
+          {/* Left: menu toggle + page title over its trail */}
+          <div className="app-navbar__left">
+            <Tooltip title={isMobile ? null : (collapsed ? 'Show menu' : 'Hide menu')} mouseEnterDelay={0.6}>
+              <Button
+                className="app-navbar__icon-btn"
+                type="text"
+                aria-label="Menu"
+                icon={isMobile ? <MenuOutlined /> : (collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />)}
+                onClick={() => (isMobile ? setDrawerOpen(true) : setCollapsed(!collapsed))}
+              />
+            </Tooltip>
+            {!isNarrow && <span className="app-navbar__divider" />}
+            <div className="app-navbar__heading">
+              <span className="app-navbar__title" title={pageMeta.title}>{pageMeta.title}</span>
+              {!isNarrow && breadcrumbItems.length > 0 && <Breadcrumb className="app-navbar__crumbs" items={breadcrumbItems} />}
             </div>
           </div>
 
           {/* Right: menu search + bell + user chip */}
-          <Space align="center" size={isNarrow ? 6 : 10} style={{ flexShrink: 0 }}>
+          <div className="app-navbar__right">
             {isNarrow ? (
-              <Button type="text" aria-label="Search menu" icon={<SearchOutlined style={{ color: '#389e0d' }} />} onClick={() => setSearchOpen(true)} />
+              <Button className="app-navbar__icon-btn" type="text" aria-label="Search menu" icon={<SearchOutlined />} onClick={() => setSearchOpen(true)} />
             ) : (
-              <MenuSearch
-                items={searchItems}
-                onPick={openSearchItem}
-                placeholder="Search menu… (Ctrl+K)"
-                style={{ width: searchWidth }}
-              />
+              <div className="app-navbar__search app-navbar__search--hint">
+                <MenuSearch
+                  items={searchItems}
+                  onPick={openSearchItem}
+                  placeholder="Search pages…"
+                  style={{ width: searchWidth, height: 38 }}
+                />
+                <span className="app-navbar__kbd"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+              </div>
             )}
             <NotificationBell />
 
             <Dropdown menu={avatarMenu} placement="bottomRight" trigger={['click']}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  cursor: 'pointer',
-                  padding: isNarrow ? 4 : '4px 10px 4px 4px',
-                  height: 40, // fixed — the name never wraps the chip taller
-                  boxSizing: 'border-box',
-                  flexShrink: 0,
-                  maxWidth: 240,
-                  borderRadius: 8,
-                  border: '0.5px solid #d9f7be',
-                  background: '#fff',
-                  transition: 'background 0.15s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#f6ffed')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
-              >
-                <Avatar
-                  size={28}
-                  style={{ flexShrink: 0, background: '#d9f7be', color: '#276221', fontSize: 11, fontWeight: 600 }}
-                  icon={<UserOutlined />}
-                />
-                {/* phones: avatar only (name / role in the menu) */}
+              <div className="app-navbar__user" title={user?.name}>
+                <Avatar size={34} className="app-navbar__avatar">{initials}</Avatar>
+                {/* phones: avatar only (name / roles in the menu) */}
                 {!isNarrow && (
                   <>
-                    <div style={{ lineHeight: 1.3, minWidth: 0, whiteSpace: 'nowrap' }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#1a4d0f', overflow: 'hidden', textOverflow: 'ellipsis' }} title={user?.name}>{user?.name}</div>
-                      <div style={{ fontSize: 11, color: '#8c8c8c', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.role ?? 'User'}</div>
+                    <div className="app-navbar__user-text">
+                      <div className="app-navbar__user-name">{user?.name}</div>
+                      <div className="app-navbar__user-role">{roleLabel}</div>
                     </div>
-                    <DownOutlined style={{ fontSize: 10, color: '#8c8c8c', marginLeft: 2 }} />
+                    <DownOutlined className="app-navbar__caret" />
                   </>
                 )}
               </div>
             </Dropdown>
-          </Space>
+          </div>
           </>
           )}
         </Header>
@@ -1056,7 +1001,7 @@ const MainLayout = () => {
             padding: isNarrow ? 12 : 24,
             borderRadius: 8,
             overflow: 'auto',
-            height: isNarrow ? 'calc(100vh - 52px - 12px)' : 'calc(100vh - 52px - 20px)',
+            height: isNarrow ? 'calc(100vh - 56px - 12px)' : 'calc(100vh - 56px - 20px)',
           }}
         >
           <Outlet />

@@ -1,0 +1,185 @@
+/* Top navbar (MainLayout header): menu toggle, page title + breadcrumb,
+   menu search, notifications, user chip. Every rule is scoped to
+   .app-navbar — page CSS is bundled into one global stylesheet. */
+
+.app-navbar {
+  --nb-text: #1f3d14;
+  --nb-muted: #7a8a73;
+  --nb-line: #e7ede3;
+  --nb-soft: #f3f7f0;
+  --nb-green: #389e0d;
+
+  height: 56px;
+  padding: 0 20px 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--nb-line);
+  box-shadow: 0 1px 3px rgba(16, 40, 8, 0.05);
+  line-height: normal;
+}
+.app-navbar--narrow {
+  padding: 0 8px;
+  gap: 6px;
+}
+
+.app-navbar__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+.app-navbar--narrow .app-navbar__left { gap: 8px; }
+
+/* square icon buttons: menu toggle, bell, phone search */
+.app-navbar .app-navbar__icon-btn.ant-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #3f5b33;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.app-navbar .app-navbar__icon-btn.ant-btn .anticon { font-size: 17px; }
+.app-navbar .app-navbar__icon-btn.ant-btn:hover {
+  background: var(--nb-soft);
+  border-color: var(--nb-line);
+  color: var(--nb-green);
+}
+
+.app-navbar__divider {
+  width: 1px;
+  height: 24px;
+  background: var(--nb-line);
+  flex-shrink: 0;
+}
+
+/* page title over its trail */
+.app-navbar__heading { min-width: 0; }
+.app-navbar__title {
+  display: block;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--nb-text);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-navbar .app-navbar__crumbs.ant-breadcrumb {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--nb-muted);
+}
+.app-navbar .app-navbar__crumbs .ant-breadcrumb-separator { color: #c5cfc0; margin-inline: 4px; }
+.app-navbar .app-navbar__crumbs li:last-child,
+.app-navbar .app-navbar__crumbs li:last-child .ant-breadcrumb-link { color: var(--nb-muted); }
+
+.app-navbar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.app-navbar--narrow .app-navbar__right { gap: 6px; }
+
+/* menu search: a soft pill with the shortcut shown */
+.app-navbar__search { position: relative; }
+.app-navbar__search .ant-select-selector,
+.app-navbar__search .ant-select-content,
+.app-navbar__search .ant-select {
+  border-radius: 999px !important;
+}
+.app-navbar__search .ant-select {
+  background: var(--nb-soft);
+  border-color: transparent !important;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.app-navbar__search .ant-select:hover { border-color: var(--nb-line) !important; }
+.app-navbar__search .ant-select-focused {
+  background: #fff;
+  border-color: var(--nb-green) !important;
+  box-shadow: 0 0 0 3px rgba(56, 158, 13, 0.12) !important;
+}
+.app-navbar__search .ant-select-selector { background: transparent !important; border-color: transparent !important; }
+.app-navbar__kbd {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 3px;
+  pointer-events: none;
+}
+.app-navbar__kbd kbd {
+  font-family: inherit;
+  font-size: 10.5px;
+  line-height: 16px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid #d9e2d4;
+  border-bottom-width: 2px;
+  background: #fff;
+  color: var(--nb-muted);
+}
+.app-navbar__search:focus-within .app-navbar__kbd { display: none; }
+/* typed text never runs under the shortcut hint */
+.app-navbar__search--hint input { padding-right: 58px !important; }
+/* a narrow search box (tablets) has no room for the hint */
+@media (max-width: 1100px) {
+  .app-navbar__kbd { display: none; }
+  .app-navbar__search--hint input { padding-right: 0 !important; }
+}
+
+/* user chip */
+.app-navbar__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 42px;
+  padding: 3px 10px 3px 3px;
+  border-radius: 999px;
+  border: 1px solid var(--nb-line);
+  background: #fff;
+  cursor: pointer;
+  max-width: 250px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.app-navbar__user:hover { background: var(--nb-soft); border-color: #d6e4cd; }
+.app-navbar--narrow .app-navbar__user { padding: 3px; gap: 0; }
+.app-navbar__avatar.ant-avatar {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #52c41a 0%, #237804 100%);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.app-navbar__user-text {
+  line-height: 1.25;
+  min-width: 0;
+  white-space: nowrap;
+}
+.app-navbar__user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nb-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-navbar__user-role {
+  font-size: 11px;
+  color: var(--nb-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-navbar__caret { font-size: 10px; color: var(--nb-muted); }

@@ -79,6 +79,22 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
 - `menuData` also feeds the header menu search (`src/components/MenuSearch.jsx`,
   Ctrl+K): every visible `link`/`action` entry is searchable by its title and
   section path, with the sidebar's own permission check — no separate list.
+- **Sidebar shape: one dropdown level per module, group headers inside.**
+  A module (Employee, Payroll, Recruitment, …) is the only expandable
+  submenu; inside it, related pages sit under `type: 'group'` headers
+  (`label`, no icon), never a nested dropdown. Order groups by the process
+  — pipeline / lifecycle first, then reports, records, setup (see Payroll,
+  Employee, Recruitment). Reports live in their own module's group (e.g.
+  Employee → Workforce Reports, Payroll → Government Compliance), not a
+  generic Reports menu. A one-item group is fine; a group past ~8 items is
+  split into two groups, not made a dropdown. Breadcrumbs (`titleMap`) name
+  the module and, for setup / report pages, the group.
+- **Notification bell** (`src/components/NotificationBell.jsx`) renders the
+  backend's `NotificationService` items (see the vueportal CLAUDE.md
+  "Notification bell" rule: every approval document and every deadline /
+  blocker gets an item). A new item group must be added to `GROUP_ORDER`
+  (or it is not shown) and a new item key to `ICONS`; each item's `path`
+  should open a list that shows exactly what it counts.
 - A page that exists under `src/pages` but is not registered in both
   `AppRoutes.jsx` and `MainLayout.jsx` is **not reachable in the app**.
 - A sidebar entry that runs a one-off job instead of opening a page (e.g.
@@ -274,8 +290,8 @@ Dated change history for each lives in `docs/<module>-history.md`.
   `/kpi-evaluations…`, `/my-evaluations…`) —
   `.claude/skills/kpi-management/SKILL.md`. Key traps: REST verbs (not
   POST-only); most actions are gated only in the UI (backend checks just
-  approve/reject); `KPI Self Evaluation` accounts are redirected to
-  `/my-evaluations` with a one-item menu.
+  approve/reject); `KPI Self Evaluation` accounts land on
+  `/my-evaluations` (menu: the normal permission-driven one).
 - **Recruitment ATS** (`src/pages/recruitment/JobApplicantList.jsx`,
   `applicants/`, `setup/`, routes `/recruitment/<stage>-list`,
   `/recruitment/setup/…`) —

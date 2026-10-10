@@ -291,7 +291,7 @@ const PayrollSettingsPage = () => {
                 </Card>
                 <Card size='small' title='Employer (government forms)' style={{ marginTop: 16 }}>
                   <Typography.Paragraph type='secondary' style={{ marginTop: 0 }}>
-                    Printed on the BIR 2316, the alphalist and the remittance reports (Payroll → Reports &amp; Compliance).
+                    Printed on the BIR 2316, the alphalist and the remittance reports (Payroll → Government Compliance).
                   </Typography.Paragraph>
                   <Row gutter={12}>
                     <Col xs={24} md={16}>

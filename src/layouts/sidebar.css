@@ -1,0 +1,194 @@
+/* Sidebar (MainLayout): brand, menu, footer. Every rule is scoped to
+   .app-sidebar — page CSS is bundled into one global stylesheet. Colours
+   follow the theme green (#389e0d) on the dark brand green (#1a4d0f). */
+
+.app-sidebar {
+  --sb-bg-top: #1d5512;
+  --sb-bg-bottom: #12370a;
+  --sb-text: rgba(255, 255, 255, 0.82);
+  --sb-text-dim: rgba(255, 255, 255, 0.45);
+  --sb-accent: #95de64;
+  --sb-hover: rgba(255, 255, 255, 0.08);
+  --sb-selected: rgba(149, 222, 100, 0.18);
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: linear-gradient(180deg, var(--sb-bg-top) 0%, var(--sb-bg-bottom) 100%);
+  color: var(--sb-text);
+}
+
+/* ── Brand ─────────────────────────────────────────────── */
+.app-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+.app-sidebar__logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+.app-sidebar__name {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.app-sidebar__tagline {
+  color: var(--sb-text-dim);
+  font-size: 10.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Menu ──────────────────────────────────────────────── */
+.app-sidebar__menu {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.app-sidebar__menu::-webkit-scrollbar { width: 6px; }
+.app-sidebar__menu::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 3px; }
+.app-sidebar__menu::-webkit-scrollbar-track { background: transparent; }
+
+.app-sidebar .ant-menu-dark,
+.app-sidebar .ant-menu-dark .ant-menu-sub.ant-menu-inline {
+  background: transparent;
+}
+/* an open module's pages sit on a faint inset panel */
+.app-sidebar .ant-menu-dark .ant-menu-sub.ant-menu-inline {
+  margin: 2px 8px 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.16);
+  padding: 2px 0 4px;
+}
+.app-sidebar .ant-menu-sub.ant-menu-inline .ant-menu-item {
+  margin-inline: 6px;
+  width: calc(100% - 12px);
+}
+
+.app-sidebar .ant-menu-item,
+.app-sidebar .ant-menu-submenu-title {
+  color: var(--sb-text);
+  font-size: 13px;
+}
+.app-sidebar .ant-menu-item a,
+.app-sidebar .ant-menu-item a:hover {
+  color: inherit;
+}
+.app-sidebar .ant-menu-item .anticon,
+.app-sidebar .ant-menu-submenu-title .anticon {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 15px;
+  transition: color 0.2s;
+}
+.app-sidebar .ant-menu-item:hover,
+.app-sidebar .ant-menu-submenu-title:hover {
+  color: #fff;
+}
+.app-sidebar .ant-menu-item:hover .anticon,
+.app-sidebar .ant-menu-submenu-title:hover .anticon {
+  color: var(--sb-accent);
+}
+
+/* the current page: tinted pill + accent bar on the left */
+.app-sidebar .ant-menu-dark .ant-menu-item-selected {
+  background: var(--sb-selected);
+  color: #fff;
+  font-weight: 500;
+  position: relative;
+}
+.app-sidebar .ant-menu-dark .ant-menu-item-selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--sb-accent);
+}
+.app-sidebar .ant-menu-dark .ant-menu-item-selected .anticon {
+  color: var(--sb-accent);
+}
+
+/* the module holding the current page stays marked when open or closed */
+.app-sidebar .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  color: #fff;
+  font-weight: 600;
+}
+.app-sidebar .ant-menu-submenu-selected > .ant-menu-submenu-title .anticon {
+  color: var(--sb-accent);
+}
+
+/* group headers: small caps with a hairline after the label */
+.app-sidebar .ant-menu-item-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 4px 18px !important;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--sb-text-dim);
+}
+.app-sidebar .ant-menu-item-group-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+/* a module's groups sit inside its panel: tighter headers */
+.app-sidebar .ant-menu-sub .ant-menu-item-group-title {
+  padding: 10px 12px 2px 16px !important;
+  color: rgba(255, 255, 255, 0.4);
+}
+.app-sidebar .ant-menu-sub .ant-menu-item-group:first-child > .ant-menu-item-group-title {
+  padding-top: 6px !important;
+}
+
+.app-sidebar .ant-menu-dark .ant-menu-item-divider {
+  margin: 8px 16px;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Footer ────────────────────────────────────────────── */
+.app-sidebar__footer {
+  flex-shrink: 0;
+  padding: 10px 16px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 10.5px;
+  color: var(--sb-text-dim);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.app-sidebar__footer kbd {
+  font-family: inherit;
+  font-size: 10px;
+  padding: 0 4px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.65);
+}
