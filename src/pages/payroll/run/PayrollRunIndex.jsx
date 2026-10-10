@@ -9,7 +9,8 @@ import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../../utils/formatDate';
 import { tablePagination } from '../../../utils/tablePagination';
 import { cutoffLabel, peso } from '../payrollHelpers';
-import { RUN_STATUS_COLORS } from './runHelpers';
+import { RUN_STATUS_COLORS, PICKER_MODAL_WIDTH } from './runHelpers';
+import EmployeePickerTable from './EmployeePickerTable';
 
 const YEARS = Array.from({ length: 4 }, (_, i) => dayjs().year() + 1 - i);
 
@@ -167,9 +168,10 @@ const PayrollRunIndex = () => {
         onOk={generate}
         confirmLoading={generating}
         onCancel={() => setGenOpen(false)}
+        width={scope === 'selected' ? PICKER_MODAL_WIDTH : 520}
         forceRender
       >
-        <Form form={form} layout='vertical' initialValues={{ scope: 'all' }} onValuesChange={handleValuesChange}>
+        <Form form={form} layout='vertical' initialValues={{ scope: 'all' }} onValuesChange={handleValuesChange} disabled={generating}>
           <Form.Item name='payroll_cutoff_id' label='Cut-off' rules={[{ required: true, message: 'Choose the cut-off' }]}>
             <Select
               showSearch={{ optionFilterProp: 'label' }}
@@ -205,28 +207,11 @@ const PayrollRunIndex = () => {
           </Form.Item>
           {scope === 'selected' && (
             <Form.Item name='employee_ids' rules={[{ required: true, message: 'Choose the employees' }]}>
-              <Select
-                mode='multiple'
-                loading={!candidates}
+              <EmployeePickerTable
+                candidates={pickedId ? candidates && candidates.filter((c) => c.eligible || c.in_run) : []}
                 disabled={!pickedId}
-                maxTagCount={10}
-                placeholder='Search employees'
-                showSearch={{ filterOption: (input, o) => o.search.toLowerCase().includes(input.toLowerCase()) }}
-                options={(candidates || []).filter((c) => c.eligible || c.in_run).map((c) => ({
-                  value: c.id,
-                  label: `${c.employee_code} - ${c.full_name}`,
-                  search: `${c.employee_code} ${c.full_name} ${c.branch || ''} ${c.position || ''}`,
-                  disabled: c.approved,
-                  c,
-                }))}
-                optionRender={(o) => (
-                  <Space>
-                    <span>{o.data.label}</span>
-                    <Typography.Text type='secondary' style={{ fontSize: 12 }}>{o.data.c.branch || ''}</Typography.Text>
-                    {o.data.c.approved && <Tag color='green'>Approved — locked</Tag>}
-                    {!o.data.c.eligible && <Tag color='orange'>No longer eligible</Tag>}
-                  </Space>
-                )}
+                busy={generating}
+                showRunStatus={!!picked?.draft_run_id}
               />
             </Form.Item>
           )}

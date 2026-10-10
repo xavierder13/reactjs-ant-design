@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Modal, Select, Space, Button, Alert, Tag, Typography, App } from 'antd';
+import { Modal, Button, Alert, Typography, App } from 'antd';
 import payrollRunApi from '../../../services/payroll/payrollRunApi';
 import handleApiError from '../../../utils/handleApiError';
+import EmployeePickerTable from './EmployeePickerTable';
+import { PICKER_MODAL_WIDTH } from './runHelpers';
 
 // Generate a Draft payroll again for the chosen employees only — the others
 // keep their lines. The list is everyone in the payroll plus every eligible
@@ -55,14 +57,6 @@ const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
     }
   };
 
-  const options = (candidates || []).map((c) => ({
-    value: c.id,
-    label: `${c.employee_code} - ${c.full_name}`,
-    search: `${c.employee_code} ${c.full_name} ${c.branch || ''}`,
-    disabled: c.approved,
-    c,
-  }));
-
   return (
     <Modal
       open={!!target}
@@ -73,37 +67,24 @@ const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
       onOk={handleOk}
       onCancel={onClose}
       afterOpenChange={handleAfterOpenChange}
-      width={680}
+      width={PICKER_MODAL_WIDTH}
       destroyOnHidden
     >
       <Typography.Paragraph type='secondary'>
         Only the chosen employees are computed again from today&apos;s attendance, leave, overtime, salary and deductions; everyone else keeps their figures.
       </Typography.Paragraph>
-      <Space wrap style={{ marginBottom: 8 }}>
-        <Button size='small' disabled={!candidates} onClick={() => setSelected((candidates || []).filter((c) => c.in_run && !c.approved).map((c) => c.id))}>All in payroll</Button>
-        <Button size='small' disabled={!notIn.length} onClick={() => setSelected((s) => [...new Set([...s, ...notIn.map((c) => c.id)])])}>
-          Add not in payroll ({notIn.length})
-        </Button>
-        <Button size='small' disabled={!selected.length} onClick={() => setSelected([])}>Clear</Button>
-      </Space>
-      <Select
-        mode='multiple'
-        style={{ width: '100%' }}
-        loading={!candidates}
+      <EmployeePickerTable
+        candidates={candidates}
         value={selected}
         onChange={setSelected}
-        options={options}
-        showSearch={{ filterOption: (input, o) => o.search.toLowerCase().includes(input.toLowerCase()) }}
-        placeholder='Search employees'
-        maxTagCount={12}
-        optionRender={(o) => (
-          <Space>
-            <span>{o.data.label}</span>
-            <Typography.Text type='secondary' style={{ fontSize: 12 }}>{o.data.c.branch || ''}</Typography.Text>
-            {!o.data.c.in_run && o.data.c.eligible && <Tag color='blue'>Not in payroll</Tag>}
-            {!o.data.c.eligible && <Tag color='orange'>No longer eligible</Tag>}
-            {o.data.c.approved && <Tag color='green'>Approved — locked</Tag>}
-          </Space>
+        busy={saving}
+        extra={(
+          <>
+            <Button size='small' disabled={!candidates || saving} onClick={() => setSelected((candidates || []).filter((c) => c.in_run && !c.approved).map((c) => c.id))}>All in payroll</Button>
+            <Button size='small' disabled={!notIn.length || saving} onClick={() => setSelected((s) => [...new Set([...s, ...notIn.map((c) => c.id)])])}>
+              {`Add not in payroll (${notIn.length})`}
+            </Button>
+          </>
         )}
       />
       {leaving.length > 0 && (

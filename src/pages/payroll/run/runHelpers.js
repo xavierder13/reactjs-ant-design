@@ -27,3 +27,7 @@ export const minutesText = (m) => {
 
 // 0.5 → '0.5'; 1 → '1'
 export const daysText = (n) => (n ? String(Number(n)) : '—');
+
+// Modals holding EmployeePickerTable: wide enough that code, name, branch,
+// position and status show in full.
+export const PICKER_MODAL_WIDTH = { xs: '100%', md: '92%', xl: 1200, xxl: 1400 };
