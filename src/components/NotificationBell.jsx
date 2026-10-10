@@ -4,7 +4,7 @@ import {
   BellOutlined, ReloadOutlined, FileDoneOutlined, AuditOutlined, UserAddOutlined, TeamOutlined,
   CommentOutlined, FormOutlined, SafetyOutlined, ScheduleOutlined, ExceptionOutlined, AlertOutlined,
   CalendarOutlined, SafetyCertificateOutlined, FieldTimeOutlined, LinkOutlined, RightOutlined, CheckCircleOutlined, TrophyOutlined, UserDeleteOutlined,
-  CarryOutOutlined, ClockCircleOutlined, HourglassOutlined, WalletOutlined, GiftOutlined, DollarOutlined, RollbackOutlined, IdcardOutlined, FlagOutlined,
+  CarryOutOutlined, ClockCircleOutlined, HourglassOutlined, WalletOutlined, GiftOutlined, DollarOutlined, RollbackOutlined, IdcardOutlined, FlagOutlined, BankOutlined,
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
@@ -44,6 +44,7 @@ const ICONS = {
   pending_filings_due: <HourglassOutlined />,
   retro_missed: <RollbackOutlined />,
   no_salary: <IdcardOutlined />,
+  no_bank_account: <BankOutlined />,
   thirteenth_month_due: <GiftOutlined />,
   next_year_cutoffs: <FlagOutlined />,
   next_year_holidays: <CalendarOutlined />,

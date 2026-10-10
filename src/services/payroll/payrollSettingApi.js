@@ -12,16 +12,29 @@ import axios from '../../api/axiosInstance';
 //   working day' | 'None' — off a Sunday / holiday),
 //   holiday_pay_needs_prior_day (bool), ot_minimum_minutes (0–240),
 //   ot_rounding_minutes (1|5|10|15|30|60 — approved overtime rounded down),
+//   employer_* (government forms), match_employee_bank (bool — pay each
+//   bank's employees from the company account at that bank),
 //   updater { name }, updated_at },
 //   rates: [{ day_type, regular_rate, overtime_rate, night_diff_rate,
 //   unworked_rate }] (8 day types, DOLE order), deduction_schedules,
-//   daily_rate_factors, pay_day_adjustments } (payroll-setting-view).
+//   daily_rate_factors, pay_day_adjustments, banks: [{ id, code, name,
+//   active }], accounts: [{ id, bank_id, bank { code, name }, account_name,
+//   account_no, is_default, default_from, default_to, active, remarks }] }
+//   (payroll-setting-view).
+// - accountStore / accountUpdate(id) { bank_id, account_name, account_no,
+//   is_default, default_from, default_to, active, remarks } → 422 bag or
+//   { message } (default periods can't overlap; one is_default);
+//   accountDelete(id) — refused while a payout waiting for approval uses it
+//   (payroll-setting-edit).
 // - save({ every setting field above, times 'HH:mm' }) / saveRates({ rates:
 //   [same as above] }) → 422 bag (payroll-setting-edit).
 const payrollSettingApi = {
   show:      ()        => axios.post('/payroll_setting/show'),
   save:      (payload) => axios.post('/payroll_setting/save', payload),
   saveRates: (rates)   => axios.post('/payroll_setting/rates/save', { rates }),
+  accountStore:  (payload)     => axios.post('/payroll_setting/accounts/store', payload),
+  accountUpdate: (id, payload) => axios.post(`/payroll_setting/accounts/update/${id}`, payload),
+  accountDelete: (id)          => axios.post(`/payroll_setting/accounts/delete/${id}`),
 };
 
 export default payrollSettingApi;

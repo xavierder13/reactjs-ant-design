@@ -18,8 +18,10 @@ import axios from '../../api/axiosInstance';
 //   { 'YYYY-MM': basic }, warnings }] }.
 // - generate({ year, pay_date, remarks }) (Draft only) · submit(id) ·
 //   approve(id, remarks) · disapprove(id, remarks) (not the submitter) ·
-//   cancel(id, reason) · download(id) → .xls · bank(id) →
-//   { credit, missing, total } (preview) · bankDownload(id) → .csv (approved).
+//   cancel(id, reason) · download(id) → .xls · bank(id) → same shape as
+//   payrollReportApi.bank (preview) · bankDownload(id, sourceId) → one paying
+//   account's .csv (approved) · paidFrom(id, { source_account_id,
+//   match_employee_bank }) — until approved (thirteenth-month-generate).
 const thirteenthMonthApi = {
   getAll:       ()            => axios.post('/thirteenth_month/index'),
   show:         (id)          => axios.post(`/thirteenth_month/show/${id}`),
@@ -30,7 +32,8 @@ const thirteenthMonthApi = {
   cancel:       (id, reason)  => axios.post(`/thirteenth_month/cancel/${id}`, { reason }),
   download:     (id)          => axios.post(`/thirteenth_month/download/${id}`, {}, { responseType: 'blob' }),
   bank:         (id)          => axios.post(`/thirteenth_month/bank/${id}`),
-  bankDownload: (id)          => axios.post(`/thirteenth_month/bank/download/${id}`, {}, { responseType: 'blob' }),
+  bankDownload: (id, sourceId) => axios.post(`/thirteenth_month/bank/download/${id}`, { source_id: sourceId }, { responseType: 'blob' }),
+  paidFrom:     (id, payload) => axios.post(`/thirteenth_month/paid_from/${id}`, payload),
 };
 
 export default thirteenthMonthApi;

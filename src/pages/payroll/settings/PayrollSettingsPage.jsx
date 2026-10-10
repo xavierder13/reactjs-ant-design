@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import {
-  Tabs, Form, Input, InputNumber, Select, TimePicker, Button, Row, Col, Card, Table, Tag, Alert, Typography, Spin, Switch, App,
+  Tabs, Form, Input, InputNumber, Select, TimePicker, Button, Row, Col, Card, Table, Tag, Alert, Typography, Spin, Switch, Space, Tooltip, Popconfirm, App,
 } from 'antd';
-import { SaveOutlined } from '@ant-design/icons';
+import { SaveOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import payrollSettingApi from '../../../services/payroll/payrollSettingApi';
 import handleApiError from '../../../utils/handleApiError';
-import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
+import { DISPLAY_DATE_FORMAT, formatDate } from '../../../utils/formatDate';
 import { applyFormErrors } from '../payrollHelpers';
+import CompanyAccountFormModal from './CompanyAccountFormModal';
 import { DAY_TYPE_COLORS } from '../../overtime/overtimeHelpers';
 
 const FACTOR_HINTS = {
@@ -52,6 +53,26 @@ const PayrollSettingsPage = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savingRates, setSavingRates] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(null); // {} = add
+
+  const reloadAccounts = async () => {
+    try {
+      const { data: res } = await payrollSettingApi.show();
+      setData((d) => ({ ...d, accounts: res.accounts, banks: res.banks }));
+    } catch (error) {
+      handleApiError(error, message);
+    }
+  };
+
+  const removeAccount = async (account) => {
+    try {
+      const { data: res } = await payrollSettingApi.accountDelete(account.id);
+      message.success(res.message);
+      reloadAccounts();
+    } catch (error) {
+      handleApiError(error, message);
+    }
+  };
   const factor = Form.useWatch('daily_rate_factor', form);
   const firstDay = Form.useWatch('cutoff_first_day', form);
   const secondDay = Form.useWatch('cutoff_second_day', form);
@@ -326,6 +347,73 @@ const PayrollSettingsPage = () => {
                     </Col>
                   </Row>
                 </Card>
+                <Card
+                  size='small'
+                  title='Payroll Accounts (paid from)'
+                  style={{ marginTop: 16 }}
+                  extra={canEdit && <Button size='small' icon={<PlusOutlined />} onClick={() => setEditingAccount({})}>Add Account</Button>}
+                >
+                  <Typography.Paragraph type='secondary' style={{ marginTop: 0 }}>
+                    The company accounts net pay is credited from — one bank file per account. A payroll uses the account whose default period covers its pay date, else the Default one; it can choose another on its Bank File until approved, and keeps what it used. Employees' own accounts are on Payroll → Bank Accounts.
+                  </Typography.Paragraph>
+                  <Form.Item
+                    name='match_employee_bank'
+                    label='Pay each bank’s employees from our account at the same bank'
+                    valuePropName='checked'
+                    extra='e.g. BDO employees from the BDO account, BPI employees from the BPI account; the others from the default. Saved with the settings.'
+                  >
+                    <Switch />
+                  </Form.Item>
+                  <Table
+                    rowKey='id'
+                    size='small'
+                    dataSource={data?.accounts || []}
+                    pagination={false}
+                    scroll={{ x: 720 }}
+                    locale={{ emptyText: 'No payroll account yet — the bank file lists credits without a paying account' }}
+                    columns={[
+                      { title: 'Bank', key: 'bank', render: (_, r) => r.bank?.name || '-' },
+                      { title: 'Account No.', dataIndex: 'account_no', width: 160 },
+                      { title: 'Account Name', dataIndex: 'account_name', width: 200 },
+                      {
+                        title: 'Used as default',
+                        key: 'default',
+                        width: 220,
+                        render: (_, r) => (
+                          <Space size={4} wrap>
+                            {r.is_default && <Tag color='green'>Default</Tag>}
+                            {r.default_from && <Tag color='blue'>{`${formatDate(r.default_from)} – ${r.default_to ? formatDate(r.default_to) : 'onward'}`}</Tag>}
+                            {!r.is_default && !r.default_from && '-'}
+                          </Space>
+                        ),
+                      },
+                      { title: 'Status', dataIndex: 'active', width: 90, render: (v) => (v ? <Tag color='green'>Active</Tag> : <Tag>Inactive</Tag>) },
+                      ...(canEdit ? [{
+                        title: 'Actions',
+                        key: 'actions',
+                        width: 90,
+                        render: (_, r) => (
+                          <Space>
+                            <Tooltip title='Edit'>
+                              <Button size='small' color='green' variant='outlined' icon={<EditOutlined />} onClick={() => setEditingAccount(r)} />
+                            </Tooltip>
+                            <Popconfirm
+                              title='Delete this payroll account?'
+                              description='Approved payrolls keep the account they used. To stop using it, set it inactive instead.'
+                              okText='Delete'
+                              okButtonProps={{ danger: true }}
+                              onConfirm={() => removeAccount(r)}
+                            >
+                              <Tooltip title='Delete'>
+                                <Button size='small' danger icon={<DeleteOutlined />} />
+                              </Tooltip>
+                            </Popconfirm>
+                          </Space>
+                        ),
+                      }] : []),
+                    ]}
+                  />
+                </Card>
                 <Row justify='space-between' align='middle' style={{ marginTop: 16 }} gutter={[8, 8]}>
                   <Col><Typography.Text type='secondary'>{lastSaved}</Typography.Text></Col>
                   {canEdit && (
@@ -363,6 +451,13 @@ const PayrollSettingsPage = () => {
             ),
           },
         ]}
+      />
+      <CompanyAccountFormModal
+        open={!!editingAccount}
+        account={editingAccount?.id ? editingAccount : null}
+        banks={data?.banks}
+        onClose={() => setEditingAccount(null)}
+        onSaved={() => { setEditingAccount(null); reloadAccounts(); }}
       />
     </Spin>
   );

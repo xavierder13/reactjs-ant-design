@@ -84,6 +84,8 @@ import PayrollRunIndex from '../pages/payroll/run/PayrollRunIndex';
 import PayrollRunPage from '../pages/payroll/run/PayrollRunPage';
 import AllowanceIndex from '../pages/payroll/allowance/AllowanceIndex';
 import AllowanceTypeIndex from '../pages/payroll/allowance/AllowanceTypeIndex';
+import BankAccountIndex from '../pages/payroll/bank_account/BankAccountIndex';
+import BankIndex from '../pages/payroll/bank/BankIndex';
 import PayrollSettingsPage from '../pages/payroll/settings/PayrollSettingsPage';
 import RemittanceReport from '../pages/payroll/reports/RemittanceReport';
 import ContributionHistoryReport from '../pages/payroll/reports/ContributionHistoryReport';
@@ -181,6 +183,8 @@ const permissionRoutes = [
   { permissions: ['final-pay-view'], path: '/final-pay', element: <FinalPayReport /> },
   { permissions: ['allowance-list'], path: '/allowances', element: <AllowanceIndex /> },
   { permissions: ['allowance-type-list'], path: '/allowance-types', element: <AllowanceTypeIndex /> },
+  { permissions: ['bank-account-list'], path: '/payroll-bank-accounts', element: <BankAccountIndex /> },
+  { permissions: ['bank-list'], path: '/banks', element: <BankIndex /> },
   { permissions: ['payroll-setting-view', 'payroll-setting-edit'], path: '/payroll-settings', element: <PayrollSettingsPage /> },
   { permissions: ['overtime-list', 'overtime-list-all'], path: '/overtime', element: <OvertimeIndex /> },
 

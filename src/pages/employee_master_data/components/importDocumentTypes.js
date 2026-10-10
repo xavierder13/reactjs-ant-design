@@ -10,6 +10,7 @@ import attendanceLogApi from "../../../services/payroll/attendanceLogApi";
 import allowanceApi from "../../../services/payroll/allowanceApi";
 import deductionApi from "../../../services/payroll/deductionApi";
 import contributionProfileApi from "../../../services/payroll/contributionProfileApi";
+import bankAccountApi from "../../../services/payroll/bankAccountApi";
 
 // Bulk create/update document types — one list for GenerateTemplateModal
 // and ImportDataModal, matching vueportal's TemplateDownloadDialog.vue /
@@ -140,7 +141,18 @@ export const DOCUMENT_TYPES = [
     download: (params) => contributionProfileApi.templateDownload(params),
     upload: (file) => contributionProfileApi.import(file),
     templateOptions: { status: true, employees: true },
-    hint: "The template lists each employee's saved profile (or the Computed defaults). Edit the lines to change: modes Computed / Fixed / Exempt (Fixed needs its EE and ER amounts, tax_fixed for tax — monthly), pagibig_ee_additional, minimum_wage_earner Yes / No, and the payroll bank account (digits, spaces and dashes; keep the cell as Text). Every line replaces that employee's whole profile; unchanged lines are skipped. One wrong line stops the whole import.",
+    hint: "The template lists each employee's saved profile (or the Computed defaults). Edit the lines to change: modes Computed / Fixed / Exempt (Fixed needs its EE and ER amounts, tax_fixed for tax — monthly), pagibig_ee_additional, minimum_wage_earner Yes / No. Every line replaces that employee's whole profile; unchanged lines are skipped. One wrong line stops the whole import.",
+  },
+  {
+    value: "bank_account",
+    label: "Bank Accounts",
+    templatePermission: "bank-account-template-download",
+    importPermission: "bank-account-import",
+    filename: "EmployeeBankAccountTemplate.xls",
+    download: (params) => bankAccountApi.templateDownload(params),
+    upload: (file) => bankAccountApi.import(file),
+    templateOptions: { status: true, employees: true },
+    hint: "The template lists each employee's payroll account in force today (current_from is for reference) with a blank effective_from. Fill bank_code (see the Values sheet), account_name, account_no (digits, spaces and dashes — keep the cell as Text so leading zeros stay) and effective_from (YYYY-MM-DD, Text) on the lines to add or change — blank effective_from lines are skipped. A new effective_from adds the account from that date (the earlier one stays as history); the same employee and effective_from as a saved account updates it. One wrong line stops the whole import.",
   },
   {
     value: "attendance_log",

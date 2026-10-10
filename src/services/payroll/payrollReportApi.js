@@ -6,9 +6,14 @@ import axios from '../../api/axiosInstance';
 // payroll runs (register / bank file also preview a Draft).
 // - register(runId) → { run, rows: [employee + figures], by_branch } ·
 //   registerDownload(runId) → .xls (Register + By Branch).
-// - bank(runId) → { credit: [{ employee_code, full_name, account_no,
-//   account_name, bank_name, amount }], missing: [{ … no payroll account }],
-//   total } · bankDownload(runId) → .csv (approved runs only).
+// - bank(runId) → { run { status, source_account_id, match_employee_bank },
+//   accounts (active company accounts), paid_from { match_employee_bank,
+//   chosen, default, by_bank }, groups: [{ source_id ('none' = no company
+//   account), source { bank_name, bank_code, account_no, account_name },
+//   credit: [{ employee_code, full_name, account_no, account_name,
+//   bank_name, amount }], total }], missing, not_positive, credit_count,
+//   total, credit_date } · bankDownload(runId, sourceId) → one group's .csv
+//   (approved runs only).
 // - remittance({ year, month }) → { cutoffs, employees: [{ sss_no, sss_msc,
 //   sss_ee, sss_er, sss_ec, philhealth_no, philhealth_base, philhealth_ee,
 //   philhealth_er, pagibig_no, pagibig_base, pagibig_ee, pagibig_voluntary,
@@ -43,7 +48,7 @@ const payrollReportApi = {
   register:           (runId)  => axios.post(`/payroll_report/register/${runId}`),
   registerDownload:   (runId)  => axios.post(`/payroll_report/register/download/${runId}`, {}, blob),
   bank:               (runId)  => axios.post(`/payroll_report/bank/${runId}`),
-  bankDownload:       (runId)  => axios.post(`/payroll_report/bank/download/${runId}`, {}, blob),
+  bankDownload:       (runId, sourceId) => axios.post(`/payroll_report/bank/download/${runId}`, { source_id: sourceId }, blob),
   remittance:         (params) => axios.post('/payroll_report/remittance', params),
   remittanceDownload: (params) => axios.post('/payroll_report/remittance/download', params, blob),
   annualization:      (params) => axios.post('/payroll_report/annualization', params),

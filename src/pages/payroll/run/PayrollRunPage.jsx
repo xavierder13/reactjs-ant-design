@@ -187,9 +187,11 @@ const PayrollRunPage = () => {
         onClick={() => setBank({
           title: `Bank File — ${run.cutoff?.code}`,
           approved: run.status === 'Approved',
-          filename: `Payroll_Bank_${run.cutoff?.code}.csv`,
+          filenamePrefix: `Payroll_Bank_${run.cutoff?.code}`,
+          canChoose: perms.canGenerate,
           load: () => payrollReportApi.bank(run.id),
-          download: () => payrollReportApi.bankDownload(run.id),
+          download: (sourceId) => payrollReportApi.bankDownload(run.id, sourceId),
+          choose: (payload) => payrollRunApi.paidFrom(run.id, payload),
         })}
       >
         Bank File

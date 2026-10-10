@@ -61,6 +61,10 @@ const payrollRunApi = {
   cancel:   (id, reason) => axios.post(`/payroll_run/cancel/${id}`, { reason }),
   candidates: (id)       => axios.post(`/payroll_run/candidates/${id}`),
   cutoffCandidates: (cutoffId) => axios.post(`/payroll_run/cutoff_candidates/${cutoffId}`),
+  // company account it is paid from (null = the default for the pay date) and
+  // the match-employee-bank rule (null = Payroll Settings) — until approved
+  // (payroll-run-generate)
+  paidFrom: (id, payload) => axios.post(`/payroll_run/paid_from/${id}`, payload),
   rollback: (id, reason, employeeIds) => axios.post(`/payroll_run/rollback/${id}`, employeeIds ? { reason, employee_ids: employeeIds } : { reason }),
 };
 

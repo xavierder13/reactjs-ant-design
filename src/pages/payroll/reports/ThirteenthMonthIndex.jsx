@@ -222,9 +222,11 @@ const ThirteenthMonthIndex = () => {
           onClick={() => setBank({
             title: `Bank File — ${run.year} 13th Month`,
             approved: run.status === 'Approved',
-            filename: `13th_Month_Bank_${run.year}.csv`,
+            filenamePrefix: `13th_Month_Bank_${run.year}`,
+            canChoose: canGenerate,
             load: () => thirteenthMonthApi.bank(run.id),
-            download: () => thirteenthMonthApi.bankDownload(run.id),
+            download: (sourceId) => thirteenthMonthApi.bankDownload(run.id, sourceId),
+            choose: (payload) => thirteenthMonthApi.paidFrom(run.id, payload),
           })}
         >
           Bank File

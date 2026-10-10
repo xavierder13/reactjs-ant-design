@@ -31,7 +31,10 @@ has its own % (the premium rates' overtime column per day type).
   `final-pay-view`), `ThirteenthMonthController` + `ThirteenthMonthRun/Pay`
   (`thirteenth-month-list/-generate/-approve/-cancel`), `MyPayslipController`
   (auth only, own approved payslips), `Exports/ReportSheet` / `ReportWorkbook`;
-  migrations `2026_10_13_100000` (bank account on contribution profiles),
+  migrations `2026_10_13_100000` (old bank columns on contribution profiles
+  — unused since `2026_10_17_100000–100400`: banks, employee_bank_accounts
+  + the move, company_bank_accounts + payroll_settings.match_employee_bank,
+  paid-from on payroll_runs / thirteenth_month_runs),
   `110000` (13th month), `120000` (employer on payroll_settings), `130000`
   (13th-month approval).
   React: `run/BankFileModal` (shared by runs and 13th month), PayslipModal
@@ -225,8 +228,28 @@ deduction payments are never duplicated.
 ## Reports & compliance rules
 
 - Every report reads **approved** runs only (register / bank preview also
-  show a Draft); the bank CSV is approved-only; no payroll bank account =
-  listed under "missing" (cash / check).
+  show a Draft); the bank CSV is approved-only.
+- Bank file (`PayrollReportService::bankLines($amounts, $creditDate,
+  $paidFrom)`): credits each employee's account **in force on the pay
+  date** (`BankAccountService::inForce` — latest `effective_from` on or
+  before it; Payroll → Bank Accounts, `/payroll-bank-accounts`,
+  `bank-account-*`; banks on Payroll → Setup → Banks, `/banks`, `bank-*`),
+  **one file per company account it is paid from** (`groups`, CSV per
+  `source_id`). No account = `missing` (cash / check); a zero or negative
+  net = `not_positive` (not credited, shown in red). The bell's
+  `no_bank_account` (info) counts active salaried employees without one
+  (`?state=missing`).
+- Paid from (`BankAccountService::paidFrom`): company accounts on Payroll
+  Settings → Payroll Accounts (`payroll_setting/accounts/*`,
+  payroll-setting-edit). Default for the pay date = the account whose
+  default period covers it (periods can't overlap), else the one marked
+  Default. `match_employee_bank` (Settings, overridable per payout): an
+  employee whose bank has an active company account is paid from it. A
+  payroll run / 13th month can choose its default and the rule on the Bank
+  File until approved (`payroll_run/paid_from`, `thirteenth_month/paid_from`
+  — the generate permission); **approval keeps the result in `paid_from`**,
+  so later account edits never change an approved payout (a payout approved
+  before this resolves live).
 - Remittances: per calendar month, all approved cut-offs ending in it; BIR
   taxable = taxable pay − mandatory EE contributions.
 - 13th month (PD 851): basic pay + paid leave − absences / late / undertime /
@@ -261,5 +284,5 @@ deduction payments are never duplicated.
 
 ## Not built yet
 
-OT minimum / rounding; posting final pay (marking loans paid); the payroll
+Posting final pay (marking loans paid); the payroll
 bank's own upload format (generic CSV now); official BIR form layouts.

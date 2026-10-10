@@ -26,7 +26,7 @@ import axios from '../../api/axiosInstance';
 //   Monthly amounts. The salary in force is used only with compensation-list;
 //   otherwise (or for a daily rate) needs_base → send base.
 // - templateDownload({ document_status, branch_id, position_id,
-//   employee_ids }) → .xls blob, every profile incl. bank accounts
+//   employee_ids }) → .xls blob, every profile
 //   (contribution-profile-template-download); import(file) → the shared 200
 //   contract — see ImportDataModal.jsx (contribution-profile-import).
 const contributionProfileApi = {
