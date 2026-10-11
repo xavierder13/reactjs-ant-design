@@ -200,7 +200,14 @@ export default function NotificationBell() {
   );
 
   const bellButton = (
-      <Badge count={summary.total} size="small" overflowCount={99} offset={[-4, 6]}>
+      <Badge
+        count={summary.total}
+        size="small"
+        overflowCount={99}
+        offset={[-4, 6]}
+        // small badge: no side padding on one digit, 8px on "12" / "99+" — even it out
+        styles={{ indicator: { paddingInline: 5, minWidth: 16, height: 16, lineHeight: "16px" } }}
+      >
         <Button
           type="text"
           className="app-navbar__icon-btn"
