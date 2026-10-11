@@ -13,10 +13,15 @@ import axios from '../../api/axiosInstance';
 //   employee_count, gross_pay, total_deductions, net_pay, employer_share,
 //   skipped { no_salary }, remarks, generated_at, approved_at, cutoff {…},
 //   generator { name }, approver { name } }] } (payroll-run-list).
-// - options() → { cutoffs: [cut-off + draft_run_id] (no approved run yet),
-//   statuses }.
+// - options() → { cutoffs: [cut-off + draft_run_id / approved_run_id /
+//   pending_run_id], statuses }. An approved cut-off takes only employees
+//   not in it (Selected employees): they are added, the run goes back to
+//   Draft and is approved again as its next round; the approved payslips
+//   stay locked and unchanged.
 // - generate({ payroll_cutoff_id, remarks, employee_ids? }) → { message, run }
-//   (payroll-run-generate); 422 { message } when approved / pending.
+//   (payroll-run-generate); 422 { message } when pending, or approved and
+//   all employees / someone already in it is chosen. run.added = employees
+//   were added to an approved run.
 //   employee_ids: only those again on the existing Draft (the rest keep
 //   their lines; 422 when Payroll Settings / premium rates changed since),
 //   or a new run with just those when the cut-off has none. Approved
@@ -65,6 +70,9 @@ const payrollRunApi = {
   // the match-employee-bank rule (null = Payroll Settings) — until approved
   // (payroll-run-generate)
   paidFrom: (id, payload) => axios.post(`/payroll_run/paid_from/${id}`, payload),
+  // not-yet-approved payslips out of a Draft (payroll-run-generate); only
+  // approved ones left → the run is Approved again as its last round left it
+  remove:   (id, employeeIds) => axios.post(`/payroll_run/remove/${id}`, { employee_ids: employeeIds }),
   rollback: (id, reason, employeeIds) => axios.post(`/payroll_run/rollback/${id}`, employeeIds ? { reason, employee_ids: employeeIds } : { reason }),
 };
 

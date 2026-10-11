@@ -206,6 +206,42 @@ deduction payments are never duplicated.
     (`cutoff_candidates`, approved ones disabled). On the run page, tick
     rows then Generate Selected (`RegenerateEmployeesModal`, approved options
     disabled); Regenerate All asks for confirmation.
+- **Add employees / approval rounds** (payroll runs and 13th month alike):
+  - Generate on an approved cut-off / year takes only employees not in it.
+    It works through Selected employees only (All is refused) or the
+    record's Add Employees button (`RegenerateEmployeesModal` mode `add`).
+  - The added are computed now and the record goes back to Draft (approval
+    fields cleared). Submit → the final approval posts only the unposted
+    lines as the next round:
+    - `payroll_run_employees.round` / `thirteenth_month_pays.round`.
+    - `rounds` JSON on the run / batch, one entry per round: submitted /
+      approved by / at, the paid-from account(s) kept for that round, and
+      the 13th month's earned_through.
+    - Migration `2026_10_18_110000` backfills approved lines as round 1.
+  - Approved lines are never touched: same amounts, posted_at and round. No
+    deduction payment is posted twice (finalize posts unposted rows only).
+  - Submit is refused when nothing unposted is left.
+  - `payroll_run/remove/{id}` and `thirteenth_month/remove/{id}`
+    (`employee_ids`, -generate) take unposted lines out of a Draft. Only
+    approved lines left → Approved again as the last round left it.
+  - `show` returns `rounds` (live employees / totals per round + submitter
+    / approver names) and `not_approved`; each line has `round`.
+  - Pages:
+    - An Approval Rounds panel when there is more than one round or
+      additions are pending.
+    - A round filter; the Register and Bank File follow it (`round`
+      param). A round's CSV works while the record is Draft, using the
+      account(s) that round kept (`BankAccountService::roundPaidFrom`).
+    - Tags: "Approved · R1" / "R2" / "Added".
+  - Guards:
+    - Pay settings / premium rates changed since approval → adding refused.
+    - A later cut-off in the same month approved or with posted payslips →
+      refused (`laterLockedInMonth`).
+    - An employee whose 13th month (posted, or Pending) already counts the
+      cut-off (earned_through ≥ its end) can't be computed for it
+      (`assertThirteenthOpen`).
+    - 13th month: a batch with approved lines keeps its pay date (the field
+      is locked).
 - **Roll back** (payroll-run-rollback, reason, `employee_ids` or none = all
   approved):
   - On an Approved run, or a Draft that still has approved payslips.
@@ -216,9 +252,12 @@ deduction payments are never duplicated.
   - Clears the approval and submission fields and sets `rolled_back_by /
     _at`, `rollback_reason` (migration `2026_10_14_110000`); the page shows
     "Rolled back … by …" until it is submitted again.
-  - Refused while a later cut-off's run is Approved or Pending, or while the
-    year's 13th month is Approved or Pending. Cancel is refused while
-    approved payslips remain.
+  - Refused while a later cut-off's run is Approved / Pending / keeps
+    approved payslips, while the year's 13th month counts this cut-off
+    (earned_through ≥ its end) and is Pending or has approved employees, and on
+    or after the cut-off's pay date (paid — corrected by a retro adjustment
+    on a later cut-off; the page then shows "Paid on …" and no Roll Back).
+    Cancel is refused while approved payslips remain.
   - The cut-off's filing stays off: reopen it on Payroll Cut-offs if late
     filings are needed.
   - UI: approved rows show an "Approved" lock tag on a Draft; ticking them
@@ -255,10 +294,28 @@ deduction payments are never duplicated.
 - 13th month (PD 851): basic pay + paid leave − absences / late / undertime /
   unpaid leave + salary differentials, ÷ 12; Draft projects the rest of the
   year at the monthly rate (daily-paid: earned only); one batch per year;
-  over ₱90,000 is taxable. Approval = the payroll run's: Submit
+  over ₱90,000 is taxable. Generate (and the Draft's Regenerate, which
+  opens the same modal) = All employees or Selected employees, like Payroll
+  Runs: `employee_ids` recomputes only those (a new batch gets just them;
+  on a Draft the others keep their lines; an inactive / unsalaried /
+  zero-amount one leaves), refused when payrolls were approved since the
+  Draft was made and other lines would keep the old "earned through";
+  `thirteenth_month/candidates { year }` feeds the shared
+  `run/EmployeePickerTable`. Approved lines are posted
+  (`thirteenth_month_pays.posted_at`, migration `2026_10_18_100000`, which
+  backfills approved batches): locked, never recomputed (selecting one is
+  refused, All skips them), and what the year-end tax / final pay read
+  (`ThirteenthMonthPay::approved()`). Roll Back Selected / All
+  (`thirteenth_month/rollback/{id}`, `thirteenth-month-rollback`, reason,
+  `employee_ids` or none = all) unposts them, the batch goes back to Draft
+  (`rolled_back_by / _at / rollback_reason`, logged) and through approval
+  again — only before `paid_on` (pay date, else Dec 24); cancel is refused
+  while posted lines remain. Approval = the payroll run's: Submit
   (thirteenth-month-generate) → Pending on the "13th Month Pay" Access Chart
   (`PayrollReportService::thirteenthProcedure()`, non-hierarchical; seeder
-  `ThirteenthMonthApprovalProcedureSeeder` copies the Payroll Run chart) →
+  `ThirteenthMonthApprovalProcedureSeeder` copies the Payroll Run chart;
+  vueportal `ApproverRoleSeeder` gives "Payroll Approver" to both charts'
+  approvers) →
   the last approval releases it; Disapprove (remarks) → Draft; Pending can't
   be regenerated / cancelled; the submitter can't decide their own.
 - Year-end tax: (taxable − contributions + 13th month over ₱90k) ÷ 12 on the

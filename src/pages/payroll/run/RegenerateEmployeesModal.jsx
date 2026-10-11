@@ -10,8 +10,10 @@ import { PICKER_MODAL_WIDTH } from './runHelpers';
 // employee not in it yet (e.g. a salary saved after it was generated); one
 // chosen but no longer eligible (inactive / no salary) leaves the payroll.
 // Approved (posted) payslips are shown but can't be chosen — roll them back
-// first.
-// `target`: { run, preselected: [employee_id] } | null.
+// first. mode 'add' (an approved run): only eligible employees not in it
+// are listed; they are added and the run goes back to Draft, to be approved
+// as its next round — the approved payslips stay as they are.
+// `target`: { run, mode?: 'add', preselected: [employee_id] } | null.
 const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
   const { message } = App.useApp();
   const [shown, setShown] = useState(null); // survives the close animation
@@ -37,12 +39,13 @@ const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
   };
 
   const run = shown?.run;
+  const adding = shown?.mode === 'add';
   const notIn = (candidates || []).filter((c) => !c.in_run && c.eligible && !c.approved);
   const leaving = (candidates || []).filter((c) => selected.includes(c.id) && !c.eligible);
 
   const handleOk = async () => {
     if (!selected.length) {
-      message.error('Select the employees to generate again');
+      message.error(adding ? 'Select the employees to add' : 'Select the employees to generate again');
       return;
     }
     setSaving(true);
@@ -61,8 +64,8 @@ const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
     <Modal
       keyboard={false}
       open={!!target}
-      title={`Generate Selected Employees — ${run?.cutoff?.code || ''}`}
-      okText={`Generate ${selected.length || ''} Employee${selected.length === 1 ? '' : 's'}`}
+      title={`${adding ? 'Add Employees' : 'Generate Selected Employees'} — ${run?.cutoff?.code || ''}`}
+      okText={`${adding ? 'Add' : 'Generate'} ${selected.length || ''} Employee${selected.length === 1 ? '' : 's'}`}
       okButtonProps={{ disabled: !selected.length || !candidates }}
       confirmLoading={saving}
       onOk={handleOk}
@@ -71,15 +74,26 @@ const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
       width={PICKER_MODAL_WIDTH}
       destroyOnHidden
     >
-      <Typography.Paragraph type='secondary'>
-        Only the chosen employees are computed again from today&apos;s attendance, leave, overtime, salary and deductions; everyone else keeps their figures.
-      </Typography.Paragraph>
+      {adding ? (
+        <Alert
+          type='info'
+          showIcon
+          style={{ marginBottom: 12 }}
+          title='Only employees not in this approved payroll are listed.'
+          description='They are computed now and the payroll goes back to Draft; submit it so they are approved as its next round. The approved payslips stay exactly as they are.'
+        />
+      ) : (
+        <Typography.Paragraph type='secondary'>
+          Only the chosen employees are computed again from today&apos;s attendance, leave, overtime, salary and deductions; everyone else keeps their figures.
+        </Typography.Paragraph>
+      )}
       <EmployeePickerTable
-        candidates={candidates}
+        candidates={adding ? candidates && candidates.filter((c) => c.eligible && !c.in_run) : candidates}
         value={selected}
         onChange={setSelected}
         busy={saving}
-        extra={(
+        showRunStatus={!adding}
+        extra={adding ? null : (
           <>
             <Button size='small' disabled={!candidates || saving} onClick={() => setSelected((candidates || []).filter((c) => c.in_run && !c.approved).map((c) => c.id))}>All in payroll</Button>
             <Button size='small' disabled={!notIn.length || saving} onClick={() => setSelected((s) => [...new Set([...s, ...notIn.map((c) => c.id)])])}>

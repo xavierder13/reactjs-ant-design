@@ -17,7 +17,10 @@ const YEARS = Array.from({ length: 4 }, (_, i) => dayjs().year() + 1 - i);
 // Payroll runs, one per cut-off: Generate makes (or re-makes) the Draft from
 // Salary History, the DTR, allowances, retro adjustments, contributions /
 // tax and scheduled deductions — for everyone, or only the employees chosen
-// (cutoff_candidates; approved payslips can't be chosen); View opens its page (/payroll-runs/:id —
+// (cutoff_candidates; approved payslips can't be chosen). An approved
+// cut-off takes only employees not in it (Selected employees only): they
+// are added and the run is approved again as its next round, the approved
+// payslips stay as they are. View opens its page (/payroll-runs/:id —
 // pay register, payslips, approval). Permissions payroll-run-list /
 // -generate / -approve / -cancel (Administrator bypasses).
 const PayrollRunIndex = () => {
@@ -37,6 +40,7 @@ const PayrollRunIndex = () => {
   const pickedId = Form.useWatch('payroll_cutoff_id', form);
   const scope = Form.useWatch('scope', form);
   const picked = cutoffs.find((c) => c.id === pickedId);
+  const adding = !!picked?.approved_run_id; // approved: only employees not in it can be added
 
   const loadCandidates = async (cutoffId) => {
     setCandidates(null);
@@ -50,8 +54,13 @@ const PayrollRunIndex = () => {
   };
 
   const handleValuesChange = (changed, all) => {
-    if ('payroll_cutoff_id' in changed) form.setFieldsValue({ employee_ids: [] });
-    if (all.scope === 'selected' && ('payroll_cutoff_id' in changed || 'scope' in changed)) loadCandidates(all.payroll_cutoff_id);
+    let scopeNow = all.scope;
+    if ('payroll_cutoff_id' in changed) {
+      const c = cutoffs.find((x) => x.id === changed.payroll_cutoff_id);
+      if (c?.approved_run_id) scopeNow = 'selected'; // an approved payroll: add employees only
+      form.setFieldsValue({ employee_ids: [], scope: scopeNow });
+    }
+    if (scopeNow === 'selected' && ('payroll_cutoff_id' in changed || 'scope' in changed)) loadCandidates(all.payroll_cutoff_id);
   };
 
   const fetchRuns = async () => {
@@ -79,9 +88,10 @@ const PayrollRunIndex = () => {
     try {
       const { data } = await payrollRunApi.options();
       setCutoffs(data.cutoffs);
-      // the latest cut-off that has ended (else the current one)
+      // the latest cut-off that has ended (else the current one) without an approved / pending payroll
       const today = dayjs().format('YYYY-MM-DD');
-      const pick = data.cutoffs.find((c) => c.date_to < today) || data.cutoffs.find((c) => c.date_from <= today);
+      const open = data.cutoffs.filter((c) => !c.approved_run_id && !c.pending_run_id);
+      const pick = open.find((c) => c.date_to < today) || open.find((c) => c.date_from <= today);
       if (pick) form.setFieldsValue({ payroll_cutoff_id: pick.id });
     } catch (error) {
       handleApiError(error, message);
@@ -165,7 +175,7 @@ const PayrollRunIndex = () => {
         keyboard={false}
         open={genOpen}
         title='Generate Payroll'
-        okText={picked?.draft_run_id ? 'Regenerate' : 'Generate'}
+        okText={adding ? 'Add Employees' : picked?.draft_run_id ? 'Regenerate' : 'Generate'}
         onOk={generate}
         confirmLoading={generating}
         onCancel={() => setGenOpen(false)}
@@ -176,8 +186,12 @@ const PayrollRunIndex = () => {
           <Form.Item name='payroll_cutoff_id' label='Cut-off' rules={[{ required: true, message: 'Choose the cut-off' }]}>
             <Select
               showSearch={{ optionFilterProp: 'label' }}
-              options={cutoffs.map((c) => ({ value: c.id, label: `${cutoffLabel(c)}${c.draft_run_id ? ' — draft' : ''}` }))}
-              placeholder='Cut-off without an approved payroll'
+              options={cutoffs.map((c) => ({
+                value: c.id,
+                disabled: !!c.pending_run_id,
+                label: `${cutoffLabel(c)}${c.draft_run_id ? ' — draft' : c.approved_run_id ? ' — approved (add employees)' : c.pending_run_id ? ' — waiting for approval' : ''}`,
+              }))}
+              placeholder='Cut-off'
             />
           </Form.Item>
           {picked && picked.date_to >= dayjs().format('YYYY-MM-DD') && (
@@ -186,6 +200,15 @@ const PayrollRunIndex = () => {
               showIcon
               style={{ marginBottom: 12 }}
               title='This cut-off hasn’t ended — dates from today on are paid as worked. Regenerate after it ends.'
+            />
+          )}
+          {adding && (
+            <Alert
+              type='info'
+              showIcon
+              style={{ marginBottom: 12 }}
+              title='This payroll is approved — only employees not in it can be added.'
+              description='They are computed now and the payroll goes back to Draft; submit it so they are approved as its next round. The approved payslips stay exactly as they are.'
             />
           )}
           {picked?.draft_run_id && (
@@ -201,15 +224,15 @@ const PayrollRunIndex = () => {
           <Form.Item name='scope' label='Employees'>
             <Radio.Group
               options={[
-                { value: 'all', label: 'All employees' },
-                { value: 'selected', label: 'Selected employees' },
+                { value: 'all', label: 'All employees', disabled: adding },
+                { value: 'selected', label: adding ? 'Selected employees (not in the payroll yet)' : 'Selected employees' },
               ]}
             />
           </Form.Item>
           {scope === 'selected' && (
             <Form.Item name='employee_ids' rules={[{ required: true, message: 'Choose the employees' }]}>
               <EmployeePickerTable
-                candidates={pickedId ? candidates && candidates.filter((c) => c.eligible || c.in_run) : []}
+                candidates={pickedId ? candidates && candidates.filter((c) => (adding ? c.eligible && !c.in_run : c.eligible || c.in_run)) : []}
                 disabled={!pickedId}
                 busy={generating}
                 showRunStatus={!!picked?.draft_run_id}

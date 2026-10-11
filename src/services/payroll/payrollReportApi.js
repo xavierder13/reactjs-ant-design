@@ -12,7 +12,10 @@ import axios from '../../api/axiosInstance';
 //   account), source { bank_name, bank_code, account_no, account_name },
 //   credit: [{ employee_code, full_name, account_no, account_name,
 //   bank_name, amount }], total }], missing, not_positive, credit_count,
-//   total, credit_date } · bankDownload(runId, sourceId) → one group's .csv
+//   total, credit_date } · bankDownload(runId, sourceId, round?) → one group's .csv
+//   (a round's CSV even while the run is back in Draft for added employees;
+//   all of it only when the run is Approved; a round uses the paying
+//   account(s) it kept when approved). `round` on register / bank too.
 //   (approved runs only).
 // - remittance({ year, month }) → { cutoffs, employees: [{ sss_no, sss_msc,
 //   sss_ee, sss_er, sss_ec, philhealth_no, philhealth_base, philhealth_ee,
@@ -45,10 +48,11 @@ import axios from '../../api/axiosInstance';
 //   (≤ 500, else 422 { message }), employer } — for printing with payslipHtml.
 const blob = { responseType: 'blob' };
 const payrollReportApi = {
-  register:           (runId)  => axios.post(`/payroll_report/register/${runId}`),
-  registerDownload:   (runId)  => axios.post(`/payroll_report/register/download/${runId}`, {}, blob),
-  bank:               (runId)  => axios.post(`/payroll_report/bank/${runId}`),
-  bankDownload:       (runId, sourceId) => axios.post(`/payroll_report/bank/download/${runId}`, { source_id: sourceId }, blob),
+  // round (optional): one approval round's payslips only
+  register:           (runId, round)  => axios.post(`/payroll_report/register/${runId}`, round ? { round } : {}),
+  registerDownload:   (runId, round)  => axios.post(`/payroll_report/register/download/${runId}`, round ? { round } : {}, blob),
+  bank:               (runId, round)  => axios.post(`/payroll_report/bank/${runId}`, round ? { round } : {}),
+  bankDownload:       (runId, sourceId, round) => axios.post(`/payroll_report/bank/download/${runId}`, round ? { source_id: sourceId, round } : { source_id: sourceId }, blob),
   remittance:         (params) => axios.post('/payroll_report/remittance', params),
   remittanceDownload: (params) => axios.post('/payroll_report/remittance/download', params, blob),
   annualization:      (params) => axios.post('/payroll_report/annualization', params),

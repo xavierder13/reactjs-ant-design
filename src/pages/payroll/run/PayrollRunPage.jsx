@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { Card, Spin, Descriptions, Table, Tag, Button, Space, Tooltip, Popconfirm, Typography, Alert, Input, Row, Col, Result, App } from 'antd';
-import { ArrowLeftOutlined, EyeOutlined, ReloadOutlined, CheckCircleOutlined, CloseCircleOutlined, SendOutlined, StopOutlined, FileExcelOutlined, BankOutlined, UsergroupAddOutlined, RollbackOutlined, LockOutlined } from '@ant-design/icons';
+import { Card, Spin, Descriptions, Table, Tag, Button, Space, Tooltip, Popconfirm, Typography, Alert, Input, Row, Col, Result, Select, App } from 'antd';
+import { ArrowLeftOutlined, EyeOutlined, ReloadOutlined, CheckCircleOutlined, CloseCircleOutlined, SendOutlined, StopOutlined, FileExcelOutlined, BankOutlined, UsergroupAddOutlined, RollbackOutlined, LockOutlined, UserAddOutlined, DeleteOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import payrollRunApi from '../../../services/payroll/payrollRunApi';
 import payrollReportApi from '../../../services/payroll/payrollReportApi';
@@ -34,8 +34,14 @@ const when = (v) => (v ? dayjs(v).format(`${DISPLAY_DATE_FORMAT} hh:mm A`) : '�
 // (posted, "Approved" tag on a Draft) are locked: Roll Back Selected / All
 // (payroll-run-rollback, reason) on an Approved run or a Draft that still has
 // some — the run goes back to Draft, the others stay approved; Generate
-// Selected leaves them out. Payroll Register (Excel)
-// and the Bank File (preview; CSV once approved) with payroll-report-view.
+// Selected leaves them out. Add Employees (approved run): only employees
+// not in it, computed now; the run goes back to Draft and is approved again
+// as its next round — the approved payslips stay as they are. Rounds panel
+// (each approval round's employees, totals, submitter, approver) and a
+// round filter, which the Register and Bank File follow (a round's CSV is
+// ready once that round is approved). Remove Selected takes not-yet-approved
+// payslips out of a Draft. Payroll Register (Excel) and the Bank File
+// (preview; CSV once approved) with payroll-report-view.
 const PayrollRunPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -59,6 +65,7 @@ const PayrollRunPage = () => {
   const [picked, setPicked] = useState([]); // ticked payslip rows (employee ids)
   const [regenerating, setRegenerating] = useState(null);
   const [rollingBack, setRollingBack] = useState(null); // { employeeIds: [..] | null (all) }
+  const [roundFilter, setRoundFilter] = useState('all'); // 'all' | round number | 'open' (not approved yet)
 
   const load = async (runId = id) => {
     try {
@@ -76,6 +83,7 @@ const PayrollRunPage = () => {
       setNotFound(false);
       setRemarks('');
       setPicked([]);
+      setRoundFilter('all');
       await load(id);
     };
     run();
@@ -108,14 +116,25 @@ const PayrollRunPage = () => {
     || (completesLevel && levelInfo.level === approval.levels[approval.levels.length - 1].level);
   const returned = isDraft && run?.acted_at && run?.action_remarks;
   const rolledBack = isDraft && run?.rolled_back_at && !run?.submitted_at;
-  const employees = (data?.employees || []).filter((e) => !search || `${e.employee_code} ${e.full_name}`.toLowerCase().includes(search.toLowerCase()));
+  const rounds = data?.rounds || [];
+  const notApproved = data?.not_approved || { employees: 0 };
+  // several approval rounds, or approved ones plus employees added since
+  const showRounds = rounds.length > 1 || (rounds.length > 0 && notApproved.employees > 0);
+  const roundNo = typeof roundFilter === 'number' ? roundFilter : null; // the Register / Bank File follow it
+  const employees = (data?.employees || [])
+    .filter((e) => !search || `${e.employee_code} ${e.full_name}`.toLowerCase().includes(search.toLowerCase()))
+    .filter((e) => (roundFilter === 'all' ? true : roundFilter === 'open' ? !e.approved : e.round === roundFilter));
   const withWarnings = (data?.employees || []).filter((e) => e.warnings.length).length;
   // approved (posted) payslips are locked: only a rollback reopens them
   const approvedIds = new Set((data?.employees || []).filter((e) => e.approved).map((e) => e.employee_id));
-  const canRollback = perms.canRollback && (run?.status === 'Approved' || (isDraft && approvedIds.size > 0));
+  // paid on the pay date: from then on no rollback (corrections = retro adjustments)
+  const paid = !!run?.cutoff?.pay_date && dayjs().format('YYYY-MM-DD') >= run.cutoff.pay_date;
+  const canRollback = perms.canRollback && !paid && (run?.status === 'Approved' || (isDraft && approvedIds.size > 0));
   const canPickGenerate = isDraft && perms.canGenerate;
   const pickedGenerate = picked.filter((eid) => !approvedIds.has(eid));
   const pickedRollback = picked.filter((eid) => approvedIds.has(eid));
+  const canAdd = perms.canGenerate && run?.status === 'Approved'; // approved: only employees not in it
+  const sel = canPickGenerate || canRollback ? 1 : 0; // the selection column shifts the totals row
 
   const columns = [
     {
@@ -129,7 +148,13 @@ const PayrollRunPage = () => {
             {r.full_name}
             {r.approved && run.status !== 'Approved' && (
               <Tooltip title='Approved and locked — roll it back to change it'>
-                <Tag color='green' icon={<LockOutlined />} style={{ marginLeft: 6 }}>Approved</Tag>
+                <Tag color='green' icon={<LockOutlined />} style={{ marginLeft: 6 }}>{rounds.length > 1 ? `Approved · R${r.round}` : 'Approved'}</Tag>
+              </Tooltip>
+            )}
+            {r.approved && run.status === 'Approved' && rounds.length > 1 && <Tag style={{ marginLeft: 6 }}>{`R${r.round}`}</Tag>}
+            {!r.approved && rounds.length > 0 && (
+              <Tooltip title='Added after the payroll was approved — approved with the next round'>
+                <Tag color='cyan' style={{ marginLeft: 6 }}>Added</Tag>
               </Tooltip>
             )}
           </div>
@@ -168,8 +193,8 @@ const PayrollRunPage = () => {
   const downloadRegister = async () => {
     setBusy('register');
     try {
-      const response = await payrollReportApi.registerDownload(run.id);
-      if (await downloadBlobResponse(response, `Payroll_Register_${run.cutoff?.code}.xls`, message)) message.success('Payroll register downloaded.');
+      const response = await payrollReportApi.registerDownload(run.id, roundNo);
+      if (await downloadBlobResponse(response, `Payroll_Register_${run.cutoff?.code}${roundNo ? `_Round${roundNo}` : ''}.xls`, message)) message.success('Payroll register downloaded.');
     } catch (error) {
       handleApiError(error, message);
     } finally {
@@ -179,28 +204,44 @@ const PayrollRunPage = () => {
 
   const reportActions = run && perms.canReport && run.status !== 'Cancelled' ? (
     <Space wrap>
-      <Button color='purple' variant='outlined' icon={<FileExcelOutlined />} loading={busy === 'register'} onClick={downloadRegister}>Payroll Register</Button>
+      <Button color='purple' variant='outlined' icon={<FileExcelOutlined />} loading={busy === 'register'} onClick={downloadRegister}>{roundNo ? `Payroll Register (Round ${roundNo})` : 'Payroll Register'}</Button>
       <Button
         color='purple'
         variant='outlined'
         icon={<BankOutlined />}
         onClick={() => setBank({
-          title: `Bank File — ${run.cutoff?.code}`,
-          approved: run.status === 'Approved',
-          filenamePrefix: `Payroll_Bank_${run.cutoff?.code}`,
-          canChoose: perms.canGenerate,
-          load: () => payrollReportApi.bank(run.id),
-          download: (sourceId) => payrollReportApi.bankDownload(run.id, sourceId),
+          title: `Bank File — ${run.cutoff?.code}${roundNo ? ` — Round ${roundNo}` : ''}`,
+          // a round is approved by itself; the whole run only when Approved
+          approved: roundNo ? true : run.status === 'Approved',
+          filenamePrefix: `Payroll_Bank_${run.cutoff?.code}${roundNo ? `_Round${roundNo}` : ''}`,
+          canChoose: perms.canGenerate && !roundNo,
+          load: () => payrollReportApi.bank(run.id, roundNo),
+          download: (sourceId) => payrollReportApi.bankDownload(run.id, sourceId, roundNo),
           choose: (payload) => payrollRunApi.paidFrom(run.id, payload),
         })}
       >
-        Bank File
+        {roundNo ? `Bank File (Round ${roundNo})` : 'Bank File'}
       </Button>
     </Space>
   ) : null;
 
-  const actions = run && ((isDraft && (perms.canGenerate || perms.canCancel)) || canDecide || canRollback) ? (
+  const pickedRemovable = picked.filter((eid) => !approvedIds.has(eid));
+  const actions = run && ((isDraft && (perms.canGenerate || perms.canCancel)) || canDecide || canRollback || canAdd) ? (
     <Space wrap>
+      {canAdd && (
+        <Button icon={<UserAddOutlined />} onClick={() => setRegenerating({ run, mode: 'add', preselected: [] })}>Add Employees</Button>
+      )}
+      {isDraft && perms.canGenerate && pickedRemovable.length > 0 && (
+        <Popconfirm
+          title={`Remove ${pickedRemovable.length} employee(s) from this payroll?`}
+          description={<div style={{ maxWidth: 320 }}>Their payslips (not approved yet) are taken out of this cut-off. Approved payslips can&apos;t be removed.</div>}
+          okText='Remove'
+          okButtonProps={{ danger: true }}
+          onConfirm={() => act('remove', async () => { const res = await payrollRunApi.remove(run.id, pickedRemovable); setPicked([]); return res; })}
+        >
+          <Button danger icon={<DeleteOutlined />} loading={busy === 'remove'}>{`Remove Selected (${pickedRemovable.length})`}</Button>
+        </Popconfirm>
+      )}
       {canRollback && pickedRollback.length > 0 && (
         <Button color='orange' variant='outlined' icon={<RollbackOutlined />} onClick={() => setRollingBack({ employeeIds: pickedRollback })}>
           {`Roll Back Selected (${pickedRollback.length})`}
@@ -329,6 +370,14 @@ const PayrollRunPage = () => {
               description={run.action_remarks}
             />
           )}
+          {paid && (run.status === 'Approved' || approvedIds.size > 0) && (
+            <Alert
+              type='info'
+              showIcon
+              style={{ marginBottom: 8 }}
+              title={`Paid on ${formatDate(run.cutoff.pay_date)} — the approved payslips can't be rolled back or generated again. Correct them with a retro adjustment on a later cut-off.`}
+            />
+          )}
           {rolledBack && (
             <Alert
               type='warning'
@@ -381,6 +430,41 @@ const PayrollRunPage = () => {
               style={{ marginBottom: 12 }}
             />
           )}
+          {showRounds && (
+            <>
+              <Typography.Text strong>Approval Rounds</Typography.Text>
+              <Table
+                rowKey='key'
+                size='small'
+                style={{ margin: '8px 0 16px' }}
+                pagination={false}
+                scroll={{ x: 900 }}
+                dataSource={[
+                  ...rounds.map((r) => ({ ...r, key: `r${r.round}` })),
+                  ...(notApproved.employees > 0 ? [{ key: 'open', round: null, ...notApproved }] : []),
+                ]}
+                columns={[
+                  { title: 'Round', key: 'round', width: 160, render: (_, r) => (r.round ? `Round ${r.round}` : <Tag color='cyan'>Not approved yet</Tag>) },
+                  { title: 'Employees', dataIndex: 'employees', width: 100, align: 'right', render: (v, r) => (r.round && !v ? <Typography.Text type='secondary'>0 — rolled back</Typography.Text> : v) },
+                  { title: 'Gross', dataIndex: 'gross_pay', width: 130, align: 'right', render: peso },
+                  { title: 'Net Pay', dataIndex: 'net_pay', width: 140, align: 'right', render: (v) => <strong>{peso(v)}</strong> },
+                  { title: 'Submitted', key: 'sub', width: 220, render: (_, r) => (r.round && r.submitted_at ? `${when(r.submitted_at)} · ${r.submitter || '—'}` : '—') },
+                  { title: 'Approved', key: 'appr', width: 220, render: (_, r) => (r.round ? `${when(r.approved_at)} · ${r.approver || '—'}` : '—') },
+                  {
+                    title: 'Actions',
+                    key: 'actions',
+                    width: 80,
+                    fixed: 'right',
+                    render: (_, r) => (
+                      <Tooltip title={r.round ? `Show round ${r.round} only` : 'Show the ones not approved yet'}>
+                        <Button color='blue' variant='outlined' size='small' icon={<EyeOutlined />} onClick={() => setRoundFilter(r.round || 'open')} />
+                      </Tooltip>
+                    ),
+                  },
+                ]}
+              />
+            </>
+          )}
           <Space style={{ marginBottom: 8, width: '100%', justifyContent: 'space-between' }} wrap>
             <Space>
               <Typography.Text strong>Pay Register</Typography.Text>
@@ -388,7 +472,21 @@ const PayrollRunPage = () => {
                 <Typography.Text type='secondary'>{picked.length} ticked — <Typography.Link onClick={() => setPicked([])}>clear</Typography.Link></Typography.Text>
               )}
             </Space>
-            <Input.Search allowClear placeholder='Code or name' onSearch={(v) => setSearch(v.trim())} onChange={(e) => !e.target.value && setSearch('')} style={{ width: 220 }} />
+            <Space wrap>
+              {showRounds && (
+                <Select
+                  value={roundFilter}
+                  onChange={setRoundFilter}
+                  style={{ width: 190 }}
+                  options={[
+                    { value: 'all', label: 'All rounds' },
+                    ...rounds.filter((r) => r.employees > 0).map((r) => ({ value: r.round, label: `Round ${r.round} (${r.employees})` })),
+                    ...(notApproved.employees > 0 ? [{ value: 'open', label: `Not approved yet (${notApproved.employees})` }] : []),
+                  ]}
+                />
+              )}
+              <Input.Search allowClear placeholder='Code or name' onSearch={(v) => setSearch(v.trim())} onChange={(e) => !e.target.value && setSearch('')} style={{ width: 220 }} />
+            </Space>
           </Space>
           <Table
             rowKey='id'
@@ -406,11 +504,11 @@ const PayrollRunPage = () => {
             scroll={{ x: 1200 }}
             summary={() => employees.length > 1 && (
               <Table.Summary.Row>
-                <Table.Summary.Cell index={0} colSpan={5}><strong>Total</strong></Table.Summary.Cell>
-                <Table.Summary.Cell index={5} align='right'><strong>{peso(employees.reduce((t, e) => t + Number(e.gross_pay), 0))}</strong></Table.Summary.Cell>
-                <Table.Summary.Cell index={6} align='right'><strong>{peso(employees.reduce((t, e) => t + Number(e.total_deductions), 0))}</strong></Table.Summary.Cell>
-                <Table.Summary.Cell index={7} align='right'><strong>{peso(employees.reduce((t, e) => t + Number(e.net_pay), 0))}</strong></Table.Summary.Cell>
-                <Table.Summary.Cell index={8} colSpan={2} />
+                <Table.Summary.Cell index={0} colSpan={5 + sel}><strong>Total</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={5 + sel} align='right'><strong>{peso(employees.reduce((t, e) => t + Number(e.gross_pay), 0))}</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={6 + sel} align='right'><strong>{peso(employees.reduce((t, e) => t + Number(e.total_deductions), 0))}</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={7 + sel} align='right'><strong>{peso(employees.reduce((t, e) => t + Number(e.net_pay), 0))}</strong></Table.Summary.Cell>
+                <Table.Summary.Cell index={8 + sel} colSpan={2} />
               </Table.Summary.Row>
             )}
           />
@@ -445,7 +543,7 @@ const PayrollRunPage = () => {
                 <li>The loan / deduction payments posted for them are removed (balances return).</li>
                 <li>Their retro adjustments are Open again.</li>
                 <li>Payslips, remittances, the bank file and reports leave them out until the payroll is approved again.</li>
-                <li>Not allowed while a later payroll, or the year&apos;s 13th month, is approved or waiting for approval.</li>
+                <li>Not allowed while a later payroll, or the year&apos;s 13th month, is approved or waiting for approval — or on / after the pay date (paid).</li>
               </ul>
             )}
           />
