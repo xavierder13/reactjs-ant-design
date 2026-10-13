@@ -15,6 +15,8 @@ import { DAY_TYPE_COLORS } from '../../overtime/overtimeHelpers';
 const FACTOR_HINTS = {
   261: '5-day work week (Sat & Sun off)',
   313: '6-day work week (Sunday off)',
+  314.6: 'DOLE default',
+  315: '26.25 days a month (old payroll)',
   365: 'paid every day of the year',
 };
 const AGENCIES = [
@@ -195,7 +197,7 @@ const PayrollSettingsPage = () => {
                         rules={[{ required: true, message: 'Required' }]}
                       >
                         <Select
-                          options={(data?.daily_rate_factors || [261, 313, 365]).map((f) => ({ value: f, label: `${f} days — ${FACTOR_HINTS[f]}` }))}
+                          options={(data?.daily_rate_factors || [261, 313, 314.6, 315, 365]).map((f) => ({ value: f, label: `${f} days — ${FACTOR_HINTS[f]}` }))}
                         />
                       </Form.Item>
                     </Col>
