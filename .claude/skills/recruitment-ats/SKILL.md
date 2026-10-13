@@ -15,13 +15,24 @@ action by `RecruitmentMaintenance` `careers-*` permissions; Administrator
 passes all) → recruitment-portal `recruitment_gateway/*`
 (`RecruitmentGatewayController`). vueportal logs in as one service account
 (credentials in vueportal `.env` `CAREERS_API_*`, token cached 60 min as
-`careers_api_token`, retried once on 401) and sends `user_email`. The
-gateway resolves that email to the portal's own user, checks that user's
-portal permission (`jobapplicants-*`, `sms-send`, `email-send` — same map
-as the portal's own middleware) and runs the portal's existing controller
-method **as that user**, so the portal's rules and Branch Manager scoping
-apply. No portal account for the email → 403 with a clear message. Never
-print or copy the credentials.
+`careers_api_token`, retried once on 401) and sends `user_email` + `scope`
+(`branch` for an HRIS Branch Manager, else `all`; Administrator always
+`all`). **vueportal decides permissions** (`careers-*`); the gateway doesn't
+re-check portal permissions. It runs the portal's existing controller method
+as: the portal account with the same email when there is one (its Branch
+Manager rules always apply — a portal Branch Manager stays branch-scoped
+even with `scope` all); otherwise, for `scope` all, the gateway's service
+account (full access); refused (403, clear message) for `scope` branch
+without a portal account, or when the HRIS says Branch Manager but the portal
+account isn't one — a mismatch only narrows. No `scope` (older vueportal) =
+the old rule (portal account + portal permission). The portal locks the
+gateway to vueportal's account with `HRIS_GATEWAY_EMAIL` (portal `.env`;
+unset = any portal Administrator, the old rule). Every accepted change
+(status, hiring details, delete, file upload / delete, SMS / email, setup
+create / update / delete) is logged by vueportal (`RecruitmentController::audit`)
+in the Audit Trail — module Recruitment, records "Applicant / Applicant File
+/ Recruitment Setup (careers portal)" with the record id; refusals aren't.
+Never print or copy the credentials.
 
 Development: vueportal's `CAREERS_API_URL` points at the local portal
 (`http://recruitment_nginx/api`, docker `shared_network`), loaded from a
@@ -183,8 +194,8 @@ types filtered by the stage list permission). Branch 1000 = ALL BRANCH
 portal's exactly (no `step`, no branch-field parameter — the portal's
 dialog requires that picker but never sends it, so it's left out), so the
 numbers match. Branch Managers: no branch picker; the gateway forces their
-portal branch. Front Page reports need the user's portal permission
-(`sourcing-report` etc.) — `bm@agoo.ac` lacks them and gets a clear 403.
+portal branch. Front Page reports follow the vueportal `careers-export`
+permission (the portal's own report permission isn't re-checked).
 
 **Phase 4 — notifications.** `notifications.js` (`typeAfterSave`,
 `typeForResend`, `INVITATION_TYPES`, `TIME_OPTIONS`) +
@@ -407,13 +418,13 @@ can't be deleted once `final_interview_status` = 1, and the Resume never.
 ## Permissions
 
 vueportal `careers-*` gate each route (RecruitmentMaintenance; Administrator
-passes); the gateway also checks the matching portal permission for the
-user. Branch Manager role: seeded by `RecruitmentBranchManagerPermissionSeeder`
+passes); the gateway doesn't re-check portal permissions (see top). Branch Manager role: seeded by `RecruitmentBranchManagerPermissionSeeder`
 to mirror the portal role (all lists except Screening, update status, files,
 SMS/email, export; not hiring details / delete). `careers-applicant-delete`
-and `careers-export` are new (PermissionSeeder → Administrator). A user needs
-a portal account with the same email (1 of 74 vueportal Branch Managers
-lacks one).
+and `careers-export` are new (PermissionSeeder → Administrator). An HRIS
+Branch Manager needs a portal Branch Manager account with the same email (its
+branch scopes the data; 1 of 74 locally — bm@sanfernando.ac — lacks one);
+other users don't need a portal account.
 
 ## Still open
 

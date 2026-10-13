@@ -21,9 +21,10 @@ const recruitmentApi = {
   downloadFile: (fileId) => axios.post('/recruitment/file_download', { file_id: fileId }, { responseType: 'blob' }),
 
   // The calls below run the portal's own ApplicantController /
-  // ApplicantFileController methods as the signed-in user (gateway). A
-  // refusal (no portal account, missing portal permission, Branch Manager
-  // locked step) comes back as 403/422 { error: "..." }. The portal itself
+  // ApplicantFileController methods for the signed-in user (gateway: the
+  // portal account with the same email, else the service account). A
+  // refusal (a Branch Manager without a matching portal Branch Manager
+  // account, a Branch Manager locked step) comes back as 403/422 { error }. The portal itself
   // answers some failures with HTTP 200 — check `success` first.
 
   // POST /recruitment/update_status (careers-update-status) { applicant_id,
@@ -65,8 +66,7 @@ const recruitmentApi = {
   sendEmail: (payload) => axios.post('/recruitment/send-email', payload),
   sendSms: (payload) => axios.post('/recruitment/send-sms', payload),
 
-  // POST /recruitment/export/{report} (careers-export; the gateway checks the
-  // report's portal permission) — report: applicants | total_count |
+  // POST /recruitment/export/{report} (careers-export) — report: applicants | total_count |
   // sourcing | recruitment | hiring | signing_contract. Body { date_from,
   // date_to, asOfDate, branch_id (1000 = all), report_group, report_type,
   // date_field_param, get_empty_date }. Returns DATA, not a file:
