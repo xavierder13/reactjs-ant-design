@@ -95,9 +95,10 @@ export const DOCUMENT_TYPES = [
     templatePermission: "employee-master-data-work-schedule-template-download",
     importPermission: "employee-master-data-work-schedule-import",
     filename: "EmployeeWorkScheduleTemplate.xls",
-    download: () => workScheduleApi.templateDownload(),
+    download: (params) => workScheduleApi.templateDownload(params),
     upload: (file) => workScheduleApi.import(file),
-    hint: "Columns: employee_code, effective_date (YYYY-MM-DD, format the cell as Text), shift_code, remarks. Each line adds a Work Schedule version that follows the shift — the template's \"Shifts\" sheet lists the active shift codes and their weekly hours. Older files with rest_day, time_in and time_out still import (as hand-typed versions).",
+    templateOptions: { status: true, employees: true },
+    hint: "The template lists the chosen employees with their Work Schedule versions (or one blank line each). Columns: employee_code, employee_name (not read), effective_date (YYYY-MM-DD, format the cell as Text), shift_code, remarks. A new line adds a version that follows the shift — the template's \"Shifts\" sheet lists the active shift codes and their weekly hours; an unchanged line adds nothing. Older files without employee_name, or with rest_day, time_in and time_out, still import.",
   },
   {
     value: "compensation",

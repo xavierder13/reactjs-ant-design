@@ -33,11 +33,12 @@ const workScheduleApi = {
   // body: { work_schedule_id }
   remove: (workScheduleId) => axios.post('/employee_master_data/work_schedule/delete', { work_schedule_id: workScheduleId }),
 
-  // POST /api/employee_master_data/work_schedule/template/download —
-  // returns an .xls blob. Columns: employee_code, effective_date,
-  // rest_day, time_in, time_out, remarks — matches EmployeeWorkScheduleController::import()'s
-  // expected column order exactly.
-  templateDownload: () => axios.post('/employee_master_data/work_schedule/template/download', {}, { responseType: 'blob' }),
+  // POST /api/employee_master_data/work_schedule/template/download
+  // { document_status, branch_id, position_id (0 = all), employee_ids } —
+  // returns an .xls blob: employee_code, employee_name (not read), effective_date,
+  // shift_code, remarks — a line per existing version, or one blank line per
+  // employee without any (EmployeeWorkScheduleController::template_download).
+  templateDownload: (params = {}) => axios.post('/employee_master_data/work_schedule/template/download', params, { responseType: 'blob' }),
 
   // POST /api/employee_master_data/work_schedule/import (multipart, field
   // "file"). Same 200-with-errors-body contract as offboardingApi's
