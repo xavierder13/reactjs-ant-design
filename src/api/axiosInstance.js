@@ -25,16 +25,17 @@ axiosInstance.interceptors.request.use(
 )
 
 // Response interceptor — a 401 that ends the session (token expired after
-// 8 h, revoked, or idle 30 min — utils/session.js) clears the token and
-// goes to /login, which says why. A permission 401 ("Unauthorized" from a
-// <Module>Maintenance middleware) is left to the page.
+// 8 h, revoked, or idle 1 h — utils/session.js) clears the token and
+// goes to /login, which says why — also when another tab already cleared
+// the token (this tab then sent none). A permission 401 ("Unauthorized"
+// from a <Module>Maintenance middleware) is left to the page.
 let redirecting = false
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     const isLoginRequest = error.config?.url?.includes('/auth/login')
 
-    if (!isLoginRequest && isSessionEnded(error) && getToken() && !redirecting) {
+    if (!isLoginRequest && isSessionEnded(error) && window.location.pathname !== '/login' && !redirecting) {
       redirecting = true
       rememberEndReason(error)
       clearTokens()

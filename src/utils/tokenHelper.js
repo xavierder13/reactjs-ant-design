@@ -1,6 +1,6 @@
 // src/utils/tokenHelper.js
 
-const TOKEN_KEY = 'access_token'
+export const TOKEN_KEY = 'access_token'
 const REFRESH_TOKEN_KEY = 'refresh_token'
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY)

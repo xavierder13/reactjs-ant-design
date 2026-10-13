@@ -8,10 +8,8 @@ import {
   Layout,
   Menu,
   Avatar,
-  Typography,
   Dropdown,
   Button,
-  Divider,
   Tooltip,
   Breadcrumb,
   Spin,
@@ -81,7 +79,6 @@ const SYNC_ACTIONS = {
 };
 
 const { Header, Sider, Content } = Layout;
-const { Title } = Typography;
 
 // ─── Page title map ────────────────────────────────────────────────────────────
 const titleMap = {
@@ -708,7 +705,7 @@ const MainLayout = () => {
 
   const { activeKey, openKeys } = getMenuState(menuData, pathname);
 
-  // signed-in pages: 30-min idle logout, synced across tabs (utils/session.js)
+  // signed-in pages: 1-hour idle logout, synced across tabs (utils/session.js)
   useSessionTimeout();
 
   // revoke the token on the server too (it also ends the idle window)

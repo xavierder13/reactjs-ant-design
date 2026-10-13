@@ -8,17 +8,22 @@
 // - A heartbeat to the backend, at most every 5 min, while the user is
 //   active: typing into a form sends no API call, and the backend's idle
 //   window only sees API calls.
-// - After 30 min with no activity in any tab, ask the backend every minute
+// - After 1 h with no activity in any tab, ask the backend every minute
 //   with a check-only call (X-Session-Check: passive — it must not extend
 //   the window itself) whether the session is really over; the 401 it gets
 //   then is handled by the axios interceptor (→ /login with the reason).
+// - Every tab follows the shared token: when another tab logs out or its
+//   session ends (token removed), this one goes to /login too, at once via
+//   the storage event and within CHECK_EVERY_MS as a fallback; when another
+//   tab signs in again (a different token), this one reloads as that session.
 // The 8 h absolute expiry needs nothing here: its 401 ends the session the
 // same way. See utils/session.js.
 import { useEffect } from 'react';
 import axiosInstance from '../api/axiosInstance';
+import { getToken, TOKEN_KEY } from '../utils/tokenHelper';
 import {
   IDLE_TIMEOUT_MS, ACTIVITY_KEY, ACTIVITY_BROADCAST_THROTTLE_MS, HEARTBEAT_THROTTLE_MS,
-  IDLE_CONFIRM_INTERVAL_MS, ACTIVITY_EVENTS, PASSIVE_HEADERS,
+  IDLE_CONFIRM_INTERVAL_MS, ACTIVITY_EVENTS, PASSIVE_HEADERS, leaveEndedSession,
 } from '../utils/session';
 
 const CHECK_EVERY_MS = 15 * 1000;
@@ -49,6 +54,10 @@ const useSessionTimeout = () => {
     };
 
     const check = () => {
+      if (!getToken()) {
+        leaveEndedSession();
+        return;
+      }
       const idle = Date.now() - Math.max(lastLocal, readShared()) >= IDLE_TIMEOUT_MS;
       if (idle && !confirmTimer) {
         confirmWithServer();
@@ -72,13 +81,25 @@ const useSessionTimeout = () => {
       }
     };
 
+    // fires in the OTHER tabs only; key null = localStorage.clear()
+    const onStorage = (e) => {
+      if (e.key !== TOKEN_KEY && e.key !== null) return;
+      if (!getToken()) {
+        leaveEndedSession();
+      } else if (e.key === TOKEN_KEY && e.oldValue && e.newValue !== e.oldValue) {
+        window.location.reload();
+      }
+    };
+
     ACTIVITY_EVENTS.forEach((evt) => window.addEventListener(evt, onActivity, { passive: true }));
+    window.addEventListener('storage', onStorage);
     // a laptop waking up / a tab coming back: decide at once, not on the next tick
     document.addEventListener('visibilitychange', check);
     const ticker = setInterval(check, CHECK_EVERY_MS);
 
     return () => {
       ACTIVITY_EVENTS.forEach((evt) => window.removeEventListener(evt, onActivity));
+      window.removeEventListener('storage', onStorage);
       document.removeEventListener('visibilitychange', check);
       clearInterval(ticker);
       stopConfirming();
