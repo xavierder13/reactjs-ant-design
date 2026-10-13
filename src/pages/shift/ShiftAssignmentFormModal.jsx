@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
-import { Modal, Form, Input, Select, DatePicker, Alert, Table, Tag, App } from 'antd';
+import { Modal, Form, Input, Select, Alert, Table, Tag, App } from 'antd';
 import shiftAssignmentApi from '../../services/shift/shiftAssignmentApi';
 import handleApiError from '../../utils/handleApiError';
-import { DISPLAY_DATE_FORMAT, formatDate } from '../../utils/formatDate';
+import { formatDate } from '../../utils/formatDate';
 import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
 import { dayText, patternSummary, applyErrors, scheduleSourceLabel } from './shiftHelpers';
+import ShiftPeriodFields from './ShiftPeriodFields';
 
 // Assign (assignment = null) or change a temporary shifting. Takes effect
 // directly (no approval). The preview lists each date's current schedule
@@ -171,9 +172,7 @@ const ShiftAssignmentFormModal = ({ open, assignment, options, onClose, onSaved 
         >
           <Select options={shiftOptions} showSearch={{ optionFilterProp: 'label' }} />
         </Form.Item>
-        <Form.Item name='dates' label='Period' rules={[{ required: true, message: 'Period is required' }]}>
-          <DatePicker.RangePicker format={DISPLAY_DATE_FORMAT} />
-        </Form.Item>
+        <ShiftPeriodFields form={form} cutoffs={options?.cutoffs} />
         <Form.Item name='relieved_employee_id' label='Relieving (optional)' tooltip='The employee this shifting covers for.'>
           <EmployeeSelect
             placeholder='Search the employee being relieved'

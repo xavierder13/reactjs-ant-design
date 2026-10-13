@@ -107,6 +107,15 @@ each employee who can't take it (same rules + scope) and Save stays off
 until removed; `bulk_store` is all or nothing — each employee gets their
 own shifting and a Created revision ("Bulk assignment"). Max 500 at once.
 
+## Shifting period by dates or cut-offs
+
+`ShiftPeriodFields` (Shifting form + Group Shift Allocation): Coverage
+Dates (a range) or Cut-offs (From / To; To follows From) — cut-offs fill
+the `dates` field with the first one's `date_from` to the last one's
+`date_to`; the API still takes `date_from` / `date_to`. The cut-offs come
+from `shift_assignment/options` (`cutoffs`, last year on), so no payroll
+permission is needed.
+
 ## Default schedules per company / branch / position
 
 `group_schedules` (`GroupSchedule`, `GroupScheduleService`,

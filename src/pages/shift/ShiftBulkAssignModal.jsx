@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Modal, Form, Input, Select, DatePicker, Transfer, Alert, Space, Typography, App,
+  Modal, Form, Input, Select, Transfer, Alert, Space, Typography, App,
 } from 'antd';
 import shiftAssignmentApi from '../../services/shift/shiftAssignmentApi';
 import handleApiError from '../../utils/handleApiError';
-import { DISPLAY_DATE_FORMAT } from '../../utils/formatDate';
 import { patternSummary, applyErrors } from './shiftHelpers';
+import ShiftPeriodFields from './ShiftPeriodFields';
 
 // Group Shift Allocation: one shift and period for many employees at once (e.g. a branch's
 // inventory week). Employees come from the ones the user manages, filtered
@@ -195,10 +195,8 @@ const ShiftBulkAssignModal = ({ open, options, onClose, onSaved }) => {
               showSearch={{ optionFilterProp: 'label' }}
             />
           </Form.Item>
-          <Form.Item name='dates' label='Period' rules={[{ required: true, message: 'Period is required' }]}>
-            <DatePicker.RangePicker format={DISPLAY_DATE_FORMAT} />
-          </Form.Item>
         </Space>
+        <ShiftPeriodFields form={form} cutoffs={options?.cutoffs} />
         <Form.Item name='reason' label='Reason'>
           <Input.TextArea rows={2} maxLength={2000} placeholder='e.g. Inventory week' />
         </Form.Item>
