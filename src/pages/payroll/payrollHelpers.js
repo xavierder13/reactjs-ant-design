@@ -23,6 +23,45 @@ export const cutoffLabel = (c) => (c
 
 export const cutoffOptions = (cutoffs = []) => cutoffs.map((c) => ({ value: c.id, label: cutoffLabel(c) }));
 
+// Working days a year (daily-rate factor) → when to use it.
+export const FACTOR_HINTS = {
+  261: '5-day work week (Sat & Sun off)',
+  313: '6-day work week (Sunday off)',
+  314.6: 'DOLE default',
+  315: '26.25 days a month (old payroll)',
+  365: 'paid every day of the year',
+};
+
+// The Payroll Settings an assignment can override (Payroll Settings →
+// Assigned Settings; the payslip's summary.settings_from uses the same keys).
+export const ASSIGNED_SETTING_FIELDS = [
+  { key: 'daily_rate_factor', label: 'Working days a year' },
+  { key: 'hours_per_day', label: 'Hours per day' },
+  { key: 'night_diff_enabled', label: 'Night differential' },
+  { key: 'sss_deduction', label: 'SSS' },
+  { key: 'philhealth_deduction', label: 'PhilHealth' },
+  { key: 'pagibig_deduction', label: 'Pag-IBIG' },
+  { key: 'tax_deduction', label: 'Withholding Tax' },
+];
+
+// Who assigned settings apply to, most specific first.
+export const ASSIGN_SCOPES = [
+  { value: 'employee', label: 'Employee' },
+  { value: 'position', label: 'Position' },
+  { value: 'branch', label: 'Branch' },
+  { value: 'company', label: 'Company' },
+];
+export const assignScopeLabel = (scope) => ASSIGN_SCOPES.find((s) => s.value === scope)?.label || scope || '';
+
+// An assigned setting's value for display ('315 days', '9 h', '1st cut-off').
+export const settingValueText = (key, value) => {
+  if (value === null || value === undefined) return null;
+  if (key === 'daily_rate_factor') return `${Number(value)} days`;
+  if (key === 'hours_per_day') return `${Number(value)} h`;
+  if (key === 'night_diff_enabled') return value ? 'On' : 'Off';
+  return value;
+};
+
 export const employeeName = (r) => `${r.last_name}, ${r.first_name}${r.middle_name ? ` ${r.middle_name}` : ''}`;
 
 export const MODE_COLORS = { Computed: 'default', Fixed: 'blue', Exempt: 'orange' };

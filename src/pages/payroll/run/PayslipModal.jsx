@@ -6,7 +6,7 @@ import handleApiError from '../../../utils/handleApiError';
 import printDocument from '../../../utils/printDocument';
 import { payslipHtml } from '../reports/printTemplates';
 import { formatDate } from '../../../utils/formatDate';
-import { cutoffLabel, peso } from '../payrollHelpers';
+import { cutoffLabel, peso, ASSIGNED_SETTING_FIELDS } from '../payrollHelpers';
 import { rateLabel } from '../../compensation/compensationHelpers';
 import DtrDaysTable from './DtrDaysTable';
 import { RUN_STATUS_COLORS, minutesText, daysText } from './runHelpers';
@@ -146,6 +146,19 @@ const PayslipModal = ({ target, onClose, loadPayslip = payrollRunApi.payslip, se
               style={{ marginBottom: 12 }}
               title='Check before approving'
               description={<ul style={{ margin: 0, paddingInlineStart: 18 }}>{p.warnings.map((w) => <li key={w}>{w}</li>)}</ul>}
+            />
+          )}
+          {!selfService && s?.settings_from && (
+            <Alert
+              type='info'
+              showIcon
+              style={{ marginBottom: 12 }}
+              title='Assigned settings used (Payroll Settings → Assigned Settings)'
+              description={(
+                <ul style={{ margin: 0, paddingInlineStart: 18 }}>
+                  {ASSIGNED_SETTING_FIELDS.filter((f) => s.settings_from[f.key]).map((f) => <li key={f.key}>{`${f.label}: ${s.settings_from[f.key]}`}</li>)}
+                </ul>
+              )}
             />
           )}
           <Row gutter={16}>

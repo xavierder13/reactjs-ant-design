@@ -8,17 +8,11 @@ import useAuth from '../../../hooks/useAuth';
 import payrollSettingApi from '../../../services/payroll/payrollSettingApi';
 import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../../utils/formatDate';
-import { applyFormErrors } from '../payrollHelpers';
+import { applyFormErrors, FACTOR_HINTS } from '../payrollHelpers';
 import CompanyAccountFormModal from './CompanyAccountFormModal';
+import SettingAssignmentsTab from './SettingAssignmentsTab';
 import { DAY_TYPE_COLORS } from '../../overtime/overtimeHelpers';
 
-const FACTOR_HINTS = {
-  261: '5-day work week (Sat & Sun off)',
-  313: '6-day work week (Sunday off)',
-  314.6: 'DOLE default',
-  315: '26.25 days a month (old payroll)',
-  365: 'paid every day of the year',
-};
 const AGENCIES = [
   { key: 'sss_deduction', label: 'SSS' },
   { key: 'philhealth_deduction', label: 'PhilHealth' },
@@ -216,6 +210,16 @@ const PayrollSettingsPage = () => {
                     <Col xs={12} md={6}>
                       <Form.Item name='night_diff_to' label='to' rules={[{ required: true, message: 'Required' }]}>
                         <TimePicker format='HH:mm' style={{ width: '100%' }} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        name='night_diff_enabled'
+                        label='Pay night differential'
+                        valuePropName='checked'
+                        extra='Off = no night differential for anyone (regular or overtime hours). Turn it off for exempt employees only, through Assigned Settings.'
+                      >
+                        <Switch checkedChildren='On' unCheckedChildren='Off' />
                       </Form.Item>
                     </Col>
                   </Row>
@@ -451,6 +455,11 @@ const PayrollSettingsPage = () => {
                 )}
               </>
             ),
+          },
+          {
+            key: 'assignments',
+            label: 'Assigned Settings',
+            children: <SettingAssignmentsTab canEdit={canEdit} />,
           },
         ]}
       />
