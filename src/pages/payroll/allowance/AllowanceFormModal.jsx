@@ -6,6 +6,7 @@ import EmployeeSelect from '../../manpower_request/request/EmployeeSelect';
 import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { applyFormErrors, peso, pesoInputProps, toNumber } from '../payrollHelpers';
+import { EMPLOYEE_FORM_MODAL_WIDTH } from '../../../utils/modalWidths';
 
 const BASIS_HINTS = {
   'Per cut-off': 'Paid in full every cut-off.',
@@ -85,7 +86,7 @@ const AllowanceFormModal = ({ open, allowance, options, onClose, onSaved }) => {
       onCancel={onClose}
       confirmLoading={saving}
       afterOpenChange={handleAfterOpenChange}
-      width={{ xs: '100%', sm: '95%', md: 640 }}
+      width={EMPLOYEE_FORM_MODAL_WIDTH}
       destroyOnHidden
     >
       <Form form={form} layout='vertical'>

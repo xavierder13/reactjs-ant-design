@@ -6,6 +6,7 @@ import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
 import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../utils/formatDate';
 import { applyCompensationErrors, rateLabel } from './compensationHelpers';
+import { EMPLOYEE_FORM_MODAL_WIDTH } from '../../utils/modalWidths';
 
 // Add or edit one salary version. `employee` ({ id, label }) fixes the
 // employee (opened from their history); without it, pick one. `version`
@@ -91,6 +92,7 @@ const CompensationFormModal = ({ open, employee, version, options, onClose, onSa
       onCancel={onClose}
       confirmLoading={saving}
       afterOpenChange={handleAfterOpenChange}
+      width={EMPLOYEE_FORM_MODAL_WIDTH}
       destroyOnHidden
     >
       <Form form={form} layout='vertical'>
@@ -121,7 +123,7 @@ const CompensationFormModal = ({ open, employee, version, options, onClose, onSa
         </Form.Item>
         <Form.Item name='pay_basis' label='Pay Basis' rules={[{ required: true, message: 'Pay basis is required' }]}>
           <Radio.Group
-            optionType='button'
+            optionType='button' buttonStyle='solid'
             options={(options?.pay_bases || ['Monthly', 'Daily']).map((b) => ({ value: b, label: b === 'Daily' ? 'Daily rate' : 'Monthly rate' }))}
           />
         </Form.Item>

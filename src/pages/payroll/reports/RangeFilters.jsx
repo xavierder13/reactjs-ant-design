@@ -24,7 +24,7 @@ const RangeFilters = ({ value, onChange, cutoffs, employees = true }) => {
   return (
     <Space wrap>
       <Radio.Group
-        optionType='button'
+        optionType='button' buttonStyle='solid'
         value={value.mode}
         onChange={(e) => set({ mode: e.target.value })}
         options={[{ value: 'dates', label: 'Dates' }, { value: 'cutoffs', label: 'Cut-offs' }]}

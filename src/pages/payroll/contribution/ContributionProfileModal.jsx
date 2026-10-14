@@ -99,7 +99,7 @@ const ContributionProfileModal = ({ employeeId, canEdit, onClose, onSaved }) => 
               <Row gutter={12} align='bottom'>
                 <Col xs={24} md={10}>
                   <Form.Item name={`${a.key}_mode`} label='Mode' rules={[{ required: true }]}>
-                    <Radio.Group optionType='button' options={MODE_OPTIONS} />
+                    <Radio.Group optionType='button' buttonStyle='solid' options={MODE_OPTIONS} />
                   </Form.Item>
                 </Col>
                 <Form.Item noStyle shouldUpdate={(p, c) => p[`${a.key}_mode`] !== c[`${a.key}_mode`]}>
@@ -139,7 +139,7 @@ const ContributionProfileModal = ({ employeeId, canEdit, onClose, onSaved }) => 
           <Row gutter={12} align='bottom'>
             <Col xs={24} md={10}>
               <Form.Item name='tax_mode' label='Mode' rules={[{ required: true }]}>
-                <Radio.Group optionType='button' options={MODE_OPTIONS} />
+                <Radio.Group optionType='button' buttonStyle='solid' options={MODE_OPTIONS} />
               </Form.Item>
             </Col>
             <Form.Item noStyle shouldUpdate={(p, c) => p.tax_mode !== c.tax_mode}>

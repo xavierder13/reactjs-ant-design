@@ -92,3 +92,49 @@ body {
   border-color: #389e0d;
   color: #fff !important;
 }
+
+/* Button-style choices (Radio.Group buttonStyle='solid'): a group locked by
+   another field (disabled) keeps its picked option filled, faded, instead of
+   AntD's grey — so it still reads as the selection. */
+.ant-radio-button-wrapper.ant-radio-button-wrapper-disabled.ant-radio-button-wrapper-checked {
+  background: #389e0d;
+  border-color: #389e0d;
+  color: #fff;
+  opacity: 0.7;
+}
+
+/* Earning / Deduction (Payroll Adjustment): earning fills green, deduction
+   red; the unpicked side stays outlined. */
+.sign-toggle .ant-radio-button-wrapper {
+  min-width: 132px;
+  text-align: center;
+}
+.sign-toggle .ant-radio-button-wrapper.sign-deduction.ant-radio-button-wrapper-checked {
+  background: #cf1322;
+  border-color: #cf1322;
+  color: #fff;
+}
+.sign-toggle .ant-radio-button-wrapper.sign-deduction.ant-radio-button-wrapper-checked::before {
+  background-color: #cf1322;
+}
+.sign-toggle .ant-radio-button-wrapper.sign-deduction.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled):hover {
+  background: #ff4d4f;
+  border-color: #ff4d4f;
+}
+.sign-toggle .ant-radio-button-wrapper.sign-deduction:not(.ant-radio-button-wrapper-checked):not(.ant-radio-button-wrapper-disabled):hover {
+  color: #cf1322;
+}
+
+/* Bulk employee pickers (Transfer with class employee-transfer): items wrap
+   onto two lines instead of being cut off with an ellipsis. */
+.employee-transfer .ant-transfer-list-content-item {
+  align-items: flex-start;
+}
+.employee-transfer .ant-transfer-list-content-item-text {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.employee-transfer .ant-transfer-list-content-item .ant-checkbox-wrapper {
+  margin-top: 3px;
+}

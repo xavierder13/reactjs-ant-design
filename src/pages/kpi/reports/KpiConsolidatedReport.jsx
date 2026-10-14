@@ -254,7 +254,7 @@ const KpiConsolidatedReport = () => {
                   <Typography.Text type='secondary'>{s.label}</Typography.Text>
                   <div>
                     <Radio.Group
-                      size='small' optionType='button' value={sections[s.key]}
+                      size='small' optionType='button' buttonStyle='solid' value={sections[s.key]}
                       onChange={(e) => setSection(s.key, e.target.value)} options={SECTION_CHOICES}
                     />
                   </div>

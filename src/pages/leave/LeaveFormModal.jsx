@@ -8,6 +8,7 @@ import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
 import useAuth from '../../hooks/useAuth';
 import filingAccess from '../../utils/filingAccess';
 import { applyLeaveErrors } from './leaveHelpers';
+import { EMPLOYEE_FORM_MODAL_WIDTH } from '../../utils/modalWidths';
 
 // File (leave = null) or edit a pending leave. While the employee, type,
 // dates and half day are filled in, the backend previews the counted days
@@ -143,7 +144,7 @@ const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
       onCancel={onClose}
       afterOpenChange={handleAfterOpenChange}
       destroyOnHidden
-      width={720}
+      width={EMPLOYEE_FORM_MODAL_WIDTH}
     >
       <Form form={form} layout='vertical'>
         {/* the employee of a filed leave can't change */}

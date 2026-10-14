@@ -158,7 +158,7 @@ export default function BranchManpowerReport() {
             </Col>
             <Col xs={24} md={18}>
               <Form.Item name='group_by' label='Generate by'>
-                <Radio.Group optionType='button' options={GROUP_BY_OPTIONS} />
+                <Radio.Group optionType='button' buttonStyle='solid' options={GROUP_BY_OPTIONS} />
               </Form.Item>
             </Col>
             <Col xs={24}>

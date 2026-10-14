@@ -6,6 +6,7 @@ import EmployeeSelect from '../../manpower_request/request/EmployeeSelect';
 import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { applyFormErrors, cutoffOptions, pesoInputProps, toNumber } from '../payrollHelpers';
+import { EMPLOYEE_FORM_MODAL_WIDTH } from '../../../utils/modalWidths';
 
 // Add or edit a scheduled deduction: total amount, amount per cut-off, the
 // first cut-off and which cut-offs of the month — or One-time (the whole
@@ -90,7 +91,7 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
       onCancel={onClose}
       confirmLoading={saving}
       afterOpenChange={handleAfterOpenChange}
-      width={{ xs: '100%', sm: '95%', md: 680 }}
+      width={EMPLOYEE_FORM_MODAL_WIDTH}
       destroyOnHidden
     >
       <Form form={form} layout='vertical'>

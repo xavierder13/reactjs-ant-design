@@ -8,6 +8,8 @@ import dayjs from 'dayjs';
 import EmployeeSelect from '../../manpower_request/request/EmployeeSelect';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { applyFormErrors, cutoffOptions, toNumber, FACTOR_HINTS, ASSIGN_SCOPES, assignScopeLabel } from '../payrollHelpers';
+import { EMPLOYEE_BULK_MODAL_WIDTH, EMPLOYEE_FORM_MODAL_WIDTH } from '../../../utils/modalWidths';
+import EmployeeTransferItem from '../../../components/EmployeeTransferItem';
 
 const AGENCIES = [
   { key: 'sss_deduction', label: 'SSS' },
@@ -212,7 +214,7 @@ const SettingAssignmentFormModal = ({ open, record, options, onClose, onSaved })
       onCancel={onClose}
       afterOpenChange={handleAfterOpenChange}
       destroyOnHidden
-      width={bulk ? 860 : 680}
+      width={bulk ? EMPLOYEE_BULK_MODAL_WIDTH : EMPLOYEE_FORM_MODAL_WIDTH}
     >
       <Form form={form} layout='vertical' initialValues={{ scope: 'branch', mode: 'one', coverage: 'cutoffs' }}>
         <Space wrap align='start'>
@@ -222,7 +224,7 @@ const SettingAssignmentFormModal = ({ open, record, options, onClose, onSaved })
           {!record && scope === 'employee' && (
             <Form.Item name='mode' label='Employees'>
               <Radio.Group
-                optionType='button'
+                optionType='button' buttonStyle='solid'
                 options={[{ value: 'one', label: 'One' }, { value: 'bulk', label: 'Bulk' }]}
                 onChange={() => form.setFieldsValue({ scope_id: undefined, employee_ids: [] })}
               />
@@ -243,19 +245,22 @@ const SettingAssignmentFormModal = ({ open, record, options, onClose, onSaved })
         )}
         {bulk && (
           <>
-            <Space wrap style={{ marginBottom: 8 }}>
-              <Select
-                allowClear
-                placeholder='Branch'
-                value={branchId}
-                onChange={(v) => setBranchId(v ?? null)}
-                options={(options?.branches || []).map((b) => ({ value: b.id, label: b.name }))}
-                showSearch={{ optionFilterProp: 'label' }}
-                style={{ width: 220 }}
-              />
-              <Input.Search placeholder='Code or name' allowClear onSearch={(v) => setSearch(v.trim())} style={{ width: 220 }} />
-              {needsFilter && <Typography.Text type='secondary'>Pick a branch or search to list employees.</Typography.Text>}
-            </Space>
+            {/* its own row above the lists (a block, so it never sits beside
+                the fields above it) */}
+            <Form.Item label='Find employees' style={{ marginBottom: 8 }}>
+              <Space wrap>
+                <Select
+                  allowClear
+                  placeholder='Branch'
+                  value={branchId}
+                  onChange={(v) => setBranchId(v ?? null)}
+                  options={(options?.branches || []).map((b) => ({ value: b.id, label: b.name }))}
+                  showSearch={{ optionFilterProp: 'label' }}
+                  style={{ width: 220 }}
+                />
+                <Input.Search placeholder='Code or name' allowClear onSearch={(v) => setSearch(v.trim())} style={{ width: 220 }} />
+              </Space>
+            </Form.Item>
             <Form.Item
               name='employee_ids'
               valuePropName='targetKeys'
@@ -270,21 +275,17 @@ const SettingAssignmentFormModal = ({ open, record, options, onClose, onSaved })
                 titles={['Employees', 'Assign to']}
                 showSearch
                 filterOption={(input, item) => `${item.title} ${item.description}`.toLowerCase().includes(input.toLowerCase())}
-                render={(item) => (
-                  <span style={errors[item.key] ? { color: '#cf1322' } : undefined}>
-                    {item.title}
-                    <Typography.Text type='secondary' style={{ fontSize: 12 }}>{` — ${item.description}`}</Typography.Text>
-                  </span>
-                )}
-                styles={{ section: { width: 'calc(50% - 20px)', height: 280 } }}
-                locale={{ notFoundContent: loadingCandidates ? 'Loading…' : 'No employees' }}
+                className='employee-transfer'
+                render={(item) => <EmployeeTransferItem item={item} error={!!errors[item.key]} />}
+                styles={{ section: { width: 'calc(50% - 20px)', height: 340 } }}
+                locale={{ notFoundContent: [needsFilter ? 'Pick a branch or search to list employees.' : (loadingCandidates ? 'Loading…' : 'No employees'), 'None selected yet'] }}
               />
             </Form.Item>
           </>
         )}
         <Form.Item name='coverage' label='Coverage'>
           <Radio.Group
-            optionType='button'
+            optionType='button' buttonStyle='solid'
             options={[{ value: 'cutoffs', label: 'Cut-offs' }, { value: 'dates', label: 'Dates' }]}
           />
         </Form.Item>

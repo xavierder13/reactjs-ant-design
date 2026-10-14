@@ -31,7 +31,7 @@ const ShiftPeriodFields = ({ form, cutoffs = [], label = 'Period' }) => {
     <>
       <Form.Item name='coverage' label='Coverage' initialValue='dates'>
         <Radio.Group
-          optionType='button'
+          optionType='button' buttonStyle='solid'
           options={[{ value: 'dates', label: 'Dates' }, { value: 'cutoffs', label: 'Cut-offs' }]}
           onChange={() => form.setFieldsValue({ cutoff_from: undefined, cutoff_to: undefined })}
         />

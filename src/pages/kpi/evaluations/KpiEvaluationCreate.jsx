@@ -231,7 +231,7 @@ const KpiEvaluationCreate = () => {
       >
         {/* Creation Mode */}
         <Form.Item label='Creation Mode' style={{ marginBottom: 16 }}>
-          <Radio.Group value={mode} onChange={handleModeChange}>
+          <Radio.Group value={mode} onChange={handleModeChange} buttonStyle='solid'>
             <Radio.Button value='individual'>Individual</Radio.Button>
             <Radio.Button value='bulk'>Bulk</Radio.Button>
           </Radio.Group>

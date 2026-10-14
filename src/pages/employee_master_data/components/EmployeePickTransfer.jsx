@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Transfer, Input, Space, Typography } from 'antd';
+import { Transfer, Input, Space } from 'antd';
 import employeeOptionApi from '../../../services/employee/employeeOptionApi';
+import EmployeeTransferItem from '../../../components/EmployeeTransferItem';
 
 const MAX_PAGES = 50; // option_list pages loaded for one branch / position / search
 
@@ -39,7 +40,7 @@ export default function EmployeePickTransfer({ value = [], onChange, branchId, p
           .map((e) => ({
             key: e.id,
             title: `${e.employee_code} - ${e.full_name}`,
-            description: `${e.position_name || 'No position'}${e.active ? '' : ' · Inactive'}`,
+            description: `${e.position_name || 'No position'}${e.branch_name ? ` · ${e.branch_name}` : ''}${e.active ? '' : ' · Inactive'}`,
           }));
         setList(rows);
         setKnown((k) => ({ ...k, ...Object.fromEntries(rows.map((r) => [r.key, r])) }));
@@ -61,7 +62,6 @@ export default function EmployeePickTransfer({ value = [], onChange, branchId, p
     <div>
       <Space wrap style={{ marginBottom: 8 }}>
         <Input.Search placeholder='Search code or name' allowClear onSearch={(v) => setSearch(v.trim())} style={{ width: 240 }} />
-        {needsFilter && <Typography.Text type='secondary'>Pick a branch or position above, or search, to list employees.</Typography.Text>}
       </Space>
       <Transfer
         dataSource={dataSource}
@@ -70,14 +70,10 @@ export default function EmployeePickTransfer({ value = [], onChange, branchId, p
         titles={['Employees', 'Selected']}
         showSearch
         filterOption={(input, item) => `${item.title} ${item.description}`.toLowerCase().includes(input.toLowerCase())}
-        render={(item) => (
-          <span>
-            {item.title}
-            {item.description && <Typography.Text type='secondary' style={{ fontSize: 12 }}>{` — ${item.description}`}</Typography.Text>}
-          </span>
-        )}
-        styles={{ section: { width: 'calc(50% - 20px)', height: 300 } }}
-        locale={{ notFoundContent: loading ? 'Loading…' : 'No employees' }}
+        className='employee-transfer'
+        render={(item) => <EmployeeTransferItem item={item} />}
+        styles={{ section: { width: 'calc(50% - 20px)', height: 340 } }}
+        locale={{ notFoundContent: [needsFilter ? 'Pick a branch or position above, or search, to list employees.' : (loading ? 'Loading…' : 'No employees'), 'None selected yet'] }}
       />
     </div>
   );

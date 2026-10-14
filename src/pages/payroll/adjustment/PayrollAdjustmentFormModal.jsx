@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import dayjs from 'dayjs';
 import { Modal, Form, Input, InputNumber, DatePicker, Select, Radio, Row, Col, Alert, Switch, Typography, App } from 'antd';
+import { MinusCircleOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import payrollAdjustmentApi from '../../../services/payroll/payrollAdjustmentApi';
 import EmployeeSelect from '../../manpower_request/request/EmployeeSelect';
 import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { applyFormErrors, cutoffOptions, pesoInputProps, toNumber } from '../payrollHelpers';
 import { rateLabel } from '../../compensation/compensationHelpers';
+import { EMPLOYEE_FORM_MODAL_WIDTH } from '../../../utils/modalWidths';
 
 // Add or edit a payroll adjustment: type, earning / deduction, the period it
 // covers, the amount and the cut-off that pays / recovers it. An Other
@@ -117,7 +119,7 @@ const PayrollAdjustmentFormModal = ({ open, adjustment, suggestion, options, onC
       onCancel={onClose}
       confirmLoading={saving}
       afterOpenChange={handleAfterOpenChange}
-      width={{ xs: '100%', sm: '95%', md: 720 }}
+      width={EMPLOYEE_FORM_MODAL_WIDTH}
       destroyOnHidden
     >
       <Form form={form} layout='vertical'>
@@ -145,12 +147,18 @@ const PayrollAdjustmentFormModal = ({ open, adjustment, suggestion, options, onC
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
-            <Form.Item name='adjustment' label='Adjustment' rules={[{ required: true, message: 'Select earning or deduction' }]}>
-              <Radio.Group
-                optionType='button'
-                disabled={!!fixedAdjustment}
-                options={[{ value: 'Earning', label: 'Earning (+)' }, { value: 'Deduction', label: 'Deduction (−)' }]}
-              />
+            {/* the picked side is filled green (earning) or red (deduction);
+                a type that fixes it keeps the pick filled, locked */}
+            <Form.Item
+              name='adjustment'
+              label='Adjustment'
+              rules={[{ required: true, message: 'Select earning or deduction' }]}
+              extra={fixedAdjustment ? `Always ${fixedAdjustment === 'Earning' ? 'an earning' : 'a deduction'} for this type` : null}
+            >
+              <Radio.Group buttonStyle='solid' disabled={!!fixedAdjustment} className='sign-toggle'>
+                <Radio.Button value='Earning' className='sign-earning'><PlusCircleOutlined /> Earning (+)</Radio.Button>
+                <Radio.Button value='Deduction' className='sign-deduction'><MinusCircleOutlined /> Deduction (−)</Radio.Button>
+              </Radio.Group>
             </Form.Item>
           </Col>
         </Row>

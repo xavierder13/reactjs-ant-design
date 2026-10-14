@@ -138,7 +138,7 @@ export default function AttendanceTab({ initialData }) {
   return (
     <div>
       <Space style={{ marginBottom: 12, flexWrap: "wrap" }}>
-        <Radio.Group value={rangeType} onChange={(e) => handleRangeTypeChange(e.target.value)} optionType="button">
+        <Radio.Group value={rangeType} onChange={(e) => handleRangeTypeChange(e.target.value)} optionType="button" buttonStyle="solid">
           <Radio.Button value="last_7_days">Last 7 Days</Radio.Button>
           <Radio.Button value="last_30_days">Last 30 Days</Radio.Button>
           <Radio.Button value="by_period">By Period</Radio.Button>

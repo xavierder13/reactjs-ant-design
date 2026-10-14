@@ -10,6 +10,7 @@ import filingAccess from '../../utils/filingAccess';
 import { applyLeaveErrors } from '../leave/leaveHelpers';
 import { scheduleText, hhmm } from '../time_entry/timeEntryHelpers';
 import { DAY_TYPE_COLORS, hoursText, punchesText } from './overtimeHelpers';
+import { EMPLOYEE_FORM_MODAL_WIDTH } from '../../utils/modalWidths';
 
 const toTime = (t) => (t ? dayjs(`2000-01-01 ${hhmm(t)}`) : null);
 
@@ -121,7 +122,7 @@ const OvertimeFormModal = ({ open, overtime, onClose, onSaved }) => {
       onCancel={onClose}
       afterOpenChange={handleAfterOpenChange}
       destroyOnHidden
-      width={{ xs: '100%', sm: '95%', md: 720 }}
+      width={EMPLOYEE_FORM_MODAL_WIDTH}
     >
       <Form form={form} layout='vertical'>
         {overtime ? (

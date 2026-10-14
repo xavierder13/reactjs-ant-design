@@ -150,7 +150,7 @@ const GroupScheduleFormModal = ({ open, record, options, onClose, onSaved }) => 
             ? 'Temporary: for the period it replaces everyone\'s Work Schedule — only an employee\'s own shifting comes first.'
             : 'Permanent from the date: used by employees who have no Work Schedule of their own.'}
         >
-          <Radio.Group options={GROUP_KINDS} optionType='button' disabled={!!record} />
+          <Radio.Group options={GROUP_KINDS} optionType='button' buttonStyle='solid' disabled={!!record} />
         </Form.Item>
         <Form.Item name='scope' label='Applies to'>
           <Segmented options={GROUP_SCOPES} disabled={!!record} onChange={() => form.setFieldValue('scope_id', undefined)} />

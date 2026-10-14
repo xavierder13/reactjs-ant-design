@@ -9,6 +9,7 @@ import handleApiError from "../../../utils/handleApiError";
 import downloadBlobResponse from "../../../utils/downloadBlobResponse";
 import { DISPLAY_DATE_FORMAT } from "../../../utils/formatDate";
 import { DOCUMENT_TYPES, BRANCH_POSITION_ROLES, MONTHS } from "./importDocumentTypes";
+import { EMPLOYEE_BULK_MODAL_WIDTH } from '../../../utils/modalWidths';
 
 // Matches vueportal's TemplateDownloadDialog.vue: a Document Type dropdown
 // (shared list in importDocumentTypes.js) plus the options the chosen
@@ -89,7 +90,7 @@ export default function GenerateTemplateModal({ open, onClose, types }) {
       okText="Generate"
       confirmLoading={downloading}
       destroyOnHidden
-      width={showEmployees ? 820 : 560}
+      width={showEmployees ? EMPLOYEE_BULK_MODAL_WIDTH : 560}
     >
       <Form form={form} layout="vertical" initialValues={{ document_type: types?.length === 1 ? types[0] : undefined, document_status: "All", month: "All", branch_id: 0, position_id: 0 }}>
         <Row gutter={16}>

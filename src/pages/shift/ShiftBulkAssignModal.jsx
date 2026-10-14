@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Modal, Form, Input, Select, Transfer, Alert, Space, Typography, App,
+  Modal, Form, Input, Select, Transfer, Alert, Space, App,
 } from 'antd';
 import shiftAssignmentApi from '../../services/shift/shiftAssignmentApi';
 import handleApiError from '../../utils/handleApiError';
 import { patternSummary, applyErrors } from './shiftHelpers';
 import ShiftPeriodFields from './ShiftPeriodFields';
+import EmployeeTransferItem from '../../components/EmployeeTransferItem';
+import { EMPLOYEE_BULK_MODAL_WIDTH } from '../../utils/modalWidths';
 
 // Group Shift Allocation: one shift and period for many employees at once (e.g. a branch's
 // inventory week). Employees come from the ones the user manages, filtered
@@ -142,22 +144,25 @@ const ShiftBulkAssignModal = ({ open, options, onClose, onSaved }) => {
       onCancel={onClose}
       afterOpenChange={handleAfterOpenChange}
       destroyOnHidden
-      width={860}
+      width={EMPLOYEE_BULK_MODAL_WIDTH}
     >
       <Form form={form} layout='vertical'>
-        <Space wrap style={{ marginBottom: 8 }}>
-          <Select
-            allowClear
-            placeholder='Branch'
-            value={branchId}
-            onChange={(v) => setBranchId(v ?? null)}
-            options={(options?.branches || []).map((b) => ({ value: b.id, label: b.name }))}
-            showSearch={{ optionFilterProp: 'label' }}
-            style={{ width: 220 }}
-          />
-          <Input.Search placeholder='Code or name' allowClear onSearch={(v) => setSearch(v.trim())} style={{ width: 220 }} />
-          {needsFilter && <Typography.Text type='secondary'>Pick a branch or search to list employees.</Typography.Text>}
-        </Space>
+        {/* its own row above the lists (a block, so it never sits beside
+            the fields above it) */}
+        <Form.Item label='Find employees' style={{ marginBottom: 8 }}>
+          <Space wrap>
+            <Select
+              allowClear
+              placeholder='Branch'
+              value={branchId}
+              onChange={(v) => setBranchId(v ?? null)}
+              options={(options?.branches || []).map((b) => ({ value: b.id, label: b.name }))}
+              showSearch={{ optionFilterProp: 'label' }}
+              style={{ width: 220 }}
+            />
+            <Input.Search placeholder='Code or name' allowClear onSearch={(v) => setSearch(v.trim())} style={{ width: 220 }} />
+          </Space>
+        </Form.Item>
         <Form.Item
           name='employee_ids'
           valuePropName='targetKeys'
@@ -172,14 +177,10 @@ const ShiftBulkAssignModal = ({ open, options, onClose, onSaved }) => {
             titles={['Employees', 'Assign to']}
             showSearch
             filterOption={(input, item) => `${item.title} ${item.description}`.toLowerCase().includes(input.toLowerCase())}
-            render={(item) => (
-              <span style={errors[item.key] ? { color: '#cf1322' } : undefined}>
-                {item.title}
-                <Typography.Text type='secondary' style={{ fontSize: 12 }}>{` — ${item.description}`}</Typography.Text>
-              </span>
-            )}
-            styles={{ section: { width: 'calc(50% - 20px)', height: 300 } }}
-            locale={{ notFoundContent: loadingCandidates ? 'Loading…' : 'No employees' }}
+            className='employee-transfer'
+            render={(item) => <EmployeeTransferItem item={item} error={!!errors[item.key]} />}
+            styles={{ section: { width: 'calc(50% - 20px)', height: 340 } }}
+            locale={{ notFoundContent: [needsFilter ? 'Pick a branch or search to list employees.' : (loadingCandidates ? 'Loading…' : 'No employees'), 'None selected yet'] }}
           />
         </Form.Item>
         <Space wrap align='start' style={{ width: '100%' }}>

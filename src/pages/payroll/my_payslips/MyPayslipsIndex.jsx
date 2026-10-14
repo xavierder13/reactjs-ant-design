@@ -163,7 +163,7 @@ const MyPayslipsIndex = () => {
       <Space wrap style={{ marginBottom: 12, width: '100%', justifyContent: 'space-between' }}>
         <Space wrap>
           <Radio.Group
-            optionType='button'
+            optionType='button' buttonStyle='solid'
             value={range.mode}
             onChange={(e) => setRange((r) => ({ ...r, mode: e.target.value }))}
             options={[{ value: 'dates', label: 'Dates' }, { value: 'cutoffs', label: 'Cut-offs' }]}

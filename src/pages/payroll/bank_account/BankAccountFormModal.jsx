@@ -6,6 +6,7 @@ import EmployeeSelect from '../../manpower_request/request/EmployeeSelect';
 import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { applyFormErrors } from '../payrollHelpers';
+import { EMPLOYEE_FORM_MODAL_WIDTH } from '../../../utils/modalWidths';
 
 // Add or edit an employee's payroll bank account. A new account (the
 // employee changed banks) = add one from its effective date — the earlier
@@ -75,7 +76,7 @@ const BankAccountFormModal = ({ open, account, forEmployee, options, onClose, on
       onCancel={onClose}
       confirmLoading={saving}
       afterOpenChange={handleAfterOpenChange}
-      width={{ xs: '100%', sm: '95%', md: 600 }}
+      width={EMPLOYEE_FORM_MODAL_WIDTH}
       destroyOnHidden
     >
       <Form form={form} layout='vertical'>

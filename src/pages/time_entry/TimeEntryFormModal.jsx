@@ -12,6 +12,7 @@ import filingAccess from '../../utils/filingAccess';
 import { applyLeaveErrors } from '../leave/leaveHelpers';
 import { scheduleText, hhmm } from './timeEntryHelpers';
 import TimeComparison from './TimeComparison';
+import { EMPLOYEE_FORM_MODAL_WIDTH } from '../../utils/modalWidths';
 
 const toTime = (t) => (t ? dayjs(`2000-01-01 ${hhmm(t)}`) : null);
 
@@ -141,7 +142,7 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
       onCancel={onClose}
       afterOpenChange={handleAfterOpenChange}
       destroyOnHidden
-      width={720}
+      width={EMPLOYEE_FORM_MODAL_WIDTH}
     >
       <Form form={form} layout='vertical'>
         {entry ? (

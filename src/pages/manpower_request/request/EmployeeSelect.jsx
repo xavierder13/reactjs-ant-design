@@ -60,7 +60,7 @@ const EmployeeSelect = ({
       });
       const options = data.employees.map((emp) => ({
         value: emp.id,
-        label: `${emp.employee_code} - ${emp.full_name} (${emp.position_name || 'No position'})${emp.active ? '' : ' — Inactive'}`,
+        label: `${emp.employee_code} - ${emp.full_name} (${emp.position_name || 'No position'}${emp.branch_name ? ` · ${emp.branch_name}` : ''})${emp.active ? '' : ' — Inactive'}`,
         // Carried through so a consumer's onChange(value, option) can read
         // it immediately on selection. date_employed is the employee's raw
         // hire date — kept for back-compat, but NOT what Record Hires

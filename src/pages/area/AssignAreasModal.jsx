@@ -3,6 +3,7 @@ import { Modal, Form, Select, Typography, App } from 'antd';
 import areaApi from '../../services/area/areaApi';
 import handleApiError from '../../utils/handleApiError';
 import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
+import { EMPLOYEE_FORM_MODAL_WIDTH } from '../../utils/modalWidths';
 
 // Assign an HR head to one or more areas (replace-all for that employee).
 // `hrHead` = null to pick a new employee, else an HR Heads tab row
@@ -64,7 +65,7 @@ const AssignAreasModal = ({ open, hrHead, areas, areaAssignments, onClose, onSav
       onCancel={onClose}
       afterOpenChange={handleAfterOpenChange}
       destroyOnHidden
-      width={560}
+      width={EMPLOYEE_FORM_MODAL_WIDTH}
     >
       <Form form={form} layout='vertical'>
         {hrHead ? (
