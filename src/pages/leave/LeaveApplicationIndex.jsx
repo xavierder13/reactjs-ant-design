@@ -20,12 +20,10 @@ import LeaveDetailsModal from './LeaveDetailsModal';
 const LeaveApplicationIndex = () => {
   const { message } = App.useApp();
   const auth = useAuth();
-  const { hasRole } = auth;
   const access = filingAccess(auth, 'leave');
   const { items: leaveTypes } = useLeaveTypes();
   const [branches, setBranches] = useState([]);
 
-  const isAdmin    = hasRole('Administrator');
   const canCreate  = access.canCreate;
 
   // an employee who only files for themself starts on All (their own
@@ -146,7 +144,7 @@ const LeaveApplicationIndex = () => {
               <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
             </Tooltip>
           )}
-          {access.canCancel(record) && ['Pending', 'Approved'].includes(record.status) && (isAdmin || (!record.paid_in && !record.pending_in)) && (
+          {access.canCancel(record) && ['Pending', 'Approved'].includes(record.status) && !record.paid_in && !record.pending_in && (
             <Popconfirm title='Cancel this leave?' description='The days go back to the balance.' onConfirm={() => cancelLeave(record)}>
               <Tooltip title='Cancel'>
                 <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} size='small' />

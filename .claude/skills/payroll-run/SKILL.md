@@ -209,7 +209,9 @@ Disapprove (remarks required) → back to Draft with "Returned by …", filing O
 again when the submit had turned it off (not when Payroll had). An approved
 leave / time entry / overtime inside a Pending or approved payslip can't be
 cancelled (`PayrollRunService::assertNotLocked`; rows carry `pending_in` /
-`paid_in`, `PaidTag`) — except by an Administrator. A scheduled deduction
+`paid_in`, `PaidTag`) — by anyone, Administrator included. Before that,
+who cancels is `FilingAccess`: `*-cancel` (HR) any filing; `*-cancel-own`
+their own or one they filed (`filed_by`), Pending or Approved. A scheduled deduction
 changed after generating (cancelled, paid manually) makes the approval fail
 naming the employee: return it, generate that employee again. A month's
 payrolls are approved in order (the later cut-off's tax true-up and

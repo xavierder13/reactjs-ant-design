@@ -19,7 +19,6 @@ import { LEAVE_STATUS_COLORS, leaveDates, num } from './leaveHelpers';
 // leave-cancel. Remarks are optional except for Disapprove.
 const LeaveDetailsModal = ({ leaveId, onClose, onActed }) => {
   const access = filingAccess(useAuth(), 'leave');
-  const { isAdmin } = access;
   const { message } = App.useApp();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -68,8 +67,8 @@ const LeaveDetailsModal = ({ leaveId, onClose, onActed }) => {
   const leave = data?.leave;
   const approval = data?.approval;
   const decidable = !!approval?.can_approve;
-  // paid (payroll adjustment instead) or in a payroll waiting for approval: Administrator only
-  const cancellable = access.canCancel(leave) && ['Pending', 'Approved'].includes(leave?.status) && (isAdmin || (!leave?.paid_in && !leave?.pending_in));
+  // paid (payroll adjustment instead) or in a payroll waiting for approval: nobody
+  const cancellable = access.canCancel(leave) && ['Pending', 'Approved'].includes(leave?.status) && !leave?.paid_in && !leave?.pending_in;
 
   return (
     <Modal

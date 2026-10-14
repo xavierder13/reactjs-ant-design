@@ -18,7 +18,6 @@ import { DAY_TYPE_COLORS, hoursText, punchesText } from './overtimeHelpers';
 // Cancel with overtime-cancel. Remarks required to disapprove.
 const OvertimeDetailsModal = ({ overtimeId, onClose, onActed }) => {
   const access = filingAccess(useAuth(), 'overtime');
-  const { isAdmin } = access;
   const { message } = App.useApp();
   const [data, setData] = useState(null);
   const [remarks, setRemarks] = useState('');
@@ -55,8 +54,8 @@ const OvertimeDetailsModal = ({ overtimeId, onClose, onActed }) => {
 
   const ot = data?.overtime;
   const decidable = !!data?.approval?.can_approve;
-  // paid (payroll adjustment instead) or in a payroll waiting for approval: Administrator only
-  const cancellable = access.canCancel(ot) && ['Pending', 'Approved'].includes(ot?.status) && (isAdmin || (!ot?.paid_in && !ot?.pending_in));
+  // paid (payroll adjustment instead) or in a payroll waiting for approval: nobody
+  const cancellable = access.canCancel(ot) && ['Pending', 'Approved'].includes(ot?.status) && !ot?.paid_in && !ot?.pending_in;
 
   return (
     <Modal

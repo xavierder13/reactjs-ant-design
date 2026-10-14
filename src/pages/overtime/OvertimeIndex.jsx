@@ -21,9 +21,7 @@ import OvertimeDetailsModal from './OvertimeDetailsModal';
 const OvertimeIndex = () => {
   const { message } = App.useApp();
   const auth = useAuth();
-  const { hasRole } = auth;
   const access = filingAccess(auth, 'overtime');
-  const isAdmin   = hasRole('Administrator');
   const canCreate  = access.canCreate;
 
   const [options, setOptions] = useState({ day_types: [], branches: [] });
@@ -145,7 +143,7 @@ const OvertimeIndex = () => {
               <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
             </Tooltip>
           )}
-          {access.canCancel(record) && ['Pending', 'Approved'].includes(record.status) && (isAdmin || (!record.paid_in && !record.pending_in)) && (
+          {access.canCancel(record) && ['Pending', 'Approved'].includes(record.status) && !record.paid_in && !record.pending_in && (
             <Popconfirm title='Cancel this overtime?' onConfirm={() => cancelOvertime(record)}>
               <Tooltip title='Cancel'>
                 <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} size='small' />

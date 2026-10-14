@@ -18,7 +18,6 @@ import TimeComparison from './TimeComparison';
 // Cancel with time-entry-cancel. Remarks required to disapprove.
 const TimeEntryDetailsModal = ({ entryId, onClose, onActed }) => {
   const access = filingAccess(useAuth(), 'time-entry');
-  const { isAdmin } = access;
   const { message } = App.useApp();
   const [data, setData] = useState(null);
   const [remarks, setRemarks] = useState('');
@@ -55,8 +54,8 @@ const TimeEntryDetailsModal = ({ entryId, onClose, onActed }) => {
 
   const entry = data?.entry;
   const decidable = !!data?.approval?.can_approve;
-  // paid (payroll adjustment instead) or in a payroll waiting for approval: Administrator only
-  const cancellable = access.canCancel(entry) && ['Pending', 'Approved'].includes(entry?.status) && (isAdmin || (!entry?.paid_in && !entry?.pending_in));
+  // paid (payroll adjustment instead) or in a payroll waiting for approval: nobody
+  const cancellable = access.canCancel(entry) && ['Pending', 'Approved'].includes(entry?.status) && !entry?.paid_in && !entry?.pending_in;
 
   return (
     <Modal

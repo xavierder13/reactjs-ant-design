@@ -21,9 +21,7 @@ import TimeEntryDetailsModal from './TimeEntryDetailsModal';
 const TimeEntryIndex = () => {
   const { message } = App.useApp();
   const auth = useAuth();
-  const { hasRole } = auth;
   const access = filingAccess(auth, 'time-entry');
-  const isAdmin   = hasRole('Administrator');
   const canCreate  = access.canCreate;
 
   const [options, setOptions] = useState({ types: [], branches: [] });
@@ -146,7 +144,7 @@ const TimeEntryIndex = () => {
               <Button color='green' variant='outlined' icon={<EditOutlined />} size='small' onClick={() => openEdit(record)} />
             </Tooltip>
           )}
-          {access.canCancel(record) && ['Pending', 'Approved'].includes(record.status) && (isAdmin || (!record.paid_in && !record.pending_in)) && (
+          {access.canCancel(record) && ['Pending', 'Approved'].includes(record.status) && !record.paid_in && !record.pending_in && (
             <Popconfirm title='Cancel this time entry?' onConfirm={() => cancelEntry(record)}>
               <Tooltip title='Cancel'>
                 <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} size='small' />
