@@ -57,6 +57,28 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
   const [maxDemerit,    setMaxDemerit]    = useState(5.00);
   const [demeritItems,  setDemeritItems]  = useState([]);
 
+  // Computation Class dropdown (Administrator only, like the column)
+  const isAdmin = hasRole('Administrator');
+  const [computationClasses, setComputationClasses] = useState([]);
+  const [computationClassesLoading, setComputationClassesLoading] = useState(false);
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    let cancelled = false;
+    const load = async () => {
+      setComputationClassesLoading(true);
+      try {
+        const { data } = await kpiTemplateApi.getComputationClasses();
+        if (!cancelled) setComputationClasses(data.computation_classes || []);
+      } catch (error) {
+        if (!cancelled) handleApiError(error, message);
+      } finally {
+        if (!cancelled) setComputationClassesLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [isAdmin, message]);
+
   // ── Populate form in edit mode ─────────────────────────────────────────────
   useEffect(() => {
 
@@ -478,6 +500,8 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
                           onUpdate={updateItem}
                           onRemove={removeItem}
                           errors={errors.items?.[item.id]}
+                          computationClasses={computationClasses}
+                          computationClassesLoading={computationClassesLoading}
                         />
                       </div>
                     )}
@@ -585,6 +609,8 @@ const KpiTemplateForm = ({ mode = 'create', template = null }) => {
                               onUpdate={updateDemeritItem}
                               onRemove={removeDemeritItem}
                               errors={errors.demeritItems?.[item.id]}
+                              computationClasses={computationClasses}
+                              computationClassesLoading={computationClassesLoading}
                             />
                           </div>
                         )}

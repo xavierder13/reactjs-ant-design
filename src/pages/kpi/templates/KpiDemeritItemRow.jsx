@@ -1,6 +1,7 @@
 import { Button, Input, Form, Tooltip, Space } from 'antd';
 import { DeleteOutlined, HolderOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
+import ComputationClassSelect from './ComputationClassSelect';
 
 const KpiDemeritItemRow = ({
   item,
@@ -10,6 +11,8 @@ const KpiDemeritItemRow = ({
   onUpdate,
   onRemove,
   errors,
+  computationClasses = [],
+  computationClassesLoading = false,
 }) => {
   const { hasRole } = useAuth();
 
@@ -85,18 +88,16 @@ const KpiDemeritItemRow = ({
       {hasRole('Administrator') && (
         <Form.Item style={{ margin: 0, width: 220 }}>
           <Space>
-            <Input
-              placeholder='e.g. AccountAnalyst/DemeritService'
-              value={item.computation_class || ''}
-              size='small'
-              onChange={(e) => onUpdate(item.id, 'computation_class', e.target.value)}
-              style={{ width: 200 }}
+            <ComputationClassSelect
+              value={item.computation_class}
+              classes={computationClasses}
+              loading={computationClassesLoading}
+              onChange={(v) => onUpdate(item.id, 'computation_class', v)}
             />
             <Tooltip
               title={
                 <div>
-                  <div>Format: <strong>Position/ServiceName</strong></div>
-                  <div style={{ marginTop: 4 }}>Example: AccountAnalyst/DemeritService</div>
+                  <div>The class that computes this grade from SAP (grouped by position).</div>
                   <div style={{ marginTop: 4 }}>Leave empty for manual entry.</div>
                 </div>
               }

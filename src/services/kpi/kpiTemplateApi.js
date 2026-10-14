@@ -14,6 +14,10 @@ const kpiTemplateApi = {
   // PUT /api/kpi/templates/:id
   update: (id, payload) => axios.put(`/kpi/templates/${id}`, payload),
 
+  // GET /api/kpi/computation-classes → { computation_classes: [{ value
+  // ('AccountAnalyst/OverDueLedgersService'), group, name }] }
+  getComputationClasses: () => axios.get('/kpi/computation-classes'),
+
   // DELETE /api/kpi/templates/:id - on the back-end, the procedure only deactivate the record, set to is_active = false
   deactivate: (id) => axios.delete(`/kpi/templates/${id}`),
 
