@@ -340,9 +340,12 @@ Unlike the other Setup pages, this is **this HRIS's own table** (vueportal
 portal has no officer table and the applicant keeps `hiring_officer_name` /
 `hiring_officer_position` as text, so editing/deleting an officer never
 changes saved applicants.
-- An officer is an **Employee Master Data** record: active, branch
-  `ADMINISTRATION`, position of rank `Managerial` (`HiringOfficer::BRANCH` /
-  `RANK`, `eligibleEmployees()`; checked on save). The form picks the
+- An officer is an **Employee Master Data** record: active and matching
+  any one of `HiringOfficer::RULES` — an `ADMINISTRATION` employee of rank
+  `Managerial`, rank `Top Management`, or position `Branch Manager` (any
+  branch) — (`eligibleEmployees()`; checked on save; the API returns
+  `rules`, `hiringOfficer.js` `rulesText` / `ineligibleReason` read them).
+  The form picks the
   employee from `create`'s eligible list (ones already officers disabled);
   Position is the employee's, read-only. The list flags an officer who no
   longer qualifies (inactive, transferred, re-ranked — `hiringOfficer.js`

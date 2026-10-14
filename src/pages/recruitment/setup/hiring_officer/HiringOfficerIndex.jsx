@@ -12,7 +12,8 @@ import { tablePagination } from '../../../../utils/tablePagination';
 
 // Hiring officers — the Hiring Officer Name options on an applicant's Final
 // Interview step; picking one there fills its position. Each is an Employee
-// Master Data record (active, ADMINISTRATION, Managerial-rank position).
+// Master Data record (active; ADMINISTRATION manager, Top Management or
+// Branch Manager).
 // This HRIS's own records (not the careers portal's).
 const HiringOfficerIndex = () => {
   const { message } = App.useApp();

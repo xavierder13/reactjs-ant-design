@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Modal, Form, Input, Select, App } from 'antd';
 import hiringOfficerApi from '../../../../services/recruitment/hiringOfficerApi';
 import handleApiError from '../../../../utils/handleApiError';
+import { rulesText } from './hiringOfficer';
 
 // Create/edit a hiring officer: pick the employee (Employee Master Data —
-// only active ADMINISTRATION employees in a Managerial-rank position, from
-// the module's own `create` endpoint); Position is the employee's, read-only.
+// only active ADMINISTRATION managers, Top Management and Branch Managers,
+// from the module's own `create` endpoint); Position is the employee's, read-only.
 // `hiringOfficer` = null for create, else the list row. Employees already
 // an officer are listed but disabled. Validation failures are HTTP 422
 // bags → inline on the field.
@@ -15,7 +16,7 @@ const HiringOfficerFormModal = ({ open, hiringOfficer, onClose, onSaved }) => {
   const [saving, setSaving] = useState(false);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [employees, setEmployees] = useState([]);
-  const [rule, setRule] = useState({ branch: null, rank: null });
+  const [rule, setRule] = useState([]);
 
   const loadOptions = async () => {
     setEmployees([]); // never offer the previous open's list (taken flags)
@@ -23,7 +24,7 @@ const HiringOfficerFormModal = ({ open, hiringOfficer, onClose, onSaved }) => {
     try {
       const { data } = await hiringOfficerApi.getCreate();
       setEmployees(data.employees);
-      setRule({ branch: data.branch, rank: data.rank });
+      setRule(data.rules || []);
     } catch (error) {
       handleApiError(error, message);
     } finally {
@@ -101,7 +102,7 @@ const HiringOfficerFormModal = ({ open, hiringOfficer, onClose, onSaved }) => {
         <Form.Item
           name='employee_id'
           label='Hiring Officer Name'
-          extra={rule.branch && `Active ${rule.branch} employees in a ${rule.rank} position.`}
+          extra={rulesText(rule)}
           rules={[{ required: true, message: 'Employee is required' }]}
         >
           <Select

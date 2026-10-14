@@ -3,18 +3,19 @@ import axios from '../../api/axiosInstance';
 // Hiring officers — the Hiring Officer Name options on an applicant's Final
 // Interview step (Update Status / Hiring Details). This HRIS's own table
 // (vueportal HiringOfficerController), not a careers portal record: each
-// officer is an Employee Master Data record (active, ADMINISTRATION branch,
-// Managerial-rank position); the applicant stores the name and position as
+// officer is an Employee Master Data record (active; an ADMINISTRATION
+// manager, Top Management or a Branch Manager); the applicant stores the name and position as
 // text. Permissions: hiring-officer-list/-create/-edit/-delete (Administrator
 // bypasses); index also allowed with careers-update-status /
 // careers-update-hiring-details (the picker).
 // - getAll() → { success, hiring_officers: [{ id, employee_id, employee:
 //   { id, employee_code, first_name, last_name, middle_name, full_name,
 //   active, branch: { id, name }, position: { id, name, rank: { id, name } } } }],
-//   branch: 'ADMINISTRATION', rank: 'Managerial' } — employee may be null
+//   rules: [{ branch?, rank?, position? }] } (qualifies = matches any one
+//   rule) — employee may be null
 //   (deleted record).
 // - getCreate() → { success, employees: [{ id, employee_code, first_name,
-//   last_name, middle_name, position, hiring_officer_id }], branch, rank } —
+//   last_name, middle_name, position, hiring_officer_id }], rules } —
 //   only eligible employees; hiring_officer_id = the officer row using them.
 // - create / update payload { employee_id } → { success, message,
 //   hiring_officer }; validation failure → HTTP 422 { employee_id: [msg] }
