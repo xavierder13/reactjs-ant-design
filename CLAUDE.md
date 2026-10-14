@@ -346,7 +346,9 @@ Dated change history for each lives in `docs/<module>-history.md`.
 `src/pages/role/` (`RoleIndex.jsx`, shared `RoleForm.jsx` for
 `CreateRole`/`EditRole`, AntD `Transfer` for permissions),
 `src/pages/permission/PermissionIndex.jsx` (list + create/edit modal, no
-separate routes), `roleApi.js`/`permissionApi.js`, `roleStore`/
+separate routes; a Roles column and View roles → `PermissionRolesModal`:
+the roles that have the permission with their user counts, from
+`permission/index`'s `roles` — reloaded on opening the page), `roleApi.js`/`permissionApi.js`, `roleStore`/
 `permissionStore`, `useRoles`/`usePermissions`. Routes: `/roles`,
 `/roles/create`, `/roles/:id/edit`, `/permissions`.
 - **Validation failures return HTTP 200, not 422** for

@@ -9,7 +9,9 @@ import axios from "../../api/axiosInstance";
 // (broken) `permission.maintenance` middleware respectively — not real
 // JSON endpoints, so they are intentionally not wired here.
 const permissionApi = {
-  // GET /api/permission/index
+  // GET /api/permission/index → { permissions: [{ id, name, guard_name,
+  //   roles: [{ id, name, users_count }] (the roles that have it),
+  //   users_count (users given it directly, not through a role) }] }
   getAll: () => axios.get('/permission/index'),
 
   // POST /api/permission/store (body: { name })

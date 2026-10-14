@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Card, Row, Col, Typography, Button,
   Table, Space, Tag, Popconfirm, Tooltip,
@@ -6,13 +6,14 @@ import {
 } from 'antd';
 import {
   PlusOutlined, EditOutlined, DeleteOutlined,
-  ReloadOutlined, SearchOutlined,
+  ReloadOutlined, SearchOutlined, EyeOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 
 import permissionApi from '../../services/permission/permissionApi';
 import usePermissions from '../../hooks/usePermissions';
 import useAuth from '../../hooks/useAuth';
+import PermissionRolesModal from './PermissionRolesModal';
 
 const PermissionIndex = () => {
   const { message } = App.useApp();
@@ -31,10 +32,21 @@ const PermissionIndex = () => {
   const [editing, setEditing] = useState(null); // null = create, else the permission being edited
   const [saving, setSaving] = useState(false);
   const [form] = Form.useForm();
+  const [viewingRoles, setViewingRoles] = useState(null); // the permission whose roles are shown
 
+  // the list is cached app-wide: load it again on opening the page so the
+  // roles reflect role edits made since
+  useEffect(() => {
+    const load = async () => { await refreshPermissions(); };
+    load();
+  }, [refreshPermissions]);
+
+  // A search matches the permission name or the name of a role that has it.
   const filtered = useMemo(() => {
-    if (!committedSearch) return permissions;
-    return permissions.filter((p) => p.name.toLowerCase().includes(committedSearch.toLowerCase()));
+    const sorted = [...permissions].sort((a, b) => a.name.localeCompare(b.name));
+    if (!committedSearch) return sorted;
+    const q = committedSearch.toLowerCase();
+    return sorted.filter((p) => p.name.toLowerCase().includes(q) || (p.roles || []).some((r) => r.name.toLowerCase().includes(q)));
   }, [permissions, committedSearch]);
 
   const handleSearch = () => {
@@ -122,6 +134,18 @@ const PermissionIndex = () => {
   const columns = [
     { title: 'Permission', dataIndex: 'name', key: 'name' },
     {
+      title: 'Roles',
+      key: 'roles',
+      width: 120,
+      sorter: (a, b) => (a.roles?.length || 0) - (b.roles?.length || 0),
+      render: (_, record) => {
+        const n = record.roles?.length || 0;
+        return n
+          ? <Tag color='blue' style={{ cursor: 'pointer' }} onClick={() => setViewingRoles(record)}>{`${n} role${n === 1 ? '' : 's'}`}</Tag>
+          : <Tag color='orange'>No role</Tag>;
+      },
+    },
+    {
       title: 'Guard',
       dataIndex: 'guard_name',
       key: 'guard_name',
@@ -130,9 +154,18 @@ const PermissionIndex = () => {
     {
       title: 'Actions',
       key: 'actions',
-      width: 100,
+      width: 130,
       render: (_, record) => (
         <Space>
+          <Tooltip title='View roles'>
+            <Button
+              color='blue'
+              variant='outlined'
+              icon={<EyeOutlined />}
+              size='small'
+              onClick={() => setViewingRoles(record)}
+            />
+          </Tooltip>
           {hasPermission('permission-edit') && (
             <Tooltip title='Edit'>
               <Button
@@ -185,7 +218,7 @@ const PermissionIndex = () => {
               <Form form={searchForm}>
                 <Form.Item name='search' style={{ marginBottom: 0 }}>
                   <Input
-                    placeholder='Search permission...'
+                    placeholder='Search permission or role...'
                     prefix={<SearchOutlined />}
                     onPressEnter={handleSearch}
                   />
@@ -228,6 +261,13 @@ const PermissionIndex = () => {
           scroll={{ x: 'max-content' }}
         />
       </Card>
+
+      <PermissionRolesModal
+        key={viewingRoles?.id ?? 'none'}
+        open={!!viewingRoles}
+        permission={viewingRoles}
+        onClose={() => setViewingRoles(null)}
+      />
 
       <Modal
         keyboard={false}
