@@ -45,11 +45,20 @@ const useEmployeeStore = create((set, get) => ({
   // Removes a deleted employee from the in-memory list immediately, then
   // reconciles with the server — mirrors the delete-then-refetch shape
   // `EmployeeMasterData.jsx` already had, just moved into the store.
+  // One request per employee (see employeeApi.delete); refetches even when
+  // one fails part-way, so the list shows what was already deleted.
   deleteEmployee: async (ids, refetchParams = {}) => {
     const idList = Array.isArray(ids) ? ids : [ids];
-    await employeeApi.delete(idList);
-    set({ items: get().items.filter((emp) => !idList.includes(emp.id)) });
-    await get().fetchItems(refetchParams);
+    const done = [];
+    try {
+      for (const id of idList) {
+        await employeeApi.delete(id);
+        done.push(id);
+      }
+    } finally {
+      set({ items: get().items.filter((emp) => !done.includes(emp.id)) });
+      await get().fetchItems(refetchParams);
+    }
   },
 }));
 

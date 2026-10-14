@@ -99,10 +99,19 @@ export default function EmployeeSegmentList({
   const viewData = (record) => navigate(`/employees/${record.id}`, { state: { employee: record, returnTo } });
   const editData = (record) => navigate(`/employees/${record.id}/edit`, { state: { employee: record, returnTo } });
 
+  // one request per employee (see employeeApi.delete); the list refreshes
+  // even when one fails part-way, so it shows what was already deleted
   const deleteIds = async (ids) => {
-    await employeeApi.delete(ids);
-    setSelectedRowKeys((keys) => keys.filter((k) => !ids.includes(k)));
-    await refresh();
+    const done = [];
+    try {
+      for (const id of ids) {
+        await employeeApi.delete(id);
+        done.push(id);
+      }
+    } finally {
+      setSelectedRowKeys((keys) => keys.filter((k) => !done.includes(k)));
+      await refresh();
+    }
   };
 
   const deleteData = async (id) => {

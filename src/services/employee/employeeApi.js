@@ -29,10 +29,10 @@ const employeeApi = {
   // ordinary JSON, unaffected.
   create:   (payload)      => axios.post('/employee_master_data/store', payload, payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined),
   update:   (id, payload)  => axios.post(`/employee_master_data/update/${id}`, payload),
-  // Payload key (`ids`) is inferred from the route accepting bulk-or-single
-  // delete, not confirmed against the live controller — verify against a
-  // real request before relying on this.
-  delete:   (ids)          => axios.post('/employee_master_data/delete', { ids }),
+  // One employee per call: EmployeeMasterDataController@delete reads
+  // `employee_id`; it accepts an array, but then clears the related records
+  // (files, NTEs, trainings, …) of the first id only — bulk delete loops.
+  delete:   (id)           => axios.post('/employee_master_data/delete', { employee_id: id }),
 
   fileUpload: (employeeId, file, meta = {}) => {
     const formData = new FormData();

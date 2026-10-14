@@ -134,7 +134,7 @@ unlike KPI's REST verbs; don't "unify"):
 getAll:           (payload) => axios.post('/employee_master_data/index', payload)
 create:           (payload) => axios.post('/employee_master_data/store', payload)
 update:           (id, payload) => axios.post(`/employee_master_data/update/${id}`, payload)
-delete:           (ids) => axios.post('/employee_master_data/delete', { ids })
+delete:           (id) => axios.post('/employee_master_data/delete', { employee_id: id })
 fileUpload:       (employeeId, file, meta) => axios.post(`/employee_master_data/file_upload/${employeeId}`, formData)  // file + document_type
 fileDelete:       (fileId) => axios.post('/employee_master_data/file_delete', { id: fileId })
 fileDownload:     (fileId) => axios.post('/employee_master_data/file_download', { file_id: fileId }, { responseType: 'blob' })
@@ -152,8 +152,12 @@ ranks, subordinate_position_ids, departments, promodizer_brands }` out) is
 `file_upload` reads `file` + `document_type` (stored as `title`) and
 answers HTTP 200 with `{ success, file }` or `{ error }` (string or
 validator bag) — check `data.error`, a 200 isn't success;
-`file_download` reads `file_id`, `file_delete` reads `id`.
-Create/update/delete shapes are inferred — see "Unconfirmed Backend
+`file_download` reads `file_id`, `file_delete` reads `id`. `delete` is
+**confirmed**: it reads `employee_id`; an array deletes the employees but
+clears the related records (files, NTEs, trainings, …) of the first id
+only (Laravel 7 `where('employee_id', [..])` binds the first value), so
+bulk delete sends one request per employee.
+Create/update shapes are inferred — see "Unconfirmed Backend
 Contracts".
 
 `employeeOptionApi.js` is a **separate** lightweight dropdown service
@@ -180,8 +184,9 @@ services therefore have no `getAll`.
   per page: `PAGE_SIZE_OPTIONS` (10–500, sent as `items_per_page`, which
   the backend doesn't cap) in both the desktop `EmployeeTable` and mobile
   `PaginationControls`; changing the size goes back to page 1.
-- `deleteEmployee(ids, refetchParams)` — optimistically removes the row(s),
-  then refetches to reconcile pagination/total.
+- `deleteEmployee(ids, refetchParams)` — deletes one employee per request,
+  removes the deleted row(s), then refetches (also after a failure part-way)
+  to reconcile pagination/total.
 - No `current`/`fetchById` — there's no endpoint for it (see "Decisions" #1).
 
 `useEmployees.js` wraps `items`/`pagination`/`isLoading`/`error` and returns
@@ -767,7 +772,6 @@ Verify against a real request/response before relying on these, then
 simplify the defensive code:
 - The resource key on `store`/`update` responses — `EmployeeForm.jsx`
   falls back through a couple of likely keys.
-- `delete`'s id-list payload key (assumed `{ ids: [...] }`).
 - `file_upload`'s response shape and file object field names —
   `FilesRequirements.jsx` renders defensively.
 - Whether `date_assigned`/`length_of_service`/`cost_center` are present on
