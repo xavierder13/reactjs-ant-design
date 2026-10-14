@@ -331,7 +331,7 @@ Dated change history for each lives in `docs/<module>-history.md`.
   `/my-payslips`) — `.claude/skills/payroll-run/SKILL.md`.
   Key traps: the DTR is computed live (DtrService) and copied onto the run;
   a holiday is never an absence; rest-day work pays only through approved
-  overtime; approved runs are locked (corrections = retro adjustments);
+  overtime; approved runs are locked (corrections = payroll adjustments);
   reports read approved runs only.
 - **Record management pages / Area Assignment / Organization** (`src/pages/area/`,
   `src/pages/record_management/`, routes `/areas`, `/companies`, `/branches`,

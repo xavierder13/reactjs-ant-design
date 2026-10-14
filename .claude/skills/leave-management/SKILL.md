@@ -107,7 +107,7 @@ Access Chart**, the Manpower Request way. Contracts are in
   by `PayrollRunService::markPaid`; "Paid · <cut-off>" `PaidTag`) or inside
   a payroll waiting for approval (`pending_in`, "For approval · <cut-off>")
   can't be cancelled except by an Administrator — a correction of a paid
-  one is a retro adjustment. Only
+  one is a payroll adjustment. Only
   Pending, not-yet-acted-on leave is editable; the employee can't change.
 - Leave type delete is refused once applications use it (set inactive).
 

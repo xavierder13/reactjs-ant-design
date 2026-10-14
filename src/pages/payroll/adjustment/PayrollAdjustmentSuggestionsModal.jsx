@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { Modal, Table, Tag, Button, Space, Tooltip, Alert, Typography, App } from 'antd';
 import { CloseCircleOutlined, EditOutlined } from '@ant-design/icons';
-import retroApi from '../../../services/payroll/retroApi';
+import payrollAdjustmentApi from '../../../services/payroll/payrollAdjustmentApi';
 import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../../utils/formatDate';
 import ExpandIcon from '../../../components/ExpandIcon';
@@ -11,9 +11,9 @@ import { rateLabel } from '../../compensation/compensationHelpers';
 import ReasonModal from '../ReasonModal';
 
 // Salary changes saved after their effective date whose payroll cut-offs
-// were already paid at the old rate — each with the computed retro. Fill in
-// opens the retro form prefilled; Dismiss records that it won't be paid.
-const RetroSuggestionsModal = ({ open, refreshKey, onClose, onCreate, onChanged }) => {
+// were already paid at the old rate — each with the computed adjustment. Fill in
+// opens the adjustment form prefilled; Dismiss records that it won't be paid.
+const PayrollAdjustmentSuggestionsModal = ({ open, refreshKey, onClose, onCreate, onChanged }) => {
   const { message } = App.useApp();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,7 @@ const RetroSuggestionsModal = ({ open, refreshKey, onClose, onCreate, onChanged 
   const fetchRows = async () => {
     setLoading(true);
     try {
-      const { data } = await retroApi.suggestions();
+      const { data } = await payrollAdjustmentApi.suggestions();
       setRows(data.suggestions);
     } catch (error) {
       handleApiError(error, message);
@@ -40,7 +40,7 @@ const RetroSuggestionsModal = ({ open, refreshKey, onClose, onCreate, onChanged 
 
   const dismiss = async (reason) => {
     try {
-      const { data } = await retroApi.dismiss(dismissing.compensation_id, reason);
+      const { data } = await payrollAdjustmentApi.dismiss(dismissing.compensation_id, reason);
       message.success(data.message);
       setDismissing(null);
       fetchRows();
@@ -78,7 +78,7 @@ const RetroSuggestionsModal = ({ open, refreshKey, onClose, onCreate, onChanged 
     },
     { title: 'Period', key: 'period', width: 190, render: (_, r) => `${formatDate(r.period_from)} – ${formatDate(r.period_to)}` },
     {
-      title: 'Retro',
+      title: 'Retro Salary',
       key: 'amount',
       width: 150,
       align: 'right',
@@ -93,7 +93,7 @@ const RetroSuggestionsModal = ({ open, refreshKey, onClose, onCreate, onChanged 
       fixed: 'right',
       render: (_, r) => (
         <Space>
-          <Tooltip title='Fill in retro'>
+          <Tooltip title='Fill in adjustment'>
             <Button size='small' color='green' variant='outlined' icon={<EditOutlined />} onClick={() => onCreate(r)} />
           </Tooltip>
           <Tooltip title='Dismiss (not paid)'>
@@ -108,7 +108,7 @@ const RetroSuggestionsModal = ({ open, refreshKey, onClose, onCreate, onChanged 
     <Modal
       keyboard={false}
       open={open}
-      title='Retro Suggestions'
+      title='Retro Salary Suggestions'
       footer={null}
       onCancel={onClose}
       width={{ xs: '100%', sm: '95%', lg: 1100 }}
@@ -128,7 +128,7 @@ const RetroSuggestionsModal = ({ open, refreshKey, onClose, onCreate, onChanged 
         loading={loading}
         pagination={false}
         scroll={{ x: 950, y: 480 }}
-        locale={{ emptyText: 'No back-dated salary change waiting for a retro' }}
+        locale={{ emptyText: 'No back-dated salary change waiting for an adjustment' }}
         expandable={{
           expandIcon: (props) => <ExpandIcon {...props} />,
           expandedRowRender: (r) => <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: 12 }}>{r.computation}</pre>,
@@ -146,4 +146,4 @@ const RetroSuggestionsModal = ({ open, refreshKey, onClose, onCreate, onChanged 
   );
 };
 
-export default RetroSuggestionsModal;
+export default PayrollAdjustmentSuggestionsModal;

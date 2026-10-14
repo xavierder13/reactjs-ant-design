@@ -43,7 +43,7 @@ const ICONS = {
   thirteenth_month_approval: <GiftOutlined />,
   payroll_due: <DollarOutlined />,
   pending_filings_due: <HourglassOutlined />,
-  retro_missed: <RollbackOutlined />,
+  payroll_adjustment_missed: <RollbackOutlined />,
   no_salary: <IdcardOutlined />,
   no_bank_account: <BankOutlined />,
   thirteenth_month_due: <GiftOutlined />,

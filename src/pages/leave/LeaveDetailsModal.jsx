@@ -68,7 +68,7 @@ const LeaveDetailsModal = ({ leaveId, onClose, onActed }) => {
   const leave = data?.leave;
   const approval = data?.approval;
   const decidable = !!approval?.can_approve;
-  // paid (retro adjustment instead) or in a payroll waiting for approval: Administrator only
+  // paid (payroll adjustment instead) or in a payroll waiting for approval: Administrator only
   const cancellable = access.canCancel(leave) && ['Pending', 'Approved'].includes(leave?.status) && (isAdmin || (!leave?.paid_in && !leave?.pending_in));
 
   return (

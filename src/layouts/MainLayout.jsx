@@ -134,7 +134,7 @@ const titleMap = {
   '/compensation':             { title: 'Salary History',          breadcrumb: ['Payroll', 'Salary History'] },
   '/contributions':            { title: 'Contributions',           breadcrumb: ['Payroll', 'Contributions'] },
   '/deductions':               { title: 'Deductions',              breadcrumb: ['Payroll', 'Deductions'] },
-  '/retro':                    { title: 'Retro Adjustments',       breadcrumb: ['Payroll', 'Retro Adjustments'] },
+  '/payroll-adjustments':      { title: 'Payroll Adjustments',     breadcrumb: ['Payroll', 'Payroll Adjustments'] },
   '/timekeeping':              { title: 'Timekeeping',             breadcrumb: ['Payroll', 'Timekeeping'] },
   '/payroll-runs':             { title: 'Payroll Runs',            breadcrumb: ['Payroll', 'Payroll Runs'] },
   '/remittances':              { title: 'Remittances',             breadcrumb: ['Payroll', 'Government Compliance', 'Remittances'] },
@@ -328,7 +328,7 @@ const menuData = [
       // reports by process — payroll reports (pay sheet, contribution
       // history), government compliance (remittances, year-end tax), special
       // pay (13th month, final pay) — the pay records the run reads (salary,
-      // allowances, statutory contributions, scheduled deductions, retro
+      // allowances, statutory contributions, scheduled deductions, payroll
       // adjustments) and setup.
       {
         key: 'payroll',
@@ -380,7 +380,7 @@ const menuData = [
               { key: 'contributions', title: 'Contributions',     link: '/contributions', permissions: ['contribution-profile-list'] },
               { key: 'allowances',    title: 'Allowances',        link: '/allowances',    permissions: ['allowance-list'] },
               { key: 'deductions',    title: 'Deductions',        link: '/deductions',    permissions: ['deduction-list'] },
-              { key: 'retro',         title: 'Retro Adjustments', link: '/retro',         permissions: ['retro-list'] },
+              { key: 'payroll-adjustments', title: 'Payroll Adjustments', link: '/payroll-adjustments', permissions: ['payroll-adjustment-list'] },
               { key: 'payroll-bank-accounts', title: 'Bank Accounts', link: '/payroll-bank-accounts', permissions: ['bank-account-list'] },
             ],
           },

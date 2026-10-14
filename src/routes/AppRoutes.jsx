@@ -78,7 +78,7 @@ import ContributionIndex from '../pages/payroll/contribution/ContributionIndex';
 import ContributionTableIndex from '../pages/payroll/contribution/ContributionTableIndex';
 import DeductionIndex from '../pages/payroll/deduction/DeductionIndex';
 import DeductionTypeIndex from '../pages/payroll/deduction/DeductionTypeIndex';
-import RetroIndex from '../pages/payroll/retro/RetroIndex';
+import PayrollAdjustmentIndex from '../pages/payroll/adjustment/PayrollAdjustmentIndex';
 import TimekeepingIndex from '../pages/payroll/timekeeping/TimekeepingIndex';
 import PayrollRunIndex from '../pages/payroll/run/PayrollRunIndex';
 import PayrollRunPage from '../pages/payroll/run/PayrollRunPage';
@@ -171,7 +171,7 @@ const permissionRoutes = [
   { permissions: ['contribution-table-list'], path: '/contribution-tables', element: <ContributionTableIndex /> },
   { permissions: ['deduction-list'], path: '/deductions', element: <DeductionIndex /> },
   { permissions: ['deduction-type-list'], path: '/deduction-types', element: <DeductionTypeIndex /> },
-  { permissions: ['retro-list'], path: '/retro', element: <RetroIndex /> },
+  { permissions: ['payroll-adjustment-list'], path: '/payroll-adjustments', element: <PayrollAdjustmentIndex /> },
   { permissions: ['dtr-list'], path: '/timekeeping', element: <TimekeepingIndex /> },
   { permissions: ['payroll-run-list'], path: '/payroll-runs', element: <PayrollRunIndex /> },
   { permissions: ['payroll-run-list'], path: '/payroll-runs/:id', element: <PayrollRunPage /> },

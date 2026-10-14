@@ -1,53 +1,53 @@
 import { useState } from 'react';
 import dayjs from 'dayjs';
 import { Modal, Form, Input, InputNumber, DatePicker, Select, Radio, Row, Col, Alert, Switch, Typography, App } from 'antd';
-import retroApi from '../../../services/payroll/retroApi';
+import payrollAdjustmentApi from '../../../services/payroll/payrollAdjustmentApi';
 import EmployeeSelect from '../../manpower_request/request/EmployeeSelect';
 import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { applyFormErrors, cutoffOptions, pesoInputProps, toNumber } from '../payrollHelpers';
 import { rateLabel } from '../../compensation/compensationHelpers';
 
-// Add or edit a retro adjustment: type, earning / deduction, the period it
+// Add or edit a payroll adjustment: type, earning / deduction, the period it
 // covers, the amount and the cut-off that pays / recovers it. An Other
 // Adjustment says what it is for (options.other_types): that fixes earning /
 // deduction for most, and whether the payroll taxes it — from the type, the
 // allowance picked, or the Taxable switch for Others (specify). `suggestion`
 // prefills a new one from a back-dated salary change (its computation is
-// kept with it); `retro` = edit (Open only).
-const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) => {
+// kept with it); `adjustment` = edit (Open only).
+const PayrollAdjustmentFormModal = ({ open, adjustment, suggestion, options, onClose, onSaved }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
-  const retroType = Form.useWatch('retro_type', form);
+  const adjustmentType = Form.useWatch('adjustment_type', form);
   const otherTypeName = Form.useWatch('other_type', form);
   const allowanceTypeId = Form.useWatch('allowance_type_id', form);
-  const isOther = retroType === 'Other Adjustment';
+  const isOther = adjustmentType === 'Other Adjustment';
   const otherType = isOther ? (options.other_types || []).find((t) => t.name === otherTypeName) : null;
-  const fixedAdjustment = isOther ? otherType?.adjustment : (retroType ? options.types?.[retroType] : null);
+  const fixedAdjustment = isOther ? otherType?.adjustment : (adjustmentType ? options.types?.[adjustmentType] : null);
   const allowanceType = (options.allowance_types || []).find((t) => t.id === allowanceTypeId);
   const today = dayjs().format('YYYY-MM-DD');
 
   const handleAfterOpenChange = (isOpen) => {
     if (!isOpen) return;
     form.resetFields();
-    const source = retro || suggestion;
+    const source = adjustment || suggestion;
     if (source) {
       form.setFieldsValue({
-        retro_type: source.retro_type,
-        other_type: retro?.other_type || undefined,
-        allowance_type_id: retro?.allowance_type_id || undefined,
-        other_specify: retro?.other_specify || null,
-        taxable: retro ? !!retro.taxable : true,
+        adjustment_type: source.adjustment_type,
+        other_type: adjustment?.other_type || undefined,
+        allowance_type_id: adjustment?.allowance_type_id || undefined,
+        other_specify: adjustment?.other_specify || null,
+        taxable: adjustment ? !!adjustment.taxable : true,
         adjustment: source.adjustment,
         period: [dayjs(source.period_from), dayjs(source.period_to)],
         amount: toNumber(source.amount),
-        payroll_cutoff_id: retro ? retro.payroll_cutoff_id : options.next_cutoff_id,
+        payroll_cutoff_id: adjustment ? adjustment.payroll_cutoff_id : options.next_cutoff_id,
         computation: source.computation,
-        reason: retro?.reason || null,
+        reason: adjustment?.reason || null,
       });
     } else {
-      form.setFieldsValue({ retro_type: 'Retro Salary', adjustment: 'Earning', taxable: true, payroll_cutoff_id: options.next_cutoff_id });
+      form.setFieldsValue({ adjustment_type: 'Retro Salary', adjustment: 'Earning', taxable: true, payroll_cutoff_id: options.next_cutoff_id });
     }
   };
 
@@ -69,7 +69,7 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
       return;
     }
     const payload = {
-      retro_type: values.retro_type,
+      adjustment_type: values.adjustment_type,
       other_type: isOther ? values.other_type : null,
       allowance_type_id: isOther && otherType?.taxable === 'allowance' ? values.allowance_type_id : null,
       other_specify: isOther && values.other_type === 'Others (specify)' ? values.other_specify?.trim() || null : null,
@@ -84,15 +84,15 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
     };
     setSaving(true);
     try {
-      const { data } = retro
-        ? await retroApi.update(retro.id, payload)
-        : await retroApi.create({
+      const { data } = adjustment
+        ? await payrollAdjustmentApi.update(adjustment.id, payload)
+        : await payrollAdjustmentApi.create({
           ...payload,
           employee_id: suggestion ? suggestion.employee.id : values.employee_id,
           compensation_id: suggestion?.compensation_id || null,
         });
       message.success(data.message);
-      onSaved(data.retro);
+      onSaved(data.payroll_adjustment);
     } catch (error) {
       applyFormErrors(error, form, message, handleApiError, (k) => (k === 'period_from' || k === 'period_to' ? 'period' : k));
     } finally {
@@ -103,15 +103,15 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
   // a cut-off that has ended can't be picked (the saved one stays visible)
   const cutoffChoices = cutoffOptions(options.cutoffs).map((o) => {
     const c = options.cutoffs.find((x) => x.id === o.value);
-    return { ...o, disabled: c.date_to < today && o.value !== retro?.payroll_cutoff_id };
+    return { ...o, disabled: c.date_to < today && o.value !== adjustment?.payroll_cutoff_id };
   });
-  const employee = retro?.employee || suggestion?.employee;
+  const employee = adjustment?.employee || suggestion?.employee;
 
   return (
     <Modal
       keyboard={false}
       open={open}
-      title={retro ? 'Edit Retro Adjustment' : 'Add Retro Adjustment'}
+      title={adjustment ? 'Edit Payroll Adjustment' : 'Add Payroll Adjustment'}
       okText='Save'
       onOk={handleSave}
       onCancel={onClose}
@@ -140,7 +140,7 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
         )}
         <Row gutter={12}>
           <Col xs={24} sm={12}>
-            <Form.Item name='retro_type' label='Type' rules={[{ required: true, message: 'Select the type' }]}>
+            <Form.Item name='adjustment_type' label='Type' rules={[{ required: true, message: 'Select the type' }]}>
               <Select options={Object.keys(options.types || {}).map((t) => ({ value: t, label: t }))} onChange={onTypeChange} />
             </Form.Item>
           </Col>
@@ -172,7 +172,7 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
                     placeholder='Select'
                     showSearch={{ optionFilterProp: 'label' }}
                     options={(options.allowance_types || [])
-                      .filter((t) => t.active || t.id === retro?.allowance_type_id)
+                      .filter((t) => t.active || t.id === adjustment?.allowance_type_id)
                       .map((t) => ({ value: t.id, label: t.name }))}
                   />
                 </Form.Item>
@@ -229,4 +229,4 @@ const RetroFormModal = ({ open, retro, suggestion, options, onClose, onSaved }) 
   );
 };
 
-export default RetroFormModal;
+export default PayrollAdjustmentFormModal;

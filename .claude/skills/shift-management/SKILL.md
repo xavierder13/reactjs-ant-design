@@ -63,7 +63,7 @@ with the permission change it directly. The system keeps every change.
   (5) none (null = No Schedule). Per date: source, shift_code, group (null |
   { id, scope, name }), day_off, time_in, time_out, break_minutes,
   grace_minutes. **Use it for anything that needs "the employee's schedule
-  on a date"** — leave counting, time entries, overtime, the DTR and retro
+  on a date"** — leave counting, time entries, overtime, the DTR and payroll adjustments
   do. React labels the source with `scheduleSourceLabel` (shiftHelpers).
 - **Scope**: `shift-assignment-list-all` (or Administrator) = every
   employee; otherwise the user's **direct** subordinates (position_subs of

@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { Modal, Descriptions, Tag, Button, Space, Spin, Table, Timeline, Typography, App } from 'antd';
 import { CloseCircleOutlined, EditOutlined } from '@ant-design/icons';
-import retroApi from '../../../services/payroll/retroApi';
+import payrollAdjustmentApi from '../../../services/payroll/payrollAdjustmentApi';
 import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../../utils/formatDate';
-import { ADJUSTMENT_COLORS, RETRO_STATUS_COLORS, cutoffLabel, peso, retroLabel } from '../payrollHelpers';
+import { ADJUSTMENT_COLORS, ADJUSTMENT_STATUS_COLORS, cutoffLabel, peso, adjustmentLabel } from '../payrollHelpers';
 import { rateLabel } from '../../compensation/compensationHelpers';
 import ReasonModal from '../ReasonModal';
 
@@ -31,21 +31,21 @@ const linesTotal = (rows) => (rows.every((r) => !r.text)
 
 const when = (v) => (v ? dayjs(v).format(`${DISPLAY_DATE_FORMAT} hh:mm A`) : '—');
 
-// One retro adjustment: a summary, where it comes from, its computation per
+// One payroll adjustment: a summary, where it comes from, its computation per
 // cut-off and its record trail (saved / cancelled); Edit / Cancel while Open.
-const RetroDetailsModal = ({ retroId, refreshKey, perms, onClose, onChanged, onEdit }) => {
+const PayrollAdjustmentDetailsModal = ({ adjustmentId, refreshKey, perms, onClose, onChanged, onEdit }) => {
   const { message } = App.useApp();
-  const [retro, setRetro] = useState(null);
+  const [adjustment, setAdjustment] = useState(null);
   const [loading, setLoading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
-    if (!retroId) return;
+    if (!adjustmentId) return;
     const load = async () => {
       setLoading(true);
       try {
-        const { data } = await retroApi.show(retroId);
-        setRetro(data.retro);
+        const { data } = await payrollAdjustmentApi.show(adjustmentId);
+        setAdjustment(data.payroll_adjustment);
       } catch (error) {
         handleApiError(error, message);
       } finally {
@@ -53,13 +53,13 @@ const RetroDetailsModal = ({ retroId, refreshKey, perms, onClose, onChanged, onE
       }
     };
     load();
-  }, [retroId, refreshKey, message]);
+  }, [adjustmentId, refreshKey, message]);
 
   const cancel = async (reason) => {
     try {
-      const { data } = await retroApi.cancel(retro.id, reason);
+      const { data } = await payrollAdjustmentApi.cancel(adjustment.id, reason);
       message.success(data.message);
-      setRetro(data.retro);
+      setAdjustment(data.payroll_adjustment);
       setCancelling(false);
       onChanged();
     } catch (error) {
@@ -68,50 +68,50 @@ const RetroDetailsModal = ({ retroId, refreshKey, perms, onClose, onChanged, onE
     }
   };
 
-  const isOpen = retro?.status === 'Open';
+  const isOpen = adjustment?.status === 'Open';
 
   return (
     <Modal
       keyboard={false}
-      open={!!retroId}
-      title='Retro Adjustment'
+      open={!!adjustmentId}
+      title='Payroll Adjustment'
       onCancel={onClose}
       width={{ xs: '100%', sm: '95%', md: 820 }}
       destroyOnHidden
-      footer={retro && isOpen && (perms.canEdit || perms.canCancel) ? (
+      footer={adjustment && isOpen && (perms.canEdit || perms.canCancel) ? (
         <Space wrap>
-          {perms.canCancel && <Button danger icon={<CloseCircleOutlined />} onClick={() => setCancelling(true)}>Cancel Retro</Button>}
-          {perms.canEdit && <Button type='primary' icon={<EditOutlined />} onClick={() => onEdit(retro)}>Edit</Button>}
+          {perms.canCancel && <Button danger icon={<CloseCircleOutlined />} onClick={() => setCancelling(true)}>Cancel Adjustment</Button>}
+          {perms.canEdit && <Button type='primary' icon={<EditOutlined />} onClick={() => onEdit(adjustment)}>Edit</Button>}
         </Space>
       ) : null}
     >
       <Spin spinning={loading}>
-        {retro && (
+        {adjustment && (
           <>
             <Descriptions
               size='small'
               column={{ xs: 1, sm: 2 }}
               style={{ marginBottom: 16 }}
               items={[
-                { key: 'employee', label: 'Employee', children: `${retro.employee?.employee_code || ''} - ${retro.employee?.full_name || ''}` },
-                { key: 'status', label: 'Status', children: <Tag color={RETRO_STATUS_COLORS[retro.status]}>{retro.status}</Tag> },
+                { key: 'employee', label: 'Employee', children: `${adjustment.employee?.employee_code || ''} - ${adjustment.employee?.full_name || ''}` },
+                { key: 'status', label: 'Status', children: <Tag color={ADJUSTMENT_STATUS_COLORS[adjustment.status]}>{adjustment.status}</Tag> },
                 {
                   key: 'type',
                   label: 'Type',
                   children: (
                     <Space size={4} wrap>
-                      {retro.retro_type === 'Other Adjustment' ? `Other — ${retroLabel(retro)}` : retro.retro_type}
-                      <Tag>{retro.taxable ? 'Taxable' : 'Non-taxable'}</Tag>
+                      {adjustment.adjustment_type === 'Other Adjustment' ? `Other — ${adjustmentLabel(adjustment)}` : adjustment.adjustment_type}
+                      <Tag>{adjustment.taxable ? 'Taxable' : 'Non-taxable'}</Tag>
                     </Space>
                   ),
                 },
                 {
                   key: 'amount',
                   label: 'Amount',
-                  children: <Space size={4}><Tag color={ADJUSTMENT_COLORS[retro.adjustment]}>{retro.adjustment}</Tag><strong>{peso(retro.amount)}</strong></Space>,
+                  children: <Space size={4}><Tag color={ADJUSTMENT_COLORS[adjustment.adjustment]}>{adjustment.adjustment}</Tag><strong>{peso(adjustment.amount)}</strong></Space>,
                 },
-                { key: 'period', label: 'Period', children: `${formatDate(retro.period_from)} – ${formatDate(retro.period_to)}` },
-                { key: 'cutoff', label: 'Paid in Cut-off', children: cutoffLabel(retro.cutoff) },
+                { key: 'period', label: 'Period', children: `${formatDate(adjustment.period_from)} – ${formatDate(adjustment.period_to)}` },
+                { key: 'cutoff', label: 'Paid in Cut-off', children: cutoffLabel(adjustment.cutoff) },
               ]}
             />
             <Typography.Title level={5}>Details</Typography.Title>
@@ -124,38 +124,38 @@ const RetroDetailsModal = ({ retroId, refreshKey, perms, onClose, onChanged, onE
                 {
                   key: 'source',
                   label: 'From Salary Change',
-                  children: retro.compensation
+                  children: adjustment.compensation
                     ? (
                       <>
-                        <strong>{rateLabel(retro.compensation.pay_basis, retro.compensation.basic_rate)}</strong>
-                        {` (${retro.compensation.change_type}) effective ${formatDate(retro.compensation.effective_date)}`}
+                        <strong>{rateLabel(adjustment.compensation.pay_basis, adjustment.compensation.basic_rate)}</strong>
+                        {` (${adjustment.compensation.change_type}) effective ${formatDate(adjustment.compensation.effective_date)}`}
                       </>
                     )
                     : <Typography.Text type='secondary'>Entered by hand</Typography.Text>,
                 },
-                { key: 'reason', label: 'Reason', children: retro.reason || '—' },
+                { key: 'reason', label: 'Reason', children: adjustment.reason || '—' },
               ]}
             />
             <Typography.Title level={5} style={{ marginTop: 16 }}>Computation</Typography.Title>
-            {retro.computation ? (
+            {adjustment.computation ? (
               <>
                 <Table
                   size='small'
                   bordered
                   pagination={false}
                   columns={COMPUTATION_COLUMNS}
-                  dataSource={computationRows(retro.computation)}
+                  dataSource={computationRows(adjustment.computation)}
                   scroll={{ x: 'max-content' }}
                   summary={() => (
                     <Table.Summary.Row>
                       <Table.Summary.Cell index={0} colSpan={3}><strong>Saved Amount</strong></Table.Summary.Cell>
-                      <Table.Summary.Cell index={3} align='right'><strong>{peso(retro.amount)}</strong></Table.Summary.Cell>
+                      <Table.Summary.Cell index={3} align='right'><strong>{peso(adjustment.amount)}</strong></Table.Summary.Cell>
                     </Table.Summary.Row>
                   )}
                 />
                 {(() => {
-                  const sum = linesTotal(computationRows(retro.computation));
-                  return sum !== null && Math.abs(sum - Number(retro.amount)) > 0.01 && (
+                  const sum = linesTotal(computationRows(adjustment.computation));
+                  return sum !== null && Math.abs(sum - Number(adjustment.amount)) > 0.01 && (
                     <Typography.Text type='warning' style={{ display: 'block', marginTop: 6 }}>
                       {`The lines add up to ${peso(sum)} — the saved amount was changed by hand.`}
                     </Typography.Text>
@@ -172,22 +172,22 @@ const RetroDetailsModal = ({ retroId, refreshKey, perms, onClose, onChanged, onE
                   content: (
                     <div>
                       <Tag color='blue'>Created</Tag>
-                      <Typography.Text type='secondary'>{`${when(retro.created_at)} · ${retro.creator?.name || 'System'}`}</Typography.Text>
+                      <Typography.Text type='secondary'>{`${when(adjustment.created_at)} · ${adjustment.creator?.name || 'System'}`}</Typography.Text>
                     </div>
                   ),
                 },
                 // a dismissed suggestion is saved already cancelled (same timestamps)
-                ...(retro.updated_at !== retro.created_at || retro.status === 'Cancelled' ? [{
+                ...(adjustment.updated_at !== adjustment.created_at || adjustment.status === 'Cancelled' ? [{
                   key: 'updated',
-                  color: retro.status === 'Cancelled' ? 'gray' : 'green',
+                  color: adjustment.status === 'Cancelled' ? 'gray' : 'green',
                   content: (
                     <div>
-                      <Tag color={retro.status === 'Cancelled' ? 'default' : 'green'}>{retro.status === 'Cancelled' ? 'Cancelled' : 'Last Edited'}</Tag>
-                      <Typography.Text type='secondary'>{`${when(retro.updated_at)} · ${retro.updater?.name || 'System'}`}</Typography.Text>
-                      {retro.cancel_reason && (
+                      <Tag color={adjustment.status === 'Cancelled' ? 'default' : 'green'}>{adjustment.status === 'Cancelled' ? 'Cancelled' : 'Last Edited'}</Tag>
+                      <Typography.Text type='secondary'>{`${when(adjustment.updated_at)} · ${adjustment.updater?.name || 'System'}`}</Typography.Text>
+                      {adjustment.cancel_reason && (
                         <div style={{ marginTop: 4 }}>
                           <Typography.Text type='secondary'>Reason: </Typography.Text>
-                          <Typography.Text italic>{retro.cancel_reason}</Typography.Text>
+                          <Typography.Text italic>{adjustment.cancel_reason}</Typography.Text>
                         </div>
                       )}
                     </div>
@@ -200,9 +200,9 @@ const RetroDetailsModal = ({ retroId, refreshKey, perms, onClose, onChanged, onE
       </Spin>
       <ReasonModal
         open={cancelling}
-        title='Cancel Retro'
+        title='Cancel Adjustment'
         label='Reason for cancelling'
-        okText='Cancel Retro'
+        okText='Cancel Adjustment'
         danger
         onSubmit={cancel}
         onClose={() => setCancelling(false)}
@@ -211,4 +211,4 @@ const RetroDetailsModal = ({ retroId, refreshKey, perms, onClose, onChanged, onE
   );
 };
 
-export default RetroDetailsModal;
+export default PayrollAdjustmentDetailsModal;

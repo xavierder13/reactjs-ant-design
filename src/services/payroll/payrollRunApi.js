@@ -7,7 +7,7 @@ import axios from '../../api/axiosInstance';
 // Run" Access Chart: every approver mapped at a level acts, its required
 // approvals complete it; the submitter can't approve their own) → Approved
 // on the last approval (locked: scheduled deductions get a Payroll payment,
-// the cut-off's open retros are Applied, its filing is turned off); a
+// the cut-off's open payroll adjustments are Applied, its filing is turned off); a
 // disapproval returns it to Draft. Cancelled (Draft only).
 // - getAll({ year }) → { runs: [{ id, payroll_cutoff_id, status,
 //   employee_count, gross_pay, total_deductions, net_pay, employer_share,
@@ -32,7 +32,7 @@ import axios from '../../api/axiosInstance';
 //   (payroll-run-generate) — approved = posted, locked until rolled back.
 // - rollback(id, reason, employeeIds?) (payroll-run-rollback; employeeIds
 //   omitted = all) — those approved payslips → unposted: removes their
-//   Payroll deduction payments of the cut-off, reopens their retros; the run
+//   Payroll deduction payments of the cut-off, reopens their payroll adjustments; the run
 //   goes back to Draft, the other payslips stay approved. On an Approved
 //   run, or a Draft that still has approved payslips; 422 while a later
 //   payroll is Approved / Pending or the year's 13th month is Approved /

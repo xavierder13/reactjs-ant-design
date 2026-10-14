@@ -15,7 +15,7 @@ import EmployeePickerTable from './EmployeePickerTable';
 const YEARS = Array.from({ length: 4 }, (_, i) => dayjs().year() + 1 - i);
 
 // Payroll runs, one per cut-off: Generate makes (or re-makes) the Draft from
-// Salary History, the DTR, allowances, retro adjustments, contributions /
+// Salary History, the DTR, allowances, payroll adjustments, contributions /
 // tax and scheduled deductions — for everyone, or only the employees chosen
 // (cutoff_candidates; approved payslips can't be chosen). An approved
 // cut-off takes only employees not in it (Selected employees only): they
@@ -243,7 +243,7 @@ const PayrollRunIndex = () => {
             <Input.TextArea rows={2} maxLength={2000} />
           </Form.Item>
           <Typography.Paragraph type='secondary' style={{ marginBottom: 0 }}>
-            Pays every active employee with a salary saved: basic pay, absences / late / undertime, holiday and rest-day pay, approved overtime and night differential (premium rates), allowances, retro adjustments of the cut-off, contributions and withholding tax (Payroll Settings schedule), and scheduled deductions due.
+            Pays every active employee with a salary saved: basic pay, absences / late / undertime, holiday and rest-day pay, approved overtime and night differential (premium rates), allowances, payroll adjustments of the cut-off, contributions and withholding tax (Payroll Settings schedule), and scheduled deductions due.
           </Typography.Paragraph>
         </Form>
       </Modal>

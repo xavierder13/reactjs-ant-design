@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Modal, Form, Input } from 'antd';
 
-// Asks for a required reason (cancel a deduction / retro, dismiss a retro
-// suggestion, roll back a payroll); `description` is shown above it.
+// Asks for a required reason (cancel a deduction / adjustment, dismiss a
+// salary suggestion, roll back a payroll); `description` is shown above it.
 // onSubmit(reason) resolves when saved; a rejection keeps the dialog open
 // (the caller shows the error).
 const ReasonModal = ({ open, title, label = 'Reason', okText = 'Save', danger = false, description = null, onSubmit, onClose }) => {

@@ -2,28 +2,28 @@ import { useEffect, useState } from 'react';
 import { Table, Tag, Button, Space, Tooltip, Select, Input, Popconfirm, Badge, Typography, App } from 'antd';
 import { EditOutlined, EyeOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined, BulbOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
-import retroApi from '../../../services/payroll/retroApi';
+import payrollAdjustmentApi from '../../../services/payroll/payrollAdjustmentApi';
 import handleApiError from '../../../utils/handleApiError';
 import { formatDate } from '../../../utils/formatDate';
 import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../../utils/tablePagination';
-import { ADJUSTMENT_COLORS, RETRO_STATUS_COLORS, cutoffOptions, employeeName, peso, retroLabel } from '../payrollHelpers';
-import RetroFormModal from './RetroFormModal';
-import RetroDetailsModal from './RetroDetailsModal';
-import RetroSuggestionsModal from './RetroSuggestionsModal';
+import { ADJUSTMENT_COLORS, ADJUSTMENT_STATUS_COLORS, cutoffOptions, employeeName, peso, adjustmentLabel } from '../payrollHelpers';
+import PayrollAdjustmentFormModal from './PayrollAdjustmentFormModal';
+import PayrollAdjustmentDetailsModal from './PayrollAdjustmentDetailsModal';
+import PayrollAdjustmentSuggestionsModal from './PayrollAdjustmentSuggestionsModal';
 
-// Retroactive pay adjustments, each paid (Earning) or recovered (Deduction)
+// Manual payroll adjustments, each paid (Earning) or recovered (Deduction)
 // on a payroll cut-off. Suggestions lists back-dated salary changes whose
 // cut-offs were already paid at the old rate. No approval; Open → Applied
 // (payroll run) | Cancelled. Server-side filters and pagination.
-const RetroIndex = () => {
+const PayrollAdjustmentIndex = () => {
   const { message } = App.useApp();
   const { hasPermission, hasRole } = useAuth();
   const isAdmin = hasRole('Administrator');
   const perms = {
-    canCreate: isAdmin || hasPermission('retro-create'),
-    canEdit:   isAdmin || hasPermission('retro-edit'),
-    canCancel: isAdmin || hasPermission('retro-cancel'),
-    canDelete: isAdmin || hasPermission('retro-delete'),
+    canCreate: isAdmin || hasPermission('payroll-adjustment-create'),
+    canEdit:   isAdmin || hasPermission('payroll-adjustment-edit'),
+    canCancel: isAdmin || hasPermission('payroll-adjustment-cancel'),
+    canDelete: isAdmin || hasPermission('payroll-adjustment-delete'),
   };
 
   const [options, setOptions] = useState({ types: {}, adjustments: [], statuses: [], cutoffs: [], branches: [], next_cutoff_id: null });
@@ -42,9 +42,9 @@ const RetroIndex = () => {
   const fetchRows = async () => {
     setLoading(true);
     try {
-      const { data } = await retroApi.getAll({ ...filters, search: search || undefined, page: page.current, per_page: page.pageSize });
-      setRows(data.retros.data);
-      setTotal(data.retros.total);
+      const { data } = await payrollAdjustmentApi.getAll({ ...filters, search: search || undefined, page: page.current, per_page: page.pageSize });
+      setRows(data.payroll_adjustments.data);
+      setTotal(data.payroll_adjustments.total);
     } catch (error) {
       handleApiError(error, message);
     } finally {
@@ -55,7 +55,7 @@ const RetroIndex = () => {
   const countSuggestions = async () => {
     if (!perms.canCreate) return;
     try {
-      const { data } = await retroApi.suggestions();
+      const { data } = await payrollAdjustmentApi.suggestions();
       setSuggestionCount(data.suggestions.length);
     } catch {
       // the badge is only a hint
@@ -71,7 +71,7 @@ const RetroIndex = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data } = await retroApi.getOptions();
+        const { data } = await payrollAdjustmentApi.getOptions();
         setOptions(data);
       } catch (error) {
         handleApiError(error, message);
@@ -87,8 +87,8 @@ const RetroIndex = () => {
 
   const openEdit = async (id) => {
     try {
-      const { data } = await retroApi.show(id);
-      setEditing(data.retro);
+      const { data } = await payrollAdjustmentApi.show(id);
+      setEditing(data.payroll_adjustment);
     } catch (error) {
       handleApiError(error, message);
     }
@@ -96,7 +96,7 @@ const RetroIndex = () => {
 
   const remove = async (record) => {
     try {
-      const { data } = await retroApi.delete(record.id);
+      const { data } = await payrollAdjustmentApi.delete(record.id);
       message.success(data.message);
       changed();
     } catch (error) {
@@ -119,11 +119,11 @@ const RetroIndex = () => {
     },
     {
       title: 'Type',
-      dataIndex: 'retro_type',
+      dataIndex: 'adjustment_type',
       width: 230,
       render: (v, r) => (
         <Space size={4} wrap>
-          {retroLabel(r)}
+          {adjustmentLabel(r)}
           {!Number(r.taxable) && <Tag>Non-taxable</Tag>}
           {r.compensation_id && <Tooltip title='From a back-dated salary change'><Tag color='cyan'>Salary</Tag></Tooltip>}
         </Space>
@@ -138,7 +138,7 @@ const RetroIndex = () => {
       render: (v, r) => <Space size={4}><Tag color={ADJUSTMENT_COLORS[r.adjustment]}>{r.adjustment === 'Earning' ? '+' : '−'}</Tag>{peso(v)}</Space>,
     },
     { title: 'Cut-off', dataIndex: 'cutoff_code', width: 110, render: (v) => v || '-' },
-    { title: 'Status', dataIndex: 'status', width: 110, render: (v) => <Tag color={RETRO_STATUS_COLORS[v]}>{v}</Tag> },
+    { title: 'Status', dataIndex: 'status', width: 110, render: (v) => <Tag color={ADJUSTMENT_STATUS_COLORS[v]}>{v}</Tag> },
     {
       title: 'Actions',
       key: 'actions',
@@ -156,7 +156,7 @@ const RetroIndex = () => {
           )}
           {perms.canDelete && r.status !== 'Applied' && (
             <Popconfirm
-              title='Delete this retro?'
+              title='Delete this adjustment?'
               description={r.compensation_id ? 'Only for a wrong entry — its salary change shows up in Suggestions again.' : 'Only for a wrong entry — otherwise cancel it.'}
               okText='Delete'
               okButtonProps={{ danger: true }}
@@ -187,8 +187,8 @@ const RetroIndex = () => {
           <Select
             allowClear
             placeholder='All types'
-            value={filters.retro_type}
-            onChange={(v) => setFilter({ retro_type: v })}
+            value={filters.adjustment_type}
+            onChange={(v) => setFilter({ adjustment_type: v })}
             options={Object.keys(options.types).map((t) => ({ value: t, label: t }))}
             style={{ width: 190 }}
           />
@@ -224,7 +224,7 @@ const RetroIndex = () => {
               <Button icon={<BulbOutlined />} onClick={() => setSuggestionsOpen(true)}>Suggestions</Button>
             </Badge>
           )}
-          {perms.canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={() => setEditing({})}>Add Retro</Button>}
+          {perms.canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={() => setEditing({})}>Add Adjustment</Button>}
         </Space>
       </Space>
       <Table
@@ -244,23 +244,23 @@ const RetroIndex = () => {
           onChange: (current, pageSize) => setPage({ current, pageSize }),
         }}
       />
-      <RetroFormModal
+      <PayrollAdjustmentFormModal
         open={!!editing}
-        retro={editing?.id ? editing : null}
+        adjustment={editing?.id ? editing : null}
         suggestion={editing?.suggestion || null}
         options={options}
         onClose={() => setEditing(null)}
         onSaved={() => { setEditing(null); setSavedCount((n) => n + 1); changed(); }}
       />
-      <RetroDetailsModal
-        retroId={viewing}
+      <PayrollAdjustmentDetailsModal
+        adjustmentId={viewing}
         refreshKey={savedCount}
         perms={perms}
         onClose={() => setViewing(null)}
         onChanged={changed}
         onEdit={(r) => setEditing(r)}
       />
-      <RetroSuggestionsModal
+      <PayrollAdjustmentSuggestionsModal
         open={suggestionsOpen}
         refreshKey={savedCount}
         onClose={() => setSuggestionsOpen(false)}
@@ -271,4 +271,4 @@ const RetroIndex = () => {
   );
 };
 
-export default RetroIndex;
+export default PayrollAdjustmentIndex;

@@ -46,7 +46,7 @@ MRF — viewing by subordinates, approver and permission.
   Pending / Approved (time-entry-cancel) — except an Approved entry paid by
   an approved payslip (`paid_in`) or inside a payroll waiting for approval
   (`pending_in`) — `PaidTag`, same for overtime; Administrators may. A paid
-  one is corrected with a retro adjustment. No levels set up → time-entry-
+  one is corrected with a payroll adjustment. No levels set up → time-entry-
   approve decides in one step.
 
 ## Shared approval helpers (for the next documents)

@@ -68,15 +68,15 @@ export const MODE_COLORS = { Computed: 'default', Fixed: 'blue', Exempt: 'orange
 
 export const DEDUCTION_STATUS_COLORS = { Active: 'green', 'On Hold': 'gold', 'Fully Paid': 'blue', Cancelled: 'default' };
 
-export const RETRO_STATUS_COLORS = { Open: 'green', Applied: 'blue', Cancelled: 'default' };
+export const ADJUSTMENT_STATUS_COLORS = { Open: 'green', Applied: 'blue', Cancelled: 'default' };
 
 export const ADJUSTMENT_COLORS = { Earning: 'green', Deduction: 'volcano' };
 
-// A retro's name as the payslip shows it: the type, or what an Other
+// An adjustment's name as the payslip shows it: the type, or what an Other
 // Adjustment is for (+ the allowance, or the text typed for Others).
-// Takes a list row (allowance_type_name) or a full retro (allowance_type).
-export const retroLabel = (r) => {
-  if (r.retro_type !== 'Other Adjustment' || !r.other_type) return r.retro_type;
+// Takes a list row (allowance_type_name) or a full adjustment (allowance_type).
+export const adjustmentLabel = (r) => {
+  if (r.adjustment_type !== 'Other Adjustment' || !r.other_type) return r.adjustment_type;
   if (r.other_type === 'Others (specify)') return r.other_specify || 'Other Adjustment';
   const allowance = r.allowance_type_name || r.allowance_type?.name;
   return `${r.other_type}${allowance ? ` (${allowance})` : ''}`;

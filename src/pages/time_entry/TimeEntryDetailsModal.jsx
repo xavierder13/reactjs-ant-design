@@ -55,7 +55,7 @@ const TimeEntryDetailsModal = ({ entryId, onClose, onActed }) => {
 
   const entry = data?.entry;
   const decidable = !!data?.approval?.can_approve;
-  // paid (retro adjustment instead) or in a payroll waiting for approval: Administrator only
+  // paid (payroll adjustment instead) or in a payroll waiting for approval: Administrator only
   const cancellable = access.canCancel(entry) && ['Pending', 'Approved'].includes(entry?.status) && (isAdmin || (!entry?.paid_in && !entry?.pending_in));
 
   return (

@@ -55,7 +55,7 @@ const OvertimeDetailsModal = ({ overtimeId, onClose, onActed }) => {
 
   const ot = data?.overtime;
   const decidable = !!data?.approval?.can_approve;
-  // paid (retro adjustment instead) or in a payroll waiting for approval: Administrator only
+  // paid (payroll adjustment instead) or in a payroll waiting for approval: Administrator only
   const cancellable = access.canCancel(ot) && ['Pending', 'Approved'].includes(ot?.status) && (isAdmin || (!ot?.paid_in && !ot?.pending_in));
 
   return (

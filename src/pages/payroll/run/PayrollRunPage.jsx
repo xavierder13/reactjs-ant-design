@@ -127,7 +127,7 @@ const PayrollRunPage = () => {
   const withWarnings = (data?.employees || []).filter((e) => e.warnings.length).length;
   // approved (posted) payslips are locked: only a rollback reopens them
   const approvedIds = new Set((data?.employees || []).filter((e) => e.approved).map((e) => e.employee_id));
-  // paid on the pay date: from then on no rollback (corrections = retro adjustments)
+  // paid on the pay date: from then on no rollback (corrections = payroll adjustments)
   const paid = !!run?.cutoff?.pay_date && dayjs().format('YYYY-MM-DD') >= run.cutoff.pay_date;
   const canRollback = perms.canRollback && !paid && (run?.status === 'Approved' || (isDraft && approvedIds.size > 0));
   const canPickGenerate = isDraft && perms.canGenerate;
@@ -302,7 +302,7 @@ const PayrollRunPage = () => {
           description={(
             <div style={{ maxWidth: 340 }}>
               {lastApproval
-                ? 'This is the last approval: loan / deduction payments are posted, this cut-off\'s retro adjustments are marked Applied and its filing is turned off. An approved payroll is locked — corrections go through a retro adjustment, or a rollback to Draft.'
+                ? 'This is the last approval: loan / deduction payments are posted, this cut-off\'s payroll adjustments are marked Applied and its filing is turned off. An approved payroll is locked — corrections go through a payroll adjustment, or a rollback to Draft.'
                 : completesLevel
                   ? `Your approval completes level ${levelInfo.level}; it then waits for the next level.`
                   : `Your approval is recorded; it still needs ${levelInfo ? levelInfo.required - levelInfo.approved - 1 : 'more'} more.`}
@@ -375,7 +375,7 @@ const PayrollRunPage = () => {
               type='info'
               showIcon
               style={{ marginBottom: 8 }}
-              title={`Paid on ${formatDate(run.cutoff.pay_date)} — the approved payslips can't be rolled back or generated again. Correct them with a retro adjustment on a later cut-off.`}
+              title={`Paid on ${formatDate(run.cutoff.pay_date)} — the approved payslips can't be rolled back or generated again. Correct them with a payroll adjustment on a later cut-off.`}
             />
           )}
           {rolledBack && (
@@ -541,7 +541,7 @@ const PayrollRunPage = () => {
             description={(
               <ul style={{ margin: 0, paddingLeft: 18 }}>
                 <li>The loan / deduction payments posted for them are removed (balances return).</li>
-                <li>Their retro adjustments are Open again.</li>
+                <li>Their payroll adjustments are Open again.</li>
                 <li>Payslips, remittances, the bank file and reports leave them out until the payroll is approved again.</li>
                 <li>Not allowed while a later payroll, or the year&apos;s 13th month, is approved or waiting for approval — or on / after the pay date (paid).</li>
               </ul>

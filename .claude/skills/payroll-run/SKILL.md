@@ -180,10 +180,11 @@ admits payroll-setting-edit for the employee picker.
   differential = night minutes × hourly × the hour's rate × night %.
 - Allowances prorated by days covered (per cut-off / per week × 52 ÷ 12 ÷
   cut-offs / per month ÷ cut-offs / per day worked); de minimis non-taxable
-  (monthly excess over the limit taxable; a weekly one by its × 52 ÷ 12). Open retros of the cut-off (Deduction ones negative),
-  labelled "Retro — <type>" or, for an Other Adjustment, what it is for (+
-  the allowance, or the Others text); taxable per the retro's `taxable`
-  (salary retros always; Other: from `EmployeeRetroAdjustment::OTHER_TYPES`,
+  (monthly excess over the limit taxable; a weekly one by its × 52 ÷ 12). Open payroll adjustments of the cut-off (Deduction ones negative,
+  code `adjustment_<id>`, ids kept in `summary.adjustment_ids`), labelled
+  with the type or, for an Other Adjustment, what it is for (+ the
+  allowance, or the Others text); taxable per the adjustment's `taxable`
+  (salary types always; Other: from `EmployeePayrollAdjustment::OTHER_TYPES`,
   the allowance type — taxable and not de minimis — or the form's switch).
 - Contributions: ContributionService::compute on the month base (monthly
   rate; daily-paid: the month's basic earnings, later cut-offs projected),
@@ -203,7 +204,7 @@ OFF — "Payroll X submitted for approval" — so nothing is filed, edited or
 approved inside it while it waits) → Pending → the chart's
 levels (local: level 1, 2 approvals, Lady Rose Lutrania + Marilou Baltazar,
 role "Payroll Approver" = payroll-run-list + -approve) → Approved on the last
-approval: Payroll payments posted (pay date), retros Applied, filing OFF.
+approval: Payroll payments posted (pay date), payroll adjustments Applied, filing OFF.
 Disapprove (remarks required) → back to Draft with "Returned by …", filing ON
 again when the submit had turned it off (not when Payroll had). An approved
 leave / time entry / overtime inside a Pending or approved payslip can't be
@@ -221,7 +222,7 @@ Administrator's approval completes a level (product rule); no levels =
 payroll-run-approve decides in one step. Engine: `ApprovalProcedure` with
 `$hierarchical = false` (every mapped approver of a level can act — a run
 isn't one employee's filing). Approved can't be regenerated or cancelled:
-correct it with a retro adjustment on the next cut-off, or roll it back.
+correct it with a payroll adjustment on the next cut-off, or roll it back.
 Seeder `PayrollRunApprovalProcedureSeeder`.
 
 ## Generate selected / roll back
@@ -295,7 +296,7 @@ deduction payments are never duplicated.
   - On an Approved run, or a Draft that still has approved payslips.
   - Removes those employees' `source = Payroll` deduction payments of the
     cut-off (`DeductionService::removePayrollPayments`: Fully Paid → Active),
-    reopens their Applied retros and unposts them. The run goes back to Draft
+    reopens their Applied payroll adjustments and unposts them. The run goes back to Draft
     (submit and approve again); the other payslips stay approved.
   - Clears the approval and submission fields and sets `rolled_back_by /
     _at`, `rollback_reason` (migration `2026_10_14_110000`); the page shows
@@ -303,7 +304,7 @@ deduction payments are never duplicated.
   - Refused while a later cut-off's run is Approved / Pending / keeps
     approved payslips, while the year's 13th month counts this cut-off
     (earned_through ≥ its end) and is Pending or has approved employees, and on
-    or after the cut-off's pay date (paid — corrected by a retro adjustment
+    or after the cut-off's pay date (paid — corrected by a payroll adjustment
     on a later cut-off; the page then shows "Paid on …" and no Roll Back).
     Cancel is refused while approved payslips remain.
   - The cut-off's filing stays off: reopen it on Payroll Cut-offs if late
