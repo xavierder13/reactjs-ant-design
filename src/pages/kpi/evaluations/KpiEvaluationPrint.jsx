@@ -24,6 +24,17 @@ const ratingScale = [
   { label: 'FAILED',             range: 'BELOW 75', description: 'The employee consistently fails to meet the basic requirement of the job.' },
 ];
 
+// "August 1 - 31, 2026" within one month; otherwise both months
+// ("August 1 - September 30, 2026") and, across a year, both years.
+const periodCovered = (start, end) => {
+  const from = dayjs(start);
+  const to = dayjs(end);
+  if (!from.isValid() || !to.isValid()) return '-';
+  if (!from.isSame(to, 'year')) return `${from.format('MMMM D, YYYY')} - ${to.format('MMMM D, YYYY')}`;
+  if (!from.isSame(to, 'month')) return `${from.format('MMMM D')} - ${to.format('MMMM D, YYYY')}`;
+  return `${from.format('MMMM D')} - ${to.format('D, YYYY')}`;
+};
+
 const KpiEvaluationPrint = () => {
   const { id }                      = useParams();
   const [evaluation, setEvaluation] = useState(null);
@@ -114,7 +125,7 @@ const KpiEvaluationPrint = () => {
               <td className='info-value'>{evaluation.employee?.department?.name || '-'}</td>
               <td className='info-label'>PERIOD COVERED:</td>
               <td className='info-value'>
-                {dayjs(evaluation.period_start).format('MMMM D')} - {dayjs(evaluation.period_end).format('D, YYYY')}
+                {periodCovered(evaluation.period_start, evaluation.period_end)}
               </td>
             </tr>
             <tr>
