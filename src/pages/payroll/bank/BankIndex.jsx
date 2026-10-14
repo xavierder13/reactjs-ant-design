@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Table, App } from 'antd';
+import { Table, Space, Tooltip, Button, App } from 'antd';
+import { EyeOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import bankApi from '../../../services/payroll/bankApi';
 import handleApiError from '../../../utils/handleApiError';
@@ -8,10 +9,12 @@ import RecordRowActions from '../../record_management/RecordRowActions';
 import ActiveTag from '../../record_management/ActiveTag';
 import { tablePagination } from '../../../utils/tablePagination';
 import BankFormModal from './BankFormModal';
+import BankEmployeesModal from './BankEmployeesModal';
 
 // Banks payroll accounts are held at (employee Bank Accounts and the
 // company's own in Payroll Settings). A bank in use can't be deleted — set
-// it inactive.
+// it inactive. View employees (bank-account-list) lists who has an account
+// there (BankEmployeesModal).
 const BankIndex = () => {
   const { message } = App.useApp();
   const { hasPermission, hasRole } = useAuth();
@@ -19,11 +22,13 @@ const BankIndex = () => {
   const canCreate = isAdmin || hasPermission('bank-create');
   const canEdit   = isAdmin || hasPermission('bank-edit');
   const canDelete = isAdmin || hasPermission('bank-delete');
+  const canViewEmployees = isAdmin || hasPermission('bank-account-list');
 
   const [banks, setBanks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [editing, setEditing] = useState(null); // {} = create
+  const [viewing, setViewing] = useState(null); // the bank whose employees are shown
 
   const fetchBanks = async () => {
     setLoading(true);
@@ -65,16 +70,23 @@ const BankIndex = () => {
     { title: 'Status', dataIndex: 'active', width: 100, render: (v) => <ActiveTag active={v ? 'Y' : 'N'} /> },
     {
       title: 'Actions',
-      width: 100,
+      width: 130,
       render: (_, r) => (
-        <RecordRowActions
-          canEdit={canEdit}
-          canDelete={canDelete && !r.employees_count}
-          onEdit={() => setEditing(r)}
-          onDelete={() => remove(r)}
-          deleteTitle='Delete this bank?'
-          deleteDescription='Only possible while no account uses it.'
-        />
+        <Space>
+          {canViewEmployees && (
+            <Tooltip title='View employees'>
+              <Button color='blue' variant='outlined' size='small' icon={<EyeOutlined />} disabled={!r.employees_count} onClick={() => setViewing(r)} />
+            </Tooltip>
+          )}
+          <RecordRowActions
+            canEdit={canEdit}
+            canDelete={canDelete && !r.employees_count}
+            onEdit={() => setEditing(r)}
+            onDelete={() => remove(r)}
+            deleteTitle='Delete this bank?'
+            deleteDescription='Only possible while no account uses it.'
+          />
+        </Space>
       ),
     },
   ];
@@ -99,6 +111,12 @@ const BankIndex = () => {
         scroll={{ x: 640 }}
         pagination={tablePagination(20)}
         expandable={{ rowExpandable: (r) => !!r.remarks, expandedRowRender: (r) => r.remarks }}
+      />
+      <BankEmployeesModal
+        key={viewing?.id ?? 'none'}
+        open={!!viewing}
+        bank={viewing}
+        onClose={() => setViewing(null)}
       />
       <BankFormModal
         open={!!editing}
