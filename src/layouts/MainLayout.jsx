@@ -690,6 +690,8 @@ const MainLayout = () => {
       return { title: 'View Branch Report', breadcrumb: ['Employee', 'Workforce Reports', 'Branch Reports', 'View'] };
     if (/^\/kpi-evaluations\/\d+$/.test(pathname))
       return { title: 'View Evaluation', breadcrumb: ['KPI Management', 'Evaluations', 'View'] };
+    if (/^\/kpi-evaluations\/\d+\/print$/.test(pathname))
+      return { title: 'Print Evaluation', breadcrumb: ['KPI Management', 'Evaluations', 'Print'] };
     if (/^\/my-evaluations\/\d+$/.test(pathname))
       return { title: 'Self Evaluation', breadcrumb: ['KPI Management', 'My Evaluations', 'Fill'] };
     if (/^\/manpower-requests\/\d+\/edit$/.test(pathname))
@@ -698,6 +700,18 @@ const MainLayout = () => {
       return { title: 'Print Manpower Request', breadcrumb: ['Manpower Request', 'Print'] };
     if (/^\/manpower-requests\/\d+$/.test(pathname))
       return { title: 'View Manpower Request', breadcrumb: ['Manpower Request', 'View'] };
+    // Not listed: the nearest listed parent page + this page's last word
+    // ("/x/12/print" → x's breadcrumb › Print), so a new detail / print
+    // page never shows a bare "Home".
+    const parts = pathname.split('/').filter(Boolean);
+    for (let n = parts.length - 1; n > 0; n--) {
+      const parent = titleMap[`/${parts.slice(0, n).join('/')}`];
+      if (parent) {
+        const last = parts[parts.length - 1];
+        const label = /^\d+$/.test(last) ? 'View' : last.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        return { title: `${parent.title} — ${label}`, breadcrumb: [...parent.breadcrumb, label] };
+      }
+    }
     return { title: '', breadcrumb: ['Home'] };
   };
 
