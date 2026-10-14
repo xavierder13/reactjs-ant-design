@@ -124,13 +124,15 @@ Template / Import Data dialogs.
 `PayrollSettingAssignmentService`, `PayrollSettingAssignmentController`,
 `payroll_setting/assignments/*` under `payroll_setting.maintenance`:
 index / options = payroll-setting-view, store / update / cancel =
-payroll-setting-edit; migration `2026_10_19_110000`). React:
+payroll-setting-edit; migrations `2026_10_19_110000`, `2026_10_21_100000`
+(night-diff hours)). React:
 `settings/SettingAssignmentsTab` + `SettingAssignmentFormModal`
 (`payrollSettingApi.assignment*`); `employee_master_data/option_list`
 admits payroll-setting-edit for the employee picker.
 
 - An employee / position / branch / company gets its own
-  `daily_rate_factor`, `hours_per_day`, `night_diff_enabled`, `sss /
+  `daily_rate_factor`, `hours_per_day`, `night_diff_enabled`,
+  `night_diff_from` / `night_diff_to`, `sss /
   philhealth / pagibig / tax_deduction` for a **coverage** (required):
   `cutoffs` (start..end cut-off; To follows From in the form, so one
   cut-off = that payroll only) or `dates` (a date range). Both are kept as
@@ -142,8 +144,8 @@ admits payroll-setting-edit for the employee picker.
   (a cut-off ending in the dates they share, or shared dates past the last
   cut-off made).
 - `overridesFor(ids, date)` + `apply(setting, override)` (a copy, never
-  saved) feed `DtrService::forEmployees` (hours per day, by the range's
-  end), `PayrollRunService::generate` / `payPeriod` and final pay (by the
+  saved) feed `DtrService::forEmployees` (hours per day and the
+  night-differential hours `nightMinutes()` counts, by the range's end), `PayrollRunService::generate` / `payPeriod` and final pay (by the
   cut-off's `date_to` / the last day). A payslip with any keeps
   `summary.settings_from` (field → "Branch: X (from 2026-10-B)"), shown on
   the PayslipModal.
@@ -154,6 +156,11 @@ admits payroll-setting-edit for the employee picker.
   `2026_10_19_120000`, default On; or assigned) = no Night Differential
   line, regular or overtime hours; the DTR still counts night minutes. An
   assignment turning it Off needs a reason (law: exempt employees only).
+- Assigned night-differential hours (`night_diff_from` / `night_diff_to`,
+  `HH:MM` in, `HH:MM:SS` stored): both or neither, blank when the
+  assignment turns it Off, and they must contain 10 PM – 6 AM (Labor Code
+  Art. 86) — wider only (`checkNightDiffHours`). The rate stays the
+  premium rates' `night_diff_rate`; there's no per-assignment rate.
 - Rules: at least one field; the first cut-off covered not Approved /
   Pending (on update the current coverage's too); target fixed on update;
   cancel needs a reason, the row is kept; the list tags an Active one whose

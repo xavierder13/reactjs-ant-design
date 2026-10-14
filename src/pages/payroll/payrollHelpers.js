@@ -38,6 +38,8 @@ export const ASSIGNED_SETTING_FIELDS = [
   { key: 'daily_rate_factor', label: 'Working days a year' },
   { key: 'hours_per_day', label: 'Hours per day' },
   { key: 'night_diff_enabled', label: 'Night differential' },
+  { key: 'night_diff_from', label: 'Night diff. from' },
+  { key: 'night_diff_to', label: 'Night diff. to' },
   { key: 'sss_deduction', label: 'SSS' },
   { key: 'philhealth_deduction', label: 'PhilHealth' },
   { key: 'pagibig_deduction', label: 'Pag-IBIG' },
@@ -59,6 +61,7 @@ export const settingValueText = (key, value) => {
   if (key === 'daily_rate_factor') return `${Number(value)} days`;
   if (key === 'hours_per_day') return `${Number(value)} h`;
   if (key === 'night_diff_enabled') return value ? 'On' : 'Off';
+  if (key === 'night_diff_from' || key === 'night_diff_to') return String(value).slice(0, 5);
   return value;
 };
 

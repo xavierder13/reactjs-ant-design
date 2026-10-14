@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Modal, Form, Input, InputNumber, Select, Segmented, Radio, Row, Col, Transfer, Space, Alert, DatePicker, Typography, App,
+  Modal, Form, Input, InputNumber, Select, Radio, Row, Col, Transfer, Space, Alert, DatePicker, TimePicker, Typography, App,
 } from 'antd';
 import payrollSettingApi from '../../../services/payroll/payrollSettingApi';
 import handleApiError from '../../../utils/handleApiError';
@@ -18,6 +18,7 @@ const AGENCIES = [
   { key: 'tax_deduction', label: 'Withholding Tax' },
 ];
 const FOLLOW = 'Follow the next level';
+const toTime = (t) => (t ? dayjs(`2000-01-01 ${String(t).slice(0, 5)}`) : undefined);
 const MAX_BULK = 500;
 
 // Assign (record = null) or change the payroll settings of an employee /
@@ -51,7 +52,11 @@ const SettingAssignmentFormModal = ({ open, record, options, onClose, onSaved })
   const dates = Form.useWatch('dates', form);
   const watched = Form.useWatch([], form);
   const nightOff = watched?.night_diff_enabled === false;
-  const fieldsKey = JSON.stringify(Object.fromEntries(['coverage', 'start_cutoff_id', 'end_cutoff_id', 'daily_rate_factor', 'hours_per_day', 'night_diff_enabled', ...AGENCIES.map((a) => a.key)].map((k) => [k, watched?.[k] ?? null])));
+  const fieldsKey = JSON.stringify({
+    ...Object.fromEntries(['coverage', 'start_cutoff_id', 'end_cutoff_id', 'daily_rate_factor', 'hours_per_day', 'night_diff_enabled', ...AGENCIES.map((a) => a.key)].map((k) => [k, watched?.[k] ?? null])),
+    night_diff_from: watched?.night_diff_from?.format('HH:mm') ?? null,
+    night_diff_to: watched?.night_diff_to?.format('HH:mm') ?? null,
+  });
 
   const handleAfterOpenChange = (isOpen) => {
     if (!isOpen) {
@@ -73,6 +78,8 @@ const SettingAssignmentFormModal = ({ open, record, options, onClose, onSaved })
         daily_rate_factor: record.daily_rate_factor === null ? undefined : Number(record.daily_rate_factor),
         hours_per_day: toNumber(record.hours_per_day),
         night_diff_enabled: record.night_diff_enabled ?? undefined,
+        night_diff_from: toTime(record.night_diff_from),
+        night_diff_to: toTime(record.night_diff_to),
         sss_deduction: record.sss_deduction || undefined,
         philhealth_deduction: record.philhealth_deduction || undefined,
         pagibig_deduction: record.pagibig_deduction || undefined,
@@ -134,6 +141,8 @@ const SettingAssignmentFormModal = ({ open, record, options, onClose, onSaved })
     daily_rate_factor: values.daily_rate_factor ?? null,
     hours_per_day: values.hours_per_day ?? null,
     night_diff_enabled: values.night_diff_enabled ?? null,
+    night_diff_from: values.night_diff_from?.format('HH:mm') ?? null,
+    night_diff_to: values.night_diff_to?.format('HH:mm') ?? null,
     ...Object.fromEntries(AGENCIES.map((a) => [a.key, values[a.key] || null])),
   });
 
@@ -217,23 +226,32 @@ const SettingAssignmentFormModal = ({ open, record, options, onClose, onSaved })
       width={bulk ? EMPLOYEE_BULK_MODAL_WIDTH : EMPLOYEE_FORM_MODAL_WIDTH}
     >
       <Form form={form} layout='vertical' initialValues={{ scope: 'branch', mode: 'one', coverage: 'cutoffs' }}>
-        <Space wrap align='start'>
-          <Form.Item name='scope' label='Applies to'>
-            <Segmented options={ASSIGN_SCOPES} disabled={!!record} onChange={() => form.setFieldsValue({ scope_id: undefined, employee_ids: [] })} />
-          </Form.Item>
-          {!record && scope === 'employee' && (
-            <Form.Item name='mode' label='Employees'>
+        {/* solid buttons like Coverage, so the chosen level stands out; on
+            change it is fixed — kept as a hidden field and shown as one
+            read-only line below instead */}
+        {record ? <Form.Item name='scope' hidden><Input /></Form.Item> : (
+          <Space wrap align='start'>
+            <Form.Item name='scope' label='Applies to'>
               <Radio.Group
                 optionType='button' buttonStyle='solid'
-                options={[{ value: 'one', label: 'One' }, { value: 'bulk', label: 'Bulk' }]}
+                options={ASSIGN_SCOPES}
                 onChange={() => form.setFieldsValue({ scope_id: undefined, employee_ids: [] })}
               />
             </Form.Item>
-          )}
-        </Space>
+            {scope === 'employee' && (
+              <Form.Item name='mode' label='Employees'>
+                <Radio.Group
+                  optionType='button' buttonStyle='solid'
+                  options={[{ value: 'one', label: 'One' }, { value: 'bulk', label: 'Bulk' }]}
+                  onChange={() => form.setFieldsValue({ scope_id: undefined, employee_ids: [] })}
+                />
+              </Form.Item>
+            )}
+          </Space>
+        )}
         {record && (
-          <Form.Item label={assignScopeLabel(scope)}>
-            <Input readOnly value={record.scope_name} />
+          <Form.Item label='Applies to'>
+            <Input readOnly value={`${assignScopeLabel(scope)}: ${record.scope_name || ''}`} />
           </Form.Item>
         )}
         {!record && !bulk && (
@@ -341,10 +359,41 @@ const SettingAssignmentFormModal = ({ open, record, options, onClose, onSaved })
           </Col>
           <Col xs={24} md={12}>
             <Form.Item name='night_diff_enabled' label='Night differential'>
-              <Select allowClear options={[{ value: true, label: 'On' }, { value: false, label: 'Off' }]} placeholder={FOLLOW} />
+              <Select
+                allowClear
+                options={[{ value: true, label: 'On' }, { value: false, label: 'Off' }]}
+                placeholder={FOLLOW}
+                onChange={(v) => { if (v === false) form.setFieldsValue({ night_diff_from: undefined, night_diff_to: undefined }); }}
+              />
+            </Form.Item>
+          </Col>
+          {/* both or neither; at least 10 PM – 6 AM (Labor Code Art. 86) */}
+          <Col xs={12} md={6}>
+            <Form.Item
+              name='night_diff_from'
+              label='Night diff. from'
+              dependencies={['night_diff_to']}
+              rules={[{ validator: (_, v) => (!v && form.getFieldValue('night_diff_to') ? Promise.reject(new Error('Enter both, or neither')) : Promise.resolve()) }]}
+            >
+              <TimePicker format='HH:mm' disabled={nightOff} placeholder='Next level' style={{ width: '100%' }} />
+            </Form.Item>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Item
+              name='night_diff_to'
+              label='to'
+              dependencies={['night_diff_from']}
+              rules={[{ validator: (_, v) => (!v && form.getFieldValue('night_diff_from') ? Promise.reject(new Error('Enter both, or neither')) : Promise.resolve()) }]}
+            >
+              <TimePicker format='HH:mm' disabled={nightOff} placeholder='Next level' style={{ width: '100%' }} />
             </Form.Item>
           </Col>
         </Row>
+        {!nightOff && (
+          <Typography.Text type='secondary' style={{ display: 'block', marginTop: -16, marginBottom: 12 }}>
+            Night differential hours: only to widen them for these employees — they must cover at least 10:00 PM – 6:00 AM.
+          </Typography.Text>
+        )}
         {nightOff && (
           <Alert
             type='warning'
