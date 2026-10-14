@@ -50,7 +50,7 @@ const RegenerateEmployeesModal = ({ target, onClose, onDone }) => {
     }
     setSaving(true);
     try {
-      const { data } = await payrollRunApi.generate({ payroll_cutoff_id: run.payroll_cutoff_id, employee_ids: selected });
+      const { data } = await payrollRunApi.generate({ payroll_cutoff_id: run.payroll_cutoff_id, company_id: run.company_id ?? null, employee_ids: selected });
       message.success(data.message);
       onDone();
     } catch (error) {

@@ -22,10 +22,14 @@ import axios from '../../api/axiosInstance';
 //   total_amount } }. An approved batch takes only employees not in it
 //   (generate with employee_ids): it goes back to Draft and is approved
 //   again as its next round; approved lines stay locked and unchanged.
-// - generate({ year, pay_date, remarks, employee_ids? }) (Draft only):
+// Each batch is for one company (company_id — the branch's company) or all
+// companies (null): one All-companies batch a year or one per company,
+// never both (422); each line keeps its company_id. getAll() also returns
+// companies [{ id, name }]; runs carry company { name }.
+// - generate({ year, company_id?, pay_date, remarks, employee_ids? }) (Draft only):
 //   employee_ids = only those again (a new batch gets just them; on a Draft
 //   the others keep their lines; refused when payrolls were approved since
-//   the Draft was made — then generate everyone) · candidates(year) →
+//   the Draft was made — then generate everyone) · candidates(year, companyId) →
 //   { run: { id, status, earned_through } | null, employees: [{ id,
 //   employee_code, full_name, branch, position, in_run, eligible,
 //   approved }] } (thirteenth-month-generate) · submit(id) ·
@@ -40,7 +44,7 @@ const thirteenthMonthApi = {
   getAll:       ()            => axios.post('/thirteenth_month/index'),
   show:         (id)          => axios.post(`/thirteenth_month/show/${id}`),
   generate:     (payload)     => axios.post('/thirteenth_month/generate', payload),
-  candidates:   (year)        => axios.post('/thirteenth_month/candidates', { year }),
+  candidates:   (year, companyId = null) => axios.post('/thirteenth_month/candidates', { year, company_id: companyId }),
   submit:       (id)          => axios.post(`/thirteenth_month/submit/${id}`),
   approve:      (id, remarks) => axios.post(`/thirteenth_month/approve/${id}`, { remarks }),
   disapprove:   (id, remarks) => axios.post(`/thirteenth_month/disapprove/${id}`, { remarks }),

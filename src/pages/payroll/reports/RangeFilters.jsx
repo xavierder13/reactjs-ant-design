@@ -1,5 +1,5 @@
 import { DatePicker, Select, Space, Radio } from 'antd';
-import useCompanies from '../../../hooks/useCompanies';
+import usePayrollCompanies from '../../../hooks/usePayrollCompanies';
 import useBranches from '../../../hooks/useBranches';
 import usePositions from '../../../hooks/usePositions';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
@@ -8,11 +8,11 @@ import EmployeeSelect from '../../manpower_request/request/EmployeeSelect';
 
 // The filters of the range reports (Contribution History, Pay Sheet):
 // a date range or a cut-off range (approved payrolls whose cut-off ENDS in
-// it, at most one year), company / branch / position (the employee's
-// current ones) and employees. Controlled: `value` / `onChange(next)`;
+// it, at most one year), company (the payslip's — its employer), branch /
+// position (the employee's current ones) and employees. Controlled: `value` / `onChange(next)`;
 // defaultRangeFilters / rangeParams / useRangeCutoffs in rangeHelpers.
 const RangeFilters = ({ value, onChange, cutoffs, employees = true }) => {
-  const { items: companies } = useCompanies();
+  const { items: companies } = usePayrollCompanies();
   const { branches } = useBranches();
   const { positionOptions } = usePositions();
   const set = (patch) => onChange({ ...value, ...patch });

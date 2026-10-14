@@ -35,8 +35,10 @@ has its own % (the premium rates' overtime column per day type).
   — unused since `2026_10_17_100000–100400`: banks, employee_bank_accounts
   + the move, company_bank_accounts + payroll_settings.match_employee_bank,
   paid-from on payroll_runs / thirteenth_month_runs),
-  `110000` (13th month), `120000` (employer on payroll_settings), `130000`
-  (13th-month approval).
+  `110000` (13th month), `120000` (employer on payroll_settings — unused
+  since `2026_10_20_100000`), `130000` (13th-month approval),
+  `2026_10_20_100000` (employer details on `companies`), `110000`
+  (`company_id` on runs / 13th-month runs and their lines).
   React: `run/BankFileModal` (shared by runs and 13th month), PayslipModal
   Print (`utils/printDocument` + `reports/printTemplates`), `my_payslips/
   MyPayslipsIndex` (`/my-payslips`, open route, My Workspace + user menu;
@@ -194,8 +196,20 @@ admits payroll-setting-edit for the employee picker.
 - Scheduled deductions due (DeductionService::dueOn skips a cut-off already
   paid; a One-time one is its whole total, from its start cut-off until taken;
   labelled "<type> — <description>" when the deduction has one) only while the net stays ≥ 0, else a warning. Lines rounded once.
-- Run: one non-cancelled per cut-off; employees = active with a salary
-  saved by the cut-off's end; settings + rates copied onto it.
+- Run: per cut-off, for **all companies** (`company_id` null) or **one
+  company** — one generation, one approval each; a cut-off has one
+  All-companies run or runs per company, never both (`generate` 422s; the
+  Generate modal's Company select shows it and disables Generate). Employees
+  = active with a salary saved by the cut-off's end, of the company (their
+  branch's), not already in another run of the cut-off; settings + rates
+  copied onto it. Each payslip keeps `company_id` (its employer: payslip
+  header, reports — `PayrollReportService::employer($companyId)`,
+  `Company::employerDetails()`). Month order (submit / approve after the
+  earlier cut-off, generate / roll back before the later one) and the 13th
+  month guard only look at runs whose scope overlaps (same company or all
+  companies). A return reopens filing only when no other run of the cut-off
+  is Pending / Approved. `payroll_run/options` → cut-offs with `runs [{ id,
+  company_id, status }]` + `companies`; `cutoff_candidates/{id} { company_id }`.
 
 ## Approval ("Payroll Run" Access Chart)
 
@@ -258,6 +272,9 @@ deduction payments are never duplicated.
     rows then Generate Selected (`RegenerateEmployeesModal`, approved options
     disabled); Regenerate All asks for confirmation.
 - **Add employees / approval rounds** (payroll runs and 13th month alike):
+  - Refused (and the button hidden / Generate disabled) on or after the pay
+    date (13th month: its pay date, else Dec 24) — paid; a missed employee
+    is paid with a payroll adjustment on a later cut-off.
   - Generate on an approved cut-off / year takes only employees not in it.
     It works through Selected employees only (All is refused) or the
     record's Add Employees button (`RegenerateEmployeesModal` mode `add`).
@@ -319,33 +336,80 @@ deduction payments are never duplicated.
 
 - Every report reads **approved** runs only (register / bank preview also
   show a Draft); the bank CSV is approved-only.
+- Employer share on payslips: Payroll Settings → General → Payslip
+  (`payroll_settings.payslip_show_employer_share`, migration
+  `2026_10_20_140000`, default **off**; not a pay setting — doesn't block a
+  partial generate). Off: `PayrollReportService::forEmployee` strips the
+  payslip's `employer` lines / `employer_share` from what employees get —
+  `my_payslip/show`, every printed payslip (`payroll_report/payslips`,
+  `my_payslip/payslips`) — and `employeePaySheet` drops the ER / EC columns
+  (JSON and the Excel). Payroll staff still see it on the run's payslip
+  (`payroll_run/employee` → `show_employer_share`; PayslipModal tags it "Not
+  on the employee's payslip" and its Print leaves it out), the register and
+  the reports.
+- Employers: Payroll Settings → Employers (`payroll_setting/employers/update/
+  {companyId}`, payroll-setting-edit; registered name blank = the company
+  name; audit 'Employer (company)'). Remittances and Year-end Tax have a
+  Company select (`reports/CompanySelect`, `payroll_report/companies` —
+  payroll-report-view, no company-list needed; `usePayrollCompanies`):
+  that employer's payslips only, cleared = all companies (employer fields
+  null, a warning to choose one). The 2316 defaults to the company of the
+  employee's latest approved payslip that year; a transferred employee gets
+  one per company. Range reports' company filter = the payslip's company.
+  Printed payslips use each payslip's `employer`.
 - Bank file (`PayrollReportService::bankLines($amounts, $creditDate,
   $paidFrom)`): credits each employee's account **in force on the pay
   date** (`BankAccountService::inForce` — latest `effective_from` on or
   before it; Payroll → Bank Accounts, `/payroll-bank-accounts`,
-  `bank-account-*`; banks on Payroll → Setup → Banks, `/banks`, `bank-*`),
+  `bank-account-*`; banks on Payroll → Setup → Banks, `/banks`, `bank-*` — View employees (`bank/BankEmployeesModal`, bank-account-list) lists a bank's accounts in force today / upcoming / history via `bank_account/index { bank_id, state }`),
   **one file per company account it is paid from** (`groups`, CSV per
   `source_id`). No account = `missing` (cash / check); a zero or negative
   net = `not_positive` (not credited, shown in red). The bell's
   `no_bank_account` (info) counts active salaried employees without one
   (`?state=missing`).
-- Paid from (`BankAccountService::paidFrom`): company accounts on Payroll
-  Settings → Payroll Accounts (`payroll_setting/accounts/*`,
-  payroll-setting-edit). Default for the pay date = the account whose
-  default period covers it (periods can't overlap), else the one marked
-  Default. `match_employee_bank` (Settings, overridable per payout): an
-  employee whose bank has an active company account is paid from it. A
-  payroll run / 13th month can choose its default and the rule on the Bank
-  File until approved (`payroll_run/paid_from`, `thirteenth_month/paid_from`
-  — the generate permission); **approval keeps the result in `paid_from`**,
-  so later account edits never change an approved payout (a payout approved
-  before this resolves live).
-- Remittances: per calendar month, all approved cut-offs ending in it; BIR
-  taxable = taxable pay − mandatory EE contributions.
+- Paid from (`BankAccountService::paidFrom` / `sourceFor`): payroll
+  accounts (`company_bank_accounts`, `payroll_setting/accounts/*`,
+  payroll-setting-edit) belong to a company (`company_id`, migration
+  `2026_10_20_120000` — managed on Payroll Settings → Employers, a company's
+  row expands to them) or are general (null — the General tab's Payroll
+  Accounts card, the fallback). An employee is paid from their payslip's
+  company's accounts — only when the company has a default for the pay date
+  (its Default, or a default period covering it); a company with no account,
+  or accounts but no such default, uses the general ones entirely (match-by-
+  bank included). Within one owner: default for the pay date = the account whose
+  default period covers it (periods can't overlap within the owner), else
+  its Default (one per owner). `match_employee_bank` (Settings, overridable
+  per payout): an employee whose bank has an active account of the same
+  owner is paid from it. Only a **one-company** payroll run / 13th month can
+  choose its account (its company's or a general one) on the Bank File until
+  approved (`can_choose_account`; `payroll_run/paid_from`,
+  `thirteenth_month/paid_from` — the generate permission); an all-companies
+  one pays each employee from their company's account. Both may change the
+  rule. **Approval keeps the result in `paid_from`** (with `companies {
+  company_id: { default, by_bank } }`), so later account edits never change
+  an approved payout (one kept before company accounts has no `companies` —
+  the general accounts for everyone). Bank file groups show the account's
+  company; CSV names add it.
+- What each line was paid with: on approval every payslip / 13th-month line
+  saves `bank_credit` (migration `2026_10_20_130000`; `PayrollReportService::
+  recordCredits` — { status credited | no_account | not_positive, amount,
+  the employee account credited, source = the company account }); a
+  rollback clears it. `runCredits` / `thirteenthCredits` = the saved ones,
+  the rest worked out now (per round with its kept accounts);
+  `creditSummary` sums them per paying account. Shown as **Paid from** on
+  the payroll page and 13th-month view (`run/PaidFromSummary`; "preview —
+  final on approval" until all saved), a Paid From column on the Approval
+  Rounds panel and the Payroll Runs list (saved credits only), and Credited
+  To / Paid From columns in the payroll register Excel.
+- Remittances: per calendar month (and company), all approved cut-offs
+  ending in it; BIR taxable = taxable pay − mandatory EE contributions.
 - 13th month (PD 851): basic pay + paid leave − absences / late / undertime /
   unpaid leave + salary differentials, ÷ 12; Draft projects the rest of the
   year at the monthly rate (daily-paid: earned only); one batch per year;
-  over ₱90,000 is taxable. Generate (and the Draft's Regenerate, which
+  over ₱90,000 is taxable. A batch is for all companies or one company like
+  payroll runs (one All batch a year or one per company; lines keep
+  `company_id`; earned through = the company's last approved cut-off; the
+  basic earned counts every payslip of the year). Generate (and the Draft's Regenerate, which
   opens the same modal) = All employees or Selected employees, like Payroll
   Runs: `employee_ids` recomputes only those (a new batch gets just them;
   on a Draft the others keep their lines; an inactive / unsalaried /
@@ -374,9 +438,9 @@ deduction payments are never duplicated.
 - Range reports (`payroll_report/contribution_history`, `pay_sheet`,
   `payslips`): `{ date_from, date_to }` = approved payslips whose cut-off
   ENDS in it (≤ 1 year; the cut-off range sends the first cut-off's start and
-  the last one's end), filtered by company / branch / position (the
-  employee's **current** ones — a payslip keeps no branch) and
-  `employee_ids`. Contribution History: per employee SSS EE / ER / EC,
+  the last one's end), filtered by company (the payslip's own `company_id`),
+  branch / position (the employee's **current** ones — a payslip keeps no
+  branch) and `employee_ids`. Contribution History: per employee SSS EE / ER / EC,
   PhilHealth EE / ER, Pag-IBIG EE / voluntary / ER, tax, EE / ER totals,
   expandable per cut-off; the Contributions page's History modal is the same
   endpoint with one employee (default this year). Pay Sheet: one line per

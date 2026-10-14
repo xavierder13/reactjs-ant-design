@@ -3,13 +3,19 @@ import axios from '../../api/axiosInstance';
 // Payroll outputs and compliance — vueportal PayrollReportController +
 // PayrollReportService (payroll_report.maintenance: payroll-report-view;
 // final pay: final-pay-view; Administrator bypasses). Read from APPROVED
-// payroll runs (register / bank file also preview a Draft).
+// payroll runs (register / bank file also preview a Draft). Every payslip
+// keeps its company_id (the employee's branch's company when generated) —
+// its employer; reports filter by it.
+// - companies() → { companies: [{ id, name }] } (active + any a payslip names).
 // - register(runId) → { run, rows: [employee + figures], by_branch } ·
 //   registerDownload(runId) → .xls (Register + By Branch).
-// - bank(runId) → { run { status, source_account_id, match_employee_bank },
-//   accounts (active company accounts), paid_from { match_employee_bank,
-//   chosen, default, by_bank }, groups: [{ source_id ('none' = no company
-//   account), source { bank_name, bank_code, account_no, account_name },
+// - bank(runId) → { run { status, source_account_id, match_employee_bank,
+//   company_id }, can_choose_account (one-company run only), accounts (what
+//   it may choose: its company's + the general active ones), paid_from {
+//   match_employee_bank, chosen, default / by_bank (general), companies {
+//   company_id: { default, by_bank } } }, groups: [{ source_id ('none' = no
+//   company account), source { bank_name, bank_code, account_no,
+//   account_name, company_id, company_name (null = general) },
 //   credit: [{ employee_code, full_name, account_no, account_name,
 //   bank_name, amount }], total }], missing, not_positive, credit_count,
 //   total, credit_date } · bankDownload(runId, sourceId, round?) → one group's .csv
@@ -17,13 +23,16 @@ import axios from '../../api/axiosInstance';
 //   all of it only when the run is Approved; a round uses the paying
 //   account(s) it kept when approved). `round` on register / bank too.
 //   (approved runs only).
-// - remittance({ year, month }) → { cutoffs, employees: [{ sss_no, sss_msc,
+// - remittance({ year, month, company_id? }) → { cutoffs, employees: [{ sss_no, sss_msc,
 //   sss_ee, sss_er, sss_ec, philhealth_no, philhealth_base, philhealth_ee,
 //   philhealth_er, pagibig_no, pagibig_base, pagibig_ee, pagibig_voluntary,
 //   pagibig_er, tin_no, gross, non_taxable, taxable, tax, … }], totals,
-//   employer } · remittanceDownload({ year, month }) → .xls.
-// - annualization({ year }) → { employees: [annual row], totals, employer };
-//   alphalistDownload({ year }) → .xls; certificate({ year, employee_id }) →
+//   employer (the company's; all null for all companies) } ·
+//   remittanceDownload({ year, month, company_id? }) → .xls.
+// - annualization({ year, company_id? }) → { employees: [annual row — that
+//   employer's payslips only], totals, employer }; alphalistDownload({ year,
+//   company_id? }) → .xls; certificate({ year, employee_id, company_id? —
+//   default: the company of their latest approved payslip that year }) →
 //   { employee, annual, employer } (BIR 2316).
 // Annual row: { gross_compensation, thirteenth_month, benefits_exempt,
 //   de_minimis, sss_ee, philhealth_ee, pagibig_ee, mandatory_contributions,
@@ -34,8 +43,8 @@ import axios from '../../api/axiosInstance';
 //   deductions, leave, gross, total_deductions, net, annual, employer,
 //   warnings } }.
 // Range reports — params { date_from, date_to (cut-offs ending in it, ≤ 1
-// year), employee_ids, company_id, branch_id, position_id } (by the
-// employee's current branch / position), approved payrolls only:
+// year), employee_ids, company_id (the payslip's), branch_id, position_id
+// (the employee's current ones) }, approved payrolls only:
 // - contributionHistory → { cutoffs, employees: [{ …employee, sss_ee, sss_er,
 //   sss_ec, philhealth_ee, philhealth_er, pagibig_ee, pagibig_voluntary,
 //   pagibig_er, tax, sss_total, philhealth_total, pagibig_total, ee_total,
@@ -45,9 +54,11 @@ import axios from '../../api/axiosInstance';
 //   columns + cutoffs, company), by_company, by_branch, by_position,
 //   by_cutoff [{ group, employees, … }], totals }; paySheetDownload → .xls.
 // - payslips → { payslips: [{ payslip (+ employee.full_name), run { cutoff } }]
-//   (≤ 500, else 422 { message }), employer } — for printing with payslipHtml.
+//   , employer (its company's) }] (≤ 500, else 422 { message }) } — for
+//   printing with payslipHtml.
 const blob = { responseType: 'blob' };
 const payrollReportApi = {
+  companies:          ()              => axios.post('/payroll_report/companies'),
   // round (optional): one approval round's payslips only
   register:           (runId, round)  => axios.post(`/payroll_report/register/${runId}`, round ? { round } : {}),
   registerDownload:   (runId, round)  => axios.post(`/payroll_report/register/download/${runId}`, round ? { round } : {}, blob),

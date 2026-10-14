@@ -10,13 +10,16 @@ import { peso } from '../payrollHelpers';
 const accountLabel = (a) => (a ? `${a.bank_name || 'Bank'} ${a.account_no}${a.account_name ? ` (${a.account_name})` : ''}` : 'No company account');
 
 // The bank credit preview of a payout (a payroll run's net pay, a 13th
-// month): one bank file per company account it is paid from (the default
-// for the pay date, or each bank's own account when "match employee bank"
-// is on — Payroll Settings → Payroll Accounts), who has no bank account
+// month): one bank file per company account it is paid from — each
+// employee's company's own account (Payroll Settings → Employers; its
+// default for the pay date, or the one at the employee's bank when "match
+// employee bank" is on), else a general one (Payroll Settings → Payroll
+// Accounts) — who has no bank account
 // (cash / check — Payroll → Bank Accounts), who has a zero or negative net
 // (nothing to credit), and each file's CSV (approved payouts only). Until
-// approved, a user who may generate it can choose the account and the rule
-// (Paid from); an approved payout shows what it kept. `target` = { title,
+// approved, a user who may generate it can choose the rule and — on a
+// one-company payout only (`can_choose_account`) — the account (Paid from);
+// an approved payout shows what it kept. `target` = { title,
 // approved, filenamePrefix, canChoose, load: () => api, download:
 // (sourceId) => api, choose: ({ source_account_id, match_employee_bank }) =>
 // api }; kept in the modal's own state so it renders while closing.
@@ -52,7 +55,8 @@ const BankFileModal = ({ target, onClose }) => {
     setDownloading(group.source_id);
     try {
       const response = await shown.download(group.source_id);
-      const name = `${shown.filenamePrefix}_${group.source?.bank_code || 'NoCompanyAccount'}.csv`;
+      const company = group.source?.company_name ? `_${group.source.company_name.replace(/[^A-Za-z0-9]+/g, '_')}` : '';
+      const name = `${shown.filenamePrefix}${company}_${group.source?.bank_code || 'NoCompanyAccount'}.csv`;
       if (await downloadBlobResponse(response, name, message)) message.success('Bank file downloaded.');
     } catch (error) {
       handleApiError(error, message);
@@ -78,8 +82,11 @@ const BankFileModal = ({ target, onClose }) => {
   };
 
   const approved = !!shown?.approved;
-  const canChoose = !approved && !!shown?.canChoose && !!shown?.choose;
+  // only a one-company payout chooses (its company's or a general account);
+  // an all-companies one pays each employee from their own company's account
+  const canChoose = !approved && !!shown?.canChoose && !!shown?.choose && data?.can_choose_account !== false;
   const paidFrom = data?.paid_from;
+  const ownCompanies = Object.values(paidFrom?.companies || {}).filter((c) => c.default);
 
   return (
     <Modal
@@ -106,7 +113,7 @@ const BankFileModal = ({ target, onClose }) => {
                   onChange={(v) => setChoice((c) => ({ ...c, source: v }))}
                   options={[
                     { value: 'auto', label: 'The default for the pay date' },
-                    ...(data.accounts || []).map((a) => ({ value: a.id, label: accountLabel({ ...a, bank_name: a.bank?.name }) })),
+                    ...(data.accounts || []).map((a) => ({ value: a.id, label: `${accountLabel({ ...a, bank_name: a.bank?.name })} · ${a.company?.name || 'General'}` })),
                   ]}
                 />
                 <Select
@@ -123,7 +130,8 @@ const BankFileModal = ({ target, onClose }) => {
               </Space>
             ) : null}
             <Typography.Paragraph type='secondary' style={{ margin: canChoose ? '8px 0 0' : 0 }}>
-              {`Default: ${accountLabel(paidFrom?.default)}${paidFrom?.chosen ? ' (chosen for this payout)' : ''} · `}
+              {ownCompanies.length > 0 && `Each employee is paid from their company’s own account (${ownCompanies.map((c) => `${c.default.company_name}: ${accountLabel(c.default)}`).join('; ')}); companies without one use the general default. `}
+              {`${ownCompanies.length ? 'General default' : 'Default'}: ${accountLabel(paidFrom?.default)}${paidFrom?.chosen ? ' (chosen for this payout)' : ''} · `}
               {paidFrom?.match_employee_bank ? 'each bank’s employees from our account at that bank' : 'everyone from the default'}
               {` · credit date ${formatDate(data.credit_date)}`}
               {approved && paidFrom && ' · kept on approval'}
@@ -159,6 +167,7 @@ const BankFileModal = ({ target, onClose }) => {
               title={(
                 <Space wrap>
                   {g.source ? `From ${accountLabel(g.source)}` : 'No company account to pay from'}
+                  {g.source && <Tag color={g.source.company_name ? 'blue' : undefined}>{g.source.company_name || 'General account'}</Tag>}
                   {!g.source && <Tag color='orange'>Add one in Payroll Settings</Tag>}
                 </Space>
               )}

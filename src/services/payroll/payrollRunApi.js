@@ -1,7 +1,11 @@
 import axios from '../../api/axiosInstance';
 
 // Payroll runs — vueportal PayrollRunController + PayrollRunService
-// (payroll_run.maintenance; Administrator bypasses). One run per cut-off:
+// (payroll_run.maintenance; Administrator bypasses). Runs per cut-off, each
+// for one company (company_id — the employee's branch's company) or all
+// companies (null): one All-companies run or one run per company, never
+// both; an employee is in one run of a cut-off; each payslip keeps its
+// company_id (its employer on payslips / reports). A run:
 // Draft (generate again as often as needed) → submit (turns the cut-off's
 // filing off; a disapproval turns it back on if the submit did) → Pending (the "Payroll
 // Run" Access Chart: every approver mapped at a level acts, its required
@@ -9,17 +13,19 @@ import axios from '../../api/axiosInstance';
 // on the last approval (locked: scheduled deductions get a Payroll payment,
 // the cut-off's open payroll adjustments are Applied, its filing is turned off); a
 // disapproval returns it to Draft. Cancelled (Draft only).
-// - getAll({ year }) → { runs: [{ id, payroll_cutoff_id, status,
+// - getAll({ year }) → { runs: [{ id, payroll_cutoff_id, company_id, company { name }, status,
 //   employee_count, gross_pay, total_deductions, net_pay, employer_share,
 //   skipped { no_salary }, remarks, generated_at, approved_at, cutoff {…},
 //   generator { name }, approver { name } }] } (payroll-run-list).
-// - options() → { cutoffs: [cut-off + draft_run_id / approved_run_id /
-//   pending_run_id], statuses }. An approved cut-off takes only employees
+// - options() → { cutoffs: [cut-off + runs [{ id, company_id (null = all),
+//   status }]], companies [{ id, name }], statuses }. An approved run takes only employees
 //   not in it (Selected employees): they are added, the run goes back to
 //   Draft and is approved again as its next round; the approved payslips
 //   stay locked and unchanged.
-// - generate({ payroll_cutoff_id, remarks, employee_ids? }) → { message, run }
-//   (payroll-run-generate); 422 { message } when pending, or approved and
+// - generate({ payroll_cutoff_id, company_id (null = all companies), remarks,
+//   employee_ids? }) → { message, run } (payroll-run-generate) — the scope's
+//   run; 422 { message } when the other kind exists (All vs per company),
+//   when pending, or approved and
 //   all employees / someone already in it is chosen. run.added = employees
 //   were added to an approved run.
 //   employee_ids: only those again on the existing Draft (the rest keep
@@ -27,7 +33,7 @@ import axios from '../../api/axiosInstance';
 //   or a new run with just those when the cut-off has none. Approved
 //   (posted) employees are never recomputed: choosing one is refused and
 //   Regenerate All skips them.
-// - candidates(id) / cutoffCandidates(cutoffId) → { employees: [{ id,
+// - candidates(id) / cutoffCandidates(cutoffId, companyId) → { employees: [{ id,
 //   employee_code, full_name, branch, position, in_run, eligible, approved }] }
 //   (payroll-run-generate) — approved = posted, locked until rolled back.
 // - rollback(id, reason, employeeIds?) (payroll-run-rollback; employeeIds
@@ -44,7 +50,7 @@ import axios from '../../api/axiosInstance';
 //   submitted_at, acted_at, action_remarks),
 //   employees: [{ id (payslip id), employee_id, employee_code, full_name,
 //   branch, position, pay_basis, basic_rate, gross_pay, total_deductions,
-//   net_pay, employer_share, absent_days, late_minutes, undertime_minutes,
+//   net_pay, employer_share, company_id, absent_days, late_minutes, undertime_minutes,
 //   ot_minutes, warnings, approved (posted) }] }.
 // - payslip(id) → { payslip: { …, earnings [{ code, label, category,
 //   amount, taxable, detail [] }], deductions [{ label, category, amount,
@@ -65,7 +71,7 @@ const payrollRunApi = {
   disapprove: (id, remarks) => axios.post(`/payroll_run/disapprove/${id}`, { remarks }),
   cancel:   (id, reason) => axios.post(`/payroll_run/cancel/${id}`, { reason }),
   candidates: (id)       => axios.post(`/payroll_run/candidates/${id}`),
-  cutoffCandidates: (cutoffId) => axios.post(`/payroll_run/cutoff_candidates/${cutoffId}`),
+  cutoffCandidates: (cutoffId, companyId = null) => axios.post(`/payroll_run/cutoff_candidates/${cutoffId}`, { company_id: companyId }),
   // company account it is paid from (null = the default for the pay date) and
   // the match-employee-bank rule (null = Payroll Settings) — until approved
   // (payroll-run-generate)

@@ -124,7 +124,7 @@ const MyPayslipsIndex = () => {
       const { data: res } = await myPayslipApi.payslips(p);
       if (!res.payslips.length) { message.info('No approved payslip in this range.'); return; }
       const body = res.payslips
-        .map((x, i) => `<div${i < res.payslips.length - 1 ? ' style="page-break-after:always"' : ''}>${payslipHtml(x.payslip, x.run, res.employer)}</div>`)
+        .map((x, i) => `<div${i < res.payslips.length - 1 ? ' style="page-break-after:always"' : ''}>${payslipHtml(x.payslip, x.run, x.employer || res.employer)}</div>`)
         .join('');
       if (!printDocument(`Payslips ${p.date_from} – ${p.date_to}`, body)) message.error('Allow pop-ups to print the payslips');
     } catch (error) {

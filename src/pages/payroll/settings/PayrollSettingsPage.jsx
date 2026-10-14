@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import {
-  Tabs, Form, Input, InputNumber, Select, TimePicker, Button, Row, Col, Card, Table, Tag, Alert, Typography, Spin, Switch, Space, Tooltip, Popconfirm, App,
+  Tabs, Form, Input, InputNumber, Select, TimePicker, Button, Row, Col, Card, Table, Tag, Alert, Typography, Spin, Switch, Space, Tooltip, App,
 } from 'antd';
-import { SaveOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { SaveOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import payrollSettingApi from '../../../services/payroll/payrollSettingApi';
 import handleApiError from '../../../utils/handleApiError';
-import { DISPLAY_DATE_FORMAT, formatDate } from '../../../utils/formatDate';
+import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { applyFormErrors, FACTOR_HINTS } from '../payrollHelpers';
 import CompanyAccountFormModal from './CompanyAccountFormModal';
+import EmployerFormModal from './EmployerFormModal';
+import CompanyAccountsTable from './CompanyAccountsTable';
 import SettingAssignmentsTab from './SettingAssignmentsTab';
+import ExpandIcon from '../../../components/ExpandIcon';
 import { DAY_TYPE_COLORS } from '../../overtime/overtimeHelpers';
 
 const AGENCIES = [
@@ -34,10 +37,11 @@ const cutoffPatternText = (a, b) => {
 
 // Payroll rules the payroll run reads: the daily-rate factor, hours per day,
 // the night-differential window, when each statutory deduction is taken,
-// the cut-off pattern and pay days the cut-off generator uses, and the
-// holiday-pay rule and the employer's registration on government forms
-// (General), and the premium pay per day type (Premium
-// Rates).
+// the cut-off pattern and pay days the cut-off generator uses, the
+// holiday-pay rule and the payroll accounts (General), the premium pay per
+// day type (Premium Rates), settings assigned to an employee / position /
+// branch / company (Assigned Settings), and each company's registration as
+// employer on payslips and government forms (Employers).
 const PayrollSettingsPage = () => {
   const { message } = App.useApp();
   const { hasPermission, hasRole } = useAuth();
@@ -50,6 +54,8 @@ const PayrollSettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [savingRates, setSavingRates] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null); // {} = add
+  const [editingEmployer, setEditingEmployer] = useState(null);
+  const [employerSearch, setEmployerSearch] = useState('');
 
   const reloadAccounts = async () => {
     try {
@@ -316,51 +322,25 @@ const PayrollSettingsPage = () => {
                     </Col>
                   </Row>
                 </Card>
-                <Card size='small' title='Employer (government forms)' style={{ marginTop: 16 }}>
-                  <Typography.Paragraph type='secondary' style={{ marginTop: 0 }}>
-                    Printed on the BIR 2316, the alphalist and the remittance reports (Payroll → Government Compliance).
-                  </Typography.Paragraph>
-                  <Row gutter={12}>
-                    <Col xs={24} md={16}>
-                      <Form.Item name='employer_name' label='Registered Name'><Input maxLength={150} /></Form.Item>
-                    </Col>
-                    <Col xs={24} md={8}>
-                      <Form.Item
-                        name='employer_tin'
-                        label='TIN'
-                        rules={[{ pattern: /^[0-9-]*$/, message: 'Digits and dashes only (e.g. 000-123-456-000)' }]}
-                      >
-                        <Input maxLength={30} placeholder='000-123-456-000' />
-                      </Form.Item>
-                    </Col>
-                    <Col xs={24} md={16}>
-                      <Form.Item name='employer_address' label='Registered Address'><Input maxLength={255} /></Form.Item>
-                    </Col>
-                    <Col xs={12} md={4}>
-                      <Form.Item name='employer_zip' label='ZIP Code'><Input maxLength={10} /></Form.Item>
-                    </Col>
-                    <Col xs={12} md={4}>
-                      <Form.Item name='employer_rdo' label='RDO Code'><Input maxLength={10} /></Form.Item>
-                    </Col>
-                    <Col xs={24} md={8}>
-                      <Form.Item name='employer_sss_no' label='SSS Employer No.'><Input maxLength={30} /></Form.Item>
-                    </Col>
-                    <Col xs={24} md={8}>
-                      <Form.Item name='employer_philhealth_no' label='PhilHealth Employer No.'><Input maxLength={30} /></Form.Item>
-                    </Col>
-                    <Col xs={24} md={8}>
-                      <Form.Item name='employer_pagibig_no' label='Pag-IBIG Employer No.'><Input maxLength={30} /></Form.Item>
-                    </Col>
-                  </Row>
+                <Card size='small' title='Payslip' style={{ marginTop: 16 }}>
+                  <Form.Item
+                    name='payslip_show_employer_share'
+                    label='Show the employer share on payslips'
+                    valuePropName='checked'
+                    extra='SSS / PhilHealth / Pag-IBIG employer share and EC. Off: not on printed payslips, My Payslips or the employee’s pay sheet — payroll staff still see it on the payroll page, register and reports. Saved with the settings.'
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Switch />
+                  </Form.Item>
                 </Card>
                 <Card
                   size='small'
-                  title='Payroll Accounts (paid from)'
+                  title='Payroll Accounts — general (paid from)'
                   style={{ marginTop: 16 }}
-                  extra={canEdit && <Button size='small' icon={<PlusOutlined />} onClick={() => setEditingAccount({})}>Add Account</Button>}
+                  extra={canEdit && <Button size='small' icon={<PlusOutlined />} onClick={() => setEditingAccount({ company_id: null })}>Add Account</Button>}
                 >
                   <Typography.Paragraph type='secondary' style={{ marginTop: 0 }}>
-                    The company accounts net pay is credited from — one bank file per account. A payroll uses the account whose default period covers its pay date, else the Default one; it can choose another on its Bank File until approved, and keeps what it used. Employees' own accounts are on Payroll → Bank Accounts.
+                    The fallback accounts net pay is credited from — for an employee whose company (employer) has no account of its own (Employers tab). One bank file per account. Within a company, or among these, the account whose default period covers the pay date is used, else the Default one; a one-company payroll can choose another on its Bank File until approved, and keeps what it used. Employees' own accounts are on Payroll → Bank Accounts.
                   </Typography.Paragraph>
                   <Form.Item
                     name='match_employee_bank'
@@ -370,54 +350,12 @@ const PayrollSettingsPage = () => {
                   >
                     <Switch />
                   </Form.Item>
-                  <Table
-                    rowKey='id'
-                    size='small'
-                    dataSource={data?.accounts || []}
-                    pagination={false}
-                    scroll={{ x: 720 }}
-                    locale={{ emptyText: 'No payroll account yet — the bank file lists credits without a paying account' }}
-                    columns={[
-                      { title: 'Bank', key: 'bank', render: (_, r) => r.bank?.name || '-' },
-                      { title: 'Account No.', dataIndex: 'account_no', width: 160 },
-                      { title: 'Account Name', dataIndex: 'account_name', width: 200 },
-                      {
-                        title: 'Used as default',
-                        key: 'default',
-                        width: 220,
-                        render: (_, r) => (
-                          <Space size={4} wrap>
-                            {r.is_default && <Tag color='green'>Default</Tag>}
-                            {r.default_from && <Tag color='blue'>{`${formatDate(r.default_from)} – ${r.default_to ? formatDate(r.default_to) : 'onward'}`}</Tag>}
-                            {!r.is_default && !r.default_from && '-'}
-                          </Space>
-                        ),
-                      },
-                      { title: 'Status', dataIndex: 'active', width: 90, render: (v) => (v ? <Tag color='green'>Active</Tag> : <Tag>Inactive</Tag>) },
-                      ...(canEdit ? [{
-                        title: 'Actions',
-                        key: 'actions',
-                        width: 90,
-                        render: (_, r) => (
-                          <Space>
-                            <Tooltip title='Edit'>
-                              <Button size='small' color='green' variant='outlined' icon={<EditOutlined />} onClick={() => setEditingAccount(r)} />
-                            </Tooltip>
-                            <Popconfirm
-                              title='Delete this payroll account?'
-                              description='Approved payrolls keep the account they used. To stop using it, set it inactive instead.'
-                              okText='Delete'
-                              okButtonProps={{ danger: true }}
-                              onConfirm={() => removeAccount(r)}
-                            >
-                              <Tooltip title='Delete'>
-                                <Button size='small' danger icon={<DeleteOutlined />} />
-                              </Tooltip>
-                            </Popconfirm>
-                          </Space>
-                        ),
-                      }] : []),
-                    ]}
+                  <CompanyAccountsTable
+                    accounts={(data?.accounts || []).filter((a) => !a.company_id)}
+                    canEdit={canEdit}
+                    onEdit={(r) => setEditingAccount(r)}
+                    onDelete={removeAccount}
+                    emptyText='No general account — a company without its own account then has none to pay from'
                   />
                 </Card>
                 <Row justify='space-between' align='middle' style={{ marginTop: 16 }} gutter={[8, 8]}>
@@ -461,11 +399,110 @@ const PayrollSettingsPage = () => {
             label: 'Assigned Settings',
             children: <SettingAssignmentsTab canEdit={canEdit} />,
           },
+          {
+            key: 'employers',
+            label: 'Employers',
+            children: (
+              <>
+                <Alert
+                  type='info'
+                  showIcon
+                  style={{ marginBottom: 12 }}
+                  title='Each company is its own employer: printed on its employees’ payslips, the BIR 2316, the alphalist and the remittance reports (Payroll → Government Compliance — choose the company there). A payslip keeps the company of the employee’s branch when it was generated.'
+                />
+                <Input.Search
+                  allowClear
+                  placeholder='Search company or TIN'
+                  onChange={(e) => setEmployerSearch(e.target.value)}
+                  style={{ width: 280, maxWidth: '100%', marginBottom: 12 }}
+                />
+                <Table
+                  rowKey='id'
+                  size='small'
+                  dataSource={(data?.employers || []).filter((r) => {
+                    const q = employerSearch.trim().toLowerCase();
+                    return !q || [r.company_name, r.registered_name, r.tin].some((v) => v && v.toLowerCase().includes(q));
+                  })}
+                  pagination={false}
+                  scroll={{ x: 1450 }}
+                  expandable={{
+                    expandIcon: (props) => <ExpandIcon {...props} />,
+                    expandedRowRender: (r) => (
+                      <div style={{ padding: '4px 0' }}>
+                        <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 8 }} wrap>
+                          <Typography.Text type='secondary'>{`Payroll accounts of ${r.company_name} — its employees are paid from these (the Default, or the one whose default period covers the pay date). No account, or no Default / covering period = the general accounts.`}</Typography.Text>
+                          {canEdit && <Button size='small' icon={<PlusOutlined />} onClick={() => setEditingAccount({ company_id: r.id, company_name: r.company_name })}>Add Account</Button>}
+                        </Space>
+                        <CompanyAccountsTable
+                          accounts={(data?.accounts || []).filter((a) => a.company_id === r.id)}
+                          canEdit={canEdit}
+                          onEdit={(a) => setEditingAccount({ ...a, company_name: r.company_name })}
+                          onDelete={removeAccount}
+                          emptyText='No account of its own — paid from the general accounts'
+                        />
+                      </div>
+                    ),
+                  }}
+                  columns={[
+                    {
+                      title: 'Company',
+                      key: 'company',
+                      fixed: 'left',
+                      width: 240,
+                      render: (_, r) => (
+                        <div>
+                          <div>{r.company_name}{!r.active && <Tag style={{ marginLeft: 6 }}>Inactive</Tag>}</div>
+                          {r.registered_name && r.registered_name !== r.company_name && <Typography.Text type='secondary' style={{ fontSize: 12 }}>{r.registered_name}</Typography.Text>}
+                        </div>
+                      ),
+                    },
+                    { title: 'TIN', dataIndex: 'tin', width: 150, render: (v) => v || <Tag color='orange'>Not set</Tag> },
+                    { title: 'RDO', dataIndex: 'rdo', width: 70, render: (v) => v || '-' },
+                    { title: 'Address', key: 'address', width: 240, render: (_, r) => [r.address, r.zip].filter(Boolean).join(' ') || '-' },
+                    { title: 'SSS', dataIndex: 'sss_no', width: 130, render: (v) => v || '-' },
+                    { title: 'PhilHealth', dataIndex: 'philhealth_no', width: 140, render: (v) => v || '-' },
+                    { title: 'Pag-IBIG', dataIndex: 'pagibig_no', width: 140, render: (v) => v || '-' },
+                    {
+                      title: 'Payroll Accounts',
+                      key: 'accounts',
+                      width: 160,
+                      render: (_, r) => {
+                        const own = (data?.accounts || []).filter((a) => a.company_id === r.id && a.active);
+                        const def = own.find((a) => a.is_default);
+                        return own.length
+                          ? <Tooltip title={def ? `Default: ${def.bank?.name || ''} ${def.account_no}` : 'No Default — its employees are paid from the general accounts (General tab) until one is set'}><Tag color={def ? 'green' : 'orange'}>{`${own.length} account${own.length === 1 ? '' : 's'}`}</Tag></Tooltip>
+                          : <Tooltip title='Paid from the general accounts (General tab)'><Typography.Text type='secondary'>General</Typography.Text></Tooltip>;
+                      },
+                    },
+                    ...(canEdit ? [{
+                      title: 'Actions',
+                      key: 'actions',
+                      width: 80,
+                      fixed: 'right',
+                      render: (_, r) => (
+                        <Tooltip title='Edit employer details'>
+                          <Button size='small' color='green' variant='outlined' icon={<EditOutlined />} onClick={() => setEditingEmployer(r)} />
+                        </Tooltip>
+                      ),
+                    }] : []),
+                  ]}
+                />
+              </>
+            ),
+          },
         ]}
+      />
+      <EmployerFormModal
+        open={!!editingEmployer}
+        employer={editingEmployer}
+        onClose={() => setEditingEmployer(null)}
+        onSaved={(employers) => { setEditingEmployer(null); setData((d) => ({ ...d, employers })); }}
       />
       <CompanyAccountFormModal
         open={!!editingAccount}
         account={editingAccount?.id ? editingAccount : null}
+        companyId={editingAccount?.company_id ?? null}
+        companyName={editingAccount?.company_name || null}
         banks={data?.banks}
         onClose={() => setEditingAccount(null)}
         onSaved={() => { setEditingAccount(null); reloadAccounts(); }}

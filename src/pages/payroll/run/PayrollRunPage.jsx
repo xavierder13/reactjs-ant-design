@@ -17,11 +17,14 @@ import FilingHistory from '../../../components/approval/FilingHistory';
 import PayslipModal from './PayslipModal';
 import BankFileModal from './BankFileModal';
 import RegenerateEmployeesModal from './RegenerateEmployeesModal';
+import PaidFromSummary from './PaidFromSummary';
 import { RUN_STATUS_COLORS, minutesText, daysText } from './runHelpers';
 
 // a summary item two columns wide (half of a lg row, a whole sm row)
 const WIDE = { xs: 1, sm: 2, md: 2, lg: 2, xl: 2, xxl: 2 };
 
+// "_ADDESSA_CORPORATION" for a company's run (file names)
+const companyFile = (run) => (run.company ? `_${run.company.name.replace(/[^A-Za-z0-9]+/g, '_')}` : '');
 const when = (v) => (v ? dayjs(v).format(`${DISPLAY_DATE_FORMAT} hh:mm A`) : '—');
 
 // The payroll run page (/payroll-runs/:id — Payroll Runs → View): summary,
@@ -133,7 +136,8 @@ const PayrollRunPage = () => {
   const canPickGenerate = isDraft && perms.canGenerate;
   const pickedGenerate = picked.filter((eid) => !approvedIds.has(eid));
   const pickedRollback = picked.filter((eid) => approvedIds.has(eid));
-  const canAdd = perms.canGenerate && run?.status === 'Approved'; // approved: only employees not in it
+  // approved: only employees not in it — until the pay date (paid: a missed employee goes on a later cut-off)
+  const canAdd = perms.canGenerate && run?.status === 'Approved' && !paid;
   const sel = canPickGenerate || canRollback ? 1 : 0; // the selection column shifts the totals row
 
   const columns = [
@@ -194,7 +198,7 @@ const PayrollRunPage = () => {
     setBusy('register');
     try {
       const response = await payrollReportApi.registerDownload(run.id, roundNo);
-      if (await downloadBlobResponse(response, `Payroll_Register_${run.cutoff?.code}${roundNo ? `_Round${roundNo}` : ''}.xls`, message)) message.success('Payroll register downloaded.');
+      if (await downloadBlobResponse(response, `Payroll_Register_${run.cutoff?.code}${companyFile(run)}${roundNo ? `_Round${roundNo}` : ''}.xls`, message)) message.success('Payroll register downloaded.');
     } catch (error) {
       handleApiError(error, message);
     } finally {
@@ -210,10 +214,10 @@ const PayrollRunPage = () => {
         variant='outlined'
         icon={<BankOutlined />}
         onClick={() => setBank({
-          title: `Bank File — ${run.cutoff?.code}${roundNo ? ` — Round ${roundNo}` : ''}`,
+          title: `Bank File — ${run.cutoff?.code}${run.company ? ` · ${run.company.name}` : ''}${roundNo ? ` — Round ${roundNo}` : ''}`,
           // a round is approved by itself; the whole run only when Approved
           approved: roundNo ? true : run.status === 'Approved',
-          filenamePrefix: `Payroll_Bank_${run.cutoff?.code}${roundNo ? `_Round${roundNo}` : ''}`,
+          filenamePrefix: `Payroll_Bank_${run.cutoff?.code}${companyFile(run)}${roundNo ? `_Round${roundNo}` : ''}`,
           canChoose: perms.canGenerate && !roundNo,
           load: () => payrollReportApi.bank(run.id, roundNo),
           download: (sourceId) => payrollReportApi.bankDownload(run.id, sourceId, roundNo),
@@ -268,7 +272,7 @@ const PayrollRunPage = () => {
             </div>
           )}
           okText='Regenerate All'
-          onConfirm={() => act('regenerate', () => payrollRunApi.generate({ payroll_cutoff_id: run.payroll_cutoff_id, remarks: run.remarks }))}
+          onConfirm={() => act('regenerate', () => payrollRunApi.generate({ payroll_cutoff_id: run.payroll_cutoff_id, company_id: run.company_id ?? null, remarks: run.remarks }))}
         >
           <Button icon={<ReloadOutlined />} loading={busy === 'regenerate'}>Regenerate All</Button>
         </Popconfirm>
@@ -326,7 +330,7 @@ const PayrollRunPage = () => {
       <Space style={{ marginBottom: 12, width: '100%', justifyContent: 'space-between' }} wrap>
         <Space wrap>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/payroll-runs')}>Payroll Runs</Button>
-          <Typography.Title level={4} style={{ margin: 0 }}>{run ? `Payroll — ${run.cutoff?.code}` : 'Payroll'}</Typography.Title>
+          <Typography.Title level={4} style={{ margin: 0 }}>{run ? `Payroll — ${run.cutoff?.code}${run.company ? ` · ${run.company.name}` : ''}` : 'Payroll'}</Typography.Title>
           {run && <Tag color={RUN_STATUS_COLORS[run.status]}>{run.status}</Tag>}
         </Space>
         <Space wrap>
@@ -345,7 +349,8 @@ const PayrollRunPage = () => {
             column={{ xs: 1, sm: 2, md: 2, lg: 4, xl: 4, xxl: 4 }}
             style={{ marginBottom: 12 }}
             items={[
-              { key: 'cutoff', label: 'Cut-off', children: cutoffLabel(run.cutoff) },
+              // (one item: an extra one breaks the 4 + 4 + 2-wide rows)
+              { key: 'cutoff', label: 'Cut-off', children: <>{cutoffLabel(run.cutoff)}<div><Typography.Text type='secondary'>{run.company?.name || 'All companies'}</Typography.Text></div></> },
               { key: 'status', label: 'Status', children: <Tag color={RUN_STATUS_COLORS[run.status]}>{run.status}</Tag> },
               { key: 'pay', label: 'Pay Date', children: run.cutoff?.pay_date ? formatDate(run.cutoff.pay_date) : '—' },
               { key: 'employees', label: 'Employees', children: run.employee_count },
@@ -375,8 +380,13 @@ const PayrollRunPage = () => {
               type='info'
               showIcon
               style={{ marginBottom: 8 }}
-              title={`Paid on ${formatDate(run.cutoff.pay_date)} — the approved payslips can't be rolled back or generated again. Correct them with a payroll adjustment on a later cut-off.`}
+              title={`Paid on ${formatDate(run.cutoff.pay_date)} — the approved payslips can't be rolled back or generated again, and no employee can be added. Correct them, or pay a missed employee, with a payroll adjustment on a later cut-off.`}
             />
+          )}
+          {data.paid_from_summary?.length > 0 && (
+            <Card size='small' style={{ marginBottom: 8 }} title={data.paid_from_final ? 'Paid from' : 'Paid from — preview (final on approval)'}>
+              <PaidFromSummary summary={data.paid_from_summary} />
+            </Card>
           )}
           {rolledBack && (
             <Alert
@@ -438,7 +448,7 @@ const PayrollRunPage = () => {
                 size='small'
                 style={{ margin: '8px 0 16px' }}
                 pagination={false}
-                scroll={{ x: 900 }}
+                scroll={{ x: 1200 }}
                 dataSource={[
                   ...rounds.map((r) => ({ ...r, key: `r${r.round}` })),
                   ...(notApproved.employees > 0 ? [{ key: 'open', round: null, ...notApproved }] : []),
@@ -450,6 +460,7 @@ const PayrollRunPage = () => {
                   { title: 'Net Pay', dataIndex: 'net_pay', width: 140, align: 'right', render: (v) => <strong>{peso(v)}</strong> },
                   { title: 'Submitted', key: 'sub', width: 220, render: (_, r) => (r.round && r.submitted_at ? `${when(r.submitted_at)} · ${r.submitter || '—'}` : '—') },
                   { title: 'Approved', key: 'appr', width: 220, render: (_, r) => (r.round ? `${when(r.approved_at)} · ${r.approver || '—'}` : '—') },
+                  { title: 'Paid From', key: 'paid_from', width: 300, render: (_, r) => (r.round ? <PaidFromSummary summary={r.paid_from_summary} compact /> : <Typography.Text type='secondary'>on approval</Typography.Text>) },
                   {
                     title: 'Actions',
                     key: 'actions',

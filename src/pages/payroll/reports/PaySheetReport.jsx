@@ -110,7 +110,7 @@ const PaySheetReport = () => {
       const { data: res } = await payrollReportApi.payslips(params);
       if (!res.payslips.length) { message.info('No approved payslip in this range.'); return; }
       const body = res.payslips
-        .map((p, i) => `<div${i < res.payslips.length - 1 ? ' style="page-break-after:always"' : ''}>${payslipHtml(p.payslip, p.run, res.employer)}</div>`)
+        .map((p, i) => `<div${i < res.payslips.length - 1 ? ' style="page-break-after:always"' : ''}>${payslipHtml(p.payslip, p.run, p.employer || res.employer)}</div>`)
         .join('');
       if (!printDocument(`Payslips ${params.date_from} – ${params.date_to}`, body)) message.error('Allow pop-ups to print the payslips');
     } catch (error) {

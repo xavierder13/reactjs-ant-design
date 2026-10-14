@@ -12,18 +12,29 @@ import axios from '../../api/axiosInstance';
 //   working day' | 'None' — off a Sunday / holiday),
 //   holiday_pay_needs_prior_day (bool), ot_minimum_minutes (0–240),
 //   ot_rounding_minutes (1|5|10|15|30|60 — approved overtime rounded down),
-//   employer_* (government forms), match_employee_bank (bool — pay each
+//   payslip_show_employer_share (bool, default false — the employer share
+//   on employees' payslips: printed, My Payslips, their pay sheet),
+//   match_employee_bank (bool — pay each
 //   bank's employees from the company account at that bank),
 //   updater { name }, updated_at },
 //   rates: [{ day_type, regular_rate, overtime_rate, night_diff_rate,
 //   unworked_rate }] (8 day types, DOLE order), deduction_schedules,
 //   daily_rate_factors, pay_day_adjustments, banks: [{ id, code, name,
-//   active }], accounts: [{ id, bank_id, bank { code, name }, account_name,
-//   account_no, is_default, default_from, default_to, active, remarks }] }
-//   (payroll-setting-view).
-// - accountStore / accountUpdate(id) { bank_id, account_name, account_no,
-//   is_default, default_from, default_to, active, remarks } → 422 bag or
-//   { message } (default periods can't overlap; one is_default);
+//   active }], accounts: [{ id, company_id (null = general — the fallback for
+//   a company with none), company { name }, bank_id, bank { code, name },
+//   account_name, account_no, is_default, default_from, default_to, active,
+//   remarks }],
+//   employers: [{ id (company), company_name, active, registered_name, tin,
+//   rdo, address, zip, sss_no, philhealth_no, pagibig_no }] (active
+//   companies + inactive ones with details) } (payroll-setting-view).
+// - employerUpdate(companyId, { registered_name (blank = the company name),
+//   tin (digits / dashes), rdo, address, zip, sss_no, philhealth_no,
+//   pagibig_no }) → { message, employers } | 422 bag (payroll-setting-edit;
+//   audit trail 'Employer (company)').
+// - accountStore / accountUpdate(id) { company_id (null = general), bank_id,
+//   account_name, account_no, is_default, default_from, default_to, active,
+//   remarks } → 422 bag or { message } (within one company — or among the
+//   general accounts — default periods can't overlap and one is_default);
 //   accountDelete(id) — refused while a payout waiting for approval uses it
 //   (payroll-setting-edit).
 // - save({ every setting field above, times 'HH:mm' }) / saveRates({ rates:
@@ -62,6 +73,7 @@ const payrollSettingApi = {
   accountStore:  (payload)     => axios.post('/payroll_setting/accounts/store', payload),
   accountUpdate: (id, payload) => axios.post(`/payroll_setting/accounts/update/${id}`, payload),
   accountDelete: (id)          => axios.post(`/payroll_setting/accounts/delete/${id}`),
+  employerUpdate: (companyId, payload) => axios.post(`/payroll_setting/employers/update/${companyId}`, payload),
   assignmentIndex:   (params)      => axios.post('/payroll_setting/assignments/index', params),
   assignmentOptions: ()            => axios.post('/payroll_setting/assignments/options'),
   assignmentStore:   (payload)     => axios.post('/payroll_setting/assignments/store', payload),

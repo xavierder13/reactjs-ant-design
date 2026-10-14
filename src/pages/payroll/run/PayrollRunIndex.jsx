@@ -11,10 +11,27 @@ import { tablePagination } from '../../../utils/tablePagination';
 import { cutoffLabel, peso } from '../payrollHelpers';
 import { RUN_STATUS_COLORS, PICKER_MODAL_WIDTH } from './runHelpers';
 import EmployeePickerTable from './EmployeePickerTable';
+import PaidFromSummary from './PaidFromSummary';
 
 const YEARS = Array.from({ length: 4 }, (_, i) => dayjs().year() + 1 - i);
+const ALL = 'all'; // the Company select's "All companies"
+const RUN_NOTE = { Draft: 'draft', Approved: 'approved (add employees)', Pending: 'waiting for approval' };
 
-// Payroll runs, one per cut-off: Generate makes (or re-makes) the Draft from
+// the cut-off's run for this scope (companyId null = all companies)
+const runOf = (cutoff, companyId) => (cutoff?.runs || []).find((r) => (r.company_id ?? null) === (companyId ?? null));
+
+// " — draft" (all companies) or " — 2 company payrolls"
+const runsNote = (c) => {
+  if (!c.runs?.length) return '';
+  const all = runOf(c, null);
+  if (all) return ` — ${RUN_NOTE[all.status]}`;
+  return ` — ${c.runs.length} company payroll${c.runs.length === 1 ? '' : 's'}`;
+};
+
+// Payroll runs per cut-off — for All companies or one company (one
+// generation, one approval each; a cut-off has one All-companies run or one
+// run per company, never both — the backend refuses a mix): Generate makes
+// (or re-makes) the scope's Draft from
 // Salary History, the DTR, allowances, payroll adjustments, contributions /
 // tax and scheduled deductions — for everyone, or only the employees chosen
 // (cutoff_candidates; approved payslips can't be chosen). An approved
@@ -35,18 +52,30 @@ const PayrollRunIndex = () => {
   const [genOpen, setGenOpen] = useState(false);
   const [cutoffs, setCutoffs] = useState([]);
   const [generating, setGenerating] = useState(false);
+  const [companies, setCompanies] = useState([]);
   const [candidates, setCandidates] = useState(null); // the picked cut-off's, for "Selected employees"
   const [form] = Form.useForm();
   const pickedId = Form.useWatch('payroll_cutoff_id', form);
+  const companyValue = Form.useWatch('company_id', form);
   const scope = Form.useWatch('scope', form);
   const picked = cutoffs.find((c) => c.id === pickedId);
-  const adding = !!picked?.approved_run_id; // approved: only employees not in it can be added
+  const companyId = companyValue && companyValue !== ALL ? companyValue : null;
+  const companyName = (id) => companies.find((c) => c.id === id)?.name || `Company #${id}`;
+  // the picked cut-off's run of this scope, and a run of the other kind blocking it
+  const scopeRun = runOf(picked, companyId);
+  const blocked = picked && !scopeRun && (companyId
+    ? (picked.runs.some((r) => r.company_id === null) ? 'This cut-off’s payroll is generated for all companies — generate the employees there.' : null)
+    : (picked.runs.length ? `This cut-off is generated per company (${picked.runs.map((r) => companyName(r.company_id)).join(', ')}) — choose a company.` : null));
+  const adding = scopeRun?.status === 'Approved'; // approved: only employees not in it can be added
+  // …until its pay date: a paid payroll takes no one (a missed employee goes on a later cut-off)
+  const paidOut = adding && !!picked?.pay_date && dayjs().format('YYYY-MM-DD') >= picked.pay_date;
+  const pending = scopeRun?.status === 'Pending';
 
-  const loadCandidates = async (cutoffId) => {
+  const loadCandidates = async (cutoffId, company) => {
     setCandidates(null);
     if (!cutoffId) return;
     try {
-      const { data } = await payrollRunApi.cutoffCandidates(cutoffId);
+      const { data } = await payrollRunApi.cutoffCandidates(cutoffId, company);
       setCandidates(data.employees);
     } catch (error) {
       handleApiError(error, message);
@@ -55,12 +84,15 @@ const PayrollRunIndex = () => {
 
   const handleValuesChange = (changed, all) => {
     let scopeNow = all.scope;
-    if ('payroll_cutoff_id' in changed) {
-      const c = cutoffs.find((x) => x.id === changed.payroll_cutoff_id);
-      if (c?.approved_run_id) scopeNow = 'selected'; // an approved payroll: add employees only
+    if ('payroll_cutoff_id' in changed || 'company_id' in changed) {
+      const c = cutoffs.find((x) => x.id === all.payroll_cutoff_id);
+      const company = all.company_id && all.company_id !== ALL ? all.company_id : null;
+      if (runOf(c, company)?.status === 'Approved') scopeNow = 'selected'; // an approved payroll: add employees only
       form.setFieldsValue({ employee_ids: [], scope: scopeNow });
     }
-    if (scopeNow === 'selected' && ('payroll_cutoff_id' in changed || 'scope' in changed)) loadCandidates(all.payroll_cutoff_id);
+    if (scopeNow === 'selected' && ('payroll_cutoff_id' in changed || 'company_id' in changed || 'scope' in changed)) {
+      loadCandidates(all.payroll_cutoff_id, all.company_id && all.company_id !== ALL ? all.company_id : null);
+    }
   };
 
   const fetchRuns = async () => {
@@ -88,9 +120,10 @@ const PayrollRunIndex = () => {
     try {
       const { data } = await payrollRunApi.options();
       setCutoffs(data.cutoffs);
-      // the latest cut-off that has ended (else the current one) without an approved / pending payroll
+      setCompanies(data.companies || []);
+      // the latest cut-off that has ended (else the current one) with no approved / pending payroll
       const today = dayjs().format('YYYY-MM-DD');
-      const open = data.cutoffs.filter((c) => !c.approved_run_id && !c.pending_run_id);
+      const open = data.cutoffs.filter((c) => c.runs.every((r) => r.status === 'Draft'));
       const pick = open.find((c) => c.date_to < today) || open.find((c) => c.date_from <= today);
       if (pick) form.setFieldsValue({ payroll_cutoff_id: pick.id });
     } catch (error) {
@@ -105,6 +138,7 @@ const PayrollRunIndex = () => {
     try {
       const { data } = await payrollRunApi.generate({
         payroll_cutoff_id: values.payroll_cutoff_id,
+        company_id: values.company_id && values.company_id !== ALL ? values.company_id : null,
         remarks: values.remarks?.trim() || null,
         ...(values.scope === 'selected' ? { employee_ids: values.employee_ids } : {}),
       });
@@ -120,12 +154,21 @@ const PayrollRunIndex = () => {
 
   const columns = [
     { title: 'Cut-off', key: 'cutoff', width: 250, render: (_, r) => cutoffLabel(r.cutoff) },
+    { title: 'Company', key: 'company', width: 200, render: (_, r) => r.company?.name || <Typography.Text type='secondary'>All companies</Typography.Text> },
     { title: 'Pay Date', key: 'pay', width: 110, render: (_, r) => (r.cutoff?.pay_date ? formatDate(r.cutoff.pay_date) : '—') },
     { title: 'Status', dataIndex: 'status', width: 100, render: (v) => <Tag color={RUN_STATUS_COLORS[v]}>{v}</Tag> },
     { title: 'Employees', dataIndex: 'employee_count', width: 100, align: 'right' },
     { title: 'Gross', dataIndex: 'gross_pay', width: 130, align: 'right', render: peso },
     { title: 'Deductions', dataIndex: 'total_deductions', width: 130, align: 'right', render: peso },
     { title: 'Net Pay', dataIndex: 'net_pay', width: 140, align: 'right', render: (v) => <strong>{peso(v)}</strong> },
+    {
+      title: 'Paid From',
+      key: 'paid_from',
+      width: 280,
+      render: (_, r) => (r.paid_from_summary?.length
+        ? <PaidFromSummary summary={r.paid_from_summary} compact />
+        : <Typography.Text type='secondary'>{r.status === 'Cancelled' ? '—' : 'on approval'}</Typography.Text>),
+    },
     {
       title: 'Last Generated',
       key: 'generated',
@@ -167,7 +210,7 @@ const PayrollRunIndex = () => {
         columns={columns}
         dataSource={runs}
         loading={loading}
-        scroll={{ x: 1250 }}
+        scroll={{ x: 1730 }}
         pagination={tablePagination(20)}
         locale={{ emptyText: `No payroll for ${year} yet` }}
       />
@@ -175,25 +218,37 @@ const PayrollRunIndex = () => {
         keyboard={false}
         open={genOpen}
         title='Generate Payroll'
-        okText={adding ? 'Add Employees' : picked?.draft_run_id ? 'Regenerate' : 'Generate'}
+        okText={adding ? 'Add Employees' : scopeRun?.status === 'Draft' ? 'Regenerate' : 'Generate'}
+        okButtonProps={{ disabled: !!blocked || pending || paidOut }}
         onOk={generate}
         confirmLoading={generating}
         onCancel={() => setGenOpen(false)}
         width={scope === 'selected' ? PICKER_MODAL_WIDTH : 520}
         forceRender
       >
-        <Form form={form} layout='vertical' initialValues={{ scope: 'all' }} onValuesChange={handleValuesChange} disabled={generating}>
+        <Form form={form} layout='vertical' initialValues={{ scope: 'all', company_id: ALL }} onValuesChange={handleValuesChange} disabled={generating}>
           <Form.Item name='payroll_cutoff_id' label='Cut-off' rules={[{ required: true, message: 'Choose the cut-off' }]}>
             <Select
               showSearch={{ optionFilterProp: 'label' }}
-              options={cutoffs.map((c) => ({
-                value: c.id,
-                disabled: !!c.pending_run_id,
-                label: `${cutoffLabel(c)}${c.draft_run_id ? ' — draft' : c.approved_run_id ? ' — approved (add employees)' : c.pending_run_id ? ' — waiting for approval' : ''}`,
-              }))}
+              options={cutoffs.map((c) => ({ value: c.id, label: `${cutoffLabel(c)}${runsNote(c)}` }))}
               placeholder='Cut-off'
             />
           </Form.Item>
+          <Form.Item name='company_id' label='Company' extra='One generation and one approval for the companies chosen — All companies, or one company at a time.'>
+            <Select
+              showSearch={{ optionFilterProp: 'label' }}
+              options={[
+                { value: ALL, label: 'All companies' },
+                ...companies.map((c) => {
+                  const r = runOf(picked, c.id);
+                  return { value: c.id, label: `${c.name}${r ? ` — ${RUN_NOTE[r.status]}` : ''}` };
+                }),
+              ]}
+            />
+          </Form.Item>
+          {blocked && <Alert type='error' showIcon style={{ marginBottom: 12 }} title={blocked} />}
+          {paidOut && <Alert type='error' showIcon style={{ marginBottom: 12 }} title={`This payroll was paid on ${formatDate(picked.pay_date)} — no employee can be added. Pay a missed employee with a payroll adjustment on a later cut-off.`} />}
+          {pending && <Alert type='warning' showIcon style={{ marginBottom: 12 }} title='This payroll is waiting for approval — an approver must return it before it can be generated again.' />}
           {picked && picked.date_to >= dayjs().format('YYYY-MM-DD') && (
             <Alert
               type='warning'
@@ -202,7 +257,7 @@ const PayrollRunIndex = () => {
               title='This cut-off hasn’t ended — dates from today on are paid as worked. Regenerate after it ends.'
             />
           )}
-          {adding && (
+          {adding && !paidOut && (
             <Alert
               type='info'
               showIcon
@@ -211,7 +266,7 @@ const PayrollRunIndex = () => {
               description='They are computed now and the payroll goes back to Draft; submit it so they are approved as its next round. The approved payslips stay exactly as they are.'
             />
           )}
-          {picked?.draft_run_id && (
+          {scopeRun?.status === 'Draft' && (
             <Alert
               type='info'
               showIcon
@@ -233,9 +288,9 @@ const PayrollRunIndex = () => {
             <Form.Item name='employee_ids' rules={[{ required: true, message: 'Choose the employees' }]}>
               <EmployeePickerTable
                 candidates={pickedId ? candidates && candidates.filter((c) => (adding ? c.eligible && !c.in_run : c.eligible || c.in_run)) : []}
-                disabled={!pickedId}
+                disabled={!pickedId || !!blocked}
                 busy={generating}
-                showRunStatus={!!picked?.draft_run_id}
+                showRunStatus={scopeRun?.status === 'Draft'}
               />
             </Form.Item>
           )}

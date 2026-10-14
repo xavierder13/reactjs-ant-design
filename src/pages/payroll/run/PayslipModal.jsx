@@ -89,6 +89,11 @@ const PayslipModal = ({ target, onClose, loadPayslip = payrollRunApi.payslip, se
   const earnings = p ? groupBy(p.earnings) : {};
   const deductions = p ? groupBy(p.deductions) : {};
 
+  // Payroll Settings → Payslip hides the employer share from the employee:
+  // payroll staff still see it here, but it isn't printed (My Payslips gets
+  // it removed by the backend)
+  const hideEmployerShare = data?.show_employer_share === false;
+
   return (
     <Modal
       keyboard={false}
@@ -101,7 +106,7 @@ const PayslipModal = ({ target, onClose, loadPayslip = payrollRunApi.payslip, se
           variant='outlined'
           icon={<PrinterOutlined />}
           onClick={() => {
-            if (!printDocument(`Payslip ${run.cutoff?.code} ${e?.full_name}`, payslipHtml(p, run, data.employer))) message.error('Allow pop-ups to print the payslip');
+            if (!printDocument(`Payslip ${run.cutoff?.code} ${e?.full_name}`, payslipHtml(hideEmployerShare ? { ...p, employer: [] } : p, run, data.employer))) message.error('Allow pop-ups to print the payslip');
           }}
         >
           Print
@@ -199,6 +204,7 @@ const PayslipModal = ({ target, onClose, loadPayslip = payrollRunApi.payslip, se
               {p.employer?.length > 0 && (
                 <div style={{ marginTop: 12 }}>
                   <Typography.Text type='secondary' style={{ fontSize: 12, textTransform: 'uppercase' }}>Employer Share (not deducted)</Typography.Text>
+                  {hideEmployerShare && <Tag style={{ marginLeft: 8 }}>Not on the employee’s payslip</Tag>}
                   <LinesTable lines={p.employer.map((l) => ({ ...l, code: l.code || l.label }))} />
                 </div>
               )}

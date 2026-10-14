@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import {
-  Table, Tag, Button, Space, Tooltip, Modal, Form, Input, InputNumber, DatePicker, Descriptions, Alert, Typography, Popconfirm, Spin, Row, Col, Radio, Select, App,
+  Table, Tag, Button, Space, Tooltip, Modal, Form, Input, InputNumber, DatePicker, Descriptions, Alert, Typography, Popconfirm, Spin, Row, Col, Radio, Select, Card, App,
 } from 'antd';
 import {
   EyeOutlined, PlusOutlined, ReloadOutlined, CheckCircleOutlined, CloseCircleOutlined, FileExcelOutlined, BankOutlined, SendOutlined, StopOutlined, RollbackOutlined, UserAddOutlined, DeleteOutlined,
@@ -20,6 +20,7 @@ import FilingHistory from '../../../components/approval/FilingHistory';
 import BankFileModal from '../run/BankFileModal';
 import { RUN_STATUS_COLORS, PICKER_MODAL_WIDTH } from '../run/runHelpers';
 import EmployeePickerTable from '../run/EmployeePickerTable';
+import PaidFromSummary from '../run/PaidFromSummary';
 import { money, sumOf } from './reportHelpers';
 
 const when = (v) => (v ? dayjs(v).format(`${DISPLAY_DATE_FORMAT} hh:mm A`) : '—');
@@ -46,6 +47,10 @@ const when = (v) => (v ? dayjs(v).format(`${DISPLAY_DATE_FORMAT} hh:mm A`) : '�
 // Rounds panel + round filter (the Register and Bank File follow it; a
 // round's CSV is ready once that round is approved); Remove Selected takes
 // not-yet-approved lines out of a Draft.
+const ALL = 'all'; // the Company select's "All companies"
+const companyFile = (run) => (run?.company ? `_${run.company.name.replace(/[^A-Za-z0-9]+/g, '_')}` : '');
+const runName = (run) => `${run.year}${run.company ? ` · ${run.company.name}` : ''}`;
+
 const ThirteenthMonthIndex = () => {
   const { message } = App.useApp();
   const { hasPermission, hasRole, user } = useAuth();
@@ -56,6 +61,7 @@ const ThirteenthMonthIndex = () => {
   const canRollbackPerm = isAdmin || hasPermission('thirteenth-month-rollback');
 
   const [runs, setRuns] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [genOpen, setGenOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -71,9 +77,19 @@ const ThirteenthMonthIndex = () => {
   const [candidates, setCandidates] = useState(null); // { run, employees } of the year, for "Selected employees"
   const [form] = Form.useForm();
   const genYear = Form.useWatch('year', form);
+  const genCompanyValue = Form.useWatch('company_id', form);
+  const genCompany = genCompanyValue && genCompanyValue !== ALL ? genCompanyValue : null;
   const scope = Form.useWatch('scope', form);
+  // one All-companies batch a year or one per company, never both
+  const yearRuns = runs.filter((r) => r.year === genYear && r.status !== 'Cancelled');
+  const genBlocked = !yearRuns.some((r) => (r.company_id ?? null) === genCompany) && (genCompany
+    ? (yearRuns.some((r) => r.company_id == null) ? `The ${genYear} 13th-month pay is generated for all companies — generate the employees there.` : null)
+    : (yearRuns.length ? `The ${genYear} 13th-month pay is generated per company (${yearRuns.map((r) => r.company?.name).join(', ')}) — choose a company.` : null));
   const genRun = candidates?.run;
   const genAdding = genRun?.status === 'Approved'; // only employees not in it can be added
+  // …until its pay date (December 24 when none): a paid batch takes no one
+  const genPaidOn = genRun?.paid_on || null;
+  const genPaid = genAdding && !!genPaidOn && dayjs().format('YYYY-MM-DD') >= genPaidOn;
   const genLocked = !!candidates?.employees.some((c) => c.approved); // approved employees keep the pay date
   const [roundFilter, setRoundFilter] = useState('all'); // 'all' | round number | 'open'
 
@@ -82,6 +98,7 @@ const ThirteenthMonthIndex = () => {
     try {
       const { data } = await thirteenthMonthApi.getAll();
       setRuns(data.runs);
+      setCompanies(data.companies || []);
     } catch (error) {
       handleApiError(error, message);
     } finally {
@@ -105,11 +122,11 @@ const ThirteenthMonthIndex = () => {
     }
   };
 
-  const loadCandidates = async (year) => {
+  const loadCandidates = async (year, companyId = null) => {
     setCandidates(null);
     if (!year) return;
     try {
-      const { data } = await thirteenthMonthApi.candidates(year);
+      const { data } = await thirteenthMonthApi.candidates(year, companyId);
       setCandidates({ run: data.run, employees: data.employees });
       // an approved batch: add employees only
       if (data.run?.status === 'Approved') form.setFieldsValue({ scope: 'selected' });
@@ -127,16 +144,17 @@ const ThirteenthMonthIndex = () => {
       year,
       pay_date: draft ? (draft.pay_date ? dayjs(draft.pay_date) : null) : dayjs(`${year}-12-15`),
       remarks: draft?.remarks || undefined,
+      company_id: draft?.company_id ?? ALL,
       scope: 'all',
     });
-    loadCandidates(year);
+    loadCandidates(year, draft?.company_id ?? null);
     setGenOpen(true);
   };
 
   const handleValuesChange = (changed, all) => {
-    if ('year' in changed) {
-      form.setFieldsValue({ employee_ids: [] });
-      loadCandidates(all.year);
+    if ('year' in changed || 'company_id' in changed) {
+      form.setFieldsValue({ employee_ids: [], scope: 'all' });
+      loadCandidates(all.year, all.company_id && all.company_id !== ALL ? all.company_id : null);
     }
   };
 
@@ -147,6 +165,7 @@ const ThirteenthMonthIndex = () => {
     try {
       const { data } = await thirteenthMonthApi.generate({
         year: values.year,
+        company_id: values.company_id && values.company_id !== ALL ? values.company_id : null,
         pay_date: values.pay_date ? values.pay_date.format('YYYY-MM-DD') : null,
         remarks: values.remarks?.trim() || null,
         ...(values.scope === 'selected' ? { employee_ids: values.employee_ids } : {}),
@@ -181,7 +200,7 @@ const ThirteenthMonthIndex = () => {
     setBusy('download');
     try {
       const response = await thirteenthMonthApi.download(run.id, round);
-      if (await downloadBlobResponse(response, `13th_Month_${run.year}${round ? `_Round${round}` : ''}.xls`, message)) message.success('13th-month register downloaded.');
+      if (await downloadBlobResponse(response, `13th_Month_${run.year}${companyFile(run)}${round ? `_Round${round}` : ''}.xls`, message)) message.success('13th-month register downloaded.');
     } catch (error) {
       handleApiError(error, message);
     } finally {
@@ -191,6 +210,7 @@ const ThirteenthMonthIndex = () => {
 
   const columns = [
     { title: 'Year', dataIndex: 'year', width: 80 },
+    { title: 'Company', key: 'company', width: 200, render: (_, r) => r.company?.name || <Typography.Text type='secondary'>All companies</Typography.Text> },
     { title: 'Status', dataIndex: 'status', width: 100, render: (v) => <Tag color={RUN_STATUS_COLORS[v]}>{v}</Tag> },
     { title: 'Earned Through', dataIndex: 'earned_through', width: 130, render: (v) => formatDate(v, '—') },
     { title: 'Pay Date', dataIndex: 'pay_date', width: 110, render: (v) => formatDate(v, '—') },
@@ -298,7 +318,7 @@ const ThirteenthMonthIndex = () => {
         </Button>
       )}
       {isDraft && canCancel && !approvedIds.size && <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} onClick={() => setCancelling(true)}>Cancel</Button>}
-      {run.status === 'Approved' && canGenerate && (
+      {run.status === 'Approved' && canGenerate && !paid && (
         <Button icon={<UserAddOutlined />} onClick={() => openGenerate(run)}>Add Employees</Button>
       )}
       {canRemove && pickedRemovable.length > 0 && (
@@ -319,10 +339,10 @@ const ThirteenthMonthIndex = () => {
           variant='outlined'
           icon={<BankOutlined />}
           onClick={() => setBank({
-            title: `Bank File — ${run.year} 13th Month${roundNo ? ` — Round ${roundNo}` : ''}`,
+            title: `Bank File — ${runName(run)} 13th Month${roundNo ? ` — Round ${roundNo}` : ''}`,
             // a round is approved by itself; the whole batch only when Approved
             approved: roundNo ? true : run.status === 'Approved',
-            filenamePrefix: `13th_Month_Bank_${run.year}${roundNo ? `_Round${roundNo}` : ''}`,
+            filenamePrefix: `13th_Month_Bank_${run.year}${companyFile(run)}${roundNo ? `_Round${roundNo}` : ''}`,
             canChoose: canGenerate && !roundNo,
             load: () => thirteenthMonthApi.bank(run.id, roundNo),
             download: (sourceId) => thirteenthMonthApi.bankDownload(run.id, sourceId, roundNo),
@@ -403,17 +423,25 @@ const ThirteenthMonthIndex = () => {
         title='Generate 13th-month Pay'
         okText={genAdding ? 'Add Employees' : genRun?.status === 'Draft' ? 'Regenerate' : 'Generate'}
         onOk={generate}
-        okButtonProps={{ disabled: genRun?.status === 'Pending' }}
+        okButtonProps={{ disabled: genRun?.status === 'Pending' || !!genBlocked || genPaid }}
         confirmLoading={generating}
         onCancel={() => setGenOpen(false)}
         width={scope === 'selected' ? PICKER_MODAL_WIDTH : 520}
         zIndex={1050} // above the batch's view modal (Regenerate opens it from there)
         forceRender
       >
-        <Form form={form} layout='vertical' initialValues={{ scope: 'all' }} onValuesChange={handleValuesChange} disabled={generating}>
+        <Form form={form} layout='vertical' initialValues={{ scope: 'all', company_id: ALL }} onValuesChange={handleValuesChange} disabled={generating}>
           <Form.Item name='year' label='Year' rules={[{ required: true, message: 'Give the year' }]}>
             <InputNumber min={2000} max={2100} style={{ width: 140 }} />
           </Form.Item>
+          <Form.Item name='company_id' label='Company' extra='One generation and one approval for the companies chosen — All companies, or one company at a time.'>
+            <Select
+              showSearch={{ optionFilterProp: 'label' }}
+              options={[{ value: ALL, label: 'All companies' }, ...companies.map((c) => ({ value: c.id, label: c.name }))]}
+            />
+          </Form.Item>
+          {genBlocked && <Alert type='error' showIcon style={{ marginBottom: 12 }} title={genBlocked} />}
+          {genPaid && <Alert type='error' showIcon style={{ marginBottom: 12 }} title={`The ${genYear} 13th-month pay was paid on ${formatDate(genPaidOn)} — no employee can be added. Pay a missed employee with an adjustment on a payroll.`} />}
           <Form.Item name='pay_date' label='Pay Date' extra={genLocked ? 'Kept: employees in this batch are already approved for this date.' : 'On or before December 24 (PD 851).'}>
             <DatePicker format={DISPLAY_DATE_FORMAT} disabled={genLocked} />
           </Form.Item>
@@ -425,7 +453,7 @@ const ThirteenthMonthIndex = () => {
               title={`The ${genYear} 13th-month pay is waiting for approval — an approver returns it if a change is needed.`}
             />
           )}
-          {genAdding && (
+          {genAdding && !genPaid && (
             <Alert
               type='info'
               showIcon
@@ -474,7 +502,7 @@ const ThirteenthMonthIndex = () => {
       <Modal
         keyboard={false}
         open={!!viewId}
-        title={run ? `13th-month Pay — ${run.year}` : '13th-month Pay'}
+        title={run ? `13th-month Pay — ${runName(run)}` : '13th-month Pay'}
         onCancel={() => { setViewId(null); setPicked([]); setRoundFilter('all'); }}
         afterOpenChange={(isOpen) => { if (isOpen) loadView(viewId); else { setView(null); setSearch(''); setRemarks(''); } }}
         destroyOnHidden
@@ -515,8 +543,13 @@ const ThirteenthMonthIndex = () => {
                 type='info'
                 showIcon
                 style={{ marginBottom: 8 }}
-                title={`Paid on ${formatDate(run.paid_on)} — the approved 13th month can't be rolled back or generated again. Correct it with an adjustment on a payroll.`}
+                title={`Paid on ${formatDate(run.paid_on)} — the approved 13th month can't be rolled back or generated again, and no employee can be added. Correct it, or pay a missed employee, with an adjustment on a payroll.`}
               />
+            )}
+            {view.paid_from_summary?.length > 0 && (
+              <Card size='small' style={{ marginBottom: 8 }} title={view.paid_from_final ? 'Paid from' : 'Paid from — preview (final on approval)'}>
+                <PaidFromSummary summary={view.paid_from_summary} />
+              </Card>
             )}
             {rolledBack && (
               <Alert

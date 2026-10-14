@@ -8,6 +8,9 @@ import downloadBlobResponse from '../../../utils/downloadBlobResponse';
 import { tablePagination } from '../../../utils/tablePagination';
 import { cutoffLabel, peso } from '../payrollHelpers';
 import { money, sumOf, nameOf } from './reportHelpers';
+import CompanySelect from './CompanySelect';
+
+const companyFile = (name) => (name ? `_${name.replace(/[^A-Za-z0-9]+/g, '_')}` : '');
 
 const missing = (v) => v || <Typography.Text type='danger'>Missing</Typography.Text>;
 const empColumn = { title: 'Employee', key: 'employee', fixed: 'left', width: 230, render: (_, r) => (
@@ -48,14 +51,16 @@ const AGENCIES = [
 // and Pag-IBIG contributions (employee + employer share) and the BIR 1601-C
 // withholding, per employee, from the month's APPROVED payrolls. Download =
 // one Excel workbook (Summary + a sheet per agency) to fill the agencies'
-// own upload / return forms.
+// own upload / return forms. Company = that employer's payslips (each
+// company files its own; cleared = all companies).
 const RemittanceReport = () => {
   const { message } = App.useApp();
   const [month, setMonth] = useState(dayjs().subtract(1, 'month').startOf('month'));
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const params = { year: month.year(), month: month.month() + 1 };
+  const [companyId, setCompanyId] = useState(null);
+  const params = { year: month.year(), month: month.month() + 1, company_id: companyId };
 
   const fetchReport = async () => {
     setLoading(true);
@@ -73,13 +78,13 @@ const RemittanceReport = () => {
     const load = async () => { await fetchReport(); };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [month]);
+  }, [month, companyId]);
 
   const download = async () => {
     setDownloading(true);
     try {
       const response = await payrollReportApi.remittanceDownload(params);
-      if (await downloadBlobResponse(response, `Remittances_${month.format('YYYY-MM')}.xls`, message)) message.success('Remittance report downloaded.');
+      if (await downloadBlobResponse(response, `Remittances_${month.format('YYYY-MM')}${companyFile(companyId && data?.employer?.name)}.xls`, message)) message.success('Remittance report downloaded.');
     } catch (error) {
       handleApiError(error, message);
     } finally {
@@ -137,7 +142,10 @@ const RemittanceReport = () => {
   return (
     <div>
       <Space wrap style={{ marginBottom: 12, width: '100%', justifyContent: 'space-between' }}>
-        <DatePicker picker='month' value={month} onChange={(v) => v && setMonth(v.startOf('month'))} allowClear={false} format='MMMM YYYY' />
+        <Space wrap>
+          <DatePicker picker='month' value={month} onChange={(v) => v && setMonth(v.startOf('month'))} allowClear={false} format='MMMM YYYY' />
+          <CompanySelect value={companyId} onChange={setCompanyId} />
+        </Space>
         <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={fetchReport} loading={loading}>Refresh</Button>
           <Button color='purple' variant='outlined' icon={<DownloadOutlined />} loading={downloading} disabled={!employees.length} onClick={download}>Download (Excel)</Button>
@@ -159,8 +167,11 @@ const RemittanceReport = () => {
             {stat('Pag-IBIG', t.pagibig.total, `EE ${peso(t.pagibig.ee)} · ER ${peso(t.pagibig.er)}`)}
             {stat('Withholding Tax (1601-C)', t.bir.tax, `taxable ${peso(t.bir.taxable)}`)}
           </Row>
-          {!data.employer?.name && (
-            <Alert type='warning' showIcon style={{ marginBottom: 12 }} title='The employer name / numbers are not set — Payroll → Setup → Payroll Settings → Employer.' />
+          {!companyId && (
+            <Alert type='warning' showIcon style={{ marginBottom: 12 }} title='All companies — choose the company to file its remittances (each company is its own employer).' />
+          )}
+          {companyId && !(data.employer?.tin && data.employer?.sss_no && data.employer?.philhealth_no && data.employer?.pagibig_no) && (
+            <Alert type='warning' showIcon style={{ marginBottom: 12 }} title={`Some employer numbers of ${data.employer?.name || 'this company'} are not set — Payroll → Setup → Payroll Settings → Employers.`} />
           )}
           <Tabs items={AGENCIES.map(agencyTab)} />
         </>

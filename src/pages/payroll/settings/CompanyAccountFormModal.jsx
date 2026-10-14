@@ -6,11 +6,14 @@ import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { applyFormErrors } from '../payrollHelpers';
 
-// Add / edit a company payroll account (paid from). The default for a pay
-// date: the account whose Default period covers it, else the one marked
-// Default — e.g. BDO marked Default, BPI with a period for November. Periods
-// can't overlap. `account` = null for add.
-const CompanyAccountFormModal = ({ open, account, banks, onClose, onSaved }) => {
+// Add / edit a payroll account (paid from) of one company (`companyId` —
+// from the Employers tab; its employees are paid from it) or a general one
+// (null — the fallback for a company with none). The default for a pay
+// date, within that company (or among the general accounts): the account
+// whose Default period covers it, else the one marked Default — e.g. BDO
+// marked Default, BPI with a period for November. Periods can't overlap
+// within the same owner. `account` = null for add.
+const CompanyAccountFormModal = ({ open, account, companyId = null, companyName = null, banks, onClose, onSaved }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
@@ -36,6 +39,7 @@ const CompanyAccountFormModal = ({ open, account, banks, onClose, onSaved }) => 
     }
     const [from, to] = values.default_period || [];
     const payload = {
+      company_id: companyId,
       bank_id: values.bank_id,
       account_name: values.account_name.trim(),
       account_no: values.account_no.trim(),
@@ -67,7 +71,7 @@ const CompanyAccountFormModal = ({ open, account, banks, onClose, onSaved }) => 
     <Modal
       keyboard={false}
       open={open}
-      title={account ? 'Edit Payroll Account' : 'Add Payroll Account'}
+      title={`${account ? 'Edit' : 'Add'} Payroll Account — ${companyName || 'General'}`}
       okText='Save'
       onOk={handleSave}
       onCancel={onClose}
@@ -110,7 +114,7 @@ const CompanyAccountFormModal = ({ open, account, banks, onClose, onSaved }) => 
               name='is_default'
               label='Default'
               valuePropName='checked'
-              extra='Used when no account has a default period covering the pay date. Marking this unmarks the others.'
+              extra={`Used when no account has a default period covering the pay date. Marking this unmarks the other Default of ${companyName || 'the general accounts'}.`}
             >
               <Switch disabled={!active} />
             </Form.Item>

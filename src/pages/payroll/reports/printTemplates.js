@@ -14,7 +14,7 @@ const employerHead = (employer, title, subtitle) => `
   <div class="head">
     <div>
       <h1>${or(employer?.name || 'Employer name not set')}</h1>
-      <div class="muted">${h([employer?.address, employer?.zip].filter(Boolean).join(' ') || 'Set the employer details in Payroll Settings')}</div>
+      <div class="muted">${h([employer?.address, employer?.zip].filter(Boolean).join(' ') || 'Set the employer details in Payroll Settings → Employers')}</div>
       ${employer?.tin ? `<div class="muted">TIN ${h(employer.tin)}${employer.rdo ? ` · RDO ${h(employer.rdo)}` : ''}</div>` : ''}
     </div>
     <div class="right"><div class="strong" style="font-size:13pt">${h(title)}</div><div class="muted">${h(subtitle)}</div></div>
