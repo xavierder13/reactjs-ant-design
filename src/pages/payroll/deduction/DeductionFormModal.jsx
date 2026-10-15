@@ -18,9 +18,20 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
   const [saving, setSaving] = useState(false);
   const total = Form.useWatch('total_amount', form);
   const perCutoff = Form.useWatch('amount_per_cutoff', form);
-  const oneTime = Form.useWatch('schedule', form) === 'One-time';
+  const schedule = Form.useWatch('schedule', form);
+  const oneTime = schedule === 'One-time';
+  // once a month (1st / 2nd cut-off of the month) or every cut-off
+  const perLabel = schedule && schedule.endsWith('of the month') ? 'Amount per Month' : 'Amount per Cut-off';
   const typeId = Form.useWatch('deduction_type_id', form);
-  const needsDescription = !!(options.types || []).find((t) => t.id === typeId)?.needs_description;
+  const type = (options.types || []).find((t) => t.id === typeId);
+  const needsDescription = !!type?.needs_description;
+  // the description's label: Other-category types (e.g. Other Deduction) say what it is
+  // ("Specify"); an Installment names the item bought; others describe it
+  const description = type?.category === 'Other'
+    ? { label: 'Specify', placeholder: 'e.g. Damaged company phone', message: 'Specify what this deduction is for' }
+    : type?.code === 'INS'
+      ? { label: 'Item Bought', placeholder: 'e.g. Refrigerator — Model X', message: 'Name the item bought' }
+      : { label: 'Description', placeholder: 'e.g. Damaged company phone', message: 'Say what this deduction is for' };
 
   const handleAfterOpenChange = (isOpen) => {
     if (!isOpen) return;
@@ -119,11 +130,11 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
         {needsDescription && (
           <Form.Item
             name='description'
-            label='Description'
-            rules={[{ required: true, whitespace: true, message: 'Say what this deduction is for' }]}
+            label={description.label}
+            rules={[{ required: true, whitespace: true, message: description.message }]}
             extra='Shown on the payslip after the type.'
           >
-            <Input maxLength={150} placeholder='e.g. Damaged company phone' />
+            <Input maxLength={150} placeholder={description.placeholder} />
           </Form.Item>
         )}
         <Row gutter={12}>
@@ -141,10 +152,10 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
           <Col xs={12} sm={8}>
             <Form.Item
               name='amount_per_cutoff'
-              label='Amount per Cut-off'
+              label={perLabel}
               dependencies={['total_amount']}
               rules={[
-                { required: true, message: 'Amount per cut-off is required' },
+                { required: true, message: `${perLabel} is required` },
                 ({ getFieldValue }) => ({
                   validator: (_, v) => (v && getFieldValue('total_amount') && v > getFieldValue('total_amount')
                     ? Promise.reject(new Error('More than the total amount'))

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import {
   Modal, Table, Tag, Button, Space, Tooltip, Popconfirm, Progress, Descriptions, Form, DatePicker,
-  InputNumber, Input, Select, Row, Col, Typography, Spin, App,
+  InputNumber, Input, Select, Row, Col, Typography, Spin, Alert, App,
 } from 'antd';
 import { DeleteOutlined, PauseCircleOutlined, PlayCircleOutlined, CloseCircleOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
 import deductionApi from '../../../services/payroll/deductionApi';
@@ -13,7 +13,10 @@ import ReasonModal from '../ReasonModal';
 
 // One deduction: amounts, schedule, progress and its payment ledger. Record
 // a manual payment, hold / resume, cancel, or delete a wrong manual payment
-// — each by permission and only while the status allows it.
+// — each by permission and only while the status allows it. A payment tagged
+// to a cut-off counts toward that cut-off's amount: the form says what that
+// payroll will then take (the rest, nothing, or — already deducted by a
+// payroll — a double payment).
 const DeductionDetailsModal = ({ deductionId, refreshKey, options, perms, onClose, onChanged, onEdit }) => {
   const { message } = App.useApp();
   const [paymentForm] = Form.useForm();
@@ -22,6 +25,24 @@ const DeductionDetailsModal = ({ deductionId, refreshKey, options, perms, onClos
   const [paying, setPaying] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const payAmount = Form.useWatch('amount', paymentForm);
+  const payCutoff = Form.useWatch('payroll_cutoff_id', paymentForm);
+
+  // what the payroll of the chosen cut-off does with this payment (DeductionService::dueOn)
+  const payHint = (() => {
+    if (!deduction || !payCutoff) return null;
+    const onCutoff = (deduction.payments || []).filter((p) => p.payroll_cutoff_id === payCutoff);
+    if (onCutoff.some((p) => p.source === 'Payroll')) {
+      return { type: 'warning', text: 'A payroll already deducted this on that cut-off — recording it again counts the cut-off twice. Leave the cut-off blank for an extra payment.' };
+    }
+    const scheduled = Number(deduction.amount_per_cutoff);
+    const cash = onCutoff.reduce((t, p) => t + Number(p.amount), 0) + Number(payAmount || 0);
+    if (!payAmount || deduction.schedule === 'One-time') return null;
+    const rest = Math.round((scheduled - cash) * 100) / 100;
+    return rest > 0
+      ? { type: 'info', text: `Less than the ${peso(scheduled)} scheduled: that cut-off's payroll deducts only the remaining ${peso(rest)}, and flags it for the payroll manager.` }
+      : { type: 'info', text: 'Covers the scheduled amount: that cut-off\'s payroll won\'t deduct this.' };
+  })();
 
   const fetchDeduction = async () => {
     setLoading(true);
@@ -246,6 +267,7 @@ const DeductionDetailsModal = ({ deductionId, refreshKey, options, perms, onClos
                       </Form.Item>
                     </Col>
                   </Row>
+                  {payHint && <Alert type={payHint.type} showIcon title={payHint.text} style={{ marginBottom: 12 }} />}
                   <Space style={{ marginBottom: 12 }}>
                     <Button onClick={() => setPaying(false)}>Close</Button>
                     <Button type='primary' loading={savingPayment} onClick={savePayment}>Save Payment</Button>

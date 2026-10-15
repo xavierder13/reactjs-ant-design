@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Tag, Button, Space, Tooltip, Select, Input, Progress, Popconfirm, Typography, App } from 'antd';
+import { Table, Tag, Button, Space, Tooltip, Select, Input, Progress, Popconfirm, Switch, Typography, App } from 'antd';
 import { EditOutlined, EyeOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
 import deductionApi from '../../../services/payroll/deductionApi';
@@ -11,10 +11,13 @@ import DeductionDetailsModal from './DeductionDetailsModal';
 import GenerateTemplateModal from '../../employee_master_data/components/GenerateTemplateModal';
 import ImportDataModal from '../../employee_master_data/components/ImportDataModal';
 
-// Scheduled deductions (loans, cash advances, …) with their balance. View
-// opens the details and payment ledger (record payment, hold / resume,
-// cancel). No approval — saved by permission. Bulk: Generate Template →
-// one line per deduction → Import. Server-side filters and pagination.
+// Scheduled deductions (loans, cash advances, installments, …) with total,
+// paid and balance. The Deducting switch (deduction-edit) holds / resumes
+// one — off = On Hold, skipped by payroll until turned on again. View opens
+// the details and payment ledger (record payment, hold / resume, cancel).
+// No approval — saved by permission. Filters: status, category, type,
+// branch, search. Bulk: Generate Template → one line per deduction →
+// Import. Server-side filters and pagination.
 const DeductionIndex = () => {
   const { message } = App.useApp();
   const { hasPermission, hasRole } = useAuth();
@@ -29,7 +32,8 @@ const DeductionIndex = () => {
   const canTemplate = isAdmin || hasPermission('deduction-template-download');
   const canImport = isAdmin || hasPermission('deduction-import');
 
-  const [options, setOptions] = useState({ types: [], cutoffs: [], branches: [], schedules: [], statuses: [] });
+  const [options, setOptions] = useState({ types: [], cutoffs: [], branches: [], schedules: [], statuses: [], categories: [] });
+  const [toggling, setToggling] = useState(null); // the deduction id being held / resumed
   const [filters, setFilters] = useState({});
   const [search, setSearch]   = useState('');
   const [page, setPage]       = useState({ current: 1, pageSize: 20 });
@@ -85,6 +89,21 @@ const DeductionIndex = () => {
     }
   };
 
+  // the Deducting switch: Active ⇄ On Hold
+  const toggle = async (record) => {
+    setToggling(record.id);
+    try {
+      const { data } = record.status === 'Active' ? await deductionApi.hold(record.id) : await deductionApi.resume(record.id);
+      message.success(data.message);
+      setSavedCount((n) => n + 1);
+      fetchRows();
+    } catch (error) {
+      handleApiError(error, message);
+    } finally {
+      setToggling(null);
+    }
+  };
+
   const remove = async (record) => {
     try {
       const { data } = await deductionApi.delete(record.id);
@@ -120,7 +139,14 @@ const DeductionIndex = () => {
       ),
     },
     { title: 'Total', dataIndex: 'total_amount', width: 120, align: 'right', render: (v) => peso(v) },
-    { title: 'Per Cut-off', dataIndex: 'amount_per_cutoff', width: 120, align: 'right', render: (v) => peso(v) },
+    { title: 'Paid', dataIndex: 'total_paid', width: 120, align: 'right', render: (v) => peso(v) },
+    {
+      title: 'Per Deduction',
+      dataIndex: 'amount_per_cutoff',
+      width: 130,
+      align: 'right',
+      render: (v, r) => (r.schedule === 'One-time' ? <Typography.Text type='secondary'>whole total</Typography.Text> : peso(v)),
+    },
     {
       title: 'Balance',
       dataIndex: 'balance',
@@ -149,6 +175,28 @@ const DeductionIndex = () => {
       ),
     },
     { title: 'Status', dataIndex: 'status', width: 110, render: (v) => <Tag color={DEDUCTION_STATUS_COLORS[v]}>{v}</Tag> },
+    {
+      title: 'Deducting',
+      key: 'deducting',
+      width: 100,
+      align: 'center',
+      render: (_, r) => {
+        if (!['Active', 'On Hold'].includes(r.status)) return <Typography.Text type='secondary'>—</Typography.Text>;
+        const on = r.status === 'Active';
+        const sw = <Switch size='small' checked={on} checkedChildren='On' unCheckedChildren='Off' loading={toggling === r.id} disabled={!perms.canEdit} />;
+        if (!perms.canEdit) return sw;
+        return (
+          <Popconfirm
+            title={on ? 'Put this deduction on hold?' : 'Resume this deduction?'}
+            description={<div style={{ maxWidth: 280 }}>{on ? 'Payroll skips it until it is turned on again. The balance stays.' : 'Payroll takes it again from the next payroll generated.'}</div>}
+            okText={on ? 'Hold' : 'Resume'}
+            onConfirm={() => toggle(r)}
+          >
+            {sw}
+          </Popconfirm>
+        );
+      },
+    },
     {
       title: 'Actions',
       key: 'actions',
@@ -199,10 +247,18 @@ const DeductionIndex = () => {
           />
           <Select
             allowClear
+            placeholder='All categories'
+            value={filters.category}
+            onChange={(v) => setFilter({ category: v, deduction_type_id: undefined })}
+            options={(options.categories || []).map((c) => ({ value: c, label: c }))}
+            style={{ width: 170 }}
+          />
+          <Select
+            allowClear
             placeholder='All types'
             value={filters.deduction_type_id}
             onChange={(v) => setFilter({ deduction_type_id: v })}
-            options={options.types.map((t) => ({ value: t.id, label: t.name }))}
+            options={options.types.filter((t) => !filters.category || t.category === filters.category).map((t) => ({ value: t.id, label: t.name }))}
             showSearch={{ optionFilterProp: 'label' }}
             style={{ width: 220 }}
           />
@@ -235,7 +291,7 @@ const DeductionIndex = () => {
         columns={columns}
         dataSource={rows}
         loading={loading}
-        scroll={{ x: 1300 }}
+        scroll={{ x: 1550 }}
         pagination={{
           current: page.current,
           pageSize: page.pageSize,
