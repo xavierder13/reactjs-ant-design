@@ -44,7 +44,10 @@ const when = (v) => (v ? dayjs(v).format(`${DISPLAY_DATE_FORMAT} hh:mm A`) : '�
 // round filter, which the Register and Bank File follow (a round's CSV is
 // ready once that round is approved). Remove Selected takes not-yet-approved
 // payslips out of a Draft. Payroll Register (Excel) and the Bank File
-// (preview; CSV once approved) with payroll-report-view.
+// (preview; CSV once approved) with payroll-report-view. Paid (on / after
+// the pay date): no rollback or Add Employees — except with
+// payroll-run-rollback-paid. Delete Payroll (payroll-run-delete, reason):
+// any status and period, back to the list.
 const PayrollRunPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -55,6 +58,8 @@ const PayrollRunPage = () => {
     canGenerate: isAdmin || hasPermission('payroll-run-generate'),
     canCancel: isAdmin || hasPermission('payroll-run-cancel'),
     canRollback: isAdmin || hasPermission('payroll-run-rollback'),
+    canUndoPaid: isAdmin || hasPermission('payroll-run-rollback-paid'),
+    canDelete: isAdmin || hasPermission('payroll-run-delete'),
     canReport: isAdmin || hasPermission('payroll-report-view'),
   };
   const [notFound, setNotFound] = useState(false);
@@ -68,6 +73,7 @@ const PayrollRunPage = () => {
   const [picked, setPicked] = useState([]); // ticked payslip rows (employee ids)
   const [regenerating, setRegenerating] = useState(null);
   const [rollingBack, setRollingBack] = useState(null); // { employeeIds: [..] | null (all) }
+  const [deleting, setDeleting] = useState(false);
   const [roundFilter, setRoundFilter] = useState('all'); // 'all' | round number | 'open' (not approved yet)
 
   const load = async (runId = id) => {
@@ -130,14 +136,15 @@ const PayrollRunPage = () => {
   const withWarnings = (data?.employees || []).filter((e) => e.warnings.length).length;
   // approved (posted) payslips are locked: only a rollback reopens them
   const approvedIds = new Set((data?.employees || []).filter((e) => e.approved).map((e) => e.employee_id));
-  // paid on the pay date: from then on no rollback (corrections = payroll adjustments)
+  // paid on the pay date: from then on no rollback (corrections = payroll adjustments) — but by payroll-run-rollback-paid
   const paid = !!run?.cutoff?.pay_date && dayjs().format('YYYY-MM-DD') >= run.cutoff.pay_date;
-  const canRollback = perms.canRollback && !paid && (run?.status === 'Approved' || (isDraft && approvedIds.size > 0));
+  const paidLocked = paid && !perms.canUndoPaid;
+  const canRollback = perms.canRollback && !paidLocked && (run?.status === 'Approved' || (isDraft && approvedIds.size > 0));
   const canPickGenerate = isDraft && perms.canGenerate;
   const pickedGenerate = picked.filter((eid) => !approvedIds.has(eid));
   const pickedRollback = picked.filter((eid) => approvedIds.has(eid));
   // approved: only employees not in it — until the pay date (paid: a missed employee goes on a later cut-off)
-  const canAdd = perms.canGenerate && run?.status === 'Approved' && !paid;
+  const canAdd = perms.canGenerate && run?.status === 'Approved' && !paidLocked;
   const sel = canPickGenerate || canRollback ? 1 : 0; // the selection column shifts the totals row
 
   const columns = [
@@ -230,7 +237,7 @@ const PayrollRunPage = () => {
   ) : null;
 
   const pickedRemovable = picked.filter((eid) => !approvedIds.has(eid));
-  const actions = run && ((isDraft && (perms.canGenerate || perms.canCancel)) || canDecide || canRollback || canAdd) ? (
+  const actions = run && ((isDraft && (perms.canGenerate || perms.canCancel)) || canDecide || canRollback || canAdd || perms.canDelete) ? (
     <Space wrap>
       {canAdd && (
         <Button icon={<UserAddOutlined />} onClick={() => setRegenerating({ run, mode: 'add', preselected: [] })}>Add Employees</Button>
@@ -257,6 +264,7 @@ const PayrollRunPage = () => {
         </Button>
       )}
       {isDraft && perms.canCancel && !approvedIds.size && <Button color='orange' variant='outlined' icon={<CloseCircleOutlined />} onClick={() => setCancelling(true)}>Cancel Payroll</Button>}
+      {perms.canDelete && <Button danger icon={<DeleteOutlined />} onClick={() => setDeleting(true)}>Delete Payroll</Button>}
       {isDraft && perms.canGenerate && (
         <Button icon={<UsergroupAddOutlined />} onClick={() => setRegenerating({ run, preselected: pickedGenerate })}>
           {pickedGenerate.length ? `Generate Selected (${pickedGenerate.length})` : 'Generate Selected'}
@@ -554,7 +562,8 @@ const PayrollRunPage = () => {
                 <li>The loan / deduction payments posted for them are removed (balances return).</li>
                 <li>Their payroll adjustments are Open again.</li>
                 <li>Payslips, remittances, the bank file and reports leave them out until the payroll is approved again.</li>
-                <li>Not allowed while a later payroll, or the year&apos;s 13th month, is approved or waiting for approval — or on / after the pay date (paid).</li>
+                <li>Not allowed while a later payroll, or the year&apos;s 13th month, is approved or waiting for approval{perms.canUndoPaid ? '' : ' — or on / after the pay date (paid)'}.</li>
+                {paid && perms.canUndoPaid && <li><strong>This payroll was paid on {formatDate(run.cutoff.pay_date)}</strong> — what the bank already credited doesn&apos;t change; settle any difference with a payroll adjustment.</li>}
               </ul>
             )}
           />
@@ -591,6 +600,41 @@ const PayrollRunPage = () => {
           }
         }}
         onClose={() => setCancelling(false)}
+      />
+      <ReasonModal
+        open={deleting}
+        title={`Delete Payroll ${run ? cutoffLabel(run.cutoff) : ''}`}
+        label='Reason for deleting'
+        okText='Delete Payroll'
+        danger
+        description={(
+          <Alert
+            type='error'
+            showIcon
+            style={{ marginBottom: 12 }}
+            title='The payroll, all its payslips and its approval history are deleted. This can&apos;t be undone.'
+            description={(
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {approvedIds.size > 0 && <li>{`Its ${approvedIds.size} approved payslip(s) are undone first: their loan / deduction payments are removed (balances return) and their payroll adjustments are Open again.`}</li>}
+                {paid && <li><strong>{`It was paid on ${formatDate(run.cutoff.pay_date)}`}</strong> — the cut-off&apos;s payments stay with the bank; reports and payslips no longer show them.</li>}
+                <li>Not allowed while a later payroll, or the year&apos;s 13th month, is approved or waiting for approval.</li>
+                <li>The cut-off and its filing switch stay as they are. The Audit Trail keeps the deletion and the reason.</li>
+              </ul>
+            )}
+          />
+        )}
+        onSubmit={async (reason) => {
+          try {
+            const { data: res } = await payrollRunApi.delete(run.id, reason);
+            message.success(res.message);
+            setDeleting(false);
+            navigate('/payroll-runs');
+          } catch (error) {
+            handleApiError(error, message);
+            throw error; // keeps the reason dialog open
+          }
+        }}
+        onClose={() => setDeleting(false)}
       />
     </div>
   );

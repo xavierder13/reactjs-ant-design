@@ -60,6 +60,11 @@ import axios from '../../api/axiosInstance';
 // - submit(id) (payroll-run-generate) · approve(id, remarks) /
 //   disapprove(id, remarks — required) (payroll-run-approve + a current-level
 //   approver) · cancel(id, reason) (payroll-run-cancel, Draft).
+// - delete(id, reason) (payroll-run-delete, Administrator) — any status and
+//   period: undoes what approved payslips posted (like rollback; 422 while a
+//   later payroll / the 13th month builds on it), then deletes the run, its
+//   payslips and approval history → { message }. rollback after the pay date
+//   and adding employees to a paid approved run: payroll-run-rollback-paid.
 const payrollRunApi = {
   getAll:   (params)     => axios.post('/payroll_run/index', params),
   options:  ()           => axios.post('/payroll_run/options'),
@@ -80,6 +85,7 @@ const payrollRunApi = {
   // approved ones left → the run is Approved again as its last round left it
   remove:   (id, employeeIds) => axios.post(`/payroll_run/remove/${id}`, { employee_ids: employeeIds }),
   rollback: (id, reason, employeeIds) => axios.post(`/payroll_run/rollback/${id}`, employeeIds ? { reason, employee_ids: employeeIds } : { reason }),
+  delete:   (id, reason) => axios.post(`/payroll_run/delete/${id}`, { reason }),
 };
 
 export default payrollRunApi;
