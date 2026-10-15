@@ -28,7 +28,7 @@ export const FACTOR_HINTS = {
   261: '5-day work week (Sat & Sun off)',
   313: '6-day work week (Sunday off)',
   314.6: 'DOLE default',
-  315: '26.25 days a month (old payroll)',
+  315: '26.25 days a month',
   365: 'paid every day of the year',
 };
 
