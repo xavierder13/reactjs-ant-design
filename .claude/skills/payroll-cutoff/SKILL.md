@@ -29,6 +29,10 @@ their own record management, for payroll.
   needs a reason; every change logged (`payroll_cutoff_filing_logs`: on/off,
   reason, who, when; "Filing history"). While OFF, the period's dates can't
   change and it can't be deleted.
+- **Delete** (`PayrollCutoffService::delete`, with its filing log): refused
+  while filing is OFF, while any payroll run (any status) is on it — delete
+  that first (Payroll Runs → View → Delete Payroll) — or while a deduction
+  (start cut-off), deduction payment or payroll adjustment points at it.
 - While OFF, `assertFilingOpen($from, $to)` blocks — for any date inside —
   leave (`LeaveService::check`) and manual time entries
   (`TimeEntryService::check`): filing, editing **and approving** (approve
@@ -37,5 +41,5 @@ their own record management, for payroll.
 
 ## Permissions
 
-`payroll-cutoff-list`, `-create` (incl. generate), `-edit`, `-delete`,
-`-filing-toggle` (the switch).
+`payroll-cutoff-list`, `-create` (incl. generate), `-edit`, `-delete`
+(Administrator only — no role seeder grants it), `-filing-toggle` (the switch).

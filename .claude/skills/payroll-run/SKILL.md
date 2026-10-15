@@ -14,7 +14,8 @@ has its own % (the premium rates' overtime column per day type).
 - vueportal: `Services/DtrService.php`, `Services/PayrollRunService.php`,
   `PayrollRun`, `PayrollRunEmployee`; `DtrController`, `PayrollRunController`;
   `DtrMaintenance` (`dtr-list`), `PayrollRunMaintenance`
-  (`payroll-run-list/-generate/-approve/-cancel`), Administrator bypass;
+  (`payroll-run-list/-generate/-approve/-cancel/-rollback`, and the
+  Administrator-only `-delete` / `-rollback-paid`), Administrator bypass;
   migrations `2026_10_12_100000` (cut-off rules on payroll_settings),
   `110000/110100` (runs, run employees). Cut-off generator:
   `PayrollCutoffService::generate/periodsFor/payDate`.
@@ -73,6 +74,13 @@ to existing (filing on) cut-offs.
 - Punches: first IN / last OUT in the day's window (4 h before the
   scheduled in, else 04:00, to the next day's start) — night shifts keep
   their next-morning OUT. An approved manual time entry replaces in / out.
+  The punches between them are the breaks (as the Attendance tab reads
+  them): break out = the last OUT, break in = the first IN among them
+  (`break_out` / `break_in` on the day). Over-break (Payroll Settings
+  `over_break_late`, default on, migration `2026_10_22_110000`): a paired
+  break — break in after break out — longer than the shift's break adds to
+  the day's late (`over_break_minutes`; payslip "09/15 6 min (over-break
+  6)"); no pair, no over-break.
 - Paid day = scheduled span − break, at most `hours_per_day` (hand-typed
   schedules have no break). Late (past grace, counted from the start),
   undertime, Absent (no punch, no leave), half-day leave 0.5 (a leave day
@@ -188,7 +196,9 @@ admits payroll-setting-edit for the employee picker.
   `hours_per_day` at its regular rate, beyond at its overtime rate. Night
   differential = night minutes × hourly × the hour's rate × night %.
 - Allowances prorated by days covered (per cut-off / per week × 52 ÷ 12 ÷
-  cut-offs / per month ÷ cut-offs / per day worked); de minimis non-taxable
+  cut-offs / per month ÷ cut-offs / per day worked), labelled "<type> —
+  <description>" for a Needs Description type (Other Allowance, the form's
+  "Specify"); de minimis non-taxable
   (monthly excess over the limit taxable; a weekly one by its × 52 ÷ 12). Open payroll adjustments of the cut-off (Deduction ones negative,
   code `adjustment_<id>`, ids kept in `summary.adjustment_ids`), labelled
   with the type or, for an Other Adjustment, what it is for (+ the
@@ -197,11 +207,32 @@ admits payroll-setting-edit for the employee picker.
   the allowance type — taxable and not de minimis — or the form's switch).
 - Contributions: ContributionService::compute on the month base (monthly
   rate; daily-paid: the month's basic earnings, later cut-offs projected),
-  taken per settings (Every cut-off ÷ count, or all on the 1st / last).
-  Tax: taxOn() monthly — every cut-off: (taxable × count − mandatory EE) ÷
-  count; 2nd cut-off: the month's taxable less tax already withheld.
-- Scheduled deductions due (DeductionService::dueOn skips a cut-off already
-  paid; a One-time one is its whole total, from its start cut-off until taken;
+  taken per settings (Every cut-off: the earlier cut-offs take the rounded
+  share, the last one the rest — `partAmount`, so the month adds up to the
+  centavo — or all on the 1st / last). Centavos per deduction (Payroll
+  Settings `sss_ / philhealth_ / pagibig_ / tax_centavos`,
+  `PayrollSetting::CENTAVO_RULES`, migration `2026_10_22_100000`;
+  `ContributionService::shares()`): `Round` = each share rounded; `Cut` = EE
+  cut to the centavo, ER = the exact premium − EE (333.4855 → EE 333.48, ER
+  333.49), tax cut to the centavo. Defaults: PhilHealth Cut (the old
+  payroll's), the others Round. SSS table amounts are whole centavos, so its
+  rule only matters if a future table has fractions.
+  Tax base = taxable earnings − mandatory EE shares (SSS, PhilHealth,
+  Pag-IBIG; not the voluntary Pag-IBIG, never loans) — not net pay. Three
+  BIR tables (`ContributionTable::TAX_TABLES`, agencies `BIR Semi-monthly`,
+  `BIR` = monthly, `BIR Annual`; `taxOn(id, taxable, date, period)`; a
+  Fixed profile amount is monthly: ÷ 2 / × 12). Every cut-off with
+  semi-monthly cut-offs: the semi-monthly table on that cut-off's own taxable
+  pay less the EE shares deducted on it; every cut-off with monthly
+  cut-offs: the monthly table; 1st / 2nd cut-off: the monthly table on the
+  month's taxable (2nd: less tax already withheld). A missing table for the
+  date is a payslip warning, never a fallback.
+- Scheduled deductions due (DeductionService::dueOn: skipped on a cut-off a
+  payroll already posted it for; manual (cash) payments tagged to the cut-off
+  count toward its amount — covering it, not due; less, only the rest is
+  deducted, with a payslip warning and "Scheduled … − … paid in cash" in the
+  line's detail (the Record Payment form says which before saving); a
+  One-time one is its whole total, from its start cut-off until taken;
   labelled "<type> — <description>" when the deduction has one) only while the net stays ≥ 0, else a warning. Lines rounded once.
 - Run: per cut-off, for **all companies** (`company_id` null) or **one
   company** — one generation, one approval each; a cut-off has one
@@ -328,11 +359,22 @@ deduction payments are never duplicated.
     _at`, `rollback_reason` (migration `2026_10_14_110000`); the page shows
     "Rolled back … by …" until it is submitted again.
   - Refused while a later cut-off's run is Approved / Pending / keeps
-    approved payslips, while the year's 13th month counts this cut-off
-    (earned_through ≥ its end) and is Pending or has approved employees, and on
-    or after the cut-off's pay date (paid — corrected by a payroll adjustment
-    on a later cut-off; the page then shows "Paid on …" and no Roll Back).
+    approved payslips, or while the year's 13th month counts this cut-off
+    (earned_through ≥ its end) and is Pending or has approved employees
+    (`assertUndoable`). On or after the cut-off's pay date (paid — corrected
+    by a payroll adjustment on a later cut-off; the page then shows "Paid on
+    …" and no Roll Back / Add Employees) only with `payroll-run-rollback-paid`
+    (Administrator): it can then roll back, regenerate and add employees; the
+    audit entry notes "after the pay date".
     Cancel is refused while approved payslips remain.
+- **Delete Payroll** (`payroll-run-delete`, Administrator; `payroll_run/delete/{id}`,
+  reason): any status and period. Approved payslips are undone first like a
+  rollback (`unpost`: deduction payments removed, adjustments Open again) —
+  refused by `assertUndoable` like a rollback, never for the pay date — then
+  the run, its payslips and its "Payroll Run" `ApprovedLog` rows are
+  deleted. The run's 'deleted' audit entry also carries `deleted payroll`
+  (code), `reason`, `payslips deleted` and `undone` (`auditRelation`). The
+  cut-off and its filing switch stay as they are; the page goes back to the list.
   - The cut-off's filing stays off: reopen it on Payroll Cut-offs if late
     filings are needed.
   - UI: approved rows show an "Approved" lock tag on a Draft; ticking them
@@ -440,8 +482,9 @@ deduction payments are never duplicated.
   approvers) →
   the last approval releases it; Disapprove (remarks) → Draft; Pending can't
   be regenerated / cancelled; the submitter can't decide their own.
-- Year-end tax: (taxable − contributions + 13th month over ₱90k) ÷ 12 on the
-  BIR monthly table × 12 vs. withheld; minimum wage earners exempt.
+- Year-end tax: taxable − contributions + 13th month over ₱90k on the BIR
+  annual table vs. withheld (+ still to withhold, − refund); final pay the
+  same; minimum wage earners exempt.
 - Range reports (`payroll_report/contribution_history`, `pay_sheet`,
   `payslips`): `{ date_from, date_to }` = approved payslips whose cut-off
   ENDS in it (≤ 1 year; the cut-off range sends the first cut-off's start and
