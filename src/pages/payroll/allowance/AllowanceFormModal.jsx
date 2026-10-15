@@ -17,7 +17,8 @@ const BASIS_HINTS = {
 
 // Add or edit an employee allowance. To change an amount, end the current
 // one (Effective To) and add the new one from the next day — the history
-// stays. `allowance` = edit (the employee can't change).
+// stays. A needs-description type (Other Allowance) asks to Specify what it
+// is for. `allowance` = edit (the employee can't change).
 const AllowanceFormModal = ({ open, allowance, options, onClose, onSaved }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
@@ -32,6 +33,7 @@ const AllowanceFormModal = ({ open, allowance, options, onClose, onSaved }) => {
     if (allowance) {
       form.setFieldsValue({
         allowance_type_id: allowance.allowance_type_id,
+        description: allowance.description,
         amount: toNumber(allowance.amount),
         basis: allowance.basis,
         effective_from: dayjs(allowance.effective_from),
@@ -52,6 +54,7 @@ const AllowanceFormModal = ({ open, allowance, options, onClose, onSaved }) => {
     }
     const payload = {
       allowance_type_id: values.allowance_type_id,
+      description: type?.needs_description ? values.description?.trim() || null : null,
       amount: values.amount,
       basis: values.basis,
       effective_from: values.effective_from.format('YYYY-MM-DD'),
@@ -111,6 +114,16 @@ const AllowanceFormModal = ({ open, allowance, options, onClose, onSaved }) => {
             </Form.Item>
           </Col>
         </Row>
+        {type?.needs_description && (
+          <Form.Item
+            name='description'
+            label='Specify'
+            rules={[{ required: true, whitespace: true, message: 'Specify what this allowance is for' }]}
+            extra='Shown on the payslip after the type.'
+          >
+            <Input maxLength={150} placeholder='e.g. Project incentive' />
+          </Form.Item>
+        )}
         {type?.de_minimis && type.de_minimis_limit && (
           <Alert
             type='info'

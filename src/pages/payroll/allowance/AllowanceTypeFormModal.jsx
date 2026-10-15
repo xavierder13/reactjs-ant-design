@@ -6,7 +6,8 @@ import { applyFormErrors, pesoInputProps, toNumber } from '../payrollHelpers';
 
 // Create / edit an allowance type and its tax treatment: taxable, or a de
 // minimis benefit (non-taxable up to a limit per period; the excess is
-// taxable). `type` = null for create.
+// taxable). Needs description = a generic type (Other Allowance): each
+// allowance specifies what it is for. `type` = null for create.
 const AllowanceTypeFormModal = ({ open, type, periods, onClose, onSaved }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
@@ -18,7 +19,7 @@ const AllowanceTypeFormModal = ({ open, type, periods, onClose, onSaved }) => {
     form.resetFields();
     form.setFieldsValue(type
       ? { ...type, de_minimis_limit: toNumber(type.de_minimis_limit) }
-      : { taxable: true, de_minimis: false, active: true });
+      : { taxable: true, de_minimis: false, needs_description: false, active: true });
   };
 
   const handleSave = async () => {
@@ -35,6 +36,7 @@ const AllowanceTypeFormModal = ({ open, type, periods, onClose, onSaved }) => {
       de_minimis: !!values.de_minimis,
       de_minimis_limit: values.de_minimis ? values.de_minimis_limit : null,
       de_minimis_period: values.de_minimis ? values.de_minimis_period : null,
+      needs_description: !!values.needs_description,
       active: !!values.active,
       remarks: values.remarks?.trim() || null,
     };
@@ -88,6 +90,16 @@ const AllowanceTypeFormModal = ({ open, type, periods, onClose, onSaved }) => {
           </Col>
           <Col xs={12} sm={8}>
             <Form.Item name='active' label='Active' valuePropName='checked'>
+              <Switch />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={16}>
+            <Form.Item
+              name='needs_description'
+              label='Needs description'
+              valuePropName='checked'
+              tooltip='A generic type (e.g. Other Allowance): each allowance must specify what it is for — shown on the payslip after the type.'
+            >
               <Switch />
             </Form.Item>
           </Col>

@@ -63,7 +63,12 @@ const AllowanceTypeIndex = () => {
 
   const columns = [
     { title: 'Code', dataIndex: 'code', width: 120, sorter: (a, b) => a.code.localeCompare(b.code) },
-    { title: 'Name', dataIndex: 'name', sorter: (a, b) => a.name.localeCompare(b.name) },
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name),
+      render: (v, r) => (r.needs_description ? <span>{v} <Tag>Needs description</Tag></span> : v),
+    },
     {
       title: 'Tax Treatment',
       key: 'tax',

@@ -116,7 +116,7 @@ const AllowanceIndex = () => {
       width: 240,
       render: (_, r) => (
         <Space size={4} wrap>
-          {r.type_name}
+          {r.type_name}{r.description ? ` — ${r.description}` : ''}
           {Number(r.de_minimis) ? <Tag color='green'>De minimis</Tag> : Number(r.taxable) ? <Tag color='orange'>Taxable</Tag> : <Tag color='green'>Non-taxable</Tag>}
         </Space>
       ),
