@@ -17,11 +17,16 @@ import ExpandIcon from '../../../components/ExpandIcon';
 import { DAY_TYPE_COLORS } from '../../overtime/overtimeHelpers';
 
 const AGENCIES = [
-  { key: 'sss_deduction', label: 'SSS' },
-  { key: 'philhealth_deduction', label: 'PhilHealth' },
-  { key: 'pagibig_deduction', label: 'Pag-IBIG' },
-  { key: 'tax_deduction', label: 'Withholding Tax' },
+  { key: 'sss_deduction', centavos: 'sss_centavos', label: 'SSS' },
+  { key: 'philhealth_deduction', centavos: 'philhealth_centavos', label: 'PhilHealth' },
+  { key: 'pagibig_deduction', centavos: 'pagibig_centavos', label: 'Pag-IBIG' },
+  { key: 'tax_deduction', centavos: 'tax_centavos', label: 'Withholding Tax', tax: true },
 ];
+// each deduction's centavos (vueportal PayrollSetting::CENTAVO_RULES)
+const centavoLabel = (rule, tax) => {
+  if (rule === 'Round') return 'Rounded to the centavo';
+  return tax ? 'Cut to the centavo' : 'Employee share cut — employer pays the rest';
+};
 const toTime = (t) => (t ? dayjs(`2000-01-01 ${String(t).slice(0, 5)}`) : null);
 const DAYS_1_28 = Array.from({ length: 28 }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
 const PAY_DAYS = [{ value: 0, label: 'Last day of the month' }, ...Array.from({ length: 31 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }))];
@@ -240,9 +245,18 @@ const PayrollSettingsPage = () => {
                         <Form.Item name={a.key} label={a.label} rules={[{ required: true, message: 'Required' }]}>
                           <Select options={(data?.deduction_schedules || []).map((s) => ({ value: s, label: s === 'Every cut-off' ? 'Every cut-off (split)' : `Once a month — ${s}` }))} />
                         </Form.Item>
+                        <Form.Item name={a.centavos} label={`${a.label} centavos`} rules={[{ required: true, message: 'Required' }]}>
+                          <Select
+                            popupMatchSelectWidth={false}
+                            options={(data?.centavo_rules || ['Round', 'Cut']).map((v) => ({ value: v, label: centavoLabel(v, a.tax) }))}
+                          />
+                        </Form.Item>
                       </Col>
                     ))}
                   </Row>
+                  <Typography.Paragraph type='secondary' style={{ marginBottom: 0 }}>
+                    Centavos — e.g. a 666.971 PhilHealth premium: employee share cut = employee 333.48, employer 333.49; rounded = 333.49 each. A share split across the cut-offs always adds up to the month (166.75 + 166.74).
+                  </Typography.Paragraph>
                 </Card>
                 <Card size='small' title='Cut-offs & Pay Days' style={{ marginTop: 16 }}>
                   <Typography.Paragraph type='secondary' style={{ marginTop: 0 }}>
