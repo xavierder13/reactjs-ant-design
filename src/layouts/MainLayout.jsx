@@ -50,6 +50,7 @@ import useAuth from '../hooks/useAuth';
 import useSessionTimeout from '../hooks/useSessionTimeout';
 import authApi from '../services/auth/authApi';
 import NotificationBell from '../components/NotificationBell';
+import PayrollAssistantButton from '../components/payroll_assistant/PayrollAssistantButton';
 import MenuSearch from '../components/MenuSearch';
 import syncApi from '../services/employee/syncApi';
 import handleApiError from '../utils/handleApiError';
@@ -149,6 +150,7 @@ const titleMap = {
   '/allowance-types':          { title: 'Allowance Types',         breadcrumb: ['Payroll', 'Setup', 'Allowance Types'] },
   '/payroll-bank-accounts':    { title: 'Bank Accounts',           breadcrumb: ['Payroll', 'Bank Accounts'] },
   '/banks':                    { title: 'Banks',                   breadcrumb: ['Payroll', 'Setup', 'Banks'] },
+  '/payroll-assistant':        { title: 'Payroll Assistant',       breadcrumb: ['Payroll', 'Help', 'Payroll Assistant'] },
   '/payroll-settings':         { title: 'Payroll Settings',        breadcrumb: ['Payroll', 'Setup', 'Payroll Settings'] },
   '/overtime':                 { title: 'Overtime',                breadcrumb: ['Time & Leave', 'Overtime'] },
   '/shifts':                   { title: 'Shifts',                  breadcrumb: ['Time & Leave', 'Shifts'] },
@@ -394,6 +396,14 @@ const menuData = [
               { key: 'deduction-types',     title: 'Deduction Types',     link: '/deduction-types',     permissions: ['deduction-type-list'] },
               { key: 'allowance-types',     title: 'Allowance Types',     link: '/allowance-types',     permissions: ['allowance-type-list'] },
               { key: 'banks',               title: 'Banks',               link: '/banks',               permissions: ['bank-list'] },
+            ],
+          },
+          {
+            key: 'payroll-help',
+            type: 'group',
+            label: 'Help',
+            children: [
+              { key: 'payroll-assistant', title: 'Payroll Assistant', link: '/payroll-assistant', permissions: ['payroll-assistant', 'payroll-assistant-manage'] },
             ],
           },
         ],
@@ -1009,6 +1019,7 @@ const MainLayout = () => {
                 <span className="app-navbar__kbd"><kbd>Ctrl</kbd><kbd>K</kbd></span>
               </div>
             )}
+            <PayrollAssistantButton />
             <NotificationBell />
 
             <Dropdown menu={avatarMenu} placement="bottomRight" trigger={['click']}>

@@ -333,6 +333,11 @@ Dated change history for each lives in `docs/<module>-history.md`.
   a holiday is never an absence; rest-day work pays only through approved
   overtime; approved runs are locked (corrections = payroll adjustments);
   reports read approved runs only.
+- **Payroll Assistant** (`src/components/payroll_assistant/`,
+  `src/pages/payroll/assistant/`, route `/payroll-assistant`, top-bar "?") —
+  `.claude/skills/payroll-assistant/SKILL.md`. No AI: keyword / synonym
+  search over topics the payroll manager edits, question → answer trees,
+  read-only "Check my case" lookups.
 - **Record management pages / Area Assignment / Organization** (`src/pages/area/`,
   `src/pages/record_management/`, routes `/areas`, `/companies`, `/branches`,
   `/departments`, `/positions`, `/ranks`, `/promodizer-brands`) —

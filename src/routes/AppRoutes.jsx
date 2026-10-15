@@ -105,6 +105,7 @@ import RankIndex from '../pages/record_management/rank/RankIndex';
 import PromodizerBrandIndex from '../pages/record_management/promodizer_brand/PromodizerBrandIndex';
 
 // Errors
+import PayrollAssistantPage from '../pages/payroll/assistant/PayrollAssistantPage';
 import UnauthorizePage from '../pages/errors/UnauthorizePage';
 import NotFoundPage from '../pages/errors/NotFoundPage';
 
@@ -185,6 +186,7 @@ const permissionRoutes = [
   { permissions: ['allowance-type-list'], path: '/allowance-types', element: <AllowanceTypeIndex /> },
   { permissions: ['bank-account-list'], path: '/payroll-bank-accounts', element: <BankAccountIndex /> },
   { permissions: ['bank-list'], path: '/banks', element: <BankIndex /> },
+  { permissions: ['payroll-assistant', 'payroll-assistant-manage'], path: '/payroll-assistant', element: <PayrollAssistantPage /> },
   { permissions: ['payroll-setting-view', 'payroll-setting-edit'], path: '/payroll-settings', element: <PayrollSettingsPage /> },
   { permissions: ['overtime-list', 'overtime-list-all'], path: '/overtime', element: <OvertimeIndex /> },
 
