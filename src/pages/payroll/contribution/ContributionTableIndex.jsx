@@ -8,7 +8,7 @@ import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../../utils/formatDate';
 import ExpandIcon from '../../../components/ExpandIcon';
 import RecordRowActions from '../../record_management/RecordRowActions';
-import { AGENCY_NOTES, FIELD_LABELS, formatCell } from './contributionColumns';
+import { AGENCY_NOTES, FIELD_LABELS, agencyLabel, formatCell } from './contributionColumns';
 import ContributionTableFormModal from './ContributionTableFormModal';
 import ContributionTableImportModal from './ContributionTableImportModal';
 
@@ -108,7 +108,7 @@ const ContributionTableIndex = () => {
           canDelete={canDelete}
           onEdit={() => setEditing(r)}
           onDelete={() => remove(r)}
-          deleteTitle={`Delete this ${agency} table?`}
+          deleteTitle={`Delete this ${agencyLabel(agency)} table?`}
           deleteDescription='Payroll falls back to the version before it for these dates.'
         />
       ),
@@ -127,7 +127,7 @@ const ContributionTableIndex = () => {
       <Tabs
         activeKey={agency}
         onChange={setAgency}
-        items={(options.agencies.length ? options.agencies : ['SSS', 'PhilHealth', 'Pag-IBIG', 'BIR']).map((a) => ({ key: a, label: a }))}
+        items={(options.agencies.length ? options.agencies : ['SSS', 'PhilHealth', 'Pag-IBIG', 'BIR']).map((a) => ({ key: a, label: agencyLabel(a) }))}
         tabBarExtraContent={(
           <Space wrap>
             <Button icon={<ReloadOutlined />} onClick={fetchTables} loading={loading}>Refresh</Button>

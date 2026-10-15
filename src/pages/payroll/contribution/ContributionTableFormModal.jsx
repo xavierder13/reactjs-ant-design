@@ -6,7 +6,7 @@ import contributionTableApi from '../../../services/payroll/contributionTableApi
 import handleApiError from '../../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { applyFormErrors, toNumber } from '../payrollHelpers';
-import { AGENCY_NOTES, FIELD_LABELS, RATE_FIELDS } from './contributionColumns';
+import { AGENCY_NOTES, FIELD_LABELS, RATE_FIELDS, agencyLabel } from './contributionColumns';
 
 // Create or edit one agency's table version: effective date, reference and
 // its brackets (only the agency's columns). A new version starts as a copy
@@ -64,7 +64,7 @@ const ContributionTableFormModal = ({ open, agency, table, copyFrom, fields, onC
     <Modal
       keyboard={false}
       open={open}
-      title={`${table ? 'Edit' : 'New'} ${agency} Table`}
+      title={`${table ? 'Edit' : 'New'} ${agencyLabel(agency)} Table`}
       okText='Save'
       onOk={handleSave}
       onCancel={onClose}

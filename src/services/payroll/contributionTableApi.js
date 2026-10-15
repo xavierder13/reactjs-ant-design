@@ -5,7 +5,9 @@ import axios from '../../api/axiosInstance';
 // A table = one agency's version from effective_date until its next one.
 // - getAll({ agency? }) → { tables: [{ id, agency, effective_date, reference,
 //   remarks, rows: [bracket], updater { name }, updated_at }] (agency, then
-//   newest first), in_force: { SSS: id|null, PhilHealth, 'Pag-IBIG', BIR } }
+//   newest first), in_force: { SSS: id|null, PhilHealth, 'Pag-IBIG', BIR,
+//   'BIR Semi-monthly', 'BIR Annual' } } — the withholding tax tables by pay
+//   period: 'BIR' = monthly (shown as "BIR Monthly").
 //   (contribution-table-list).
 // - getOptions() → { agencies, row_fields: { agency: [columns] } } — the
 //   bracket columns each agency uses (all required; range_to blank only on

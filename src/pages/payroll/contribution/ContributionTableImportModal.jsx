@@ -9,7 +9,7 @@ import handleApiError from '../../../utils/handleApiError';
 import downloadBlobResponse from '../../../utils/downloadBlobResponse';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../../utils/formatDate';
 import { applyFormErrors } from '../payrollHelpers';
-import { FIELD_LABELS, formatCell } from './contributionColumns';
+import { FIELD_LABELS, agencyLabel, formatCell } from './contributionColumns';
 
 const STATUS = {
   new:     { label: 'New', color: 'blue' },
@@ -148,7 +148,7 @@ const ContributionTableImportModal = ({ open, agency: defaultAgency, agencies, r
         />
         <Space wrap align='start' style={{ width: '100%' }} size={[16, 0]}>
           <Form.Item name='agency' label='Agency' rules={[{ required: true, message: 'Choose the agency' }]}>
-            <Select style={{ width: 160 }} options={agencies.map((a) => ({ value: a, label: a }))} />
+            <Select style={{ width: 180 }} options={agencies.map((a) => ({ value: a, label: agencyLabel(a) }))} />
           </Form.Item>
           <Form.Item label=' ' colon={false}>
             <Button icon={<DownloadOutlined />} loading={busy === 'download'} onClick={download}>
