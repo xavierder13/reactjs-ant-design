@@ -319,6 +319,17 @@ const PayrollSettingsPage = () => {
                     <Switch />
                   </Form.Item>
                 </Card>
+                <Card size='small' title='Late' style={{ marginTop: 16 }}>
+                  <Form.Item
+                    name='over_break_late'
+                    label='Count over-break as late'
+                    valuePropName='checked'
+                    extra='The punches between the first time in and the last time out are the breaks: break out = the last OUT, break in = the first IN among them (as on the Attendance tab). A break longer than the shift’s break counts as late — only when both are punched. Off = late at time in only.'
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Switch />
+                  </Form.Item>
+                </Card>
                 <Card size='small' title='Overtime' style={{ marginTop: 16 }}>
                   <Typography.Paragraph type='secondary' style={{ marginTop: 0 }}>
                     Only approved overtime is paid. Each filing under the minimum counts 0; the rest is rounded down to whole blocks (e.g. 1 h 50 min per 15 minutes = 1 h 45 min). Overtime before the shift counts when it is approved.

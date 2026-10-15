@@ -8,7 +8,8 @@ const empty = <Typography.Text type='secondary'>—</Typography.Text>;
 
 // A cut-off's daily time record, one line per date (DtrService days): the
 // schedule used, the day type and holidays, the times in / out (and where
-// they came from), the status and the minutes that pay or deduct. Shared by
+// they came from) and the break, the status and the minutes that pay or
+// deduct (late incl. over-break). Shared by
 // the Timekeeping viewer and the payslip.
 // Where a time in / out came from: the biometric device, an Attendance Logs
 // import, or an approved manual time entry.
@@ -88,6 +89,12 @@ const DtrDaysTable = ({ days }) => {
         return (
           <div>
             {line('In', d.time_in, d.in_source)}
+            {(d.break_out || d.break_in) && (
+              <div style={{ display: 'flex', gap: 6, whiteSpace: 'nowrap' }}>
+                <Typography.Text type='secondary' style={{ fontSize: 11, width: 24 }}>Brk</Typography.Text>
+                <Typography.Text type='secondary'>{`${d.break_out || '—'}–${d.break_in || '—'}`}</Typography.Text>
+              </div>
+            )}
             {line('Out', d.time_out, d.out_source)}
           </div>
         );
@@ -105,7 +112,18 @@ const DtrDaysTable = ({ days }) => {
       ),
     },
     { title: 'Worked', dataIndex: 'worked_minutes', width: 85, align: 'right', render: minutesText },
-    { title: 'Late', dataIndex: 'late_minutes', width: 75, align: 'right', render: (v) => (v ? <Typography.Text type='danger'>{minutesText(v)}</Typography.Text> : empty) },
+    {
+      title: 'Late',
+      dataIndex: 'late_minutes',
+      width: 75,
+      align: 'right',
+      render: (v, d) => (v ? (
+        <div>
+          <Typography.Text type='danger'>{minutesText(v)}</Typography.Text>
+          {d.over_break_minutes > 0 && <div><Typography.Text type='secondary' style={{ fontSize: 11 }}>{`over-break ${minutesText(d.over_break_minutes)}`}</Typography.Text></div>}
+        </div>
+      ) : empty),
+    },
     { title: 'Undertime', dataIndex: 'undertime_minutes', width: 90, align: 'right', render: (v) => (v ? <Typography.Text type='danger'>{minutesText(v)}</Typography.Text> : empty) },
     { title: 'Absent', dataIndex: 'absent_days', width: 70, align: 'right', render: (v) => (v ? <Typography.Text type='danger'>{daysText(v)}</Typography.Text> : empty) },
     { title: 'Night', dataIndex: 'night_minutes', width: 70, align: 'right', render: minutesText },
