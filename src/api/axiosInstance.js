@@ -24,8 +24,8 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-// Response interceptor — a 401 that ends the session (token expired after
-// 8 h, revoked, or idle 1 h — utils/session.js) clears the token and
+// Response interceptor — a 401 that ends the session (session duration
+// reached, revoked, or idle — Session Settings, utils/session.js) clears the token and
 // goes to /login, which says why — also when another tab already cleared
 // the token (this tab then sent none). A permission 401 ("Unauthorized"
 // from a <Module>Maintenance middleware) is left to the page.

@@ -72,6 +72,7 @@ import GroupScheduleIndex from '../pages/shift/GroupScheduleIndex';
 import TimeEntryIndex from '../pages/time_entry/TimeEntryIndex';
 import AccessChartIndex from '../pages/approval/AccessChartIndex';
 import PayrollCutoffIndex from '../pages/payroll_cutoff/PayrollCutoffIndex';
+import SessionSettingsPage from '../pages/session_setting/SessionSettingsPage';
 import AuditTrailIndex from '../pages/audit_trail/AuditTrailIndex';
 import CompensationIndex from '../pages/compensation/CompensationIndex';
 import ContributionIndex from '../pages/payroll/contribution/ContributionIndex';
@@ -167,6 +168,8 @@ const permissionRoutes = [
   { permissions: ['payroll-cutoff-list'], path: '/payroll-cutoffs', element: <PayrollCutoffIndex /> },
   { permissions: ['access-chart-list'], path: '/approving-officers', element: <ApprovingOfficerIndex /> },
   { permissions: ['activity-logs'], path: '/audit-trail', element: <AuditTrailIndex /> },
+  // Administrator only: the page itself redirects anyone else
+  { permissions: [], path: '/session-settings', element: <SessionSettingsPage /> },
   { permissions: ['compensation-list'], path: '/compensation', element: <CompensationIndex /> },
   { permissions: ['contribution-profile-list'], path: '/contributions', element: <ContributionIndex /> },
   { permissions: ['contribution-table-list'], path: '/contribution-tables', element: <ContributionTableIndex /> },

@@ -44,6 +44,7 @@ import {
   WalletOutlined,
   SearchOutlined,
   CloseOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
@@ -132,6 +133,7 @@ const titleMap = {
   '/access-charts':            { title: 'Access Charts',           breadcrumb: ['Approvals', 'Access Charts'] },
   '/approving-officers':       { title: 'Approving Officers',      breadcrumb: ['Approvals', 'Approving Officers'] },
   '/audit-trail':              { title: 'Audit Trail',             breadcrumb: ['Set Up & Authorizations', 'Audit Trail'] },
+  '/session-settings':         { title: 'Session Settings',        breadcrumb: ['Set Up & Authorizations', 'Session Settings'] },
   '/compensation':             { title: 'Salary History',          breadcrumb: ['Payroll', 'Salary History'] },
   '/contributions':            { title: 'Contributions',           breadcrumb: ['Payroll', 'Contributions'] },
   '/deductions':               { title: 'Deductions',              breadcrumb: ['Payroll', 'Deductions'] },
@@ -585,6 +587,8 @@ const menuData = [
       { key: 'permissions', title: 'Permissions', icon: <SettingOutlined />, link: '/permissions', permissions: ['permission-list'] },
       // Who added / edited / deleted leave, attendance and payroll records.
       { key: 'audit-trail', title: 'Audit Trail', icon: <FileSearchOutlined />, link: '/audit-trail', permissions: ['activity-logs'] },
+      // idle time before logout + session duration; Administrator only
+      { key: 'session-settings', title: 'Session Settings', icon: <ClockCircleOutlined />, link: '/session-settings', permissions: [] },
     ],
   },
 ];

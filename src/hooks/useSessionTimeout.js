@@ -5,10 +5,10 @@
 // - Real activity (mouse, keys, touch, wheel) is this tab's; it is also
 //   written to localStorage so the other tabs — all on the same token —
 //   count it too (a busy tab keeps an untouched one alive).
-// - A heartbeat to the backend, at most every 5 min, while the user is
-//   active: typing into a form sends no API call, and the backend's idle
+// - A heartbeat to the backend, at most every 5 min (or half the idle
+//   window, if shorter), while the user is active: typing into a form sends no API call, and the backend's idle
 //   window only sees API calls.
-// - After 1 h with no activity in any tab, ask the backend every minute
+// - After the idle time (Session Settings) with no activity in any tab, ask the backend every minute
 //   with a check-only call (X-Session-Check: passive — it must not extend
 //   the window itself) whether the session is really over; the 401 it gets
 //   then is handled by the axios interceptor (→ /login with the reason).
@@ -16,14 +16,14 @@
 //   session ends (token removed), this one goes to /login too, at once via
 //   the storage event and within CHECK_EVERY_MS as a fallback; when another
 //   tab signs in again (a different token), this one reloads as that session.
-// The 8 h absolute expiry needs nothing here: its 401 ends the session the
+// The session duration needs nothing here: its 401 ends the session the
 // same way. See utils/session.js.
 import { useEffect } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import { getToken, TOKEN_KEY } from '../utils/tokenHelper';
 import {
-  IDLE_TIMEOUT_MS, ACTIVITY_KEY, ACTIVITY_BROADCAST_THROTTLE_MS, HEARTBEAT_THROTTLE_MS,
-  IDLE_CONFIRM_INTERVAL_MS, ACTIVITY_EVENTS, PASSIVE_HEADERS, leaveEndedSession,
+  getIdleTimeoutMs, ACTIVITY_KEY, ACTIVITY_BROADCAST_THROTTLE_MS, getHeartbeatThrottleMs,
+  IDLE_CONFIRM_INTERVAL_MS, ACTIVITY_EVENTS, PASSIVE_HEADERS, leaveEndedSession, setSessionSettings,
 } from '../utils/session';
 
 const CHECK_EVERY_MS = 15 * 1000;
@@ -58,7 +58,7 @@ const useSessionTimeout = () => {
         leaveEndedSession();
         return;
       }
-      const idle = Date.now() - Math.max(lastLocal, readShared()) >= IDLE_TIMEOUT_MS;
+      const idle = Date.now() - Math.max(lastLocal, readShared()) >= getIdleTimeoutMs();
       if (idle && !confirmTimer) {
         confirmWithServer();
         confirmTimer = setInterval(confirmWithServer, IDLE_CONFIRM_INTERVAL_MS);
@@ -75,9 +75,9 @@ const useSessionTimeout = () => {
         lastBroadcast = now;
         try { localStorage.setItem(ACTIVITY_KEY, String(now)); } catch { /* other tabs just won't see it */ }
       }
-      if (now - lastHeartbeat > HEARTBEAT_THROTTLE_MS) {
+      if (now - lastHeartbeat > getHeartbeatThrottleMs()) {
         lastHeartbeat = now;
-        axiosInstance.get('/auth/init').catch(() => {});
+        axiosInstance.get('/auth/init').then(({ data }) => setSessionSettings(data.session)).catch(() => {});
       }
     };
 

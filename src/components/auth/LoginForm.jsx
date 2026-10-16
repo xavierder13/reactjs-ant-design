@@ -13,7 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import axios from '../../api/axiosInstance'
 import useAuth from '../../hooks/useAuth'
-import { takeEndReason } from '../../utils/session'
+import { takeEndReason, setSessionSettings } from '../../utils/session'
 import LoginIllustration from './LoginIllustration'
 import './login.css'
 
@@ -56,6 +56,7 @@ const LoginForm = () => {
 
       setTokens(data.access_token, data.refresh_token)
       setAuth(data.user, data.user_roles, data.user_permissions)
+      setSessionSettings(data.session)
       navigate('/')
     } catch (error) {
       if (error?.response) {

@@ -145,14 +145,19 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
   themselves do **not**, so action gates still need the explicit bypass.
 - Tokens live in `localStorage` via `src/utils/tokenHelper.js`
   (`access_token`, `refresh_token`).
-- **Session expiry** (vueportal `CheckSessionActivity`: 8 h token
-  lifetime + 1 h idle window per token, refreshed by every API call):
+- **Session expiry** (vueportal `CheckSessionActivity`: a session duration
+  per token + an idle window refreshed by every API call — both from
+  Session Settings, `/session-settings`, Administrator only, default 8 h /
+  60 min; `/auth/login` and `/auth/init` send them as `session`, saved by
+  `setSessionSettings` in `utils/session.js`):
   `axiosInstance` clears the token and goes to `/login` (which shows why)
-  only on a session 401 — "Unauthenticated." or "…expired due to
-  inactivity." — never on a permission 401 ("Unauthorized" from a
-  `<Module>Maintenance` middleware); `useSessionTimeout` (MainLayout) is the
-  1-hour idle logout, synced across tabs via localStorage, with a
-  5-min-throttled heartbeat while the user is active, and keeps every tab on
+  only on a session 401 — "Unauthenticated.", "…expired due to
+  inactivity." or "Your session has expired." (duration reached) — never on
+  a permission 401 ("Unauthorized" from a `<Module>Maintenance`
+  middleware); `useSessionTimeout` (MainLayout) is the idle logout
+  (`getIdleTimeoutMs()`), synced across tabs via localStorage, with a
+  heartbeat at most every 5 min (or half the idle time) while the user is
+  active, and keeps every tab on
   the shared token (another tab's logout / session end → /login, a new
   sign-in → reload); Logout calls
   `authApi.logout()` to revoke the token. **A timed / automatic API call

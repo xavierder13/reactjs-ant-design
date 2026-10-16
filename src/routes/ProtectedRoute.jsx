@@ -6,6 +6,7 @@ import { Spin } from 'antd';
 import axiosInstance from '../api/axiosInstance';
 import useAuth from '../hooks/useAuth';
 import { getToken } from '../utils/tokenHelper';
+import { setSessionSettings } from '../utils/session';
 
 const ProtectedRoute = ({ permissions = [] }) => {
   const token = getToken();
@@ -19,6 +20,7 @@ const ProtectedRoute = ({ permissions = [] }) => {
           const { data } = await axiosInstance.get('/auth/init');
           
           setAuth(data.user, data.user_roles, data.user_permissions);
+          setSessionSettings(data.session);
           setLoaded();
         } catch (error) {
           // axiosInstance interceptor handles 401 redirect
