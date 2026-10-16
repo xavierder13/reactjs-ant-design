@@ -208,7 +208,7 @@ const menuData = [
     children: [
       { key: 'my-attendance',  title: 'My Attendance',  icon: <FieldTimeOutlined />, link: '/my-attendance',  requiresEmployee: true },
       { key: 'my-payslips',    title: 'My Payslips',    icon: <WalletOutlined />,    link: '/my-payslips',    requiresEmployee: true },
-      { key: 'my-evaluations', title: 'My Evaluations', icon: <StarOutlined />,      link: '/my-evaluations', permissions: ['kpi-self-evaluation-list'] },
+      { key: 'my-evaluations', title: 'My Evaluations', icon: <StarOutlined />,      link: '/my-evaluations', permissions: ['kpi-self-evaluation-list'], requiresEmployee: true },
     ],
   },
   { type: 'divider' },
@@ -508,7 +508,7 @@ const menuData = [
         children: [
           { key: 'kpi-evaluation-list',   title: 'All Evaluations', link: '/kpi-evaluations',        permissions: ['kpi-evaluation-list'] },
           { key: 'kpi-evaluation-create', title: 'Create Evaluation', link: '/kpi-evaluations/create', permissions: ['kpi-evaluation-create'] },
-          { key: 'kpi-my-evaluations',    title: 'My Evaluations',  link: '/my-evaluations',          permissions: ['kpi-self-evaluation-list'] },
+          { key: 'kpi-my-evaluations',    title: 'My Evaluations',  link: '/my-evaluations',          permissions: ['kpi-self-evaluation-list'], requiresEmployee: true },
         ],
       },
       {
