@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Form,
   Input,
@@ -14,8 +14,17 @@ import { useNavigate } from 'react-router-dom'
 import axios from '../../api/axiosInstance'
 import useAuth from '../../hooks/useAuth'
 import { takeEndReason } from '../../utils/session'
+import LoginIllustration from './LoginIllustration'
+import './login.css'
 
 const { Title, Text } = Typography
+
+// Brand-panel captions, rotated every few seconds (the dots pick one).
+const SLIDES = [
+  { title: 'Your people, in one place', text: 'Employee records, recruitment and onboarding in one HR system.' },
+  { title: 'Time & Leave made simple', text: 'File leave, time entries and overtime, approved online.' },
+  { title: 'Payroll you can trust', text: 'Accurate pay, payslips and government reports every cut-off.' },
+]
 
 const LoginForm = () => {
   const [form] = Form.useForm();
@@ -23,6 +32,12 @@ const LoginForm = () => {
   const [isInvalid, setIsInvalid] = useState(false);
   // why the last session ended (expired / idle), set by the axios interceptor
   const [endReason] = useState(takeEndReason);
+
+  const [slide, setSlide] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setSlide((i) => (i + 1) % SLIDES.length), 5000);
+    return () => clearInterval(timer);
+  }, [slide]);
 
   const navigate = useNavigate();
   const { setAuth, setTokens } = useAuth();
@@ -56,69 +71,44 @@ const LoginForm = () => {
   }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        minHeight: '100vh',
-        background: '#f6ffed',
-      }}
-    >
-      {/* LEFT PANEL */}
-      <div className="login-left-panel">
-        <img
-          src="/img/login.jpg"
-          alt="Login"
-          style={{
-            width: '100%',
-            maxWidth: 1000,
-            borderRadius: 16,
-            objectFit: 'contain',
-          }}
-        />
-
-        <div style={{ textAlign: 'center', color: '#fff' }}>
-          <Title level={2} style={{ color: '#fff', marginBottom: 0 }}>
-            Welcome Back
-          </Title>
-          <Text style={{ color: 'rgba(255,255,255,.85)', fontSize: 20 }}>
-            Human Resource Information System
-          </Text>
+    <div className="login-page">
+      {/* LEFT PANEL: brand + animated illustration */}
+      <div className="login-page__brand">
+        <div className="login-page__brand-top">
+          <div className="login-page__logo">HR</div>
+          <div>
+            <div className="login-page__brand-top-name">ADDESSA Corporation</div>
+            <div className="login-page__brand-top-tagline">Human Resource Information System</div>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
-          <div style={{ width: 24, height: 8, borderRadius: 4, background: '#fff' }} />
-          <div style={{ width: 8, height: 8, borderRadius: 4, background: 'rgba(255,255,255,.4)' }} />
-          <div style={{ width: 8, height: 8, borderRadius: 4, background: 'rgba(255,255,255,.4)' }} />
+        <LoginIllustration />
+
+        <div className="login-page__caption" aria-live="polite">
+          {/* key restarts the fade-in on every slide */}
+          <div key={`t${slide}`} className="login-page__caption-title">{SLIDES[slide].title}</div>
+          <div key={`d${slide}`} className="login-page__caption-text">{SLIDES[slide].text}</div>
+        </div>
+
+        <div className="login-page__dots">
+          {SLIDES.map((s, i) => (
+            <button
+              key={s.title}
+              type="button"
+              aria-label={s.title}
+              className={`login-page__dot${i === slide ? ' login-page__dot--active' : ''}`}
+              onClick={() => setSlide(i)}
+            />
+          ))}
         </div>
       </div>
 
       {/* RIGHT PANEL */}
-      <div
-        style={{
-          width: 440,
-          background: '#fff',
-          padding: 48,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          boxShadow: '-2px 0 24px rgba(0,0,0,.06)',
-        }}
-      >
+      <div className="login-page__form">
+        <div className="login-page__form-inner">
         {/* Logo */}
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 36 }}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              background: '#389e0d',
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ color: '#fff', fontWeight: 700 }}>HR</Text>
-          </div>
+        <div className="login-page__form-brand">
+          <div className="login-page__logo">HR</div>
 
           <div>
             <Text strong style={{ display: 'block', color: '#1a4d0f' }}>
@@ -212,10 +202,11 @@ const LoginForm = () => {
 
         <Text
           type="secondary"
-          style={{ textAlign: 'center', marginTop: 24, fontSize: 12 }}
+          style={{ display: 'block', textAlign: 'center', marginTop: 24, fontSize: 12 }}
         >
           Having trouble? Contact your system administrator.
         </Text>
+        </div>
       </div>
     </div>
   )

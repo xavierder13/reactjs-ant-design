@@ -28,22 +28,6 @@ body {
 
 /* index.css */
 
-.login-left-panel {
-  flex: 1;
-  background: #389e0d;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  padding: 48px;
-}
-
-@media (max-width: 992px) {
-  .login-left-panel {
-    display: none;
-  }
-}
 /* App.jsx's Modal theme sets contentPadding: 0 (padding moves onto the
    header/body/footer for edge-to-edge dividers). Confirm dialogs
    (modal.confirm — e.g. Sync & Updates) have no header/footer, so they lost
