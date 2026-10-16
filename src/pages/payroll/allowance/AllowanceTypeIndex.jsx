@@ -8,6 +8,7 @@ import RecordRowActions from '../../record_management/RecordRowActions';
 import ActiveTag from '../../record_management/ActiveTag';
 import { tablePagination } from '../../../utils/tablePagination';
 import { peso } from '../payrollHelpers';
+import ExpandIcon from '../../../components/ExpandIcon';
 import AllowanceTypeFormModal from './AllowanceTypeFormModal';
 
 // Allowance types and how they are taxed. Seeded with the common ones
@@ -122,7 +123,7 @@ const AllowanceTypeIndex = () => {
         loading={loading}
         scroll={{ x: 820 }}
         pagination={tablePagination(20)}
-        expandable={{ rowExpandable: (r) => !!r.remarks, expandedRowRender: (r) => r.remarks }}
+        expandable={{ expandIcon: (props) => <ExpandIcon {...props} />, rowExpandable: (r) => !!r.remarks, expandedRowRender: (r) => r.remarks }}
       />
       <AllowanceTypeFormModal
         open={!!editing}

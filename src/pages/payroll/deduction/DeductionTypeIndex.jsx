@@ -7,6 +7,7 @@ import RecordToolbar from '../../record_management/RecordToolbar';
 import RecordRowActions from '../../record_management/RecordRowActions';
 import ActiveTag from '../../record_management/ActiveTag';
 import { tablePagination } from '../../../utils/tablePagination';
+import ExpandIcon from '../../../components/ExpandIcon';
 import DeductionTypeFormModal from './DeductionTypeFormModal';
 
 const CATEGORY_COLORS = { 'Government Loan': 'blue', 'Company Loan': 'purple', 'Cash Advance': 'gold', Other: 'default' };
@@ -107,7 +108,7 @@ const DeductionTypeIndex = () => {
         loading={loading}
         scroll={{ x: 760 }}
         pagination={tablePagination(20)}
-        expandable={{ rowExpandable: (r) => !!r.remarks, expandedRowRender: (r) => r.remarks }}
+        expandable={{ expandIcon: (props) => <ExpandIcon {...props} />, rowExpandable: (r) => !!r.remarks, expandedRowRender: (r) => r.remarks }}
       />
       <DeductionTypeFormModal
         open={!!editing}

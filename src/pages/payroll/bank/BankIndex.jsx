@@ -8,6 +8,7 @@ import RecordToolbar from '../../record_management/RecordToolbar';
 import RecordRowActions from '../../record_management/RecordRowActions';
 import ActiveTag from '../../record_management/ActiveTag';
 import { tablePagination } from '../../../utils/tablePagination';
+import ExpandIcon from '../../../components/ExpandIcon';
 import BankFormModal from './BankFormModal';
 import BankEmployeesModal from './BankEmployeesModal';
 
@@ -110,7 +111,7 @@ const BankIndex = () => {
         loading={loading}
         scroll={{ x: 640 }}
         pagination={tablePagination(20)}
-        expandable={{ rowExpandable: (r) => !!r.remarks, expandedRowRender: (r) => r.remarks }}
+        expandable={{ expandIcon: (props) => <ExpandIcon {...props} />, rowExpandable: (r) => !!r.remarks, expandedRowRender: (r) => r.remarks }}
       />
       <BankEmployeesModal
         key={viewing?.id ?? 'none'}
