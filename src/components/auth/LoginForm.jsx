@@ -5,6 +5,7 @@ import {
   Button,
   Typography,
   Alert,
+  App,
 } from 'antd'
 import {
   EyeInvisibleOutlined,
@@ -14,6 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from '../../api/axiosInstance'
 import useAuth from '../../hooks/useAuth'
 import { takeEndReason, setSessionSettings } from '../../utils/session'
+import { getToken, TOKEN_KEY } from '../../utils/tokenHelper'
 import LoginIllustration from './LoginIllustration'
 import './login.css'
 
@@ -29,7 +31,8 @@ const SLIDES = [
 const LoginForm = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [isInvalid, setIsInvalid] = useState(false);
+  // the sign-in error shown above the form (null = none)
+  const [error, setError] = useState(null);
   // why the last session ended (expired / idle), set by the axios interceptor
   const [endReason] = useState(takeEndReason);
 
@@ -40,11 +43,41 @@ const LoginForm = () => {
   }, [slide]);
 
   const navigate = useNavigate();
+  const { message } = App.useApp();
   const { setAuth, setTokens } = useAuth();
 
+  // One session per browser: every tab shares the token. If another tab
+  // signs in while this login page is open, go into the app with that
+  // session instead of asking again (also when this tab comes back into view).
+  useEffect(() => {
+    const enter = () => {
+      message.info('You are already signed in.')
+      navigate('/', { replace: true })
+    }
+    const onStorage = (e) => {
+      if (e.key === TOKEN_KEY && e.newValue) enter()
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && getToken()) enter()
+    }
+    window.addEventListener('storage', onStorage)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [navigate, message]);
+
   const login = async () => {
+    // signed in meanwhile in another tab: use that session
+    if (getToken()) {
+      message.info('You are already signed in.')
+      navigate('/', { replace: true })
+      return
+    }
+
     setLoading(true)
-    setIsInvalid(false)
+    setError(null)
 
     try {
       const values = await form.validateFields()
@@ -58,10 +91,19 @@ const LoginForm = () => {
       setAuth(data.user, data.user_roles, data.user_permissions)
       setSessionSettings(data.session)
       navigate('/')
-    } catch (error) {
-      if (error?.response) {
-        setIsInvalid(true)
+    } catch (err) {
+      // only a 401 means wrong credentials; say what else went wrong
+      const status = err?.response?.status
+      if (status === 401) {
+        setError('Invalid email or password.')
+      } else if (status === 403) {
+        setError(err.response.data?.error || 'Your account is inactive. Please contact the administrator.')
+      } else if (status === 422) {
+        setError('Enter your email and password.')
+      } else if (err?.response || err?.request) {
+        setError('We couldn’t sign you in right now. Please try again in a moment.')
       }
+      // neither: the form's own field validation shows
     } finally {
       setLoading(false)
     }
@@ -127,7 +169,7 @@ const LoginForm = () => {
           <Text type="secondary">Enter your credentials to continue</Text>
         </div>
 
-        {endReason && !isInvalid && (
+        {endReason && !error && (
           <Alert
             type="warning"
             showIcon
@@ -136,11 +178,11 @@ const LoginForm = () => {
           />
         )}
 
-        {isInvalid && (
+        {error && (
           <Alert
             type="error"
             showIcon
-            title="Invalid email or password."
+            title={error}
             style={{ marginBottom: 20, borderRadius: 8 }}
           />
         )}

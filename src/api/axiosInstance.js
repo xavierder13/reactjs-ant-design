@@ -12,11 +12,12 @@ const axiosInstance = axios.create({
   }
 })
 
-// Request interceptor — attach token to every request
+// Request interceptor — attach token to every request but the sign-in:
+// another tab's (possibly idle-expired) token must not ride along with it
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = getToken()
-    if (token) {
+    if (token && !config.url?.includes('/auth/login')) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
