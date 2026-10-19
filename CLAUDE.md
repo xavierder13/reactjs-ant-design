@@ -343,6 +343,10 @@ Dated change history for each lives in `docs/<module>-history.md`.
   `.claude/skills/payroll-assistant/SKILL.md`. No AI: keyword / synonym
   search over topics the payroll manager edits, question → answer trees,
   read-only "Check my case" lookups.
+- **Clearance** (`src/pages/clearance/`, routes `/clearances…`) —
+  `.claude/skills/clearance/SKILL.md`. Offboarding department sign-offs
+  (checklist, accountabilities, assets still assigned), final approval on the
+  "Clearance" Access Chart, Deduct from Final Pay lines on Final Pay.
 - **Company Assets** (`src/pages/company_asset/`, route `/company-assets`) —
   `.claude/skills/company-asset/SKILL.md`. Non-IT company property on
   vueportal's Company Asset module: registry, assign / return, history,

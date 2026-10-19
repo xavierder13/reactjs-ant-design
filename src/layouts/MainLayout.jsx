@@ -109,6 +109,9 @@ const titleMap = {
   '/employees/hired-this-month':    { title: 'Employees Hired This Month', breadcrumb: ['Employee', 'Hired This Month'] },
   '/employees/for-regularization':  { title: 'For Regularization', breadcrumb: ['Employee', 'For Regularization'] },
   '/employees/resigned':            { title: 'Resigned', breadcrumb: ['Employee', 'Resigned'] },
+  '/clearances':                    { title: 'Clearances', breadcrumb: ['Employee', 'Separation', 'Clearances'] },
+  '/clearances/setup':              { title: 'Clearance Setup', breadcrumb: ['Employee', 'Separation', 'Clearance Setup'] },
+  '/clearances/templates/new':      { title: 'New Clearance Template', breadcrumb: ['Employee', 'Separation', 'Clearance Setup', 'New Template'] },
   '/employees/nte':                 { title: 'Issued NTE (Open)', breadcrumb: ['Employee', 'Issued NTE'] },
   '/employees/disciplinary':        { title: 'Disciplinary Actions (Open)', breadcrumb: ['Employee', 'Disciplinary Actions'] },
   '/employees/referral-codes':      { title: 'Referral Codes', breadcrumb: ['Employee', 'Referral Codes'] },
@@ -295,6 +298,8 @@ const menuData = [
             label: 'Separation',
             children: [
               { key: 'resigned', title: 'Resigned', link: '/employees/resigned', permissions: ['employee-master-data-resigned-list'] },
+              { key: 'clearances', title: 'Clearances', link: '/clearances', permissions: ['clearance-list', 'clearance-list-all', 'clearance-sign'] },
+              { key: 'clearance-setup', title: 'Clearance Setup', link: '/clearances/setup', permissions: ['clearance-setup'] },
             ],
           },
           {
@@ -747,6 +752,12 @@ const MainLayout = () => {
       return { title: 'Edit Manpower Request', breadcrumb: ['Manpower Request', 'Edit'] };
     if (/^\/manpower-requests\/\d+\/print$/.test(pathname))
       return { title: 'Print Manpower Request', breadcrumb: ['Manpower Request', 'Print'] };
+    if (/^\/clearances\/templates\/\d+$/.test(pathname))
+      return { title: 'Edit Clearance Template', breadcrumb: ['Employee', 'Separation', 'Clearance Setup', 'Edit Template'] };
+    if (/^\/clearances\/\d+$/.test(pathname))
+      return { title: 'Clearance', breadcrumb: ['Employee', 'Separation', 'Clearances', 'View'] };
+    if (/^\/clearances\/\d+\/print$/.test(pathname))
+      return { title: 'Print Clearance', breadcrumb: ['Employee', 'Separation', 'Clearances', 'Print'] };
     if (/^\/manpower-requests\/\d+$/.test(pathname))
       return { title: 'View Manpower Request', breadcrumb: ['Manpower Request', 'View'] };
     // Not listed: the nearest listed parent page + this page's last word

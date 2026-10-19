@@ -4,7 +4,7 @@ import {
   BellOutlined, ReloadOutlined, FileDoneOutlined, AuditOutlined, UserAddOutlined, TeamOutlined,
   CommentOutlined, FormOutlined, SafetyOutlined, ScheduleOutlined, ExceptionOutlined, AlertOutlined,
   CalendarOutlined, SafetyCertificateOutlined, FieldTimeOutlined, LinkOutlined, RightOutlined, CheckCircleOutlined, TrophyOutlined, UserDeleteOutlined,
-  CarryOutOutlined, ClockCircleOutlined, HourglassOutlined, WalletOutlined, GiftOutlined, DollarOutlined, RollbackOutlined, IdcardOutlined, FlagOutlined, BankOutlined, CloseOutlined,
+  CarryOutOutlined, ClockCircleOutlined, SolutionOutlined, HourglassOutlined, WalletOutlined, GiftOutlined, DollarOutlined, RollbackOutlined, IdcardOutlined, FlagOutlined, BankOutlined, CloseOutlined,
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
@@ -15,7 +15,7 @@ const { Text } = Typography;
 
 // How often the count refreshes while the app is open (no live push).
 const REFRESH_MS = 5 * 60 * 1000;
-const GROUP_ORDER = ["For approval", "Payroll", "Recruitment", "Employee relations", "Recommended"];
+const GROUP_ORDER = ["For approval", "Payroll", "Recruitment", "Employee relations", "Offboarding", "Recommended"];
 
 // One icon per NotificationService item key; unknown keys fall back to the bell.
 const ICONS = {
@@ -49,6 +49,10 @@ const ICONS = {
   thirteenth_month_due: <GiftOutlined />,
   next_year_cutoffs: <FlagOutlined />,
   next_year_holidays: <CalendarOutlined />,
+  clearance_approval: <SolutionOutlined />,
+  clearance_to_sign: <FormOutlined />,
+  clearance_overdue: <FieldTimeOutlined />,
+  clearance_to_start: <UserDeleteOutlined />,
 };
 
 // The header bell: the user's to-dos as counts, grouped; each row opens the

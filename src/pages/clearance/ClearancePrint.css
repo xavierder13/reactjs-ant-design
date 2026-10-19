@@ -1,0 +1,226 @@
+/* ── Screen styles ─────────────────────────────────────────────────────────── */
+.clearance-print {
+  font-size: 11px;
+  color: #000;
+  font-family: Arial, sans-serif;
+}
+
+.clr-header-table,
+.clr-info-table,
+.clr-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+
+.clr-header-table {
+  border: 1px solid #000;
+}
+
+.clr-header-table td {
+  padding: 8px;
+  vertical-align: middle;
+}
+
+.clearance-print .header-logo {
+  width: 70px;
+  text-align: center;
+}
+
+.clearance-print .company-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
+.clearance-print .header-brand {
+  text-align: center;
+}
+
+.clearance-print .company-name {
+  font-size: 15px;
+  font-weight: bold;
+}
+
+.clearance-print .form-title {
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+.clearance-print .header-no {
+  width: 180px;
+  border-left: 1px solid #000;
+  text-align: center;
+}
+
+.clearance-print .no-value {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.clearance-print .status-value {
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+.clr-info-table td {
+  border: 1px solid #000;
+  padding: 4px 6px;
+}
+
+.clr-info-table .info-label {
+  width: 16%;
+  font-weight: bold;
+  background: #f5f5f5;
+}
+
+.clr-table th,
+.clr-table td {
+  border: 1px solid #000;
+  padding: 4px 6px;
+  vertical-align: top;
+  text-align: left;
+}
+
+.clr-table th {
+  background: #f5f5f5;
+}
+
+.clr-table tr {
+  break-inside: avoid;
+}
+
+.clr-table .dept {
+  font-weight: bold;
+}
+
+.clr-table .cat {
+  margin-top: 3px;
+  font-size: 9px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #595959;
+}
+
+.clr-table .acc {
+  margin-top: 2px;
+}
+
+.clr-table .remarks {
+  margin-top: 2px;
+  font-style: italic;
+  white-space: pre-line;
+}
+
+.clr-table .pending {
+  color: #8c8c8c;
+}
+
+.clr-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 48px;
+  row-gap: 22px;
+  margin-top: 28px;
+  break-inside: avoid;
+}
+
+.clr-sign-block {
+  min-width: 0;
+}
+
+.clearance-print .sign-label {
+  font-weight: bold;
+  margin-bottom: 24px;
+}
+
+.clearance-print .sign-approver + .sign-approver {
+  margin-top: 26px;
+}
+
+.clearance-print .sign-line {
+  border-top: 1px solid #000;
+  text-align: center;
+  padding-top: 2px;
+  min-height: 14px;
+  font-weight: bold;
+}
+
+.clearance-print .sign-caption {
+  text-align: center;
+  font-size: 10px;
+}
+
+.clearance-print .sign-date {
+  margin-top: 6px;
+  font-size: 10px;
+}
+
+.clearance-print .printed-on {
+  margin-top: 8px;
+  text-align: right;
+  font-size: 9px;
+  color: #595959;
+}
+
+/* ── Print styles ──────────────────────────────────────────────────────────── */
+/* Page CSS is bundled globally, so every print rule here is scoped to this
+   page (body:has(.clearance-print)) — see the CLAUDE.md "Printing" rule. */
+@page employee-clearance {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+@media print {
+  body:has(.clearance-print) {
+    page: employee-clearance;
+  }
+
+  body:has(.clearance-print) * {
+    visibility: hidden !important;
+  }
+
+  body:has(.clearance-print) .clearance-print,
+  body:has(.clearance-print) .clearance-print * {
+    visibility: visible !important;
+  }
+
+  /* one printed page tall (100vh = the page box, whatever scale the
+     browser prints at): the signatures go to the bottom; a longer
+     clearance just flows on, signatures last */
+  body:has(.clearance-print) .clearance-print {
+    display: flex !important;
+    flex-direction: column;
+    min-height: 100vh;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    overflow: visible !important;
+  }
+
+  body:has(.clearance-print) .clr-footer {
+    margin-top: auto;
+    padding-top: 28px;
+  }
+
+  body:has(.clearance-print) .no-print {
+    display: none !important;
+  }
+
+  body:has(.clearance-print) .ant-layout,
+  body:has(.clearance-print) .ant-layout-content {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body:has(.clearance-print) .clr-table th,
+  body:has(.clearance-print) .clr-info-table .info-label {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

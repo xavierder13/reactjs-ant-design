@@ -70,6 +70,11 @@ import ShiftIndex from '../pages/shift/ShiftIndex';
 import ShiftAssignmentIndex from '../pages/shift/ShiftAssignmentIndex';
 import GroupScheduleIndex from '../pages/shift/GroupScheduleIndex';
 import TimeEntryIndex from '../pages/time_entry/TimeEntryIndex';
+import ClearanceIndex from '../pages/clearance/ClearanceIndex';
+import ClearanceView from '../pages/clearance/ClearanceView';
+import ClearancePrint from '../pages/clearance/ClearancePrint';
+import ClearanceSetup from '../pages/clearance/setup/ClearanceSetup';
+import ClearanceTemplateForm from '../pages/clearance/setup/ClearanceTemplateForm';
 import CompanyAssetIndex from '../pages/company_asset/CompanyAssetIndex';
 import AccessChartIndex from '../pages/approval/AccessChartIndex';
 import PayrollCutoffIndex from '../pages/payroll_cutoff/PayrollCutoffIndex';
@@ -130,7 +135,13 @@ const permissionRoutes = [
   { permissions: ['employee-master-data-for-regularization'], path: '/employees/hired-this-month', element: <HiredThisMonth /> },
   { permissions: ['employee-master-data-for-regularization'], path: '/employees/for-regularization', element: <ForRegularization /> },
   { permissions: ['employee-master-data-resigned-list'], path: '/employees/resigned', element: <ResignedEmployees /> },
+  { permissions: ['clearance-list', 'clearance-list-all', 'clearance-sign'], path: '/clearances', element: <ClearanceIndex /> },
+  { permissions: ['clearance-setup'], path: '/clearances/setup', element: <ClearanceSetup /> },
+  { permissions: ['clearance-setup'], path: '/clearances/templates/new', element: <ClearanceTemplateForm /> },
+  { permissions: ['clearance-setup'], path: '/clearances/templates/:id', element: <ClearanceTemplateForm /> },
   { permissions: ['company-asset-list'], path: '/company-assets', element: <CompanyAssetIndex /> },
+  { permissions: ['clearance-list', 'clearance-list-all', 'clearance-sign'], path: '/clearances/:id', element: <ClearanceView /> },
+  { permissions: ['clearance-list', 'clearance-list-all', 'clearance-sign'], path: '/clearances/:id/print', element: <ClearancePrint /> },
   { permissions: ['employee-master-data-nte-list'], path: '/employees/nte', element: <OpenNteList /> },
   { permissions: ['employee-master-data-disciplinary-list'], path: '/employees/disciplinary', element: <OpenDisciplinaryList /> },
   { permissions: ['employee-referral-list'], path: '/employees/referral-codes', element: <ReferralCodeList /> },

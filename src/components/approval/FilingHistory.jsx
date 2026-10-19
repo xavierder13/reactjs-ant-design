@@ -2,8 +2,8 @@ import dayjs from 'dayjs';
 import { Timeline, Tag, Typography } from 'antd';
 import { DISPLAY_DATE_FORMAT } from '../../utils/formatDate';
 
-const ACTION_COLORS = { Filed: 'blue', Submitted: 'blue', Approved: 'green', Disapproved: 'red', Cancelled: 'default' };
-const DOT_COLORS = { Filed: 'blue', Submitted: 'blue', Approved: 'green', Disapproved: 'red', Cancelled: 'gray' };
+const ACTION_COLORS = { Filed: 'blue', Submitted: 'blue', Approved: 'green', Disapproved: 'red', Cancelled: 'default', Reverted: 'orange' };
+const DOT_COLORS = { Filed: 'blue', Submitted: 'blue', Approved: 'green', Disapproved: 'red', Cancelled: 'gray', Reverted: 'orange' };
 
 const when = (v) => (v ? dayjs(v).format(`${DISPLAY_DATE_FORMAT} hh:mm A`) : '—');
 

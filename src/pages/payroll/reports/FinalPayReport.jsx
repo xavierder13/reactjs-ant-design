@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
+import { Link } from 'react-router-dom';
 import { Select, DatePicker, Button, Card, Row, Col, Table, Tag, Alert, Descriptions, Typography, Empty, Spin, App } from 'antd';
 import { CalculatorOutlined, PrinterOutlined } from '@ant-design/icons';
 import payrollReportApi from '../../../services/payroll/payrollReportApi';
@@ -172,6 +173,13 @@ const FinalPayReport = () => {
               { key: 'rate', label: 'Rate', children: `${rateLabel(st.rate.pay_basis, st.rate.basic_rate)} · daily ${peso(st.rate.daily_rate)}` },
               { key: 'paid', label: 'Paid Through', children: formatDate(st.paid_through, 'no approved payroll') },
               { key: 'unpaid', label: 'Unpaid From', children: st.unpaid_from ? formatDate(st.unpaid_from) : 'nothing unpaid' },
+              {
+                key: 'clearance',
+                label: 'Clearance',
+                children: st.clearance
+                  ? <Link to={`/clearances/${st.clearance.id}`}><Tag color={st.clearance.status === 'Cleared' ? 'green' : 'gold'}>{`${st.clearance.clearance_no} · ${st.clearance.status === 'Pending' ? 'For Final Approval' : st.clearance.status}`}</Tag></Link>
+                  : <Tag color='red'>Not started</Tag>,
+              },
               { key: 'net', label: 'Net Final Pay', children: <strong>{peso(st.net)}</strong> },
             ]}
           />
