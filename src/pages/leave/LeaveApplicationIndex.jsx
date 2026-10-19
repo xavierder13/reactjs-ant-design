@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Tag, Button, Space, Tooltip, Select, Input, DatePicker, Popconfirm, Segmented, Typography, App } from 'antd';
+import { Table, Tag, Button, Space, Tooltip, Select, Input, DatePicker, Popconfirm, Typography, App } from 'antd';
 import { EyeOutlined, EditOutlined, CloseCircleOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import useAuth from '../../hooks/useAuth';
 import filingAccess from '../../utils/filingAccess';
@@ -10,6 +10,7 @@ import { DISPLAY_DATE_FORMAT } from '../../utils/formatDate';
 import { LEAVE_STATUS_COLORS, LEAVE_STATUSES, leaveDates, num } from './leaveHelpers';
 import LeaveFormModal from './LeaveFormModal';
 import PaidTag from '../../components/approval/PaidTag';
+import ApprovalViewToggle from '../../components/approval/ApprovalViewToggle';
 import LeaveDetailsModal from './LeaveDetailsModal';
 
 // Leave applications. "For My Approval" = leaves waiting for this user's
@@ -24,17 +25,23 @@ const LeaveApplicationIndex = () => {
   const { items: leaveTypes } = useLeaveTypes();
   const [branches, setBranches] = useState([]);
 
-  const canCreate  = access.canCreate;
+  // filing for any employee (HR / timekeeping); filing only for yourself
+  // is in My Workspace
+  const canCreate  = access.canCreate && !access.createOwnOnly;
 
   // an employee who only files for themself starts on All (their own
   // filings, plus any they approve); approvers / HR on For My Approval
-  const [view, setView]       = useState(access.createOwnOnly ? 'all' : 'approval');
+  // "For My Approval" only for those who can approve (leave-approve or
+  // Administrator); everyone else just has the list (All)
+  const canApprove = auth.hasRole('Administrator') || auth.hasPermission('leave-approve');
+  const [view, setView]       = useState(canApprove && !access.createOwnOnly ? 'approval' : 'all');
   const [filters, setFilters] = useState({});
   const [search, setSearch]   = useState('');
   const [page, setPage]       = useState({ current: 1, pageSize: 20 });
   const [rows, setRows]       = useState([]);
   const [total, setTotal]     = useState(0);
   const [loading, setLoading] = useState(false);
+  const [approvalCount, setApprovalCount] = useState(0);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing]   = useState(null);
   const [viewing, setViewing]   = useState(null);
@@ -51,6 +58,13 @@ const LeaveApplicationIndex = () => {
       });
       setRows(data.leaves.data);
       setTotal(data.leaves.total);
+      // the For My Approval count (no filters), refreshed with every reload
+      if (canApprove) {
+        const counted = view === 'approval' && !Object.values(filters).some(Boolean) && !search
+          ? data.leaves.total
+          : (await leaveApi.getAll({ scope: 'for_approval', page: 1, per_page: 1 })).data.leaves.total;
+        setApprovalCount(counted);
+      }
     } catch (error) {
       handleApiError(error, message);
     } finally {
@@ -160,11 +174,13 @@ const LeaveApplicationIndex = () => {
     <div>
       <Space wrap style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
         <Space wrap>
-          <Segmented
-            value={view}
-            onChange={(v) => { setView(v); setPage((p) => ({ ...p, current: 1 })); }}
-            options={[{ value: 'approval', label: 'For My Approval' }, { value: 'all', label: 'All' }]}
-          />
+          {canApprove && (
+            <ApprovalViewToggle
+              value={view}
+              onChange={(v) => { setView(v); setPage((p) => ({ ...p, current: 1 })); }}
+              count={approvalCount}
+            />
+          )}
           <Select
             allowClear
             disabled={view === 'approval'}

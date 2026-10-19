@@ -230,7 +230,8 @@ const KpiMyEvaluationIndex = () => {
         style={{ marginBottom: 16 }}
         items={[
           { title: <Link to='/'>Home</Link> },
-          { title: 'My Evaluations' },
+          { title: 'My Workspace' },
+          { title: 'Evaluations' },
         ]}
       />
 

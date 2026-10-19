@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Table, Tag, Button, Space, Tooltip, Select, Input, DatePicker, Popconfirm, Segmented, App,
+  Table, Tag, Button, Space, Tooltip, Select, Input, DatePicker, Popconfirm, App,
 } from 'antd';
 import { EyeOutlined, EditOutlined, CloseCircleOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import useAuth from '../../hooks/useAuth';
@@ -12,6 +12,7 @@ import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../utils/tablePagination'
 import { TIME_ENTRY_STATUS_COLORS, TIME_ENTRY_STATUSES, timeRange, breakRange } from './timeEntryHelpers';
 import TimeEntryFormModal from './TimeEntryFormModal';
 import PaidTag from '../../components/approval/PaidTag';
+import ApprovalViewToggle from '../../components/approval/ApprovalViewToggle';
 import TimeEntryDetailsModal from './TimeEntryDetailsModal';
 
 // Manual time-in / time-out for days the biometric device couldn't record
@@ -22,18 +23,24 @@ const TimeEntryIndex = () => {
   const { message } = App.useApp();
   const auth = useAuth();
   const access = filingAccess(auth, 'time-entry');
-  const canCreate  = access.canCreate;
+  // filing for any employee (HR / timekeeping); filing only for yourself
+  // is in My Workspace
+  const canCreate  = access.canCreate && !access.createOwnOnly;
 
   const [options, setOptions] = useState({ types: [], branches: [] });
   // an employee who only files for themself starts on All (their own
   // filings, plus any they approve); approvers / HR on For My Approval
-  const [view, setView]       = useState(access.createOwnOnly ? 'all' : 'approval');
+  // "For My Approval" only for those who can approve (time-entry-approve or
+  // Administrator); everyone else just has the list (All)
+  const canApprove = auth.hasRole('Administrator') || auth.hasPermission('time-entry-approve');
+  const [view, setView]       = useState(canApprove && !access.createOwnOnly ? 'approval' : 'all');
   const [filters, setFilters] = useState({});
   const [search, setSearch]   = useState('');
   const [page, setPage]       = useState({ current: 1, pageSize: 20 });
   const [rows, setRows]       = useState([]);
   const [total, setTotal]     = useState(0);
   const [loading, setLoading] = useState(false);
+  const [approvalCount, setApprovalCount] = useState(0);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing]   = useState(null);
   const [viewing, setViewing]   = useState(null);
@@ -52,6 +59,13 @@ const TimeEntryIndex = () => {
       });
       setRows(data.entries.data);
       setTotal(data.entries.total);
+      // the For My Approval count (no filters), refreshed with every reload
+      if (canApprove) {
+        const counted = view === 'approval' && !Object.values(filters).some(Boolean) && !search
+          ? data.entries.total
+          : (await timeEntryApi.getAll({ scope: 'for_approval', page: 1, per_page: 1 })).data.entries.total;
+        setApprovalCount(counted);
+      }
     } catch (error) {
       handleApiError(error, message);
     } finally {
@@ -160,11 +174,13 @@ const TimeEntryIndex = () => {
     <div>
       <Space wrap style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
         <Space wrap>
-          <Segmented
-            value={view}
-            onChange={(v) => { setView(v); setPage((p) => ({ ...p, current: 1 })); }}
-            options={[{ value: 'approval', label: 'For My Approval' }, { value: 'all', label: 'All' }]}
-          />
+          {canApprove && (
+            <ApprovalViewToggle
+              value={view}
+              onChange={(v) => { setView(v); setPage((p) => ({ ...p, current: 1 })); }}
+              count={approvalCount}
+            />
+          )}
           <Select
             allowClear
             disabled={view === 'approval'}

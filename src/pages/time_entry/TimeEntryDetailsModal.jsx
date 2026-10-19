@@ -7,6 +7,7 @@ import ApprovalSteps from '../../components/approval/ApprovalSteps';
 import FilingHistory from '../../components/approval/FilingHistory';
 import { TIME_ENTRY_STATUS_COLORS, scheduleText, timeRange, breakRange } from './timeEntryHelpers';
 import PaidTag from '../../components/approval/PaidTag';
+import FilingSummary from '../../components/approval/FilingSummary';
 import useAuth from '../../hooks/useAuth';
 import filingAccess from '../../utils/filingAccess';
 import TimeComparison from './TimeComparison';
@@ -16,7 +17,8 @@ import TimeComparison from './TimeComparison';
 // history (filed, each decision, cancellation), and the actions this
 // user may take: Approve / Disapprove when the backend says can_approve,
 // Cancel with time-entry-cancel. Remarks required to disapprove.
-const TimeEntryDetailsModal = ({ entryId, onClose, onActed }) => {
+// fetchDetails: how to load it (My Workspace passes its own-filing endpoint)
+const TimeEntryDetailsModal = ({ entryId, onClose, onActed, fetchDetails = timeEntryApi.show }) => {
   const access = filingAccess(useAuth(), 'time-entry');
   const { message } = App.useApp();
   const [data, setData] = useState(null);
@@ -27,7 +29,7 @@ const TimeEntryDetailsModal = ({ entryId, onClose, onActed }) => {
     if (!isOpen) { setData(null); return; }
     setRemarks('');
     try {
-      const { data: res } = await timeEntryApi.show(entryId);
+      const { data: res } = await fetchDetails(entryId);
       setData(res);
     } catch (error) {
       handleApiError(error, message);
@@ -85,14 +87,10 @@ const TimeEntryDetailsModal = ({ entryId, onClose, onActed }) => {
     >
       {!entry ? <Spin style={{ display: 'block', margin: '32px auto' }} /> : (
         <>
-          <Descriptions
-            size='small'
-            column={{ xs: 1, sm: 2 }}
-            style={{ marginBottom: 16 }}
-            items={[
-              { key: 'employee', label: 'Employee', children: entry.employee ? `${entry.employee.employee_code} - ${entry.employee.full_name}` : '—' },
-              { key: 'status', label: 'Status', children: <><Tag color={TIME_ENTRY_STATUS_COLORS[entry.status]}>{entry.status}</Tag><PaidTag paidIn={entry.paid_in} pendingIn={entry.pending_in} /></> },
-              { key: 'branch', label: 'Branch / Position', children: [entry.employee?.branch?.name, entry.employee?.position?.name].filter(Boolean).join(' / ') || '—' },
+          <FilingSummary
+            employee={entry.employee}
+            status={<><Tag color={TIME_ENTRY_STATUS_COLORS[entry.status]}>{entry.status}</Tag><PaidTag paidIn={entry.paid_in} pendingIn={entry.pending_in} /></>}
+            facts={[
               { key: 'date', label: 'Date', children: formatDate(entry.date) },
               { key: 'type', label: 'Type', children: entry.entry_type },
               { key: 'time', label: 'Time Filed', children: <strong>{timeRange(entry.time_in, entry.time_out)}</strong> },

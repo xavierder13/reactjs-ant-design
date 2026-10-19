@@ -20,9 +20,11 @@ const toTime = (t) => (t ? dayjs(`2000-01-01 ${hhmm(t)}`) : null);
 // and date are set, the preview shows that day's schedule (Work Schedule /
 // shifting) and the biometric punches actually recorded, the level-1
 // approver, warnings (day off, an old date) and the rule that blocks saving.
-const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
+const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved, ownOnly = false }) => {
   const auth = useAuth();
   const access = filingAccess(auth, 'time-entry');
+  // ownOnly (My Workspace): always the user's own employee, no picker
+  const selfOnly = ownOnly || access.createOwnOnly;
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
@@ -42,7 +44,7 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
     if (!isOpen) { form.resetFields(); setPreview(null); return; }
     form.resetFields();
     setPreview(null);
-    if (!entry && access.createOwnOnly && access.ownEmployeeId) form.setFieldsValue({ employee_id: access.ownEmployeeId });
+    if (!entry && selfOnly && access.ownEmployeeId) form.setFieldsValue({ employee_id: access.ownEmployeeId });
     if (entry) {
       form.setFieldsValue({
         employee_id: entry.employee_id,
@@ -152,7 +154,7 @@ const TimeEntryFormModal = ({ open, entry, types, onClose, onSaved }) => {
             </Form.Item>
             <Form.Item name='employee_id' hidden><Input /></Form.Item>
           </>
-        ) : access.createOwnOnly ? (
+        ) : selfOnly ? (
           <>
             {/* files only their own (time-entry-create-own) */}
             <Form.Item label='Employee'>

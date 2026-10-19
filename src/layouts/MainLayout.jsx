@@ -31,7 +31,6 @@ import {
   IdcardOutlined,
   SolutionOutlined,
   StarOutlined,
-  FieldTimeOutlined,
   BarChartOutlined,
   FileTextOutlined,
   ApartmentOutlined,
@@ -90,8 +89,11 @@ const titleMap = {
   '/workforce-dashboard':    { title: 'Workforce Dashboard', breadcrumb: ['Dashboards', 'Workforce Dashboard'] },
   '/users':                  { title: 'User Accounts',       breadcrumb: ['User Management', 'User Accounts'] },
   '/user/profile':           { title: 'My Profile',          breadcrumb: ['User Management', 'My Profile'] },
-  '/my-payslips':            { title: 'My Payslips',         breadcrumb: ['My Workspace', 'My Payslips'] },
-  '/my-attendance':          { title: 'My Attendance',       breadcrumb: ['My Workspace', 'My Attendance'] },
+  '/my-payslips':            { title: 'Payslips',            breadcrumb: ['My Workspace', 'Payslips'] },
+  '/my-attendance':          { title: 'Attendance Records',  breadcrumb: ['My Workspace', 'Time & Leave', 'Attendance Records'] },
+  '/my-leave':               { title: 'Leave Applications',  breadcrumb: ['My Workspace', 'Time & Leave', 'Leave Applications'] },
+  '/my-time-entries':        { title: 'Time Entries',        breadcrumb: ['My Workspace', 'Time & Leave', 'Time Entries'] },
+  '/my-overtime':            { title: 'Overtime',            breadcrumb: ['My Workspace', 'Time & Leave', 'Overtime'] },
   '/roles':                  { title: 'Roles',               breadcrumb: ['Authorizations', 'Roles'] },
   '/roles/create':           { title: 'Create Role',         breadcrumb: ['Authorizations', 'Roles', 'Create'] },
   '/permissions':            { title: 'Permissions',         breadcrumb: ['Authorizations', 'Permissions'] },
@@ -118,7 +120,7 @@ const titleMap = {
   '/kpi-templates/create':   { title: 'Create KPI Template', breadcrumb: ['KPI Management', 'KPI Templates', 'Create'] },
   '/kpi-evaluations':        { title: 'KPI Evaluations',     breadcrumb: ['KPI Management', 'Evaluations'] },
   '/kpi-evaluations/create': { title: 'Create Evaluation',     breadcrumb: ['KPI Management', 'Evaluations', 'Create'] },
-  '/my-evaluations':         { title: 'My Evaluations',        breadcrumb: ['KPI Management', 'My Evaluations'] },
+  '/my-evaluations':         { title: 'Evaluations',           breadcrumb: ['My Workspace', 'Evaluations'] },
   '/kpi-reports/consolidated': { title: 'KPI Consolidated Report', breadcrumb: ['KPI Management', 'Reports', 'Consolidated Report'] },
   '/kpi-dashboard':            { title: 'KPI Dashboard', breadcrumb: ['Dashboards', 'KPI Dashboard'] },
   '/manpower-requests':        { title: 'Manpower Requests',       breadcrumb: ['Manpower Request', 'All Requests'] },
@@ -202,16 +204,44 @@ const menuData = [
   // ── My Workspace ────────────────────────────────────────────────────────────
   // The signed-in employee's own records (self-service). requiresEmployee =
   // shown only to an account linked to an employee (users.employee_id); no
-  // permission needed, like the endpoints. Filing leave / time entries /
-  // overtime stays under Time & Leave (gated by the *-own permissions).
+  // permission needed, like the endpoints. My Leave / Time Entries /
+  // Overtime list and file the user's own (filing needs *-own or *-create);
+  // Time & Leave is for approvers and HR and leaves the user's own out.
   {
     key: 'my-workspace',
     type: 'group',
     label: 'My Workspace',
+    // Grouped like the HR side: Time & Leave is one dropdown with Leave /
+    // Attendance headers (as Human Resource → Time & Leave), then pay and
+    // performance as single links.
     children: [
-      { key: 'my-attendance',  title: 'My Attendance',  icon: <FieldTimeOutlined />, link: '/my-attendance',  requiresEmployee: true },
-      { key: 'my-payslips',    title: 'My Payslips',    icon: <WalletOutlined />,    link: '/my-payslips',    requiresEmployee: true },
-      { key: 'my-evaluations', title: 'My Evaluations', icon: <StarOutlined />,      link: '/my-evaluations', permissions: ['kpi-self-evaluation-list'], requiresEmployee: true },
+      {
+        key: 'my-time-leave',
+        title: 'Time & Leave',
+        icon: <ScheduleOutlined />,
+        children: [
+          {
+            key: 'my-leave-group',
+            type: 'group',
+            label: 'Leave',
+            children: [
+              { key: 'my-leave', title: 'Leave Applications', link: '/my-leave', requiresEmployee: true },
+            ],
+          },
+          {
+            key: 'my-attendance-group',
+            type: 'group',
+            label: 'Attendance',
+            children: [
+              { key: 'my-attendance',   title: 'Attendance Records', link: '/my-attendance', requiresEmployee: true },
+              { key: 'my-time-entries', title: 'Time Entries',    link: '/my-time-entries', requiresEmployee: true },
+              { key: 'my-overtime',     title: 'Overtime',        link: '/my-overtime',     requiresEmployee: true },
+            ],
+          },
+        ],
+      },
+      { key: 'my-payslips',    title: 'Payslips',    icon: <WalletOutlined />, link: '/my-payslips',    requiresEmployee: true },
+      { key: 'my-evaluations', title: 'Evaluations', icon: <StarOutlined />,   link: '/my-evaluations', permissions: ['kpi-self-evaluation-list'], requiresEmployee: true },
     ],
   },
   { type: 'divider' },
@@ -506,13 +536,14 @@ const menuData = [
         ],
       },
       {
+        // evaluators / approvers only (kpi-evaluation-list / -create); a
+        // self-evaluation is My Workspace → My Evaluations
         key: 'kpi-evaluations',
         title: 'Evaluations',
         icon: <FileTextOutlined />,
         children: [
           { key: 'kpi-evaluation-list',   title: 'All Evaluations', link: '/kpi-evaluations',        permissions: ['kpi-evaluation-list'] },
           { key: 'kpi-evaluation-create', title: 'Create Evaluation', link: '/kpi-evaluations/create', permissions: ['kpi-evaluation-create'] },
-          { key: 'kpi-my-evaluations',    title: 'My Evaluations',  link: '/my-evaluations',          permissions: ['kpi-self-evaluation-list'], requiresEmployee: true },
         ],
       },
       {
@@ -711,7 +742,7 @@ const MainLayout = () => {
     if (/^\/kpi-evaluations\/\d+\/print$/.test(pathname))
       return { title: 'Print Evaluation', breadcrumb: ['KPI Management', 'Evaluations', 'Print'] };
     if (/^\/my-evaluations\/\d+$/.test(pathname))
-      return { title: 'Self Evaluation', breadcrumb: ['KPI Management', 'My Evaluations', 'Fill'] };
+      return { title: 'Self Evaluation', breadcrumb: ['My Workspace', 'Evaluations', 'Fill'] };
     if (/^\/manpower-requests\/\d+\/edit$/.test(pathname))
       return { title: 'Edit Manpower Request', breadcrumb: ['Manpower Request', 'Edit'] };
     if (/^\/manpower-requests\/\d+\/print$/.test(pathname))

@@ -19,9 +19,11 @@ const toTime = (t) => (t ? dayjs(`2000-01-01 ${hhmm(t)}`) : null);
 // preview shows the hours, how the day counts (rest day / holiday), the
 // schedule and biometric punches that day, the level-1 approver, warnings
 // (inside scheduled hours, an old date) and the rule that blocks saving.
-const OvertimeFormModal = ({ open, overtime, onClose, onSaved }) => {
+const OvertimeFormModal = ({ open, overtime, onClose, onSaved, ownOnly = false }) => {
   const auth = useAuth();
   const access = filingAccess(auth, 'overtime');
+  // ownOnly (My Workspace): always the user's own employee, no picker
+  const selfOnly = ownOnly || access.createOwnOnly;
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
@@ -39,7 +41,7 @@ const OvertimeFormModal = ({ open, overtime, onClose, onSaved }) => {
     if (!isOpen) { form.resetFields(); setPreview(null); return; }
     form.resetFields();
     setPreview(null);
-    if (!overtime && access.createOwnOnly && access.ownEmployeeId) form.setFieldsValue({ employee_id: access.ownEmployeeId });
+    if (!overtime && selfOnly && access.ownEmployeeId) form.setFieldsValue({ employee_id: access.ownEmployeeId });
     if (overtime) {
       form.setFieldsValue({
         employee_id: overtime.employee_id,
@@ -132,7 +134,7 @@ const OvertimeFormModal = ({ open, overtime, onClose, onSaved }) => {
             </Form.Item>
             <Form.Item name='employee_id' hidden><Input /></Form.Item>
           </>
-        ) : access.createOwnOnly ? (
+        ) : selfOnly ? (
           <>
             {/* files only their own (overtime-create-own) */}
             <Form.Item label='Employee'>

@@ -70,13 +70,19 @@ by the Leave, Time Entry and Overtime details modals.
 (PermissionSeeder → Administrator). `option_list` admits time-entry-create.
 
 Own vs. others (vueportal `FilingAccess`, React `utils/filingAccess.js`):
-`*-list` = their own + what they filed / approve, `*-list-all` = everyone;
+`*-list` = the Time & Leave list of what they filed for others / approve
+(never their own — that is My Workspace → Time & Leave → Time Entries / Overtime,
+`MyFilingController`, no permission), `*-list-all` = everyone, own
+included; the For My Approval / All toggle only with `*-approve` /
+Administrator, File only with the any-employee `*-create`;
 `*-create / -edit / -cancel` = for any employee (HR), `*-create-own /
 -edit-own / -cancel-own` = only the user's own employee record
 (`users.employee_id`), cancel only while Pending — the form then has no
 employee picker ("Name (yourself)"). Same for leave and overtime. Roles:
-`PayrollRoleSeeder` (Employee Self-Service = list + the -own ones;
-Timekeeper = all).
+`PayrollRoleSeeder` (Employee Self-Service = only the nine -own ones — no
+*-list / leave-balance-list, everything else is My Workspace; Time & Leave
+Viewer = view-only `*-list` + `*-list-all` and leave balances for all three
+modules — no toggle, File, Edit, Cancel or Approve; Timekeeper = all).
 
 ## Next
 

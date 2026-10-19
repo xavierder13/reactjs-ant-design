@@ -34,11 +34,21 @@ Access Chart**, the Manpower Request way. Contracts are in
   `leave-approve` decides in one step. Editing is refused once an approver
   has acted. Nobody covering an employee at level 1 strands the leave there
   (Administrator can approve) — the form warns.
-- **Visibility** (`LeaveService::scopeVisible`, enforced on index / show /
-  update / act — hidden = 404): `leave-list-all` (HR) sees all; others see
-  what they filed, their own leave, leaves pending at their level (level 1:
-  employees they cover) and leaves they acted on. `scope=for_approval` =
-  waiting for this user's decision now.
+- **Visibility** (`LeaveService::scopeVisible`, enforced on show / update /
+  act — hidden = 404): `leave-list-all` (HR) sees all; others see what they
+  filed, their own leave, leaves pending at their level (level 1: employees
+  they cover) and leaves they acted on. The Leave Applications **list**
+  (`/leave/index`) leaves the user's own leave out unless they have
+  `leave-list-all` — their own is in **My Workspace → Time & Leave → Leave Applications** (`/my-leave`).
+  `scope=for_approval` = waiting for this user's decision now (never their
+  own).
+- **My Workspace → Leave Applications** (`/my-leave`, vueportal `MyFilingController`, prefix
+  `my_filing`, auth only — no permission, like My Payslips): the signed-in
+  employee's own leave (`users.employee_id`; another's → 404) with this
+  year's balances; filing / editing / cancelling go through `/leave/*`
+  with `leave-create-own` / `-edit-own` / `-cancel-own` (or the any-employee
+  ones), the form forced to the user (`ownOnly`). Shared with My Time
+  Entries / My Overtime: `src/pages/my_workspace/MyFilingList.jsx`.
 - **Leave Balances** (`/leave/balances`): `leave-balance-list-all` = any
   employee (employee search); `leave-balance-list` = subordinates — the
   same coverage as level-1 approval (positions below the user's in
@@ -47,7 +57,15 @@ Access Chart**, the Manpower Request way. Contracts are in
   Other employees → 403. The year's applications section needs
   `leave-list`. The File Leave preview gets the balance from `compute`, so
   filers need no balance permission.
-- React: Leave Applications opens on **For My Approval**; the View dialog
+- React: Leave Applications (Time & Leave, for approvers and HR) shows the
+  **For My Approval / All** toggle only to `leave-approve` / Administrator
+  (opens on For My Approval; others just have All) — the shared
+  `components/approval/ApprovalViewToggle.jsx`, whose red badge counts
+  what waits for the user's decision (the `scope=for_approval` total, no
+  filters; the same number as the bell), refreshed on every reload; time
+  entries and overtime use it too and **File Leave** only
+  to those filing for any employee (`leave-create`) — filing only for
+  yourself is in My Workspace. The View dialog
   (`/leave/show/{id}`) shows the levels (Steps), who acted / who can act,
   and Approve / Disapprove only when `approval.can_approve`.
 

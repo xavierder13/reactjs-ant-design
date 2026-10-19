@@ -15,9 +15,11 @@ import { EMPLOYEE_FORM_MODAL_WIDTH } from '../../utils/modalWidths';
 // (rest days from the employee's Work Schedule, holidays from the Holiday
 // Calendar for their branch), the type's balance for that year, and the
 // rule that would block saving — Save stays disabled until it's clear.
-const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
+const LeaveFormModal = ({ open, leave, onClose, onSaved, ownOnly = false }) => {
   const auth = useAuth();
   const access = filingAccess(auth, 'leave');
+  // ownOnly (My Workspace): always the user's own employee, no picker
+  const selfOnly = ownOnly || access.createOwnOnly;
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
@@ -44,7 +46,7 @@ const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
     form.resetFields();
     setPreview(null);
     setBalance(null);
-    if (!leave && access.createOwnOnly && access.ownEmployeeId) form.setFieldsValue({ employee_id: access.ownEmployeeId });
+    if (!leave && selfOnly && access.ownEmployeeId) form.setFieldsValue({ employee_id: access.ownEmployeeId });
     if (leave) {
       form.setFieldsValue({
         employee_id: leave.employee_id,
@@ -160,7 +162,7 @@ const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
             </Form.Item>
             <Form.Item name='employee_id' hidden><Input /></Form.Item>
           </>
-        ) : access.createOwnOnly ? (
+        ) : selfOnly ? (
           <>
             {/* files only their own (leave-create-own) */}
             <Form.Item label='Employee'>

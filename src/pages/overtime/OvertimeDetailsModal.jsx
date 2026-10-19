@@ -7,6 +7,7 @@ import ApprovalSteps from '../../components/approval/ApprovalSteps';
 import FilingHistory from '../../components/approval/FilingHistory';
 import { TIME_ENTRY_STATUS_COLORS, scheduleText, timeRange } from '../time_entry/timeEntryHelpers';
 import PaidTag from '../../components/approval/PaidTag';
+import FilingSummary from '../../components/approval/FilingSummary';
 import useAuth from '../../hooks/useAuth';
 import filingAccess from '../../utils/filingAccess';
 import { DAY_TYPE_COLORS, hoursText, punchesText } from './overtimeHelpers';
@@ -16,7 +17,8 @@ import { DAY_TYPE_COLORS, hoursText, punchesText } from './overtimeHelpers';
 // and history (filed, each decision, cancellation), and the actions this
 // user may take: Approve / Disapprove when the backend says can_approve,
 // Cancel with overtime-cancel. Remarks required to disapprove.
-const OvertimeDetailsModal = ({ overtimeId, onClose, onActed }) => {
+// fetchDetails: how to load it (My Workspace passes its own-filing endpoint)
+const OvertimeDetailsModal = ({ overtimeId, onClose, onActed, fetchDetails = overtimeApi.show }) => {
   const access = filingAccess(useAuth(), 'overtime');
   const { message } = App.useApp();
   const [data, setData] = useState(null);
@@ -27,7 +29,7 @@ const OvertimeDetailsModal = ({ overtimeId, onClose, onActed }) => {
     if (!isOpen) { setData(null); return; }
     setRemarks('');
     try {
-      const { data: res } = await overtimeApi.show(overtimeId);
+      const { data: res } = await fetchDetails(overtimeId);
       setData(res);
     } catch (error) {
       handleApiError(error, message);
@@ -85,14 +87,10 @@ const OvertimeDetailsModal = ({ overtimeId, onClose, onActed }) => {
     >
       {!ot ? <Spin style={{ display: 'block', margin: '32px auto' }} /> : (
         <>
-          <Descriptions
-            size='small'
-            column={{ xs: 1, sm: 2 }}
-            style={{ marginBottom: 16 }}
-            items={[
-              { key: 'employee', label: 'Employee', children: ot.employee ? `${ot.employee.employee_code} - ${ot.employee.full_name}` : '—' },
-              { key: 'status', label: 'Status', children: <><Tag color={TIME_ENTRY_STATUS_COLORS[ot.status]}>{ot.status}</Tag><PaidTag paidIn={ot.paid_in} pendingIn={ot.pending_in} /></> },
-              { key: 'branch', label: 'Branch / Position', children: [ot.employee?.branch?.name, ot.employee?.position?.name].filter(Boolean).join(' / ') || '—' },
+          <FilingSummary
+            employee={ot.employee}
+            status={<><Tag color={TIME_ENTRY_STATUS_COLORS[ot.status]}>{ot.status}</Tag><PaidTag paidIn={ot.paid_in} pendingIn={ot.pending_in} /></>}
+            facts={[
               { key: 'date', label: 'Date', children: formatDate(ot.date) },
               { key: 'time', label: 'Overtime', children: timeRange(ot.time_from, ot.time_to) },
               { key: 'hours', label: 'Hours', children: <strong>{hoursText(ot.hours)}</strong> },

@@ -7,6 +7,7 @@ import handleApiError from '../../utils/handleApiError';
 import ApprovalSteps from '../../components/approval/ApprovalSteps';
 import FilingHistory from '../../components/approval/FilingHistory';
 import PaidTag from '../../components/approval/PaidTag';
+import FilingSummary from '../../components/approval/FilingSummary';
 import useAuth from '../../hooks/useAuth';
 import filingAccess from '../../utils/filingAccess';
 import { LEAVE_STATUS_COLORS, leaveDates, num } from './leaveHelpers';
@@ -17,7 +18,8 @@ import { LEAVE_STATUS_COLORS, leaveDates, num } from './leaveHelpers';
 // user may take: Approve / Disapprove when the backend says can_approve
 // (current-level approver, once, not their own leave), Cancel with
 // leave-cancel. Remarks are optional except for Disapprove.
-const LeaveDetailsModal = ({ leaveId, onClose, onActed }) => {
+// fetchDetails: how to load it (My Workspace passes its own-filing endpoint)
+const LeaveDetailsModal = ({ leaveId, onClose, onActed, fetchDetails = leaveApi.show }) => {
   const access = filingAccess(useAuth(), 'leave');
   const { message } = App.useApp();
   const [data, setData] = useState(null);
@@ -28,7 +30,7 @@ const LeaveDetailsModal = ({ leaveId, onClose, onActed }) => {
   const load = async () => {
     setLoading(true);
     try {
-      const { data: res } = await leaveApi.show(leaveId);
+      const { data: res } = await fetchDetails(leaveId);
       setData(res);
     } catch (error) {
       handleApiError(error, message);
@@ -100,14 +102,10 @@ const LeaveDetailsModal = ({ leaveId, onClose, onActed }) => {
     >
       {loading || !leave ? <Spin style={{ display: 'block', margin: '32px auto' }} /> : (
         <>
-          <Descriptions
-            size='small'
-            column={{ xs: 1, sm: 2 }}
-            style={{ marginBottom: 16 }}
-            items={[
-              { key: 'employee', label: 'Employee', children: leave.employee ? `${leave.employee.employee_code} - ${leave.employee.full_name}` : '—' },
-              { key: 'status', label: 'Status', children: <><Tag color={LEAVE_STATUS_COLORS[leave.status]}>{leave.status}</Tag><PaidTag paidIn={leave.paid_in} pendingIn={leave.pending_in} /></> },
-              { key: 'branch', label: 'Branch / Position', children: [leave.employee?.branch?.name, leave.employee?.position?.name].filter(Boolean).join(' / ') || '—' },
+          <FilingSummary
+            employee={leave.employee}
+            status={<><Tag color={LEAVE_STATUS_COLORS[leave.status]}>{leave.status}</Tag><PaidTag paidIn={leave.paid_in} pendingIn={leave.pending_in} /></>}
+            facts={[
               {
                 key: 'type',
                 label: 'Leave Type',
