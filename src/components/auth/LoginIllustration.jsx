@@ -1,9 +1,32 @@
+import { LOGO_URL } from '../../utils/brand';
+
 // Animated login illustration: an HRIS dashboard with floating employee,
 // leave and payslip cards and colleagues talking in the office (speech
 // bubbles take turns), drawn in the app greens
 // (sidebar.css). Pure SVG +
-// CSS keyframes from login.css (.li-*), so no image file or library; the
-// motion stops under prefers-reduced-motion.
+// CSS keyframes from login.css (.li-*); the only image is the ADDESSA
+// logo (public/img/addessa.jpg) on the dashboard, the shirts and an ID
+// lanyard. The motion stops under prefers-reduced-motion.
+
+// The round ADDESSA mark at (cx, cy) on a thin white ring; the clip trims
+// the JPG's white corners. `mirror` cancels a flipped parent (scale(-1 1))
+// so the logo never reads backwards.
+const Logo = ({ cx, cy, r, mirror = false }) => (
+  <g transform={mirror ? 'scale(-1 1)' : undefined}>
+    <circle cx={mirror ? -cx : cx} cy={cy} r={r + 1} fill="#ffffff" />
+    <image href={LOGO_URL} x={(mirror ? -cx : cx) - r} y={cy - r} width={r * 2} height={r * 2} clipPath="url(#li-logo-clip)" />
+  </g>
+);
+
+// A company ID on a lanyard, hanging from the neck and swinging a little.
+const IdLanyard = () => (
+  <g className="li-swing">
+    <path d="M-7 -84 L-3 -62 M7 -84 L3 -62" stroke="#c8102e" strokeWidth="1.6" strokeLinecap="round" />
+    <rect x="-8" y="-63" width="16" height="21" rx="2.5" fill="#ffffff" stroke="#d9f7be" />
+    <Logo cx={0} cy={-55} r={4.5} />
+    <rect x="-5" y="-47" width="10" height="2" rx="1" fill="#389e0d" />
+  </g>
+);
 // A head facing +x: hair, face, eye and a small smile; `nod` animates it.
 const Head = ({ skin, hair, nod }) => (
   <g className={`li-nod ${nod}`}>
@@ -17,7 +40,8 @@ const Head = ({ skin, hair, nod }) => (
 
 // A standing person, feet on the floor at x, facing right (flip = left).
 // The front arm gestures (`gesture`); children are held in that hand.
-const Person = ({ x, flip = false, shirt, arm, pants, skin, hair, gesture, nod, children }) => (
+// The shirt carries the ADDESSA emblem, or `badge` the ID lanyard instead.
+const Person = ({ x, flip = false, shirt, arm, pants, skin, hair, gesture, nod, badge = false, children }) => (
   <g transform={`translate(${x} 472)${flip ? ' scale(-1 1)' : ''}`}>
     <ellipse cx="0" cy="2" rx="20" ry="3.5" fill="rgba(0,0,0,0.25)" />
     <rect x="-10" y="-40" width="8" height="38" rx="4" fill={pants} />
@@ -27,6 +51,7 @@ const Person = ({ x, flip = false, shirt, arm, pants, skin, hair, gesture, nod, 
     <rect x="-20" y="-80" width="8" height="32" rx="4" fill={arm} />
     <circle cx="-16" cy="-48" r="4.5" fill={skin} />
     <rect x="-16" y="-84" width="32" height="48" rx="12" fill={shirt} />
+    {badge ? <IdLanyard /> : <Logo cx={4} cy={-71} r={4} mirror={flip} />}
     <g className={`li-gesture ${gesture}`}>
       <rect x="10" y="-80" width="8" height="30" rx="4" fill={arm} />
       <circle cx="14" cy="-50" r="4.5" fill={skin} />
@@ -48,7 +73,12 @@ const Bubble = ({ className, x, y, tail }) => (
 );
 
 const LoginIllustration = () => (
-  <svg className="login-illustration" viewBox="0 0 560 490" role="img" aria-label="Colleagues talking in the office around an HRIS dashboard">
+  <svg className="login-illustration" viewBox="0 0 560 490" role="img" aria-label="ADDESSA colleagues talking in the office around an HRIS dashboard">
+    <defs>
+      <clipPath id="li-logo-clip" clipPathUnits="objectBoundingBox">
+        <circle cx="0.5" cy="0.5" r="0.47" />
+      </clipPath>
+    </defs>
     {/* dashboard window */}
     <g className="li-window">
       <rect x="110" y="70" width="340" height="260" rx="18" fill="#ffffff" />
@@ -57,7 +87,8 @@ const LoginIllustration = () => (
       <circle cx="134" cy="90" r="5" fill="#ff7875" />
       <circle cx="150" cy="90" r="5" fill="#ffc53d" />
       <circle cx="166" cy="90" r="5" fill="#73d13d" />
-      <rect x="196" y="85" width="120" height="10" rx="5" fill="#d9f7be" />
+      <Logo cx={196} cy={90} r={9} />
+      <text x="211" y="94.5" fontSize="12" fontWeight="700" fill="#1a4d0f">ADDESSA HRIS</text>
 
       {/* sidebar strip */}
       <rect x="126" y="126" width="64" height="188" rx="10" fill="#1d5512" />
@@ -140,7 +171,7 @@ const LoginIllustration = () => (
 
     {/* office chat: two colleagues on the left, a mug-holder talking to a
         colleague seated at a desk on the right; speech bubbles take turns */}
-    <Person x={60} shirt="#ffffff" arm="#f0f0f0" pants="#b7eb8f" skin="#f1c27d" hair="#1f1209" gesture="li-gesture--1" nod="li-nod--1" />
+    <Person x={60} badge shirt="#ffffff" arm="#f0f0f0" pants="#b7eb8f" skin="#f1c27d" hair="#1f1209" gesture="li-gesture--1" nod="li-nod--1" />
     <Person x={142} flip shirt="#ffd666" arm="#f5c542" pants="#d9f7be" skin="#e0ac69" hair="#3b2314" gesture="li-gesture--2" nod="li-nod--2">
       <rect x="12" y="-60" width="18" height="24" rx="2.5" fill="#ffffff" stroke="#b7eb8f" strokeWidth="1.5" />
       <rect x="16" y="-54" width="10" height="3" rx="1.5" fill="#95de64" />
@@ -163,6 +194,7 @@ const LoginIllustration = () => (
       <rect x="8" y="-5" width="14" height="5" rx="2.5" fill="#0b2406" />
       <rect x="-16" y="-84" width="30" height="48" rx="12" fill="#ffffff" />
       <rect x="-2" y="-84" width="5" height="14" rx="2.5" fill="#389e0d" />
+      <Logo cx={-9} cy={-71} r={4} mirror />
       <g className="li-type">
         <rect x="4" y="-74" width="26" height="8" rx="4" fill="#f0f0f0" />
         <circle cx="30" cy="-70" r="4.5" fill="#f1c27d" />

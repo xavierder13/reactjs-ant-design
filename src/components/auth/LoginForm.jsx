@@ -10,6 +10,8 @@ import {
 import {
   EyeInvisibleOutlined,
   EyeTwoTone,
+  LockOutlined,
+  MailOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import axios from '../../api/axiosInstance'
@@ -17,6 +19,7 @@ import useAuth from '../../hooks/useAuth'
 import { takeEndReason, setSessionSettings } from '../../utils/session'
 import { getToken, TOKEN_KEY } from '../../utils/tokenHelper'
 import LoginIllustration from './LoginIllustration'
+import { LOGO_URL } from '../../utils/brand'
 import './login.css'
 
 const { Title, Text } = Typography
@@ -118,7 +121,7 @@ const LoginForm = () => {
       {/* LEFT PANEL: brand + animated illustration */}
       <div className="login-page__brand">
         <div className="login-page__brand-top">
-          <div className="login-page__logo">HR</div>
+          <img className="login-page__logo" src={LOGO_URL} alt="ADDESSA" />
           <div>
             <div className="login-page__brand-top-name">ADDESSA Corporation</div>
             <div className="login-page__brand-top-tagline">Human Resource Information System</div>
@@ -151,7 +154,7 @@ const LoginForm = () => {
         <div className="login-page__form-inner">
         {/* Logo */}
         <div className="login-page__form-brand">
-          <div className="login-page__logo">HR</div>
+          <img className="login-page__logo login-page__logo--lg" src={LOGO_URL} alt="ADDESSA" />
 
           <div>
             <Text strong style={{ display: 'block', color: '#1a4d0f' }}>
@@ -164,9 +167,9 @@ const LoginForm = () => {
         {/* Heading */}
         <div style={{ marginBottom: 24 }}>
           <Title level={3} style={{ marginBottom: 0, color: '#1a4d0f' }}>
-            Sign In
+            Welcome back
           </Title>
-          <Text type="secondary">Enter your credentials to continue</Text>
+          <Text type="secondary">Sign in with your work email to continue</Text>
         </div>
 
         {endReason && !error && (
@@ -205,6 +208,8 @@ const LoginForm = () => {
             <Input
               size="large"
               placeholder="you@company.com"
+              prefix={<MailOutlined style={{ color: '#8c8c8c' }} />}
+              autoComplete="username"
               style={{ borderRadius: 8 }}
               onKeyDown={handleEnter}
             />
@@ -218,6 +223,8 @@ const LoginForm = () => {
             <Input.Password
               size="large"
               placeholder="••••••••"
+              prefix={<LockOutlined style={{ color: '#8c8c8c' }} />}
+              autoComplete="current-password"
               iconRender={(visible) =>
                 visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
               }
@@ -249,6 +256,10 @@ const LoginForm = () => {
         >
           Having trouble? Contact your system administrator.
         </Text>
+
+        <div className="login-page__footer">
+          © {new Date().getFullYear()} ADDESSA Corporation · The way to comfort living.
+        </div>
         </div>
       </div>
     </div>

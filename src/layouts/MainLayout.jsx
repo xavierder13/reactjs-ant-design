@@ -53,6 +53,7 @@ import authApi from '../services/auth/authApi';
 import NotificationBell from '../components/NotificationBell';
 import PayrollAssistantButton from '../components/payroll_assistant/PayrollAssistantButton';
 import MenuSearch from '../components/MenuSearch';
+import { LOGO_URL } from '../utils/brand';
 import syncApi from '../services/employee/syncApi';
 import handleApiError from '../utils/handleApiError';
 
@@ -859,7 +860,7 @@ const MainLayout = () => {
   const sidebarContent = (
     <div className="app-sidebar">
       <div className="app-sidebar__brand">
-        <div className="app-sidebar__logo">HR</div>
+        <img className="app-sidebar__logo" src={LOGO_URL} alt="ADDESSA" />
         {(isMobile || !collapsed) && (
           <div style={{ minWidth: 0 }}>
             <div className="app-sidebar__name">ADDESSA Corp</div>
@@ -924,7 +925,8 @@ const MainLayout = () => {
 
   if (!isLoaded) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <img src={LOGO_URL} alt="ADDESSA" width={72} height={72} style={{ borderRadius: '50%' }} />
         <Spin size="large" />
       </div>
     );

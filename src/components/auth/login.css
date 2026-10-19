@@ -83,21 +83,21 @@
   background: #95de64;
 }
 
-/* the same tile as the sidebar's brand logo */
+/* the round ADDESSA mark on a white ring */
 .login-page__logo {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  color: #fff;
-  font-weight: 800;
-  font-size: 14px;
-  letter-spacing: 0.02em;
+  padding: 2px;
+  border-radius: 50%;
+  background: #fff;
+  object-fit: contain;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+.login-page__logo--lg {
+  width: 52px;
+  height: 52px;
+  box-shadow: 0 4px 14px rgba(56, 158, 13, 0.22);
 }
 
 /* ── Sign-in panel (right) ─────────────────────────────── */
@@ -110,6 +110,17 @@
   flex-direction: column;
   justify-content: center;
   box-shadow: -2px 0 24px rgba(0, 0, 0, 0.06);
+  /* brand stripe: ADDESSA green into red */
+  border-top: 4px solid transparent;
+  border-image: linear-gradient(90deg, #389e0d 0%, #389e0d 70%, #c8102e 70%) 1;
+}
+.login-page__footer {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+  text-align: center;
+  font-size: 11px;
+  color: #8c8c8c;
 }
 .login-page__form-brand {
   display: flex;
@@ -166,6 +177,11 @@
 .login-page .li-nod--3 { animation-delay: -1.6s; animation-duration: 3.6s; }
 .login-page .li-nod--4 { animation-delay: -2.2s; animation-duration: 4s; }
 .login-page .li-type { animation: login-type 0.5s ease-in-out infinite alternate; }
+.login-page .li-swing {
+  transform-box: fill-box;
+  transform-origin: top center;
+  animation: login-swing 3s ease-in-out infinite;
+}
 .login-page .li-tablet-line { animation: login-twinkle 2s ease-in-out infinite; }
 .login-page .li-bubble {
   opacity: 0;
@@ -183,6 +199,7 @@
 
 @keyframes login-gesture { 0%, 100% { transform: rotate(-30deg); } 50% { transform: rotate(-55deg); } }
 @keyframes login-nod { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(5deg); } }
+@keyframes login-swing { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
 @keyframes login-type { from { transform: translateY(0); } to { transform: translateY(-2px); } }
 @keyframes login-bubble {
   0% { opacity: 0; transform: scale(0.6); }
