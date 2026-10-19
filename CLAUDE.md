@@ -343,6 +343,10 @@ Dated change history for each lives in `docs/<module>-history.md`.
   `.claude/skills/payroll-assistant/SKILL.md`. No AI: keyword / synonym
   search over topics the payroll manager edits, question → answer trees,
   read-only "Check my case" lookups.
+- **Company Assets** (`src/pages/company_asset/`, route `/company-assets`) —
+  `.claude/skills/company-asset/SKILL.md`. Non-IT company property on
+  vueportal's Company Asset module: registry, assign / return, history,
+  maintenance log, disposal; `create` options are GET.
 - **Record management pages / Area Assignment / Organization** (`src/pages/area/`,
   `src/pages/record_management/`, routes `/areas`, `/companies`, `/branches`,
   `/departments`, `/positions`, `/ranks`, `/promodizer-brands`) —

@@ -70,6 +70,7 @@ import ShiftIndex from '../pages/shift/ShiftIndex';
 import ShiftAssignmentIndex from '../pages/shift/ShiftAssignmentIndex';
 import GroupScheduleIndex from '../pages/shift/GroupScheduleIndex';
 import TimeEntryIndex from '../pages/time_entry/TimeEntryIndex';
+import CompanyAssetIndex from '../pages/company_asset/CompanyAssetIndex';
 import AccessChartIndex from '../pages/approval/AccessChartIndex';
 import PayrollCutoffIndex from '../pages/payroll_cutoff/PayrollCutoffIndex';
 import SessionSettingsPage from '../pages/session_setting/SessionSettingsPage';
@@ -126,6 +127,7 @@ const permissionRoutes = [
   { permissions: ['employee-master-data-for-regularization'], path: '/employees/hired-this-month', element: <HiredThisMonth /> },
   { permissions: ['employee-master-data-for-regularization'], path: '/employees/for-regularization', element: <ForRegularization /> },
   { permissions: ['employee-master-data-resigned-list'], path: '/employees/resigned', element: <ResignedEmployees /> },
+  { permissions: ['company-asset-list'], path: '/company-assets', element: <CompanyAssetIndex /> },
   { permissions: ['employee-master-data-nte-list'], path: '/employees/nte', element: <OpenNteList /> },
   { permissions: ['employee-master-data-disciplinary-list'], path: '/employees/disciplinary', element: <OpenDisciplinaryList /> },
   { permissions: ['employee-referral-list'], path: '/employees/referral-codes', element: <ReferralCodeList /> },

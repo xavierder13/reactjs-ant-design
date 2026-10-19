@@ -45,6 +45,7 @@ import {
   SearchOutlined,
   CloseOutlined,
   ClockCircleOutlined,
+  InboxOutlined,
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
@@ -123,6 +124,7 @@ const titleMap = {
   '/manpower-requests':        { title: 'Manpower Requests',       breadcrumb: ['Manpower Request', 'All Requests'] },
   '/manpower-requests/create': { title: 'Create Manpower Request', breadcrumb: ['Manpower Request', 'Create'] },
   '/areas':                    { title: 'Area Assignment',         breadcrumb: ['Human Resource', 'Area Assignment'] },
+  '/company-assets':           { title: 'Company Assets',          breadcrumb: ['Human Resource', 'Company Assets'] },
   '/holiday-calendar':         { title: 'Holiday Calendar',        breadcrumb: ['Time & Leave', 'Holiday Calendar'] },
   '/leave':                    { title: 'Leave Applications',      breadcrumb: ['Time & Leave', 'Leave Applications'] },
   '/leave/balances':           { title: 'Leave Balances',          breadcrumb: ['Time & Leave', 'Leave Balances'] },
@@ -467,6 +469,7 @@ const menuData = [
         ],
       },
       { key: 'area-assignment', title: 'Area Assignment', icon: <ApartmentOutlined />, link: '/areas', permissions: ['area-list'] },
+      { key: 'company-assets', title: 'Company Assets', icon: <InboxOutlined />, link: '/company-assets', permissions: ['company-asset-list'] },
       // Manual triggers, same group as vueportal's "Sync & Updates" menu:
       // `action` items confirm, then call SYNC_ACTIONS[action] (no route).
       // Permissions are the backend middleware's own gates; `[]` means
