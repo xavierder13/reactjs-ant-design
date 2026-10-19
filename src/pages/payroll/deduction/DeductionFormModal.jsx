@@ -34,7 +34,7 @@ const DeductionFormModal = ({ open, deduction, options, onClose, onSaved }) => {
       : { label: 'Description', placeholder: 'e.g. Damaged company phone', message: 'Say what this deduction is for' };
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     if (deduction) {
       form.setFieldsValue({

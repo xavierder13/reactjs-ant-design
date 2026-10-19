@@ -12,7 +12,7 @@ const RankFormModal = ({ open, rank, onClose, onSaved }) => {
   // Reset first on every open: the form store outlives destroyOnHidden
   // content (see UserFormModal.jsx).
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     if (rank) form.setFieldsValue({ name: rank.name });
   };

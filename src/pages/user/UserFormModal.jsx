@@ -30,7 +30,7 @@ const UserFormModal = ({ open, user, roles, branches, positions, onClose, onSave
   // typed in an earlier Create (e.g. a password) would otherwise ride along
   // into this Edit and silently change the user's password.
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     if (user) {
       form.setFieldsValue({

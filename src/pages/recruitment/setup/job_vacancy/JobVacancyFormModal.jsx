@@ -38,7 +38,7 @@ const JobVacancyFormModal = ({ open, vacancyId, positions, branches, onClose, on
   );
 
   const handleAfterOpenChange = async (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); setLoadError(null); return; }
     form.resetFields();
     setLoadError(null);
     if (!vacancyId) return;

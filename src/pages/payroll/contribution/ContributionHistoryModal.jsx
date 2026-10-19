@@ -35,7 +35,8 @@ const ContributionHistoryModal = ({ employee, onClose }) => {
   };
 
   const handleAfterOpenChange = async (isOpen) => {
-    if (!isOpen || !employee) return;
+    if (!isOpen) { setLines(null); return; }
+    if (!employee) return;
     const d = thisYear();
     setDates(d);
     await load(d);

@@ -24,7 +24,12 @@ const PositionFormModal = ({ open, position, positions, ranks, branches, departm
   // content (see UserFormModal.jsx). Every branch gets a quantity — the
   // saved one, else 0.
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      form.resetFields();
+      setActiveTab('details');
+      setBranchSearch('');
+      return;
+    }
     form.resetFields();
     setActiveTab('details');
     setBranchSearch('');

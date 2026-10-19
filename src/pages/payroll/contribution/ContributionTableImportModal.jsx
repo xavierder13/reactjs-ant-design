@@ -35,7 +35,12 @@ const ContributionTableImportModal = ({ open, agency: defaultAgency, agencies, r
   const fields = rowFields[agency] || [];
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      form.resetFields();
+      setPlan(null);
+      setChangesOnly(true);
+      return;
+    }
     form.resetFields();
     form.setFieldsValue({ agency: defaultAgency });
     setPlan(null);

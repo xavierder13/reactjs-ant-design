@@ -14,7 +14,8 @@ const LeaveCreditModal = ({ row, employeeId, year, onClose, onSaved }) => {
   const typeDefault = row ? num(row.leave_type.yearly_credits) : null;
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen || !row) return;
+    if (!isOpen) { form.resetFields(); return; }
+    if (!row) return;
     form.resetFields();
     form.setFieldsValue({ use_default: !row.is_override, credits: row.credits, remarks: row.remarks });
   };

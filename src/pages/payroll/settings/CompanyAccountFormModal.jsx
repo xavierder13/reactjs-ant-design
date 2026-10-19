@@ -20,7 +20,7 @@ const CompanyAccountFormModal = ({ open, account, companyId = null, companyName 
   const active = Form.useWatch('active', form);
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     form.setFieldsValue(account
       ? {

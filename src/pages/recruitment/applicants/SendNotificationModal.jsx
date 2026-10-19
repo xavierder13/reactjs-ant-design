@@ -29,6 +29,7 @@ export default function SendNotificationModal({
 
   const handleAfterOpenChange = (isOpen) => {
     if (!isOpen) {
+      form.resetFields();
       setResults([]);
       return;
     }

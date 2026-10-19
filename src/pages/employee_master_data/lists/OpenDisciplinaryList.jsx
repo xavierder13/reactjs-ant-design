@@ -39,6 +39,8 @@ function DisciplinaryEditModal({ record, onClose, onSaved }) {
 
   const handleAfterOpenChange = (isOpen) => {
     if (!isOpen) {
+      form.resetFields();
+      setFileName(null);
       setPendingFile(null);
       return;
     }

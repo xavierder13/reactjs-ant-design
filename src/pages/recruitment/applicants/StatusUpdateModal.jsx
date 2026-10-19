@@ -147,7 +147,8 @@ export default function StatusUpdateModal({
     ? missingFiles(finalRequiredFiles(maps?.positions?.[String(v.employment_position)]), files) : [];
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen || !applicant) return;
+    if (!isOpen) { form.resetFields(); return; }
+    if (!applicant) return;
     fetchHiringOfficers();
     form.resetFields();
     form.setFieldsValue(formValuesOf(applicant));

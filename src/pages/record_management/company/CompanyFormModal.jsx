@@ -12,7 +12,7 @@ const CompanyFormModal = ({ open, company, onClose, onSaved }) => {
   // Reset first on every open: the form store outlives destroyOnHidden
   // content (see UserFormModal.jsx).
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     form.setFieldsValue({ name: company?.name, active: company ? company.active !== 'N' : true });
   };

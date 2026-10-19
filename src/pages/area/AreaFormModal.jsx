@@ -33,7 +33,7 @@ const AreaFormModal = ({ open, area, onClose, onSaved }) => {
   // Populate only once the Modal has opened (destroyOnHidden — the Form
   // isn't mounted before that; see PermissionIndex.jsx).
   const handleAfterOpenChange = async (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
 
     if (area) {
       form.setFieldsValue({

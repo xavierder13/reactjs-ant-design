@@ -16,7 +16,7 @@ const AccessChartFormModal = ({ open, chart, modules, onClose, onSaved }) => {
   const levels = Form.useWatch('levels', form) || [];
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     form.setFieldsValue(chart ? {
       name: chart.name,

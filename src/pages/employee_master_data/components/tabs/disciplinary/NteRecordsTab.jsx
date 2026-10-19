@@ -81,7 +81,7 @@ export default function NteRecordsTab({ employeeId, mode, initialRecords, pendin
   // same copy-pasted pattern here). See SubmitAcknowledgmentReportModal.jsx
   // for the same afterOpenChange pattern, done correctly from the start.
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     if (editing) {
       form.setFieldsValue({
         date_issued: editing.date_issued ? dayjs(editing.date_issued) : null,

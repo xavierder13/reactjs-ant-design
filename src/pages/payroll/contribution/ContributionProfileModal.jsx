@@ -27,7 +27,12 @@ const ContributionProfileModal = ({ employeeId, canEdit, onClose, onSaved }) => 
   const [saving, setSaving] = useState(false);
 
   const handleAfterOpenChange = async (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      form.resetFields();
+      setEmployee(null);
+      setLastSaved(null);
+      return;
+    }
     form.resetFields();
     setEmployee(null);
     setLoading(true);

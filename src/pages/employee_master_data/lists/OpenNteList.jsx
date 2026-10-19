@@ -34,6 +34,7 @@ function NteEditModal({ record, onClose, onSaved }) {
 
   const handleAfterOpenChange = (isOpen) => {
     if (!isOpen) {
+      form.resetFields();
       setCurrent(null);
       setPendingFiles({});
       return;

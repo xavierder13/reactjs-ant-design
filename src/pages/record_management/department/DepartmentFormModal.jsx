@@ -15,7 +15,7 @@ const DepartmentFormModal = ({ open, department, divisions, onClose, onSaved }) 
   // Reset first on every open: the form store outlives destroyOnHidden
   // content (see UserFormModal.jsx).
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     form.setFieldsValue({
       department:  department?.name,

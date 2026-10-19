@@ -113,7 +113,7 @@ export default function PerformanceRecordTab({
   // shared component in one place). See SubmitAcknowledgmentReportModal.jsx
   // for the same afterOpenChange pattern, done correctly from the start.
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     form.setFieldsValue(getInitialFormValues(editing));
   };

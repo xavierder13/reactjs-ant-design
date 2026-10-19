@@ -28,7 +28,7 @@ export default function SubmitAcknowledgmentReportModal({ open, employees, onClo
   // not a render-synchronization effect, so it doesn't trigger
   // react-hooks/set-state-in-effect.
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { setBranchId(undefined); setStatusById({}); return; }
     const branchIds = [...new Set(employees.map((e) => e.branch?.id).filter(Boolean))];
     setBranchId(branchIds.length === 1 ? branchIds[0] : undefined);
     setStatusById(Object.fromEntries(employees.map((e) => [e.id, Boolean(e.active)])));

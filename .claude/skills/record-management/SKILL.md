@@ -18,7 +18,7 @@ files.** The backend is vueportal (its own `record-management` skill).
 | API wrapper | `src/services/area/areaApi.js` | POST-only, matching the backend module. Comment the response shapes at the top (confirmed from the controller, not guessed). |
 | Store + hook | `src/store/areaStore.js`, `src/hooks/useAreas.js` | `{ items, isLoading, error, fetchItems }`; hook auto-fetches with `useEffect(() => { fetchItems(); }, [fetchItems])` and returns `refetch`. |
 | List page | `src/pages/area/AreaIndex.jsx` | `App.useApp()` messages (new-page convention). Search box filters in memory via `useMemo`. Table `rowKey`, `size='small'`, `pagination={{ pageSize: 10, showSizeChanger: true }}`, expandable rows for mapped records. Delete in `Popconfirm`. |
-| Create/edit modal | `src/pages/area/AreaFormModal.jsx` | One component for both (`area` null = create). `destroyOnHidden` + **populate/reset in `afterOpenChange`**, never in the open handler (see `CLAUDE.md` Form conventions). Form options loaded from the module's own `create` endpoint on open. Errors → `handleApiError`. |
+| Create/edit modal | `src/pages/area/AreaFormModal.jsx` | One component for both (`area` null = create). `destroyOnHidden` + **populate in `afterOpenChange(true)`**, never in the open handler (the Form isn't mounted yet), and **reset in `afterOpenChange(false)`** — `form.resetFields()` plus any state showing the record (preview, fetched data). The form store outlives `destroyOnHidden`, so a modal reset only on open shows the previous record during the next opening animation. Form options loaded from the module's own `create` endpoint on open. Errors → `handleApiError`. |
 | Route | `src/routes/AppRoutes.jsx` `permissionRoutes` | `{ permissions: ['<module>-list'], path, element }`. |
 | Menu + title | `src/layouts/MainLayout.jsx` `menuData` + `titleMap` | Both are required or the page is unreachable/untitled. |
 
@@ -241,10 +241,10 @@ Replace vueportal's `company/`, `branch/`, `department/`, `position/`,
   (roles, branches, positions) — `/user/create` needs `user-create`, which
   an editor may lack. Validation errors are **HTTP 200** error bags (like
   Role) → check `data.success`, map entries with `form.setFields`.
-- `handleAfterOpenChange` calls `form.resetFields()` first on every open:
-  the form store outlives `destroyOnHidden` content, and a password typed in
-  a cancelled Create otherwise rides into the next Edit and changes that
-  user's password.
+- `handleAfterOpenChange` calls `form.resetFields()` on close and again on
+  every open: the form store outlives `destroyOnHidden` content, and a
+  password typed in a cancelled Create otherwise rides into the next Edit
+  and changes that user's password.
 - Permissions: `user-list`, `user-create`, `user-edit`, `user-delete`.
 
 ## Area Assignment (reference page)

@@ -31,7 +31,7 @@ const PayrollAdjustmentFormModal = ({ open, adjustment, suggestion, options, onC
   const today = dayjs().format('YYYY-MM-DD');
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     const source = adjustment || suggestion;
     if (source) {

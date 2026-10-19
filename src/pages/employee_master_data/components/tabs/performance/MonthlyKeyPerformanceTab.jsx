@@ -82,15 +82,16 @@ export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialReco
     setPeriodModalOpen(true);
   };
 
-  // Reset only after the Modal has actually opened, not in
-  // openAddPeriod/openDeletePeriod above — this Modal has destroyOnHidden,
-  // so its <Form> doesn't exist in the tree yet at the moment those
-  // handlers run. Calling periodForm.resetFields() before that triggers
-  // AntD's "Instance created by useForm is not connected to any Form
-  // element" warning — confirmed live (reported against
-  // WorkScheduleTab.jsx, same copy-pasted pattern here).
+  // Reset once the Modal has finished closing (its <Form> is still mounted
+  // then), not in openAddPeriod/openDeletePeriod above — this Modal has
+  // destroyOnHidden, so its <Form> doesn't exist in the tree yet at the
+  // moment those handlers run. Calling periodForm.resetFields() before that
+  // triggers AntD's "Instance created by useForm is not connected to any
+  // Form element" warning — confirmed live (reported against
+  // WorkScheduleTab.jsx, same copy-pasted pattern here). Resetting on open
+  // instead left the last values visible during the opening animation.
   const handlePeriodModalAfterOpenChange = (isOpen) => {
-    if (isOpen) periodForm.resetFields();
+    if (!isOpen) periodForm.resetFields();
   };
 
   const handlePeriodConfirm = async () => {
@@ -155,6 +156,7 @@ export default function MonthlyKeyPerformanceTab({ employeeId, mode, initialReco
   // Modal also has destroyOnHidden.
   const handleGradeModalAfterOpenChange = (isOpen) => {
     if (isOpen) gradeForm.setFieldsValue({ grade: editingRow?.grade });
+    else gradeForm.resetFields();
   };
 
   const handleGradeSave = async () => {

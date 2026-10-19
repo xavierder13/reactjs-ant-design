@@ -12,7 +12,7 @@ const CareersBranchFormModal = ({ open, branch, onClose, onSaved }) => {
   const [saving, setSaving] = useState(false);
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     if (branch) form.setFieldsValue({ code: branch.code, name: branch.name });
   };

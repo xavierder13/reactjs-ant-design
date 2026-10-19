@@ -21,7 +21,7 @@ const AssignAreasModal = ({ open, hrHead, areas, areaAssignments, onClose, onSav
   // Populate only once the Modal has opened (destroyOnHidden — see
   // PermissionIndex.jsx).
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     if (hrHead) {
       form.setFieldsValue({ area_ids: hrHead.areas.map((a) => a.id) });
     } else {

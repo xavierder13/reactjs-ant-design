@@ -30,7 +30,7 @@ const ShiftAssignmentFormModal = ({ open, assignment, options, onClose, onSaved 
     || (assignment && shiftId && assignment.shift_id === shiftId ? assignment.shift : undefined);
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); setPreview(null); return; }
     form.resetFields();
     setPreview(null);
     if (assignment) {

@@ -179,6 +179,7 @@ const DeductionDetailsModal = ({ deductionId, refreshKey, options, perms, onClos
       title='Deduction'
       footer={null}
       onCancel={onClose}
+      afterOpenChange={(isOpen) => { if (!isOpen) { setDeduction(null); setPaying(false); paymentForm.resetFields(); } }}
       width={{ xs: '100%', sm: '95%', lg: 1000 }}
       destroyOnHidden
     >

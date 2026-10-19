@@ -145,6 +145,7 @@ const CompensationHistoryModal = ({ employeeId, options, canCreate, canEdit, can
       width={{ xs: '100%', sm: '95%', md: '95%', lg: 1100, xl: 1250, xxl: 1400 }}
       footer={null}
       onCancel={onClose}
+      afterOpenChange={(isOpen) => { if (!isOpen) setData(null); }}
       destroyOnHidden
     >
       {employee && (

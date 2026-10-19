@@ -28,7 +28,7 @@ const AllowanceFormModal = ({ open, allowance, options, onClose, onSaved }) => {
   const type = (options.types || []).find((t) => t.id === typeId);
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     if (allowance) {
       form.setFieldsValue({

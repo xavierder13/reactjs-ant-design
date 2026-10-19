@@ -41,7 +41,7 @@ const AssistantTopicFormModal = ({ open, topic, options, onClose, onSaved }) => 
   const answerOptions = nodeOptions.filter((o) => nodes.find((n) => n?.id === o.value)?.kind === 'answer');
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     form.setFieldsValue(topic
       ? { ...topic, ...treeToForm(topic.tree), outcomes: topic.outcomes || {} }

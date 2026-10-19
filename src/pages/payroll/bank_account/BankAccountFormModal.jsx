@@ -19,7 +19,7 @@ const BankAccountFormModal = ({ open, account, forEmployee, options, onClose, on
   const [saving, setSaving] = useState(false);
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     if (account) {
       form.setFieldsValue({

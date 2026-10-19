@@ -12,7 +12,7 @@ const BankFormModal = ({ open, bank, onClose, onSaved }) => {
   const [saving, setSaving] = useState(false);
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     form.setFieldsValue(bank || { active: true });
   };

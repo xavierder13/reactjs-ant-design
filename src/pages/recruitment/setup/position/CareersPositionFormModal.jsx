@@ -37,7 +37,7 @@ const CareersPositionFormModal = ({ open, position, departments, ranks, onClose,
   // Select — leave it empty instead so a current one must be picked (the
   // portal's own dialog shows these empty too).
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); setMissing([]); return; }
     form.resetFields();
     setMissing([]);
     if (position) {

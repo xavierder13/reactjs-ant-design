@@ -13,7 +13,7 @@ const LeaveTypeFormModal = ({ open, leaveType, employmentTypes, onClose, onSaved
   const [saving, setSaving] = useState(false);
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     form.setFieldsValue(leaveType ? {
       ...leaveType,

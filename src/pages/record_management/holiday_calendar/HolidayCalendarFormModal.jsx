@@ -22,7 +22,7 @@ const HolidayCalendarFormModal = ({ open, holiday, defaultDate, branches, onClos
   const branchItems = branches.map((b) => ({ key: b.id, title: b.name, code: b.code }));
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     if (holiday) {
       form.setFieldsValue({

@@ -21,7 +21,7 @@ const CompensationFormModal = ({ open, employee, version, options, onClose, onSa
   const employeeId = employee?.id ?? picked;
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); setCurrent(null); return; }
     form.resetFields();
     setCurrent(null);
     if (version) {

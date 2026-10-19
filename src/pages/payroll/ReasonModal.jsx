@@ -36,7 +36,7 @@ const ReasonModal = ({ open, title, label = 'Reason', okText = 'Save', danger = 
       confirmLoading={saving}
       onOk={handleOk}
       onCancel={onClose}
-      afterOpenChange={(isOpen) => { if (isOpen) form.resetFields(); }}
+      afterOpenChange={(isOpen) => { if (!isOpen) form.resetFields(); }}
       destroyOnHidden
     >
       {description}

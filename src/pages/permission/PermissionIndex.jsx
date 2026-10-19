@@ -81,7 +81,7 @@ const PermissionIndex = () => {
   // employee_master_data/components/SubmitAcknowledgmentReportModal.jsx
   // for the same afterOpenChange pattern, done correctly from the start.
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     if (editing) {
       form.setFieldsValue({ name: editing.name });
     } else {

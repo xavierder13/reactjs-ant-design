@@ -21,7 +21,7 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
   const locked = !!shift?.assigned;
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     form.setFieldsValue(shift ? {
       code: shift.code,

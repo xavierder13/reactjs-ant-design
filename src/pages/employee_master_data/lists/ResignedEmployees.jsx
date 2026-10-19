@@ -142,7 +142,8 @@ export default function ResignedEmployees() {
   };
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen || !editing) return;
+    if (!isOpen) { form.resetFields(); return; }
+    if (!editing) return;
     form.setFieldsValue({
       last_day_of_work: toDayjs(editing.last_day_of_work),
       reason_of_resignation: editing.reason_of_resignation || undefined,

@@ -34,7 +34,7 @@ const GroupScheduleFormModal = ({ open, record, options, onClose, onSaved }) => 
   const shift = shifts.find((s) => s.id === shiftId) || (record && record.shift_id === shiftId ? record.shift : undefined);
 
   const handleAfterOpenChange = async (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); setPreview(null); return; }
     form.resetFields();
     setPreview(null);
     if (record) {

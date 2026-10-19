@@ -76,6 +76,7 @@ const PayrollAdjustmentDetailsModal = ({ adjustmentId, refreshKey, perms, onClos
       open={!!adjustmentId}
       title='Payroll Adjustment'
       onCancel={onClose}
+      afterOpenChange={(open) => { if (!open) setAdjustment(null); }}
       width={{ xs: '100%', sm: '95%', md: 820 }}
       destroyOnHidden
       footer={adjustment && isOpen && (perms.canEdit || perms.canCancel) ? (

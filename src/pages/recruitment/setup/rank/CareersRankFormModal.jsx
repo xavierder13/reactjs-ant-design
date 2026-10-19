@@ -12,7 +12,7 @@ const CareersRankFormModal = ({ open, rank, onClose, onSaved }) => {
   const [saving, setSaving] = useState(false);
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     if (rank) form.setFieldsValue({ name: rank.name });
   };

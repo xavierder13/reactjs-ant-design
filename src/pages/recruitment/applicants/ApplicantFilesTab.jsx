@@ -174,7 +174,7 @@ function UploadModal({ open, applicantId, onClose, onUploaded }) {
       open={open}
       title="Attach Applicant's File"
       destroyOnHidden
-      afterOpenChange={(isOpen) => { if (isOpen) form.resetFields(); }}
+      afterOpenChange={(isOpen) => { if (!isOpen) form.resetFields(); }}
       onCancel={onClose}
       onOk={handleSave}
       okText="Upload"

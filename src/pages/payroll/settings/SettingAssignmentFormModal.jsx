@@ -60,6 +60,7 @@ const SettingAssignmentFormModal = ({ open, record, options, onClose, onSaved })
 
   const handleAfterOpenChange = (isOpen) => {
     if (!isOpen) {
+      form.resetFields();
       setBranchId(null);
       setSearch('');
       setCandidates([]);

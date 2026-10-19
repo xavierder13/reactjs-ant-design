@@ -15,7 +15,7 @@ const AllowanceTypeFormModal = ({ open, type, periods, onClose, onSaved }) => {
   const deMinimis = Form.useWatch('de_minimis', form);
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     form.setFieldsValue(type
       ? { ...type, de_minimis_limit: toNumber(type.de_minimis_limit) }

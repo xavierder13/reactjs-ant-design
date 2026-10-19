@@ -34,7 +34,7 @@ export default function ExportModal({ open, stageKey, branches, can, isBranchMan
     .sort((a, b) => (a.value === ALL_BRANCHES_ID ? -1 : b.value === ALL_BRANCHES_ID ? 1 : a.label.localeCompare(b.label)));
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     form.setFieldsValue({
       report_group: lockedType ? DETAILED : FRONT_PAGE,

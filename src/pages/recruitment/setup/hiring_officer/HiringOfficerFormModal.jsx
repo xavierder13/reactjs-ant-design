@@ -33,7 +33,7 @@ const HiringOfficerFormModal = ({ open, hiringOfficer, onClose, onSaved }) => {
   };
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     if (hiringOfficer) {
       form.setFieldsValue({ employee_id: hiringOfficer.employee_id, position: hiringOfficer.employee?.position?.name });

@@ -27,7 +27,7 @@ const useAcknowledgmentReportStore = create((set, get) => ({
   },
 
   fetchById: async (id) => {
-    set({ isLoadingCurrent: true, error: null });
+    set({ isLoadingCurrent: true, error: null, current: null });
     try {
       const { data } = await employeeAcknowledgmentReportApi.view(id);
       set({ current: data.acknowledgment_report });

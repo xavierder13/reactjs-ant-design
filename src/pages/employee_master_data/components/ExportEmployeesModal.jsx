@@ -63,7 +63,8 @@ export default function ExportEmployeesModal({ open, onClose, presetValues, extr
   // Presets are applied once the modal (and its Form) is mounted —
   // destroyOnHidden means the Form doesn't exist before that.
   const handleAfterOpenChange = (isOpen) => {
-    if (isOpen && presetValues) form.setFieldsValue(presetValues);
+    if (!isOpen) { form.resetFields(); return; }
+    if (presetValues) form.setFieldsValue(presetValues);
   };
 
   const handleExport = async () => {

@@ -36,7 +36,7 @@ const OvertimeFormModal = ({ open, overtime, onClose, onSaved }) => {
   const ready = !!(open && employeeId && date && timeFrom && timeTo);
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); setPreview(null); return; }
     form.resetFields();
     setPreview(null);
     if (!overtime && access.createOwnOnly && access.ownEmployeeId) form.setFieldsValue({ employee_id: access.ownEmployeeId });

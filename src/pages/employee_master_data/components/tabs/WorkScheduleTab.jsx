@@ -95,7 +95,7 @@ export default function WorkScheduleTab({ mode = "create", initialData, pendingR
   // SubmitAcknowledgmentReportModal.jsx for the same afterOpenChange
   // pattern, done correctly from the start.
   const handleAfterOpenChange = async (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     if (editing) {
       form.setFieldsValue({
         effective_date: editing.effective_date ? dayjs(editing.effective_date) : null,

@@ -12,7 +12,7 @@ const PromodizerBrandFormModal = ({ open, brand, onClose, onSaved }) => {
   // Reset first on every open: the form store outlives destroyOnHidden
   // content (see UserFormModal.jsx).
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     if (brand) form.setFieldsValue({ brand: brand.brand });
   };

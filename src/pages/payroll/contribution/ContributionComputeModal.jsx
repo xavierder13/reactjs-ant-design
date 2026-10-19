@@ -50,7 +50,12 @@ const ContributionComputeModal = ({ employee, onClose }) => {
   };
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) { clearTimeout(typingTimer.current); return; }
+    if (!isOpen) {
+      clearTimeout(typingTimer.current);
+      form.resetFields();
+      setResult(null);
+      return;
+    }
     form.setFieldsValue({ date: dayjs(), base: null });
     setResult(null);
     compute();

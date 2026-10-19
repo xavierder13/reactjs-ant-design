@@ -35,7 +35,12 @@ const LeaveFormModal = ({ open, leave, onClose, onSaved }) => {
   const ready = !!(open && employeeId && leaveTypeId && dates?.[0] && dates?.[1]);
 
   const handleAfterOpenChange = async (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      form.resetFields();
+      setPreview(null);
+      setBalance(null);
+      return;
+    }
     form.resetFields();
     setPreview(null);
     setBalance(null);

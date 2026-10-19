@@ -20,7 +20,7 @@ const ContributionTableFormModal = ({ open, agency, table, copyFrom, fields, onC
   const source = table || copyFrom;
 
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     form.resetFields();
     const rows = (source?.rows || []).map((r) => Object.fromEntries(columns.map((f) => [f, toNumber(r[f])])));
     form.setFieldsValue({

@@ -114,7 +114,7 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
   // same copy-pasted pattern here). See SubmitAcknowledgmentReportModal.jsx
   // for the same afterOpenChange pattern, done correctly from the start.
   const handleAfterOpenChange = (isOpen) => {
-    if (!isOpen) return;
+    if (!isOpen) { form.resetFields(); return; }
     if (editing) {
       form.setFieldsValue({
         last_day_of_work: toDayjs(editing.last_day_of_work),
