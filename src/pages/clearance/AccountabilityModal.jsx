@@ -6,7 +6,7 @@ import { applyLeaveErrors } from '../leave/leaveHelpers';
 import { pesoInputProps, toNumber } from '../payroll/payrollHelpers';
 
 const STATUS_HINTS = {
-  Unsettled: 'Still owed — the department can\'t sign off yet',
+  Unsettled: 'Still owed — the component can\'t be signed off yet',
   Returned: 'Item returned (for an asset: record the return in its asset module too)',
   Paid: 'Settled by the employee',
   'Deduct from Final Pay': 'Becomes a deduction line on the Final Pay',
@@ -103,7 +103,7 @@ const AccountabilityModal = ({ open, itemId, accountability, asset, line, status
           showIcon
           style={{ marginBottom: 16 }}
           title={`${asset.asset_type} ${asset.asset_tag} is still assigned to the employee`}
-          description='Charge it (Deduct from Final Pay / Paid) or waive it to let the department sign off while it stays unreturned.'
+          description='Charge it (Deduct from Final Pay / Paid) or waive it to let the component be signed off while it stays unreturned.'
         />
       )}
       {line && !accountability && (

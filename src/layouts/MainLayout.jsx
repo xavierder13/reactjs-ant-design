@@ -45,6 +45,7 @@ import {
   CloseOutlined,
   ClockCircleOutlined,
   InboxOutlined,
+  FileDoneOutlined,
 } from '@ant-design/icons';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
 import useAuth from '../hooks/useAuth';
@@ -109,9 +110,9 @@ const titleMap = {
   '/employees/hired-this-month':    { title: 'Employees Hired This Month', breadcrumb: ['Employee', 'Hired This Month'] },
   '/employees/for-regularization':  { title: 'For Regularization', breadcrumb: ['Employee', 'For Regularization'] },
   '/employees/resigned':            { title: 'Resigned', breadcrumb: ['Employee', 'Resigned'] },
-  '/clearances':                    { title: 'Clearances', breadcrumb: ['Employee', 'Separation', 'Clearances'] },
-  '/clearances/setup':              { title: 'Clearance Setup', breadcrumb: ['Employee', 'Separation', 'Clearance Setup'] },
-  '/clearances/templates/new':      { title: 'New Clearance Template', breadcrumb: ['Employee', 'Separation', 'Clearance Setup', 'New Template'] },
+  '/clearances':                    { title: 'Clearances', breadcrumb: ['Clearance', 'Clearances'] },
+  '/clearances/setup':              { title: 'Clearance Setup', breadcrumb: ['Clearance', 'Setup', 'Clearance Setup'] },
+  '/clearances/templates/new':      { title: 'New Clearance Template', breadcrumb: ['Clearance', 'Setup', 'Clearance Setup', 'New Template'] },
   '/employees/nte':                 { title: 'Issued NTE (Open)', breadcrumb: ['Employee', 'Issued NTE'] },
   '/employees/disciplinary':        { title: 'Disciplinary Actions (Open)', breadcrumb: ['Employee', 'Disciplinary Actions'] },
   '/employees/referral-codes':      { title: 'Referral Codes', breadcrumb: ['Employee', 'Referral Codes'] },
@@ -262,6 +263,7 @@ const menuData = [
         // Grouped by the employee lifecycle, like Set Up → Organization:
         // the records, then joining, conduct, leaving, programs, and the
         // workforce reports (branch headcount: acknowledgment + fill rate).
+        // Clearing a leaving employee is its own module (Clearance).
         children: [
           {
             key: 'emp-records',
@@ -298,8 +300,6 @@ const menuData = [
             label: 'Separation',
             children: [
               { key: 'resigned', title: 'Resigned', link: '/employees/resigned', permissions: ['employee-master-data-resigned-list'] },
-              { key: 'clearances', title: 'Clearances', link: '/clearances', permissions: ['clearance-list', 'clearance-list-all', 'clearance-sign'] },
-              { key: 'clearance-setup', title: 'Clearance Setup', link: '/clearances/setup', permissions: ['clearance-setup'] },
             ],
           },
           {
@@ -501,6 +501,31 @@ const menuData = [
         children: [
           { key: 'manpower-request-list',   title: 'All Requests',    link: '/manpower-requests',        permissions: ['manpower-request-list', 'manpower-request-list-all'] },
           { key: 'manpower-request-create', title: 'Create Request',  link: '/manpower-requests/create',  permissions: ['manpower-request-create'] },
+        ],
+      },
+      {
+        // offboarding clearance: the clearances being cleared, then their
+        // templates / categories
+        key: 'clearance',
+        title: 'Clearance',
+        icon: <FileDoneOutlined />,
+        children: [
+          {
+            key: 'clearance-process',
+            type: 'group',
+            label: 'Process',
+            children: [
+              { key: 'clearances', title: 'Clearances', link: '/clearances', permissions: ['clearance-list', 'clearance-list-all', 'clearance-sign'] },
+            ],
+          },
+          {
+            key: 'clearance-setup-group',
+            type: 'group',
+            label: 'Setup',
+            children: [
+              { key: 'clearance-setup', title: 'Clearance Setup', link: '/clearances/setup', permissions: ['clearance-setup'] },
+            ],
+          },
         ],
       },
       { key: 'area-assignment', title: 'Area Assignment', icon: <ApartmentOutlined />, link: '/areas', permissions: ['area-list'] },
@@ -753,11 +778,11 @@ const MainLayout = () => {
     if (/^\/manpower-requests\/\d+\/print$/.test(pathname))
       return { title: 'Print Manpower Request', breadcrumb: ['Manpower Request', 'Print'] };
     if (/^\/clearances\/templates\/\d+$/.test(pathname))
-      return { title: 'Edit Clearance Template', breadcrumb: ['Employee', 'Separation', 'Clearance Setup', 'Edit Template'] };
+      return { title: 'Edit Clearance Template', breadcrumb: ['Clearance', 'Setup', 'Clearance Setup', 'Edit Template'] };
     if (/^\/clearances\/\d+$/.test(pathname))
-      return { title: 'Clearance', breadcrumb: ['Employee', 'Separation', 'Clearances', 'View'] };
+      return { title: 'Clearance', breadcrumb: ['Clearance', 'Clearances', 'View'] };
     if (/^\/clearances\/\d+\/print$/.test(pathname))
-      return { title: 'Print Clearance', breadcrumb: ['Employee', 'Separation', 'Clearances', 'Print'] };
+      return { title: 'Print Clearance', breadcrumb: ['Clearance', 'Clearances', 'Print'] };
     if (/^\/manpower-requests\/\d+$/.test(pathname))
       return { title: 'View Manpower Request', breadcrumb: ['Manpower Request', 'View'] };
     // Not listed: the nearest listed parent page + this page's last word

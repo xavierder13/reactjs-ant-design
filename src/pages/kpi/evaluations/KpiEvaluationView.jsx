@@ -61,7 +61,6 @@ const KpiEvaluationView = () => {
         setCanApproveEval(data.can_approve);
         setCanViewApproverRating(!!data.can_view_approver_rating);
         setTemplate(data.template);
-        console.log(data);
         
       } catch {
         message.error('Failed to load evaluation.');

@@ -19,10 +19,13 @@ const ClearanceStageSteps = ({ clearance: c, items, approval }) => {
   else if (c.status === 'Cleared') current = items.length + 1;
   else current = -1;
 
+  // one step per component + Final Approval + Cleared: scrolls sideways
+  // instead of squeezing the titles when the template is long
   return (
+    <div style={{ overflowX: 'auto', marginTop: 16, paddingBottom: 4 }}>
     <Steps
       size='small'
-      style={{ marginTop: 16 }}
+      style={{ minWidth: (items.length + 2) * 150 }}
       current={current}
       status={c.status === 'Cancelled' ? 'error' : (c.status === 'Cleared' ? 'finish' : 'process')}
       items={[
@@ -35,6 +38,7 @@ const ClearanceStageSteps = ({ clearance: c, items, approval }) => {
         { title: 'Cleared', content: c.cleared_at ? when(c.cleared_at) : null },
       ]}
     />
+    </div>
   );
 };
 

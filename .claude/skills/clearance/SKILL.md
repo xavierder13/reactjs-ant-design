@@ -161,7 +161,7 @@ src/pages/clearance/
   setup/ClearanceCategoriesTab.jsx (form inline)
 ```
 
-Menu: Employee → Separation → Clearances, Clearance Setup.
+Menu: Human Resource → Clearance (Process: Clearances; Setup: Clearance Setup).
 
 Backend tables (`database/migrations/new/2026_10_25_1000{00..10}_*`, run by
 file path; `100007` moves any old department checklist lines into items

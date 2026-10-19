@@ -14,7 +14,7 @@ const PRINT_MARKS = { Done: '✓', 'N/A': 'N/A', Charged: 'Charged' };
 const formatDate = (value) => (value && !String(value).startsWith('0000') ? dayjs(value).format('MM/DD/YYYY') : '');
 
 // The printed clearance form (/clearances/:id/print), like the MRF print:
-// the employee and separation, one row per department with its checklist,
+// the employee and separation, one row per component with its checklist,
 // accountabilities and who signed it when (blank signature line beside it
 // for the wet signature), the amounts charged to the final pay, and at the
 // bottom of the page four signature blocks: the employee's conforme, HR
@@ -120,7 +120,7 @@ const ClearancePrint = () => {
         <table className='clr-table'>
           <thead>
             <tr>
-              <th style={{ width: '18%' }}>Department</th>
+              <th style={{ width: '18%' }}>Component</th>
               <th>Checklist / Accountabilities</th>
               <th style={{ width: '17%' }}>Cleared By / Date</th>
               <th style={{ width: '17%' }}>Signature</th>
@@ -180,7 +180,7 @@ const ClearancePrint = () => {
         {/* pinned to the bottom of the page (ClearancePrint.css): the
             employee's conforme and each final-approval level of the
             "Clearance" chart (blank lines until it is approved) */}
-        <div className='clr-footer'>
+        <div className='clr-footer' style={{ gridTemplateColumns: `repeat(${Math.min(3, 1 + Math.max(1, levels.length))}, 1fr)` }}>
           <SignBlock label='Conforme:' name={c.employee?.full_name} caption='Employee — signature over printed name' note='I acknowledge the accountabilities above.' />
           {(levels.length ? levels : [1]).map((level) => {
             const d = approvals.find((a) => Number(a.level) === Number(level));

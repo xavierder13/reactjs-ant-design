@@ -20,11 +20,10 @@ const VIEWS = [
   { value: 'all', label: 'All', can: () => true },
 ];
 
-// Offboarding clearances. "To Verify (HR)" = HR Verification / HR Review;
-// "Payroll Clearance" = waiting for Payroll; "To Sign" = clearances whose department sign-off
-// waits for this user (a signatory or the immediate head); "For My
-// Approval" = every department signed, waiting at this user's final
-// approval level; "Past Due" = open past the clear-by date. The bell links
+// Offboarding clearances. "To Clear" = clearances whose current component
+// waits for this user (its in-charge: assigned, Immediate Head or Branch
+// Manager); "For My Approval" = every component cleared, waiting at this
+// user's final approval level; "Past Due" = open past the clear-by date. The bell links
 // here with ?scope=…, and "Separations without a clearance" with ?new=1.
 const ClearanceIndex = () => {
   const { message } = App.useApp();
@@ -125,7 +124,7 @@ const ClearanceIndex = () => {
         : formatDate(d)),
     },
     {
-      title: 'Departments',
+      title: 'Components',
       key: 'progress',
       width: 160,
       render: (_, r) => (
