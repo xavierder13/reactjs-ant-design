@@ -73,10 +73,11 @@ export default function NotificationBell() {
 
   // passive = the timed refresh: checked by the backend but not counted as
   // activity, so an open tab doesn't keep an idle session alive.
-  const load = useCallback(async (passive = false) => {
+  // fresh = the Refresh button: not the backend's minute-old copy.
+  const load = useCallback(async (passive = false, fresh = false) => {
     setLoading(true);
     try {
-      const { data } = await notificationApi.getSummary(passive ? { headers: PASSIVE_HEADERS } : undefined);
+      const { data } = await notificationApi.getSummary(passive ? { headers: PASSIVE_HEADERS } : undefined, fresh);
       if (data?.success) {
         setSummary({ total: data.total || 0, items: data.items || [] });
         setUpdatedAt(dayjs());
@@ -138,7 +139,7 @@ export default function NotificationBell() {
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           <Tooltip title={updatedAt ? `Updated ${updatedAt.format("h:mm A")}` : "Refresh"}>
-            <Button type="text" size="small" icon={<ReloadOutlined />} loading={loading} onClick={() => load()} aria-label="Refresh notifications" />
+            <Button type="text" size="small" icon={<ReloadOutlined />} loading={loading} onClick={() => load(false, true)} aria-label="Refresh notifications" />
           </Tooltip>
           {/* the phone drawer closes only by this button (persistent) */}
           {isPhone && <Button type="text" size="small" icon={<CloseOutlined />} onClick={() => setOpen(false)} aria-label="Close notifications" />}
