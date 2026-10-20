@@ -227,7 +227,12 @@ Replace vueportal's `company/`, `branch/`, `department/`, `position/`,
   only `'N'`, legacy rows hold `''`/`'1'` = active), roles via `Transfer`
   keyed by role **name** (Spatie `assignRole`); update replaces all roles.
   Employee Record = `users.employee_id` via `EmployeeSelect` (all
-  employees, inactive tagged; `initialOption` labels the saved one). The
+  employees, inactive tagged; `initialOption` labels the saved one).
+  Picking an employee adds **Employee Self-Service** and **KPI Self
+  Evaluation** to Assigned roles
+  (Form `onValuesChange`; still removable; editing leaves roles alone
+  unless the employee is changed). Existing linked accounts:
+  vueportal `EmployeeSelfServiceUserSeeder`. The
   backend validates exists (several accounts may link the same employee —
   user rule, 2026-10-09), and only changes the
   link when `employee_id` is sent (vueportal's Vue form doesn't send it).

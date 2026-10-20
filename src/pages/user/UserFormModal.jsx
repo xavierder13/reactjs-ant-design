@@ -24,6 +24,19 @@ const UserFormModal = ({ open, user, roles, branches, positions, onClose, onSave
   // Roles are assigned by name (Spatie assignRole) — keys are role names.
   const roleItems = roles.map((r) => ({ key: r.name, title: r.name }));
 
+  // Linking an employee assigns the employee roles: Employee Self-Service
+  // (file / edit / cancel their own leave, time entries, overtime in My
+  // Workspace) and KPI Self Evaluation (their own KPI self-evaluation) —
+  // shown in Assigned before saving, still removable. Only when the employee
+  // is picked, so editing an account leaves its roles as they are.
+  const EMPLOYEE_ROLES = ['Employee Self-Service', 'KPI Self Evaluation'];
+  const handleValuesChange = (changed) => {
+    if (!changed.employee_id) return;
+    const current = form.getFieldValue('roles') || [];
+    const add = EMPLOYEE_ROLES.filter((name) => roles.some((r) => r.name === name) && !current.includes(name));
+    if (add.length) form.setFieldValue('roles', [...current, ...add]);
+  };
+
   // Populate only once the Modal has opened (destroyOnHidden — the Form
   // isn't mounted before that; see PermissionIndex.jsx).
   // Always reset first: the form store outlives the modal content, so values
@@ -107,7 +120,7 @@ const UserFormModal = ({ open, user, roles, branches, positions, onClose, onSave
       destroyOnHidden
       width={820}
     >
-      <Form form={form} layout='vertical' initialValues={{ active: true, roles: [] }}>
+      <Form form={form} layout='vertical' initialValues={{ active: true, roles: [] }} onValuesChange={handleValuesChange}>
         <Row gutter={16}>
           <Col xs={24} md={12}>
             <Form.Item name='name' label='Full Name' rules={[{ required: true, whitespace: true, message: 'Full name is required' }]}>
@@ -182,7 +195,7 @@ const UserFormModal = ({ open, user, roles, branches, positions, onClose, onSave
             <Form.Item
               name='employee_id'
               label='Employee Record'
-              extra='Links this account to an employee — their profile then shows on My Profile. Several accounts may link the same employee.'
+              extra='Links this account to an employee — their profile then shows on My Profile, and Employee Self-Service and KPI Self Evaluation are assigned (remove them from Roles if not wanted). Several accounts may link the same employee.'
             >
               <EmployeeSelect
                 placeholder='Search employee code or name'
