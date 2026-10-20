@@ -1,6 +1,7 @@
 import { Card, Descriptions, Row, Col, Timeline, Typography, Empty } from "antd";
 
 import { formatDate } from "../../../utils/formatDate";
+import RegularizationDateWarning from "../components/RegularizationDateWarning";
 
 const show = (value) => (value === null || value === undefined || value === "" ? "-" : value);
 // Full-width sections, 3 columns from `lg` up — values like department or
@@ -24,7 +25,16 @@ export default function ProfileEmployment({ employee }) {
             { key: "type", label: "Employment Type", children: show(employee.employment_type) },
             { key: "employed", label: "Date Employed", children: formatDate(employee.date_employed) },
             { key: "assigned", label: "Date Assigned", children: formatDate(latestAssignment?.date_assigned) },
-            { key: "regularized", label: "Regularization", children: formatDate(employee.regularization_date) },
+            {
+              key: "regularized",
+              label: "Regularization",
+              children: (
+                <>
+                  {formatDate(employee.regularization_date)}
+                  <RegularizationDateWarning regularizationDate={employee.regularization_date} directHireSince={employee.direct_hire_since} />
+                </>
+              ),
+            },
             { key: "resigned", label: "Date Resigned", children: formatDate(employee.date_resigned) },
             { key: "los", label: "Length of Service", children: show(employee.length_of_service) },
           ]} />

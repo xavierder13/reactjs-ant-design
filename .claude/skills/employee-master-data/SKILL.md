@@ -414,16 +414,27 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   change what Employee Details shows (surfaced as a warning `Alert`).
   `branch`/`position` here are **name strings**, not ids — Selects reuse
   `useEmployeeFormOptions` keyed on `.label`.
-- **Evaluation & Regularization** is not a CRUD module: the core record's
-  `regularization_date`, `regularization_interview_date` and
-  `regularization_interview_status` (Passed/Failed, required once the
-  interview date is set) — bare `Form.Item`s saved by the main Save (the
-  backend only writes the interview columns when the request sends them;
-  the Vue form doesn't). On save, a changed interview with result Passed
-  switches an employee who is already due (active, Probationary, 150+ days
-  since **Direct Hire Since**) to `employment_type` Regular with
-  `regularization_date` = Direct Hire Since + 180 days (user rule — not the
-  interview date); vueportal's "Regularize Passed Employees" action
+- **Evaluation & Regularization**: a read-only summary (Date of
+  Regularization, Final Interview Date, Overall Result — all set by the
+  backend, shown from the core record's `regularization_date`,
+  `regularization_interview_date`, `regularization_interview_status`) plus
+  **Regularization Interviews** (`RegularizationInterviews.jsx` on
+  `PerformanceRecordTab`, `regularizationInterviewApi.js`, vueportal
+  `EmployeeRegularizationInterviewController` + `RegularizationService`):
+  one row per interviewer (Interviewer = an employee via `EmployeeSelect`,
+  date, Passed / Failed, remarks), read off the row's
+  `regularization_interviews`; needs a saved employee. The **final
+  interview (latest date, then the last added) decides** — the backend
+  copies it onto the record (the main Save no longer writes these). A
+  Passed final result switches an employee who is already due (active,
+  Probationary, 150+ days since **Direct Hire Since**) to Regular with
+  `regularization_date` = Direct Hire Since + 180 days (DOLE rule — never
+  typed: shown "Due …" until set; the backend ignores a sent value, Import
+  Data skips the column, a Regular employee without one gets it filled);
+  each write answers `employee` (patched into the form via
+  `onEmployeeChange`). `RegularizationDateWarning` flags an older stored
+  date that isn't Direct Hire Since + 180 (also on the profile's
+  Employment tab). vueportal's "Regularize Passed Employees" action
   (`GET employee_master_data/regularize_passed_employees`,
   `employee-master-data-regularize`) catches the ones who become due later.
   Direct Hire Since (`EmployeeBranchAssignmentPosition::directHireSinceSql()`,

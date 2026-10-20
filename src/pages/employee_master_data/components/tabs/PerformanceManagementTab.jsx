@@ -61,6 +61,9 @@ export default function PerformanceManagementTab({ mode = "create", initialData,
         <EvaluationRegularizationTab
           employeeId={employeeId}
           mode={mode}
+          directHireSince={initialData?.direct_hire_since}
+          initialInterviews={initialData?.regularization_interviews}
+          onRegularizationChange={onEmployeeChange}
           initialFiles={initialData?.files}
           pendingFiles={pendingCreateData?.files || []}
           onPendingFilesChange={setPending("files")}

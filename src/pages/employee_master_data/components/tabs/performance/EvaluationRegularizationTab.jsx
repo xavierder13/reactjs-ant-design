@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Form, DatePicker, Select, Row, Col, Typography, Card, Tag, Spin, App } from "antd";
+import { Form, Typography, Card, Tag, Spin, Descriptions, App } from "antd";
 
 import employeeApi from "../../../../../services/employee/employeeApi";
 import handleApiError from "../../../../../utils/handleApiError";
 import downloadBlobResponse from "../../../../../utils/downloadBlobResponse";
-import { DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
+import { DISPLAY_DATE_FORMAT, formatDate, toDayjs } from "../../../../../utils/formatDate";
 import FileSlotCard, { FileSlots } from "../../FileSlotCard";
+import RegularizationDateWarning from "../../RegularizationDateWarning";
+import RegularizationInterviews from "./RegularizationInterviews";
 
 // vueportal's "Evaluation & Regularization" sub-tab (EmployeeInformationTabs.vue)
 // is not its own CRUD module like the other 6 Performance Management
@@ -140,56 +142,71 @@ function PendingFileSlot({ label, documentType, pendingFiles, onPendingFilesChan
   );
 }
 
-export default function EvaluationRegularizationTab({ employeeId, mode, initialFiles = [], pendingFiles = [], onPendingFilesChange }) {
+// View mode: the form's value as text (Form.Item passes it as `value`), like
+// the profile's Employment tab.
+const DateText = ({ value }) => formatDate(value);
+const ResultText = ({ value }) => (value ? <Tag color={value === "Passed" ? "green" : "red"}>{value}</Tag> : "-");
+
+// Date of Regularization is never typed (DOLE: Direct Hire Since + 180 days,
+// set by the backend when the employee is regularized). Not set yet: the
+// date it will be, from `dueFrom` (Direct Hire Since).
+const RegularizationDateText = ({ value, dueFrom }) => {
+  if (toDayjs(value)) return formatDate(value);
+  const since = toDayjs(dueFrom);
+  return since
+    ? <Typography.Text type="secondary">Due {since.add(180, "day").format(DISPLAY_DATE_FORMAT)}</Typography.Text>
+    : "-";
+};
+
+// `directHireSince`: the saved employee's direct_hire_since; on Add Employee
+// (none yet) the form's Date Employed stands in for it.
+// `onRegularizationChange(employeeFields)`: after an interview is saved —
+// the employee's resulting employment_type / regularization_date /
+// regularization_interview_date / _status.
+export default function EvaluationRegularizationTab({
+  employeeId, mode, directHireSince, initialInterviews, onRegularizationChange,
+  initialFiles = [], pendingFiles = [], onPendingFilesChange,
+}) {
   const readOnly = mode === "view";
+  const regularizationDate = Form.useWatch("regularization_date");
+  const dateEmployed = Form.useWatch("date_employed");
+  const dueFrom = directHireSince || dateEmployed;
+  // flags an older stored date that isn't Direct Hire Since + 180
+  const warning = <RegularizationDateWarning regularizationDate={regularizationDate} directHireSince={dueFrom} />;
+  const regularizationDateText = <Form.Item name="regularization_date" noStyle><RegularizationDateText dueFrom={dueFrom} /></Form.Item>;
   const isCreateMode = mode === "create";
 
   return (
     <div>
-      <Row gutter={16}>
-        <Col xs={24} md={8}>
-          {/* Filled by the backend (Direct Hire Since + 180 days) when a Passed
-              interview regularizes the employee; HR can still change it. */}
-          <Form.Item
-            name="regularization_date"
-            label="Date of Regularization"
-            labelCol={{ span: 24 }}
-            extra="Set automatically 180 days after Direct Hire Since once the interview is Passed; can be changed."
-          >
-            <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} disabled={readOnly} />
-          </Form.Item>
-        </Col>
-        {/* A Passed result regularizes the employee (Employment Type →
-            Regular) once due — see the backend's passedForRegularizationQuery(). */}
-        <Col xs={24} md={8}>
-          <Form.Item name="regularization_interview_date" label="Date of Regularization Interview" labelCol={{ span: 24 }}>
-            <DatePicker style={{ width: "100%" }} format={DISPLAY_DATE_FORMAT} disabled={readOnly} />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={8}>
-          <Form.Item
-            name="regularization_interview_status"
-            label="Interview Result"
-            labelCol={{ span: 24 }}
-            dependencies={["regularization_interview_date"]}
-            rules={[({ getFieldValue }) => ({
-              validator: (_, value) => (getFieldValue("regularization_interview_date") && !value
-                ? Promise.reject(new Error("Interview Result is required when the interview date is filled in"))
-                : Promise.resolve()),
-            })]}
-          >
-            <Select
-              allowClear
-              placeholder="Passed or Failed"
-              disabled={readOnly}
-              options={[
-                { label: "Passed", value: "Passed" },
-                { label: "Failed", value: "Failed" },
-              ]}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
+      {/* All three are set by the backend: the regularization date is
+          Direct Hire Since + 180 days (DOLE), the interview date / result
+          are the final interview's (RegularizationInterviews below). */}
+      <Descriptions
+        size="small"
+        column={{ xs: 1, sm: 2, lg: 3 }}
+        style={{ marginBottom: 16 }}
+        items={[
+          { key: "regularized", label: "Date of Regularization", children: <>{regularizationDateText}{warning}</> },
+          { key: "interview", label: "Final Interview Date", children: <Form.Item name="regularization_interview_date" noStyle><DateText /></Form.Item> },
+          { key: "result", label: "Overall Result", children: <Form.Item name="regularization_interview_status" noStyle><ResultText /></Form.Item> },
+        ]}
+      />
+
+      <Typography.Title level={5} style={{ marginTop: 0 }}>Regularization Interviews</Typography.Title>
+      <Typography.Paragraph type="secondary">
+        The final interview (latest date) decides the overall result. A Passed result regularizes the employee
+        once due (150 days after Direct Hire Since), dated 180 days after Direct Hire Since.
+      </Typography.Paragraph>
+      {employeeId ? (
+        <RegularizationInterviews
+          employeeId={employeeId}
+          mode={mode}
+          initialRecords={initialInterviews}
+          onResult={onRegularizationChange}
+        />
+      ) : (
+        <Typography.Paragraph type="secondary">Save the employee first before adding interviews.</Typography.Paragraph>
+      )}
 
       {employeeId ? (
         <FileSlots>

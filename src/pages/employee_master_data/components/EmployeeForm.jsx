@@ -183,8 +183,16 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
     if ('date_resigned' in patch) {
       form.setFieldsValue({ date_resigned: toDayjs(patch.date_resigned) });
     }
-    // Set by a Branch Assignment row's agency tag (BranchAssignmentPositionTab).
+    // Set by a Branch Assignment row's agency tag (BranchAssignmentPositionTab),
+    // or by a regularization interview (EvaluationRegularizationTab).
     if ('employment_type' in patch) form.setFieldsValue({ employment_type: patch.employment_type });
+    // a regularization interview's result (read-only fields, set by the backend)
+    ['regularization_date', 'regularization_interview_date'].forEach((field) => {
+      if (field in patch) form.setFieldsValue({ [field]: toDayjs(patch[field]) });
+    });
+    if ('regularization_interview_status' in patch) {
+      form.setFieldsValue({ regularization_interview_status: patch.regularization_interview_status || null });
+    }
   };
 
   // `employee` (the saved/live baseline — "currentData") vs the form's
