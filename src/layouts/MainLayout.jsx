@@ -110,6 +110,8 @@ const titleMap = {
   '/employees/hired-this-month':    { title: 'Employees Hired This Month', breadcrumb: ['Employee', 'Hired This Month'] },
   '/employees/for-regularization':  { title: 'For Regularization', breadcrumb: ['Employee', 'For Regularization'] },
   '/employees/resigned':            { title: 'Resigned', breadcrumb: ['Employee', 'Resigned'] },
+  '/employees/overdue-deactivation':   { title: 'Overdue Deactivation', breadcrumb: ['Employee', 'Separation', 'Overdue Deactivation'] },
+  '/employees/overdue-regularization': { title: 'Overdue Regularization', breadcrumb: ['Employee', 'Hiring & Onboarding', 'Overdue Regularization'] },
   '/clearances':                    { title: 'Clearances', breadcrumb: ['Clearance', 'Clearances'] },
   '/clearances/setup':              { title: 'Clearance Setup', breadcrumb: ['Clearance', 'Setup', 'Clearance Setup'] },
   '/clearances/templates/new':      { title: 'New Clearance Template', breadcrumb: ['Clearance', 'Setup', 'Clearance Setup', 'New Template'] },
@@ -283,6 +285,7 @@ const menuData = [
               { key: 'careers-synced',     title: 'Synced from Careers', link: '/employees/careers-synced',     permissions: ['employee-master-data-list'] },
               { key: 'hired-this-month',   title: 'Hired This Month',    link: '/employees/hired-this-month',   permissions: ['employee-master-data-for-regularization'] },
               { key: 'for-regularization', title: 'For Regularization',  link: '/employees/for-regularization', permissions: ['employee-master-data-for-regularization'] },
+              { key: 'overdue-regularization', title: 'Overdue Regularization', link: '/employees/overdue-regularization', permissions: ['employee-master-data-regularize'] },
             ],
           },
           {
@@ -300,6 +303,7 @@ const menuData = [
             label: 'Separation',
             children: [
               { key: 'resigned', title: 'Resigned', link: '/employees/resigned', permissions: ['employee-master-data-resigned-list'] },
+              { key: 'overdue-deactivation', title: 'Overdue Deactivation', link: '/employees/overdue-deactivation', permissions: ['employee-master-data-deactivate'] },
             ],
           },
           {

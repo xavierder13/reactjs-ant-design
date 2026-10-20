@@ -118,6 +118,8 @@ reports live inside the process they belong to, like Payroll's and KPI's:
 /employees/hired-this-month   → HiredThisMonth       (employee-master-data-for-regularization — the backend gates this list on it too)
 /employees/for-regularization → ForRegularization    (employee-master-data-for-regularization)
 /employees/resigned           → ResignedEmployees    (employee-master-data-resigned-list)
+/employees/overdue-deactivation   → OverdueDeactivation   (employee-master-data-deactivate)
+/employees/overdue-regularization → OverdueRegularization (employee-master-data-regularize)
 /employees/nte                → OpenNteList          (employee-master-data-nte-list)
 /employees/disciplinary       → OpenDisciplinaryList (employee-master-data-disciplinary-list)
 /employees/referral-codes     → ReferralCodeList     (employee-referral-list)

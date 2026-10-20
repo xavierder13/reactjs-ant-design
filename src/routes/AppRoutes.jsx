@@ -53,6 +53,8 @@ import OpenNteList from '../pages/employee_master_data/lists/OpenNteList';
 import OpenDisciplinaryList from '../pages/employee_master_data/lists/OpenDisciplinaryList';
 import ReferralCodeList from '../pages/employee_master_data/referral_codes/ReferralCodeList';
 import NewHiredList from '../pages/employee_master_data/new_hired/NewHiredList';
+import OverdueDeactivation from '../pages/employee_master_data/lists/OverdueDeactivation';
+import OverdueRegularization from '../pages/employee_master_data/lists/OverdueRegularization';
 import Vacancies from '../pages/recruitment/Vacancies';
 import JobApplicantList from '../pages/recruitment/JobApplicantList';
 import { APPLICANT_STAGES } from '../pages/recruitment/applicants/stages';
@@ -135,6 +137,9 @@ const permissionRoutes = [
   { permissions: ['employee-master-data-for-regularization'], path: '/employees/hired-this-month', element: <HiredThisMonth /> },
   { permissions: ['employee-master-data-for-regularization'], path: '/employees/for-regularization', element: <ForRegularization /> },
   { permissions: ['employee-master-data-resigned-list'], path: '/employees/resigned', element: <ResignedEmployees /> },
+  // who the nightly Deactivate Resigned / Regularize Passed jobs would update; run them by hand
+  { permissions: ['employee-master-data-deactivate'], path: '/employees/overdue-deactivation', element: <OverdueDeactivation /> },
+  { permissions: ['employee-master-data-regularize'], path: '/employees/overdue-regularization', element: <OverdueRegularization /> },
   { permissions: ['clearance-list', 'clearance-list-all', 'clearance-sign'], path: '/clearances', element: <ClearanceIndex /> },
   { permissions: ['clearance-setup'], path: '/clearances/setup', element: <ClearanceSetup /> },
   { permissions: ['clearance-setup'], path: '/clearances/templates/new', element: <ClearanceTemplateForm /> },
