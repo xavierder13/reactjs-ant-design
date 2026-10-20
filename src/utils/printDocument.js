@@ -24,6 +24,9 @@ export default function printDocument(title, body) {
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${BASE_CSS}</style></head><body>${body}</body></html>`);
   w.document.close();
   w.focus();
-  setTimeout(() => w.print(), 300);
+  // print once its images (the payslip logo) have loaded — at most 3 s
+  const images = Array.from(w.document.images).filter((img) => !img.complete);
+  const loaded = Promise.all(images.map((img) => new Promise((done) => { img.onload = done; img.onerror = done; })));
+  Promise.race([loaded, new Promise((done) => setTimeout(done, 3000))]).then(() => setTimeout(() => w.print(), 300));
   return true;
 }

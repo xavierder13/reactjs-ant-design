@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { escapeHtml as h } from '../../../utils/printDocument';
 import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
+import addessaLogo from '../../../assets/addessa-logo.jpg';
 
 // HTML for the documents printed with utils/printDocument: the payslip, the
 // BIR 2316 (certificate of compensation and tax withheld — data layout, not
@@ -9,13 +10,25 @@ import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 const money = (v) => Number(v || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const date = (v) => (v ? dayjs(v).format(DISPLAY_DATE_FORMAT) : '—');
 const or = (v) => h(v || '—');
+// absolute: the print window is a blank page of its own
+const logoUrl = () => new URL(addessaLogo, window.location.href).href;
+// the company letterhead (as on Addessa memos) — the payslip's address line
+const LETTERHEAD_ADDRESS = 'FVC Building, #43 Alexander Street, Urdaneta City';
+const LETTERHEAD_TEL = '(075) 529-7282 / 529-7283';
 
-const employerHead = (employer, title, subtitle) => `
+// withLogo: the Addessa letterhead — logo left of the employer name, the
+// letterhead address and tel. no. in place of the employer's address, no TIN (the payslip)
+const employerHead = (employer, title, subtitle, withLogo = false) => `
   <div class="head">
-    <div>
+    <div style="display:flex;gap:12px;align-items:center">
+      ${withLogo ? `<img src="${h(logoUrl())}" alt="Addessa Corporation" style="height:56px;width:auto">` : ''}
+      <div>
       <h1>${or(employer?.name || 'Employer name not set')}</h1>
-      <div class="muted">${h([employer?.address, employer?.zip].filter(Boolean).join(' ') || 'Set the employer details in Payroll Settings → Employers')}</div>
-      ${employer?.tin ? `<div class="muted">TIN ${h(employer.tin)}${employer.rdo ? ` · RDO ${h(employer.rdo)}` : ''}</div>` : ''}
+      ${withLogo
+    ? `<div class="muted">${h(LETTERHEAD_ADDRESS)}</div><div class="muted">Tel. No.: ${h(LETTERHEAD_TEL)}</div>`
+    : `<div class="muted">${h([employer?.address, employer?.zip].filter(Boolean).join(' ') || 'Set the employer details in Payroll Settings → Employers')}</div>`}
+      ${!withLogo && employer?.tin ? `<div class="muted">TIN ${h(employer.tin)}${employer.rdo ? ` · RDO ${h(employer.rdo)}` : ''}</div>` : ''}
+      </div>
     </div>
     <div class="right"><div class="strong" style="font-size:13pt">${h(title)}</div><div class="muted">${h(subtitle)}</div></div>
   </div>`;
@@ -33,7 +46,7 @@ export const payslipHtml = (p, run, employer) => {
   const c = run.cutoff || {};
   const s = p.summary || {};
   return `
-    ${employerHead(employer, 'PAYSLIP', `${c.code || ''} · ${date(c.date_from)} – ${date(c.date_to)}`)}
+    ${employerHead(employer, 'PAYSLIP', `${c.code || ''} · ${date(c.date_from)} – ${date(c.date_to)}`, true)}
     <table style="margin-bottom:8px">
       <tr><td style="width:15%" class="muted">Employee</td><td class="strong">${or(e.full_name)}</td><td style="width:15%" class="muted">Pay Date</td><td>${date(c.pay_date)}</td></tr>
       <tr><td class="muted">Code</td><td>${or(e.employee_code)}</td><td class="muted">Rate</td><td>${money(p.basic_rate)} ${p.pay_basis === 'Daily' ? '/ day' : '/ month'}</td></tr>
@@ -46,7 +59,6 @@ export const payslipHtml = (p, run, employer) => {
     </div>
     <div class="box" style="display:flex;justify-content:space-between;font-size:13pt"><span class="strong">NET PAY</span><span class="strong">₱ ${money(p.net_pay)}</span></div>
     ${p.employer?.length ? `<div class="muted">Employer share (not deducted): ${p.employer.map((l) => `${h(l.label)} ${money(l.amount)}`).join(' · ')}</div>` : ''}
-    <div class="sign"><div>Prepared by</div><div>Received by (employee)</div></div>
     <div class="muted" style="margin-top:10px">This is a system-generated payslip.</div>`;
 };
 
