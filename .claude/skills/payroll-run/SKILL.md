@@ -95,7 +95,8 @@ to existing (filing on) cut-offs.
   first work day it looks back up to 14 days into the previous cut-off).
 - Rest day: punches alone pay nothing — rest-day work is paid through
   approved overtime.
-- Today or later without punches = Upcoming (assumed worked, not deducted).
+- Today or later without punches = Upcoming (assumed worked, not deducted);
+  a full-day approved leave is On Leave already (a half-day one stays Upcoming).
 - Night minutes capped at worked minutes (break excluded).
 
 ## Attendance logs (imported)

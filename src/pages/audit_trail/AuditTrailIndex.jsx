@@ -13,6 +13,8 @@ const ACTIONS = {
   created: { label: 'Added',   color: 'green' },
   updated: { label: 'Edited',  color: 'blue' },
   deleted: { label: 'Deleted', color: 'red' },
+  // a bulk import logged as one entry (e.g. attendance logs) — HRIS only
+  imported: { label: 'Imported', color: 'purple' },
 };
 
 // 'leave_type_id' → 'Leave Type', 'filed_by' → 'Filed By'.
@@ -56,10 +58,13 @@ const CHANGE_COLUMNS = [
   { title: 'After', dataIndex: 'new', render: (v, c) => showValue(v, c.field) },
 ];
 
-// An added record has no before, a deleted one no after.
+// 'Leave Application #12'; an import (one entry per file) has no record id.
+const recordLabel = (r) => (r.record_id ? `${r.record} #${r.record_id}` : r.record);
+
+// An added (or imported) record has no before, a deleted one no after.
 const changeColumns = (action, columns = CHANGE_COLUMNS) => (action === 'updated'
   ? columns
-  : columns.filter((c) => c.dataIndex !== (action === 'created' ? 'old' : 'new')));
+  : columns.filter((c) => c.dataIndex !== (action === 'deleted' ? 'new' : 'old')));
 
 // The viewer: previous value tinted red, new value green.
 const VIEWER_COLUMNS = [
@@ -155,7 +160,7 @@ const AuditTrailIndex = () => {
       render: (v) => <Tag color={ACTIONS[v]?.color}>{ACTIONS[v]?.label || v}</Tag>,
     },
     { title: 'Module', dataIndex: 'module', width: 110 },
-    { title: 'Record', key: 'record', width: 190, render: (_, r) => `${r.record} #${r.record_id}` },
+    { title: 'Record', key: 'record', width: 190, render: (_, r) => recordLabel(r) },
     { title: subjectLabel, key: 'subject', width: 230, render: (_, r) => subjectOf(r) || '-' },
     {
       title: 'Changed Fields',
@@ -212,7 +217,7 @@ const AuditTrailIndex = () => {
             placeholder='All actions'
             value={filters.description}
             onChange={(v) => setFilter({ description: v })}
-            options={Object.entries(ACTIONS).map(([value, a]) => ({ value, label: a.label }))}
+            options={Object.entries(ACTIONS).filter(([value]) => !careers || value !== 'imported').map(([value, a]) => ({ value, label: a.label }))}
             style={{ width: 130 }}
           />
           <Select
@@ -275,7 +280,7 @@ const AuditTrailIndex = () => {
       />
       <Modal
         keyboard={false}
-        title={viewing && `${viewing.record} #${viewing.record_id}`}
+        title={viewing && recordLabel(viewing)}
         open={viewerOpen}
         onCancel={() => setViewerOpen(false)}
         footer={<Button onClick={() => setViewerOpen(false)}>Close</Button>}
