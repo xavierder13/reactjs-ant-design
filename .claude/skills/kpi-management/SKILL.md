@@ -20,7 +20,8 @@ DELETE), unlike Manpower Request's POST-only API.
   - `evaluations/` — `KpiEvaluationIndex`, `KpiEvaluationCreate` (single or
     bulk via `EmployeeBulkSelector`, shows created/skipped; both pickers load
     `GET /kpi/employees` — only the user's subordinates in their branch, all
-    for `kpi-evaluation-list-all` / KPI admins — see vueportal's kpi skill),
+    for the Administrator / KPI administrators; list-all only widens viewing — see
+    vueportal's kpi skill),
     `KpiEvaluationView` (tabs + every workflow action), sections
     `JobPerformanceSection`, `BehaviorRatingSection`, `DemeritSection`,
     `ScoreSummary`, `KpiEvaluationPrint` (+ `.css`), and `kpiScore.js` —

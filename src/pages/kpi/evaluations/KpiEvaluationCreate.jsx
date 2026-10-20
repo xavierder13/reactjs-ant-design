@@ -39,7 +39,7 @@ const KpiEvaluationCreate = () => {
     setLoading(true);
     try {
       // the employees this user may evaluate (subordinates in their branch,
-      // or everyone with kpi-evaluation-list-all) — KpiEmployeeController
+      // everyone for the Administrator / KPI administrators) — KpiEmployeeController
       const { data } = await kpiEvaluationApi.getEmployees({ search, page: pageNumber });
       const options = data.data.map((emp) => ({
         value: emp.id,
