@@ -192,7 +192,12 @@ const MyPayslipsIndex = () => {
         loading={loading}
         scroll={{ x: 760 }}
         pagination={tablePagination(10)}
-        locale={{ emptyText: 'No payslips yet — they appear once a payroll is approved' }}
+        // the default range is this year: say so when it hides older payslips
+        locale={{
+          emptyText: data.payslips.length && params
+            ? `No payslip from ${period(params)} — widen the range to see your ${data.payslips.length} earlier one(s)`
+            : 'No payslips yet — they appear once a payroll is approved',
+        }}
       />
       <PayslipModal target={payslip} onClose={() => setPayslip(null)} loadPayslip={myPayslipApi.show} selfService />
     </div>
