@@ -89,7 +89,10 @@ to existing (filing on) cut-offs.
   (one punch — flagged, not deducted), No Schedule (flagged).
 - Holiday (not a Special Working Day) not worked = Holiday, never Absent,
   leave not used; worked = minutes worked, no late / undertime. Prior-day
-  rule for unworked regular holiday pay = `holiday_pay_needs_prior_day`.
+  rule for unworked regular holiday pay = `holiday_pay_needs_prior_day`: the
+  last scheduled work day before it (an unpaid holiday passes the absence on,
+  so successive holidays are paid only if the first is; before the period's
+  first work day it looks back up to 14 days into the previous cut-off).
 - Rest day: punches alone pay nothing — rest-day work is paid through
   approved overtime.
 - Today or later without punches = Upcoming (assumed worked, not deducted).
@@ -190,8 +193,9 @@ admits payroll-setting-edit for the employee picker.
   paid leave × daily, unworked holiday × its "paid if unworked" rate.
 - Overtime counted (DtrService::payableOvertime, Payroll Settings →
   Overtime): a filing under `ot_minimum_minutes` (default 30) = 0, the rest
-  rounded down to `ot_rounding_minutes` blocks (default 15); a DTR remark
-  shows filed vs. counted. Pre-shift overtime counts when approved.
+  rounded down to `ot_rounding_minutes` blocks (default 15), the dropped
+  minutes taken off the end (night minutes count only on the rest); a DTR
+  remark shows filed vs. counted. Pre-shift overtime counts when approved.
 - Overtime: scheduled day → the day type's overtime rate; day off → first
   `hours_per_day` at its regular rate, beyond at its overtime rate. Night
   differential = night minutes × hourly × the hour's rate × night %.

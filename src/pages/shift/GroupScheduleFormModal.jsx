@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import {
-  Modal, Form, Input, Select, DatePicker, Radio, Segmented, Alert, Collapse, Typography, App,
+  Modal, Form, Input, Select, DatePicker, Radio, Alert, Collapse, Typography, App,
 } from 'antd';
 import groupScheduleApi from '../../services/shift/groupScheduleApi';
 import shiftApi from '../../services/shift/shiftApi';
@@ -153,7 +153,8 @@ const GroupScheduleFormModal = ({ open, record, options, onClose, onSaved }) => 
           <Radio.Group options={GROUP_KINDS} optionType='button' buttonStyle='solid' disabled={!!record} />
         </Form.Item>
         <Form.Item name='scope' label='Applies to'>
-          <Segmented options={GROUP_SCOPES} disabled={!!record} onChange={() => form.setFieldValue('scope_id', undefined)} />
+          {/* solid buttons like Type, so the chosen level stands out when fixed (change) */}
+          <Radio.Group options={GROUP_SCOPES} optionType='button' buttonStyle='solid' disabled={!!record} onChange={() => form.setFieldValue('scope_id', undefined)} />
         </Form.Item>
         <Form.Item name='scope_id' label={scopeLabel(scope)} rules={[{ required: true, message: `${scopeLabel(scope)} is required` }]}>
           <Select options={groupOptions} showSearch={{ optionFilterProp: 'label' }} disabled={!!record} placeholder={`Select the ${scopeLabel(scope).toLowerCase()}`} />

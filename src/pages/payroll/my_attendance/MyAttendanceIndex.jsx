@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Select, Button, Alert, Spin, Space, App } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import myAttendanceApi from '../../../services/payroll/myAttendanceApi';
@@ -18,18 +18,22 @@ const MyAttendanceIndex = () => {
   const [cutoffId, setCutoffId] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  // the latest request — an earlier cut-off's slower response is dropped
+  const requestRef = useRef(0);
 
   const fetchDtr = async (id) => {
     if (!id) return;
+    const request = ++requestRef.current;
     setLoading(true);
     try {
       const { data: res } = await myAttendanceApi.show({ payroll_cutoff_id: id });
-      setData(res);
+      if (request === requestRef.current) setData(res);
     } catch (error) {
+      if (request !== requestRef.current) return;
       setData(null);
       handleApiError(error, message);
     } finally {
-      setLoading(false);
+      if (request === requestRef.current) setLoading(false);
     }
   };
 
@@ -76,7 +80,7 @@ const MyAttendanceIndex = () => {
             type='info'
             showIcon
             style={{ marginBottom: 12 }}
-            title='A missing or wrong punch? File a Manual Time Entry (Time & Leave → Manual Time Entries). Only approved leave, time entries and overtime count here.'
+            title='A missing or wrong punch? File a time entry (My Workspace → Time Entries). Only approved leave, time entries and overtime count here.'
           />
           <DtrDaysTable days={data.days} />
         </Spin>
