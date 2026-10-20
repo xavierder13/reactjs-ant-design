@@ -1,6 +1,6 @@
-import { Form, Select, DatePicker, Switch } from "antd";
+import { Form, Select, DatePicker, Switch, Descriptions } from "antd";
 
-import { DISPLAY_DATE_FORMAT } from "../../../../../utils/formatDate";
+import { DISPLAY_DATE_FORMAT, formatDate } from "../../../../../utils/formatDate";
 // Grouped company reason list. Records saved under the older flat list keep
 // their stored text; the Select still shows it when editing.
 const RESIGNATION_REASON_GROUPS = [
@@ -59,5 +59,31 @@ export default function OffboardingFormFields() {
         <Switch />
       </Form.Item>
     </>
+  );
+}
+
+const yesNo = (value) => (Number(value) ? "Yes" : "No");
+
+// The same fields read-only, as text (the record's View).
+export function OffboardingDetails({ record }) {
+  const r = record || {};
+  return (
+    <Descriptions
+      size="small"
+      bordered
+      column={{ xs: 1, sm: 2 }}
+      style={{ marginBottom: 16 }}
+      items={[
+        { key: "last_day", label: "Last Day of Work", children: formatDate(r.last_day_of_work) },
+        { key: "reason", label: "Reason of Resignation", children: r.reason_of_resignation || "-" },
+        { key: "filed", label: "Resignation Date Filed", children: formatDate(r.resignation_date_filed) },
+        { key: "received", label: "Resignation File Received", children: formatDate(r.resignation_date_received) },
+        { key: "effectivity", label: "Resignation Effectivity Date", children: formatDate(r.resignation_effectivity_date) },
+        { key: "exit", label: "Exit Interview Date", children: formatDate(r.exit_interview_date) },
+        { key: "compliance", label: "Compliance", children: r.compliance || "-" },
+        { key: "coe", label: "COE Issued", children: yesNo(r.coe_is_issued) },
+        { key: "last_pay", label: "Last Pay Issued", children: yesNo(r.last_pay_is_issued) },
+      ]}
+    />
   );
 }

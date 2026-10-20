@@ -73,14 +73,19 @@ export default function EmployeeProfile({ employee: initialEmployee, view = "hr"
     .forEach((tab) => items.push({
       ...tab,
       // The record tabs render bare Form.Items (e.g. Evaluation &
-      // Regularization's date) expecting EmployeeForm's ancestor <Form>.
+      // Regularization's dates and interview result) expecting EmployeeForm's
+      // ancestor <Form>, so their values are seeded here as EmployeeForm does.
       // Not `disabled`: that would also disable their downloads and the
       // Attendance filters; view mode already hides every mutating action.
       children: (
         <Card size="small">
           <Form
             layout="vertical"
-            initialValues={{ regularization_date: toDayjs(employee.regularization_date) }}
+            initialValues={{
+              regularization_date: toDayjs(employee.regularization_date),
+              regularization_interview_date: toDayjs(employee.regularization_interview_date),
+              regularization_interview_status: employee.regularization_interview_status || null,
+            }}
           >
             {tab.children}
           </Form>

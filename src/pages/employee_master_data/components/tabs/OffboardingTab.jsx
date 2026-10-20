@@ -13,7 +13,7 @@ import handleApiError from "../../../../utils/handleApiError";
 import employeeApi from "../../../../services/employee/employeeApi";
 import offboardingApi from "../../../../services/employee/offboardingApi";
 import OffboardingFileSlot, { OffboardingFileSlots } from "./offboarding/OffboardingFileSlot";
-import OffboardingFormFields from "./offboarding/OffboardingFormFields";
+import OffboardingFormFields, { OffboardingDetails } from "./offboarding/OffboardingFormFields";
 import { formatDate, toDayjs } from "../../../../utils/formatDate";
 
 // This module's data source ambiguity (the previous Roadmap blocker) is
@@ -315,7 +315,7 @@ export default function OffboardingTab({ mode = "create", initialData, onEmploye
           destroyOnHidden
         >
           <Form form={form} layout="vertical" disabled={viewOnly}>
-            <OffboardingFormFields />
+            {viewOnly ? <OffboardingDetails record={editing} /> : <OffboardingFormFields />}
 
             <ConfigProvider componentDisabled={false}>
               <OffboardingFileSlots readOnly={viewOnly}>
