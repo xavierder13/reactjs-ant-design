@@ -95,6 +95,7 @@ const titleMap = {
   '/my-leave':               { title: 'Leave Applications',  breadcrumb: ['My Workspace', 'Time & Leave', 'Leave Applications'] },
   '/my-time-entries':        { title: 'Time Entries',        breadcrumb: ['My Workspace', 'Time & Leave', 'Time Entries'] },
   '/my-overtime':            { title: 'Overtime',            breadcrumb: ['My Workspace', 'Time & Leave', 'Overtime'] },
+  '/my-clearance':           { title: 'Clearance',           breadcrumb: ['My Workspace', 'Clearance'] },
   '/roles':                  { title: 'Roles',               breadcrumb: ['Authorizations', 'Roles'] },
   '/roles/create':           { title: 'Create Role',         breadcrumb: ['Authorizations', 'Roles', 'Create'] },
   '/permissions':            { title: 'Permissions',         breadcrumb: ['Authorizations', 'Permissions'] },
@@ -247,6 +248,8 @@ const menuData = [
         ],
       },
       { key: 'my-payslips',    title: 'Payslips',    icon: <WalletOutlined />, link: '/my-payslips',    requiresEmployee: true },
+      // own clearance progress (read-only) — after Evaluations would hide it among pay
+      { key: 'my-clearance',   title: 'Clearance',   icon: <FileDoneOutlined />, link: '/my-clearance', requiresEmployee: true },
       { key: 'my-evaluations', title: 'Evaluations', icon: <StarOutlined />,   link: '/my-evaluations', permissions: ['kpi-self-evaluation-list'], requiresEmployee: true },
     ],
   },

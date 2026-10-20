@@ -163,6 +163,14 @@ src/pages/clearance/
 
 Menu: Human Resource → Clearance (Process: Clearances; Setup: Clearance Setup).
 
+**My Clearance** (`MyClearance.jsx`, `/my-clearance`, My Workspace → Clearance,
+any linked account): the employee's own clearances — vueportal
+`MyClearanceController` (`my_clearance/index`, `my_clearance/show/{id}`,
+auth only, `employee_id` = the account's; another's is a 404) returning the
+same `details()` as `clearance/show`, rendered read-only: header, progress,
+`ClearanceStageSteps`, components (in-charge / signed by, accountabilities
+expandable) and the final approval. No actions.
+
 Backend tables (`database/migrations/new/2026_10_25_1000{00..10}_*`, run by
 file path; `100007` moves any old department checklist lines into items
 under "General" and drops `clearance_departments.checklist`):

@@ -104,6 +104,7 @@ import YearEndTaxReport from '../pages/payroll/reports/YearEndTaxReport';
 import FinalPayReport from '../pages/payroll/reports/FinalPayReport';
 import MyPayslipsIndex from '../pages/payroll/my_payslips/MyPayslipsIndex';
 import MyAttendanceIndex from '../pages/payroll/my_attendance/MyAttendanceIndex';
+import MyClearance from '../pages/clearance/MyClearance';
 import MyLeave from '../pages/my_workspace/MyLeave';
 import MyTimeEntries from '../pages/my_workspace/MyTimeEntries';
 import MyOvertime from '../pages/my_workspace/MyOvertime';
@@ -288,6 +289,7 @@ const AppRoutes = () => {
             <Route path='/my-leave' element={<MyLeave />} />
             <Route path='/my-time-entries' element={<MyTimeEntries />} />
             <Route path='/my-overtime' element={<MyOvertime />} />
+            <Route path='/my-clearance' element={<MyClearance />} />
           </Route>
         </Route>
 
