@@ -462,7 +462,7 @@ const KpiEvaluationView = () => {
       >
         {/* ── Employee Info — always visible ─────────────────────────────── */}
         <Row gutter={[16, 8]} style={{ marginBottom: 16 }}>
-          <Col xs={24} md={5}>
+          <Col xs={24} md={4}>
             <Typography.Text type='secondary'>Employee</Typography.Text>
             <div>
               <Typography.Text strong>
@@ -470,7 +470,7 @@ const KpiEvaluationView = () => {
               </Typography.Text>
             </div>
           </Col>
-          <Col xs={24} md={5}>
+          <Col xs={24} md={4}>
             <Typography.Text type='secondary'>Position</Typography.Text>
             <div>
               <Typography.Text strong>
@@ -478,7 +478,15 @@ const KpiEvaluationView = () => {
               </Typography.Text>
             </div>
           </Col>
-          <Col xs={24} md={5}>
+          <Col xs={24} md={4}>
+            <Typography.Text type='secondary'>Branch</Typography.Text>
+            <div>
+              <Typography.Text strong>
+                {employee?.branch?.name || '-'}
+              </Typography.Text>
+            </div>
+          </Col>
+          <Col xs={24} md={4}>
             <Typography.Text type='secondary'>Period</Typography.Text>
             <div>
               <Typography.Text strong>
@@ -496,7 +504,7 @@ const KpiEvaluationView = () => {
               </Tag>
             </div>
           </Col>
-          <Col xs={24} md={5}>
+          <Col xs={24} md={4}>
             <Typography.Text type='secondary'>Created By</Typography.Text>
             <div>
               <Typography.Text strong>

@@ -118,6 +118,11 @@ const KpiEvaluationIndex = () => {
       render:    (_, record) => record.position?.name || '-',
     },
     {
+      title:     'Branch',
+      key:       'branch',
+      render:    (_, record) => record.employee?.branch?.name || '-',
+    },
+    {
       title: 'Period',
       key: 'period',
       render: (_, record) => {

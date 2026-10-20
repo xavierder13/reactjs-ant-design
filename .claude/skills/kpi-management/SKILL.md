@@ -18,7 +18,9 @@ DELETE), unlike Manpower Request's POST-only API.
     indicator), `CreateKpiTemplate`/`EditKpiTemplate` (thin wrappers),
     `KpiTemplateItemRow`, `KpiDemeritItemRow`.
   - `evaluations/` — `KpiEvaluationIndex`, `KpiEvaluationCreate` (single or
-    bulk via `EmployeeBulkSelector`, shows created/skipped),
+    bulk via `EmployeeBulkSelector`, shows created/skipped; both pickers load
+    `GET /kpi/employees` — only the user's subordinates in their branch, all
+    for `kpi-evaluation-list-all` / KPI admins — see vueportal's kpi skill),
     `KpiEvaluationView` (tabs + every workflow action), sections
     `JobPerformanceSection`, `BehaviorRatingSection`, `DemeritSection`,
     `ScoreSummary`, `KpiEvaluationPrint` (+ `.css`), and `kpiScore.js` —
@@ -113,8 +115,12 @@ Management", `titleMap`, regex cases for `:id` pages):
 
 ## Evaluation list (`KpiEvaluationIndex.jsx`)
 
-Search, status, **position** and **branch** filters (in-memory; options
-from the loaded evaluations — the list endpoint includes
+Rows are the backend's visible scope (subordinates in the user's branch +
+own; everything for `kpi-evaluation-list-all`, role KPI Evaluation Viewer).
+Columns include **Branch** (the employee's current branch,
+`employee.branch` — also shown on the View page next to Position). Search,
+status, **position** and **branch** filters (in-memory; options
+from the loaded evaluations — the list and show endpoints include
 `employee.branch`). Every filter applies on change (search as you type),
 so there's no Search button — only Refresh.
 

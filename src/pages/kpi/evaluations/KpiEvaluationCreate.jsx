@@ -9,7 +9,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
 import kpiEvaluationApi      from '../../../services/kpi/kpiEvaluationApi';
-import employeeOptionApi      from '../../../services/employee/employeeOptionApi';
 import useKpiEvaluationStore from '../../../store/kpiEvaluationStore';
 import handleApiError        from '../../../utils/handleApiError';
 
@@ -39,10 +38,12 @@ const KpiEvaluationCreate = () => {
     if (loading) return;
     setLoading(true);
     try {
-      const { data } = await employeeOptionApi.getActive({ search, page: pageNumber}); 
-      const options = data.employees.map((emp) => ({
+      // the employees this user may evaluate (subordinates in their branch,
+      // or everyone with kpi-evaluation-list-all) — KpiEmployeeController
+      const { data } = await kpiEvaluationApi.getEmployees({ search, page: pageNumber });
+      const options = data.data.map((emp) => ({
         value: emp.id,
-        label: `${emp.employee_code} - ${emp.full_name} (${emp.position_name || ''})`,
+        label: `${emp.employee_code} - ${emp.full_name} (${emp.position_name || ''}${emp.branch_name ? ` · ${emp.branch_name}` : ''})`,
       }));
 
       setEmployees((prev) => append ? [...prev, ...options] : options);
