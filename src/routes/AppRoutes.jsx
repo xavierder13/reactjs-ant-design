@@ -237,9 +237,9 @@ const permissionRoutes = [
   { permissions: ['kpi-report-view'],       path: '/kpi-dashboard', element: <KpiDashboard /> },
   { permissions: ['kpi-report-view'],       path: '/kpi-reports/consolidated', element: <KpiConsolidatedReport /> },
 
-  // Employee self-service routes
-  { permissions: ['kpi-self-evaluation-list'],   path: '/my-evaluations', element: <KpiMyEvaluationIndex /> },
-  { permissions: ['kpi-self-evaluation-create', 'kpi-self-evaluation-edit'],   path: '/my-evaluations/:id', element: <KpiMyEvaluationForm /> },
+  // Employee self-service routes (selfService = My Workspace, as the menu)
+  { permissions: ['kpi-self-evaluation-list'],   path: '/my-evaluations', element: <KpiMyEvaluationIndex />, selfService: true },
+  { permissions: ['kpi-self-evaluation-create', 'kpi-self-evaluation-edit'],   path: '/my-evaluations/:id', element: <KpiMyEvaluationForm />, selfService: true },
   
 ];
 
@@ -285,6 +285,12 @@ const AppRoutes = () => {
             <Route path='/'             element={<SmartRedirect />} />
             <Route path='/dashboard'    element={<OldDashboardRedirect />} />
             <Route path='/user/profile' element={<UserProfile />} />
+          </Route>
+        </Route>
+
+        {/* ── Protected — My Workspace (linked employee or Employee Self-Service) */}
+        <Route element={<ProtectedRoute selfService />}>
+          <Route element={<MainLayout />}>
             <Route path='/my-payslips'  element={<MyPayslipsIndex />} />
             <Route path='/my-attendance' element={<MyAttendanceIndex />} />
             <Route path='/my-leave' element={<MyLeave />} />
@@ -297,8 +303,8 @@ const AppRoutes = () => {
         </Route>
 
         {/* ── Protected — permission based (dynamic) ─────────── */}
-        {permissionRoutes.map(({ permissions, path, element }) => (
-          <Route key={path} element={<ProtectedRoute permissions={permissions} />}>
+        {permissionRoutes.map(({ permissions, path, element, selfService }) => (
+          <Route key={path} element={<ProtectedRoute permissions={permissions} selfService={selfService} />}>
             <Route element={<MainLayout />}>
               <Route path={path} element={element} />
             </Route>

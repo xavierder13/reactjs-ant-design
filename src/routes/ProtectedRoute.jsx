@@ -8,9 +8,9 @@ import useAuth from '../hooks/useAuth';
 import { getToken } from '../utils/tokenHelper';
 import { setSessionSettings } from '../utils/session';
 
-const ProtectedRoute = ({ permissions = [] }) => {
+const ProtectedRoute = ({ permissions = [], selfService = false }) => {
   const token = getToken();
-  const { isLoaded, setAuth, setLoaded, hasAnyPermission, hasRole } = useAuth();
+  const { user, isLoaded, setAuth, setLoaded, hasAnyPermission, hasRole } = useAuth();
   const [loading, setLoading] = useState(!isLoaded);
 
   useEffect(() => {
@@ -50,6 +50,12 @@ const ProtectedRoute = ({ permissions = [] }) => {
   // Step 3: Has permissions to check → verify at least one matches
   // (product rule: the Administrator can open every page)
   if (permissions.length > 0 && !hasRole('Administrator') && !hasAnyPermission(...permissions)) {
+    return <Navigate to='/unauthorize' replace />;
+  }
+
+  // Step 3b: My Workspace pages → only an account linked to an employee
+  // (users.employee_id) or an Employee Self-Service one (as the menu)
+  if (selfService && !user?.employee_id && !hasRole('Employee Self-Service')) {
     return <Navigate to='/unauthorize' replace />;
   }
 

@@ -215,10 +215,13 @@ const menuData = [
   // permission needed, like the endpoints. My Leave / Time Entries /
   // Overtime list and file the user's own (filing needs *-own or *-create);
   // Time & Leave is for approvers and HR and leaves the user's own out.
+  // requiresSelfService = the whole group (Approvals too) only for an
+  // Employee Self-Service account or one linked to an employee.
   {
     key: 'my-workspace',
     type: 'group',
     label: 'My Workspace',
+    requiresSelfService: true,
     // Grouped like the HR side: Time & Leave is one dropdown with Leave /
     // Attendance headers (as Human Resource → Time & Leave), then pay and
     // performance as single links.
@@ -834,8 +837,10 @@ const MainLayout = () => {
 
   // Product rule: the Administrator sees every menu entry
   const isAdmin = hasRole('Administrator');
+  const isSelfService = !!user?.employee_id || hasRole('Employee Self-Service');
   const canSeeItem = (item) => {
     if (item.requiresEmployee && !user?.employee_id) return false;
+    if (item.requiresSelfService && !isSelfService) return false;
     if (isAdmin) return true;
     if (item.permission && !hasPermission(item.permission)) return false;
     if (item.permissions && !item.permissions.some((p) => hasPermission(p))) return false;
@@ -849,6 +854,7 @@ const MainLayout = () => {
     if (item.type === 'divider') return { type: 'divider' };
 
     if (item.type === 'group') {
+      if (!canSeeItem(item)) return null;
       const children = item.children?.map(generateMenuItem).filter(Boolean);
       if (!children?.length) return null;
       return {
@@ -891,7 +897,7 @@ const MainLayout = () => {
   // with the section titles above each one, e.g. Time & Leave › Setup.
   const collectSearchItems = (items, path = []) => items.flatMap((item) => {
     if (!item || item.type === 'divider') return [];
-    if (item.type === 'group') return collectSearchItems(item.children ?? [], [...path, item.label]);
+    if (item.type === 'group') return canSeeItem(item) ? collectSearchItems(item.children ?? [], [...path, item.label]) : [];
     if (!canSeeItem(item)) return [];
     if (item.children) return collectSearchItems(item.children, [...path, item.title]);
     return item.link || item.action ? [{ key: item.key, title: item.title, path, link: item.link, action: item.action }] : [];
