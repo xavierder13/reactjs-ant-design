@@ -57,9 +57,10 @@ Management", `titleMap`, regex cases for `:id` pages):
   `/my-evaluations`. The menu is the normal permission-driven one (My
   Workspace → Evaluations; KPI Management → Evaluations shows only with
   `kpi-evaluation-list` / `-create`) — an account that also has Employee
-  Self-Service sees its leave / time entry / overtime pages too. These accounts are created
-  by the backend (`<employee_code>@hr_evaluation.ac`) when a `self`
-  evaluation is created.
+  Self-Service sees its leave / time entry / overtime pages too. Creating an
+  evaluation no longer creates an account: the employee's own account is
+  linked in User Accounts (which assigns KPI Self Evaluation); a `self`
+  evaluation for an employee without one says so in the create message.
 
 ## KPI Dashboard (`src/pages/kpi/dashboard/`)
 
