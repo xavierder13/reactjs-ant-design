@@ -741,6 +741,12 @@ account form with an info Alert). Parts:
   `TAB_PERMISSIONS`. Self: all of them (read from the my_profile record)
   except Attendance, whose `employee_master_data/attendance` endpoint needs
   `employee-master-data-attendance`.
+- **Assets** tab (`ProfileAssets.jsx`, last before `extraTabs`): the company
+  assets currently assigned (`company_asset/employee_assets/{id}` — current
+  only, read-only; assign / return on Company Assets), shown with
+  `company-asset-employee-view` or `company-asset-list` (the endpoint's);
+  on My Profile (`view="self"`) always, through `my_asset/index` (own only,
+  no permission).
 - Work Schedule's Shift column is `src/pages/shift/ShiftChip.jsx`: click the
   code → popover with the weekly breakdown (time in/out, break, hours, rest
   days, grace) from the version's `shift` (`EmployeeWorkScheduleController::

@@ -53,6 +53,11 @@ const companyAssetApi = {
   addMaintenanceLog: (id, payload) => axios.post(`/company_asset/maintenance_log/${id}/store`, payload),
   dispose:           (id, payload) => axios.post(`/company_asset/dispose/${id}`, payload),
   employeeOptions:   (params)      => axios.post('/company_asset/employee_options', params),
+  // the assets currently assigned to one employee → { company_assets: [...] }
+  // (company-asset-employee-view or -list) — the employee profile's Assets tab
+  employeeAssets:    (employeeId)  => axios.post(`/company_asset/employee_assets/${employeeId}`),
+  // the signed-in employee's own → { linked, company_assets } (auth only) — My Profile's Assets tab
+  myAssets:          ()            => axios.post('/my_asset/index'),
 };
 
 export default companyAssetApi;

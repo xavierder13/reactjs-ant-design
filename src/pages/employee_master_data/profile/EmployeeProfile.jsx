@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, Tabs, Form } from "antd";
 import { useSearchParams } from "react-router-dom";
-import { ProfileOutlined, IdcardOutlined, FolderOpenOutlined } from "@ant-design/icons";
+import { ProfileOutlined, IdcardOutlined, FolderOpenOutlined, LaptopOutlined } from "@ant-design/icons";
 
 import useAuth from "../../../hooks/useAuth";
 import { toDayjs } from "../../../utils/formatDate";
@@ -10,6 +10,7 @@ import ProfileHeader from "./ProfileHeader";
 import ProfileOverview from "./ProfileOverview";
 import ProfileEmployment from "./ProfileEmployment";
 import ProfileDocuments from "./ProfileDocuments";
+import ProfileAssets from "./ProfileAssets";
 import "../components/employeeTabs.css";
 
 // The existing Employee Master Data tabs reused read-only below the
@@ -92,6 +93,13 @@ export default function EmployeeProfile({ employee: initialEmployee, view = "hr"
         </Card>
       ),
     }));
+
+  // Company assets currently assigned: HR by company-asset-employee-view /
+  // -list (the endpoint's permissions); the employee always sees their own
+  // (self-service endpoint)
+  if (isSelf || can("company-asset-employee-view") || can("company-asset-list")) {
+    items.push({ key: "assets", label: "Assets", icon: <LaptopOutlined />, children: <Card size="small"><ProfileAssets employee={employee} self={isSelf} /></Card> });
+  }
 
   items.push(...extraTabs);
 
