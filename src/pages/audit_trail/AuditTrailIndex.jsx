@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
-import { Table, Tag, Button, Space, Select, DatePicker, Typography, Tooltip, Modal, Descriptions, App } from 'antd';
+import { Table, Tag, Button, Space, Select, DatePicker, Typography, Tooltip, Modal, Descriptions, Segmented, App } from 'antd';
 import { ReloadOutlined, EyeOutlined } from '@ant-design/icons';
 import auditTrailApi from '../../services/audit/auditTrailApi';
 import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
@@ -22,15 +22,25 @@ const fieldLabel = (field) => field
   .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
   .join(' ');
 
+// One entry of a logged list: a string as is; an object (e.g. a clearance
+// sign-off's checklist item) by its name, with its status when it has one.
+const listItemText = (item) => {
+  if (item === null || typeof item !== 'object') return String(item);
+  const name = item.item ?? item.name ?? item.title ?? item.label;
+  if (name === undefined || name === null) return JSON.stringify(item);
+  return item.status ? `${name} — ${item.status}` : String(name);
+};
+
 // Logged values: names already resolved by the backend; dates and
-// timestamps formatted; lists (a shift's days, a holiday's branches) one
-// per line.
+// timestamps formatted; lists (a shift's days, a holiday's branches, a
+// sign-off's checklist) one per line.
 const showValue = (value, field) => {
   if (value === null || value === undefined || value === '') return <Typography.Text type='secondary'>—</Typography.Text>;
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   // a 0 / 1 status flag (e.g. a holiday's) — leave statuses are words
   if (field === 'status' && [0, 1, '0', '1'].includes(value)) return Number(value) ? 'Active' : 'Inactive';
-  if (Array.isArray(value)) return value.length ? value.map((v) => <div key={v}>{v}</div>) : <Typography.Text type='secondary'>none</Typography.Text>;
+  // keyed by position: a logged list has no ids, and entries can repeat
+  if (Array.isArray(value)) return value.length ? value.map((v, i) => <div key={i}>{listItemText(v)}</div>) : <Typography.Text type='secondary'>none</Typography.Text>;
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return dayjs(value).format(DISPLAY_DATE_FORMAT);
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(value)) {
     const d = dayjs(value);
@@ -58,13 +68,26 @@ const VIEWER_COLUMNS = [
   { ...CHANGE_COLUMNS[2], title: 'New Data', onCell: () => ({ style: { background: 'rgba(82, 196, 26, 0.08)' } }) },
 ];
 
-// Audit trail of leave, attendance and payroll records: who added, edited
-// or deleted what and when, with every changed field's before / after
-// value (expand a row, or View for the Previous / New Data viewer). Newest
-// first; server-side filters and pagination.
+// HRIS: the audited HRIS records (employee, leave, attendance, payroll,
+// recruitment changes made through the HRIS). Careers portal: changes portal
+// staff made in the careers portal itself, read through the gateway — portal
+// users, and the applicant / record each entry is about instead of an
+// employee.
+const SOURCES = [
+  { value: 'hris', label: 'HRIS' },
+  { value: 'careers', label: 'Careers portal' },
+];
+
+// Audit trail: who added, edited or deleted what and when, with every
+// changed field's before / after value (expand a row, or View for the
+// Previous / New Data viewer). Newest first; server-side filters and
+// pagination.
 const AuditTrailIndex = () => {
   const { message } = App.useApp();
+  const [source, setSource]   = useState('hris');
   const [options, setOptions] = useState({ modules: [], records: [], users: [] });
+  // the careers portal's records / users, sent with each of its pages
+  const [careersOptions, setCareersOptions] = useState({ records: [], users: [] });
   const [filters, setFilters] = useState({});
   const [page, setPage]       = useState({ current: 1, pageSize: 20 });
   const [rows, setRows]       = useState([]);
@@ -77,9 +100,11 @@ const AuditTrailIndex = () => {
   const fetchRows = async () => {
     setLoading(true);
     try {
-      const { data } = await auditTrailApi.getAll({ ...filters, page: page.current, per_page: page.pageSize });
+      const params = { ...filters, page: page.current, per_page: page.pageSize };
+      const { data } = source === 'careers' ? await auditTrailApi.getCareers(params) : await auditTrailApi.getAll(params);
       setRows(data.logs.data);
       setTotal(data.logs.total);
+      if (source === 'careers') setCareersOptions({ records: data.records, users: data.users });
     } catch (error) {
       handleApiError(error, message);
     } finally {
@@ -91,7 +116,7 @@ const AuditTrailIndex = () => {
     const load = async () => { await fetchRows(); };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, page]);
+  }, [source, filters, page]);
 
   useEffect(() => {
     const load = async () => {
@@ -106,6 +131,14 @@ const AuditTrailIndex = () => {
   }, [message]);
 
   const setFilter = (patch) => { setFilters((f) => ({ ...f, ...patch })); setPage((p) => ({ ...p, current: 1 })); };
+  // each source has its own filters
+  const changeSource = (value) => { setSource(value); setFilters({}); setRows([]); setTotal(0); setPage((p) => ({ ...p, current: 1 })); };
+
+  const careers = source === 'careers';
+  const recordOptions = careers ? careersOptions.records : options.records;
+  const users = careers ? careersOptions.users : options.users;
+  const subjectLabel = careers ? 'Applicant / Record' : 'Employee';
+  const subjectOf = (r) => (careers ? r.subject : r.employee);
 
   const columns = [
     {
@@ -123,7 +156,7 @@ const AuditTrailIndex = () => {
     },
     { title: 'Module', dataIndex: 'module', width: 110 },
     { title: 'Record', key: 'record', width: 190, render: (_, r) => `${r.record} #${r.record_id}` },
-    { title: 'Employee', dataIndex: 'employee', width: 230, render: (v) => v || '-' },
+    { title: subjectLabel, key: 'subject', width: 230, render: (_, r) => subjectOf(r) || '-' },
     {
       title: 'Changed Fields',
       dataIndex: 'changes',
@@ -152,22 +185,26 @@ const AuditTrailIndex = () => {
 
   return (
     <div>
-      <Space wrap style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
+      <Segmented options={SOURCES} value={source} onChange={changeSource} style={{ marginBottom: 12 }} />
+      {/* key: a new source remounts the filters (clears the date range) */}
+      <Space key={source} wrap style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
         <Space wrap>
-          <Select
-            allowClear
-            placeholder='All modules'
-            value={filters.log_name}
-            onChange={(v) => setFilter({ log_name: v })}
-            options={options.modules.map((m) => ({ value: m, label: m }))}
-            style={{ width: 140 }}
-          />
+          {!careers && (
+            <Select
+              allowClear
+              placeholder='All modules'
+              value={filters.log_name}
+              onChange={(v) => setFilter({ log_name: v })}
+              options={options.modules.map((m) => ({ value: m, label: m }))}
+              style={{ width: 140 }}
+            />
+          )}
           <Select
             allowClear
             placeholder='All records'
             value={filters.record}
             onChange={(v) => setFilter({ record: v })}
-            options={options.records}
+            options={recordOptions}
             style={{ width: 180 }}
           />
           <Select
@@ -183,17 +220,19 @@ const AuditTrailIndex = () => {
             placeholder='All users'
             value={filters.causer_id}
             onChange={(v) => setFilter({ causer_id: v })}
-            options={options.users.map((u) => ({ value: u.id, label: u.name }))}
+            options={users.map((u) => ({ value: u.id, label: u.name }))}
             showSearch={{ optionFilterProp: 'label' }}
             style={{ width: 200 }}
           />
-          <div style={{ width: 240 }}>
-            <EmployeeSelect
-              value={filters.employee_id}
-              onChange={(v) => setFilter({ employee_id: v ?? undefined })}
-              placeholder='All employees'
-            />
-          </div>
+          {!careers && (
+            <div style={{ width: 240 }}>
+              <EmployeeSelect
+                value={filters.employee_id}
+                onChange={(v) => setFilter({ employee_id: v ?? undefined })}
+                placeholder='All employees'
+              />
+            </div>
+          )}
           <DatePicker.RangePicker
             format={DISPLAY_DATE_FORMAT}
             onChange={(range) => setFilter({
@@ -254,7 +293,7 @@ const AuditTrailIndex = () => {
                 { key: 'when', label: 'Date & Time', children: viewing.created_at ? dayjs(viewing.created_at).format(`${DISPLAY_DATE_FORMAT} hh:mm:ss A`) : '-' },
                 { key: 'user', label: 'User', children: viewing.user || <Typography.Text type='secondary'>System</Typography.Text> },
                 { key: 'module', label: 'Module', children: viewing.module },
-                { key: 'employee', label: 'Employee', children: viewing.employee || '-' },
+                { key: 'subject', label: subjectLabel, children: subjectOf(viewing) || '-' },
               ]}
             />
             <Table

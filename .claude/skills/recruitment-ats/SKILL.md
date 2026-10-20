@@ -32,6 +32,10 @@ unset = any portal Administrator, the old rule). Every accepted change
 create / update / delete) is logged by vueportal (`RecruitmentController::audit`)
 in the Audit Trail — module Recruitment, records "Applicant / Applicant File
 / Recruitment Setup (careers portal)" with the record id; refusals aren't.
+The portal doesn't log gateway requests itself (its `RecruitmentMaintenance`
+turns logging off); changes portal staff make in the portal are logged
+there and shown on the Audit Trail's Careers portal view
+(`activity_logs/careers_audit_trail` → gateway `audit_trail`).
 Never print or copy the credentials.
 
 Development: vueportal's `CAREERS_API_URL` points at the local portal

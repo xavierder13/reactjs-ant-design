@@ -12,9 +12,17 @@ import axios from '../../api/axiosInstance';
 //   a shift's days / a holiday's branches are lists of strings. 422 bag.
 // - getOptions() → { modules: [log_name], records: [{ value, label }],
 //   users: [{ id, name }] }.
+// - getCareers({ description, record, causer_id (portal user), date_from,
+//   date_to, page, per_page ≤ 100 }) — ActivityLogController
+//   @careers_audit_trail: changes portal staff made in the careers portal
+//   itself, read through the gateway → { logs: paginator of the same rows
+//   with `subject` (the applicant / record) instead of `employee`, records:
+//   [{ value, label }], users: [{ id, name }] (portal users) }. 422 bag or
+//   { error } when the portal can't be reached.
 const auditTrailApi = {
   getAll:     (params) => axios.post('/activity_logs/audit_trail', params),
   getOptions: ()       => axios.post('/activity_logs/audit_trail_options'),
+  getCareers: (params) => axios.post('/activity_logs/careers_audit_trail', params),
 };
 
 export default auditTrailApi;
