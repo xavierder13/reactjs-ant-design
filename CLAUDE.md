@@ -203,6 +203,7 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
   | Cancel / deactivate (status change, data kept) | `CloseCircleOutlined` / `StopOutlined` | `color="orange" variant="outlined"` |
   | Submit / send forward | `SendOutlined` | `color="cyan" variant="outlined"` |
   | Print / export / download | `PrinterOutlined` / `DownloadOutlined` | `color="purple" variant="outlined"` |
+  | Pull / sync from an outside source (e.g. Biometric Devices' Pull now; Fetch from BioBridge) | `SyncOutlined` (`spin` while running) / `CloudDownloadOutlined` | `color="geekblue" variant="outlined"` |
 
   Use the fixed AntD **preset** colors above, never `color="primary"` for a
   row action — this app's theme sets `colorPrimary` to green (`#389e0d`,

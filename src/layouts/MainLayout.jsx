@@ -40,6 +40,7 @@ import {
   ScheduleOutlined,
   AuditOutlined,
   FileSearchOutlined,
+  ScanOutlined,
   WalletOutlined,
   SearchOutlined,
   CloseOutlined,
@@ -143,6 +144,7 @@ const titleMap = {
   '/default-schedules':        { title: 'Default Schedules',       breadcrumb: ['Time & Leave', 'Default Schedules'] },
   '/time-entries':             { title: 'Manual Time Entries',     breadcrumb: ['Time & Leave', 'Manual Time Entries'] },
   '/payroll-cutoffs':          { title: 'Payroll Cut-offs',        breadcrumb: ['Time & Leave', 'Payroll Cut-offs'] },
+  '/biometric-devices':        { title: 'Biometric Devices',       breadcrumb: ['Set Up & Authorizations', 'Biometric Devices'] },
   '/access-charts':            { title: 'Access Charts',           breadcrumb: ['Approvals', 'Access Charts'] },
   '/approving-officers':       { title: 'Approving Officers',      breadcrumb: ['Approvals', 'Approving Officers'] },
   '/audit-trail':              { title: 'Audit Trail',             breadcrumb: ['Set Up & Authorizations', 'Audit Trail'] },
@@ -667,6 +669,9 @@ const menuData = [
       },
       { key: 'roles',       title: 'Roles',       icon: <TeamOutlined />,    link: '/roles',       permissions: ['role-list'] },
       { key: 'permissions', title: 'Permissions', icon: <SettingOutlined />, link: '/permissions', permissions: ['permission-list'] },
+      // the branch ZKTeco devices and the attendance feeds (live listener,
+      // pulls, BioBridge fallback)
+      { key: 'biometric-devices', title: 'Biometric Devices', icon: <ScanOutlined />, link: '/biometric-devices', permissions: ['biometric-device-list'] },
       // Who added / edited / deleted leave, attendance and payroll records.
       { key: 'audit-trail', title: 'Audit Trail', icon: <FileSearchOutlined />, link: '/audit-trail', permissions: ['activity-logs'] },
       // idle time before logout + session duration; Administrator only

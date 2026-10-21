@@ -80,6 +80,7 @@ import ClearanceTemplateForm from '../pages/clearance/setup/ClearanceTemplateFor
 import CompanyAssetIndex from '../pages/company_asset/CompanyAssetIndex';
 import AccessChartIndex from '../pages/approval/AccessChartIndex';
 import PayrollCutoffIndex from '../pages/payroll_cutoff/PayrollCutoffIndex';
+import BiometricDeviceIndex from '../pages/biometric_device/BiometricDeviceIndex';
 import SessionSettingsPage from '../pages/session_setting/SessionSettingsPage';
 import AuditTrailIndex from '../pages/audit_trail/AuditTrailIndex';
 import CompensationIndex from '../pages/compensation/CompensationIndex';
@@ -189,6 +190,7 @@ const permissionRoutes = [
   { permissions: ['time-entry-list', 'time-entry-list-all'], path: '/time-entries', element: <TimeEntryIndex /> },
   { permissions: ['access-chart-list'], path: '/access-charts', element: <AccessChartIndex /> },
   { permissions: ['payroll-cutoff-list'], path: '/payroll-cutoffs', element: <PayrollCutoffIndex /> },
+  { permissions: ['biometric-device-list'], path: '/biometric-devices', element: <BiometricDeviceIndex /> },
   { permissions: ['access-chart-list'], path: '/approving-officers', element: <ApprovingOfficerIndex /> },
   { permissions: ['activity-logs'], path: '/audit-trail', element: <AuditTrailIndex /> },
   // Administrator only: the page itself redirects anyone else
