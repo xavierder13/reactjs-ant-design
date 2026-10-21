@@ -192,7 +192,7 @@ const PayrollSettingsPage = () => {
                   type='info'
                   showIcon
                   style={{ marginBottom: 16 }}
-                  title='The payroll run keeps a copy of these settings, so a change applies to runs made after it. Cut-offs are made from the pattern below (Time & Leave → Setup → Payroll Cut-offs → Generate Year).'
+                  title='The payroll run keeps a copy of these settings, so a change applies to runs made after it. Cut-offs are made from the pattern below (Payroll → Setup → Payroll Cut-offs → Generate Year).'
                 />
                 <Card size='small' title='Rates' style={{ marginBottom: 16 }}>
                   <Row gutter={16}>

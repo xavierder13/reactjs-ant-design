@@ -104,9 +104,9 @@ const titleMap = {
   '/employees':              { title: 'Employee Master Data', breadcrumb: ['Employee', 'Master Data'] },
   '/employees/create':       { title: 'Create Employee',     breadcrumb: ['Employee', 'Create'] },
   '/acknowledgment-reports': { title: 'Branch Reports', breadcrumb: ['Employee', 'Workforce Reports', 'Branch Reports'] },
-  '/recruitment/setup/positions':     { title: 'Careers Positions', breadcrumb: ['Recruitment', 'Setup', 'Positions'] },
-  '/recruitment/setup/ranks':         { title: 'Careers Ranks', breadcrumb: ['Recruitment', 'Setup', 'Ranks'] },
-  '/recruitment/setup/branches':      { title: 'Careers Branches', breadcrumb: ['Recruitment', 'Setup', 'Branches'] },
+  '/recruitment/setup/positions':     { title: 'Careers Positions', breadcrumb: ['Recruitment', 'Setup', 'Careers Positions'] },
+  '/recruitment/setup/ranks':         { title: 'Careers Ranks', breadcrumb: ['Recruitment', 'Setup', 'Careers Ranks'] },
+  '/recruitment/setup/branches':      { title: 'Careers Branches', breadcrumb: ['Recruitment', 'Setup', 'Careers Branches'] },
   '/recruitment/setup/job-vacancies': { title: 'Job Vacancies', breadcrumb: ['Recruitment', 'Setup', 'Job Vacancies'] },
   '/recruitment/setup/hiring-officers': { title: 'Hiring Officers', breadcrumb: ['Recruitment', 'Setup', 'Hiring Officers'] },
   '/reports/branch-manpower': { title: 'Branch Manpower Fill Rate', breadcrumb: ['Employee', 'Workforce Reports', 'Branch Manpower Fill Rate'] },
@@ -123,7 +123,7 @@ const titleMap = {
   '/employees/referral-codes':      { title: 'Referral Codes', breadcrumb: ['Employee', 'Referral Codes'] },
   '/employees/new-hired':           { title: 'New Hired', breadcrumb: ['Employee', 'New Hired'] },
   '/employees/careers-synced':      { title: 'Synced from Careers', breadcrumb: ['Employee', 'Synced from Careers'] },
-  '/vacancies':                     { title: 'Vacancies', breadcrumb: ['Recruitment', 'Vacancies'] },
+  '/vacancies':                     { title: 'Headcount Vacancies', breadcrumb: ['Employee', 'Workforce Reports', 'Headcount Vacancies'] },
   ...Object.fromEntries(APPLICANT_STAGES.map((stage) => [stage.path, { title: stage.title, breadcrumb: ['Recruitment', stage.title] }])),
   '/kpi-templates':          { title: 'KPI Templates',       breadcrumb: ['KPI Management', 'KPI Templates'] },
   '/kpi-templates/create':   { title: 'Create KPI Template', breadcrumb: ['KPI Management', 'KPI Templates', 'Create'] },
@@ -143,10 +143,10 @@ const titleMap = {
   '/shifting':                 { title: 'Shifting',                breadcrumb: ['Time & Leave', 'Shifting'] },
   '/default-schedules':        { title: 'Default Schedules',       breadcrumb: ['Time & Leave', 'Default Schedules'] },
   '/time-entries':             { title: 'Manual Time Entries',     breadcrumb: ['Time & Leave', 'Manual Time Entries'] },
-  '/payroll-cutoffs':          { title: 'Payroll Cut-offs',        breadcrumb: ['Time & Leave', 'Payroll Cut-offs'] },
+  '/payroll-cutoffs':          { title: 'Payroll Cut-offs',        breadcrumb: ['Payroll', 'Setup', 'Payroll Cut-offs'] },
   '/biometric-devices':        { title: 'Biometric Devices',       breadcrumb: ['Set Up & Authorizations', 'Biometric Devices'] },
-  '/access-charts':            { title: 'Access Charts',           breadcrumb: ['Approvals', 'Access Charts'] },
-  '/approving-officers':       { title: 'Approving Officers',      breadcrumb: ['Approvals', 'Approving Officers'] },
+  '/access-charts':            { title: 'Access Charts',           breadcrumb: ['Approval Setup', 'Access Charts'] },
+  '/approving-officers':       { title: 'Approving Officers',      breadcrumb: ['Approval Setup', 'Approving Officers'] },
   '/audit-trail':              { title: 'Audit Trail',             breadcrumb: ['Set Up & Authorizations', 'Audit Trail'] },
   '/session-settings':         { title: 'Session Settings',        breadcrumb: ['Set Up & Authorizations', 'Session Settings'] },
   '/compensation':             { title: 'Salary History',          breadcrumb: ['Payroll', 'Salary History'] },
@@ -336,6 +336,8 @@ const menuData = [
             children: [
               { key: 'acknowledgment-reports', title: 'Branch Reports', link: '/acknowledgment-reports', permissions: ['employee-acknowledgment-reports'] },
               { key: 'hr-report-branch-manpower', title: 'Branch Manpower Fill Rate', link: '/reports/branch-manpower', permissions: ['employee-master-data-branch-manpower-export'] },
+              // required vs. active headcount per position × branch (not the careers postings — Recruitment → Setup → Job Vacancies)
+              { key: 'vacancies', title: 'Headcount Vacancies', link: '/vacancies', permissions: ['vacancy-list'] },
             ],
           },
         ]
@@ -379,7 +381,6 @@ const menuData = [
             children: [
               { key: 'leave-types',      title: 'Leave Types',      link: '/leave/types',      permissions: ['leave-type-list'] },
               { key: 'shifts',           title: 'Shifts',           link: '/shifts',           permissions: ['shift-list'] },
-              { key: 'payroll-cutoffs',  title: 'Payroll Cut-offs', link: '/payroll-cutoffs',  permissions: ['payroll-cutoff-list'] },
               { key: 'holiday-calendar', title: 'Holiday Calendar', link: '/holiday-calendar', permissions: ['holiday-calendar-list'] },
             ],
           },
@@ -450,6 +451,7 @@ const menuData = [
             type: 'group',
             label: 'Setup',
             children: [
+              { key: 'payroll-cutoffs',     title: 'Payroll Cut-offs',    link: '/payroll-cutoffs',     permissions: ['payroll-cutoff-list'] },
               { key: 'contribution-tables', title: 'Contribution Tables', link: '/contribution-tables', permissions: ['contribution-table-list'] },
               { key: 'payroll-settings',    title: 'Payroll Settings',    link: '/payroll-settings',    permissions: ['payroll-setting-view', 'payroll-setting-edit'] },
               { key: 'deduction-types',     title: 'Deduction Types',     link: '/deduction-types',     permissions: ['deduction-type-list'] },
@@ -489,23 +491,15 @@ const menuData = [
               { key: 'hired',             title: 'Hired',             link: '/recruitment/hired-list',             permissions: ['careers-hired-list'] },
             ],
           },
-          {
-            key: 'recruitment-openings',
-            type: 'group',
-            label: 'Openings',
-            children: [
-              { key: 'vacancies', title: 'Vacancies', link: '/vacancies', permissions: ['vacancy-list'] },
-            ],
-          },
           // Careers portal record maintenance (recruitment-portal data, via the gateway).
           {
             key: 'recruitment-setup',
             type: 'group',
             label: 'Setup',
             children: [
-              { key: 'careers-positions',     title: 'Positions',     link: '/recruitment/setup/positions',     permissions: ['careers-position-list'] },
-              { key: 'careers-ranks',         title: 'Ranks',         link: '/recruitment/setup/ranks',         permissions: ['careers-rank-list'] },
-              { key: 'careers-branches',      title: 'Branches',      link: '/recruitment/setup/branches',      permissions: ['careers-branch-list'] },
+              { key: 'careers-positions',     title: 'Careers Positions', link: '/recruitment/setup/positions',     permissions: ['careers-position-list'] },
+              { key: 'careers-ranks',         title: 'Careers Ranks',  link: '/recruitment/setup/ranks',         permissions: ['careers-rank-list'] },
+              { key: 'careers-branches',      title: 'Careers Branches', link: '/recruitment/setup/branches',      permissions: ['careers-branch-list'] },
               { key: 'careers-job-vacancies', title: 'Job Vacancies', link: '/recruitment/setup/job-vacancies', permissions: ['careers-job-vacancy-list'] },
               // This HRIS's own table, not the careers portal's — the Hiring Officer Name options.
               { key: 'hiring-officers',       title: 'Hiring Officers', link: '/recruitment/setup/hiring-officers', permissions: ['hiring-officer-list'] },
@@ -651,8 +645,8 @@ const menuData = [
       // Approval procedures shared by MRF, Leave, Manual Time Entries and
       // the older modules (vueportal's Access Chart screens).
       {
-        key: 'approvals',
-        title: 'Approvals',
+        key: 'approval-setup',
+        title: 'Approval Setup',
         icon: <AuditOutlined />,
         children: [
           { key: 'access-charts',      title: 'Access Charts',      link: '/access-charts',      permissions: ['access-chart-list'] },

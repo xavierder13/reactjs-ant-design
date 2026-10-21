@@ -222,7 +222,7 @@ const PayrollAdjustmentFormModal = ({ open, adjustment, suggestion, options, onC
           name='payroll_cutoff_id'
           label='Pay / Deduct on Cut-off'
           rules={[{ required: true, message: 'Select the cut-off' }]}
-          extra={!options.next_cutoff_id ? 'No cut-off ahead — generate this year\'s cut-offs (Time & Leave → Setup → Payroll Cut-offs).' : null}
+          extra={!options.next_cutoff_id ? 'No cut-off ahead — generate this year\'s cut-offs (Payroll → Setup → Payroll Cut-offs).' : null}
         >
           <Select options={cutoffChoices} placeholder='Select' showSearch={{ optionFilterProp: 'label' }} />
         </Form.Item>

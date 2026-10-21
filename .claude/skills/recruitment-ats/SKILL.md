@@ -270,7 +270,7 @@ standard font can't encode print as "?". Verified by rendering
 ## Recruitment Setup — careers portal records
 
 Recruitment → **Setup** group (a flat group header like Payroll → Setup, after
-the Applicant Pipeline and Openings groups): Positions, Ranks, Branches,
+the Applicant Pipeline group): Careers Positions, Careers Ranks, Careers Branches,
 Job Vacancies (`src/pages/recruitment/setup/{position,rank,branch,job_vacancy}/`,
 routes `/recruitment/setup/positions|ranks|branches|job-vacancies`). These are the
 careers portal's own records — what applicants pick on the careers site —

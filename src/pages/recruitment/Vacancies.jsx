@@ -102,13 +102,13 @@ export default function Vacancies() {
     <>
       <Breadcrumb
         style={{ margin: "16px 0", marginTop: 0 }}
-        items={[{ title: <Link to="/">Home</Link> }, { title: "Vacancies" }]}
+        items={[{ title: <Link to="/">Home</Link> }, { title: "Headcount Vacancies" }]}
       />
       <Card
         title={
           <Row justify="space-between" align="middle" gutter={[8, 8]} wrap>
             <Col flex="none">
-              <Typography.Title level={4} style={{ margin: 0 }}>Vacancies</Typography.Title>
+              <Typography.Title level={4} style={{ margin: 0 }}>Headcount Vacancies</Typography.Title>
             </Col>
             <Col flex="none">
               <Space wrap>

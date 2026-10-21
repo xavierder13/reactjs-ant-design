@@ -16,7 +16,7 @@ their own record management, for payroll.
   `PayrollCutoffMaintenance` (`payroll_cutoff.maintenance`, Administrator
   bypass), migration `2026_10_09_120000_create_payroll_cutoffs_table`.
 - React: `src/pages/payroll_cutoff/PayrollCutoffIndex.jsx` (`/payroll-cutoffs`,
-  Time & Leave → Setup → Payroll Cut-offs), `payrollCutoffApi.js` (contract
+  Payroll → Setup → Payroll Cut-offs), `payrollCutoffApi.js` (contract
   in its header).
 
 ## Rules
