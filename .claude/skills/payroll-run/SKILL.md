@@ -224,8 +224,12 @@ admits payroll-setting-edit for the employee picker.
   `PayrollSetting::CENTAVO_RULES`, migration `2026_10_22_100000`;
   `ContributionService::shares()`): `Round` = each share rounded; `Cut` = EE
   cut to the centavo, ER = the exact premium − EE (333.4855 → EE 333.48, ER
-  333.49), tax cut to the centavo. Defaults: PhilHealth Cut (the old
-  payroll's), the others Round. SSS table amounts are whole centavos, so its
+  333.49), tax cut to the centavo; withholding tax also takes `Peso`
+  (`PayrollSetting::TAX_CENTAVO_RULES`, `ContributionService::taxLine`):
+  rounded to the whole peso, half up (919.53 → 920.00 — the old payroll's
+  tax), for every tax table (semi-monthly, monthly, annual). Defaults:
+  PhilHealth Cut (the old payroll's), the others Round. SSS table amounts
+  are whole centavos, so its
   rule only matters if a future table has fractions.
   Tax base = taxable earnings − mandatory EE shares (SSS, PhilHealth,
   Pag-IBIG; not the voluntary Pag-IBIG, never loans) — not net pay. Three

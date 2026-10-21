@@ -22,9 +22,11 @@ const AGENCIES = [
   { key: 'pagibig_deduction', centavos: 'pagibig_centavos', label: 'Pag-IBIG' },
   { key: 'tax_deduction', centavos: 'tax_centavos', label: 'Withholding Tax', tax: true },
 ];
-// each deduction's centavos (vueportal PayrollSetting::CENTAVO_RULES)
+// each deduction's centavos (vueportal PayrollSetting::CENTAVO_RULES; withholding
+// tax: TAX_CENTAVO_RULES, which adds Peso — rounded to the whole peso)
 const centavoLabel = (rule, tax) => {
   if (rule === 'Round') return 'Rounded to the centavo';
+  if (rule === 'Peso') return 'Rounded to the whole peso (919.53 → 920.00)'; // withholding tax only
   return tax ? 'Cut to the centavo' : 'Employee share cut — employer pays the rest';
 };
 const toTime = (t) => (t ? dayjs(`2000-01-01 ${String(t).slice(0, 5)}`) : null);
@@ -248,7 +250,7 @@ const PayrollSettingsPage = () => {
                         <Form.Item name={a.centavos} label={`${a.label} centavos`} rules={[{ required: true, message: 'Required' }]}>
                           <Select
                             popupMatchSelectWidth={false}
-                            options={(data?.centavo_rules || ['Round', 'Cut']).map((v) => ({ value: v, label: centavoLabel(v, a.tax) }))}
+                            options={((a.tax ? data?.tax_centavo_rules : data?.centavo_rules) || ['Round', 'Cut']).map((v) => ({ value: v, label: centavoLabel(v, a.tax) }))}
                           />
                         </Form.Item>
                       </Col>
