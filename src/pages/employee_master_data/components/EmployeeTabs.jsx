@@ -35,11 +35,13 @@ import "./employeeTabs.css";
 // request — matches EmployeeMasterDataController@store() accepting all of
 // these except Offboarding in the same request that creates the employee).
 export default function EmployeeTabs({ mode = "create", initialData, onEmployeeChange, onActiveTabChange, onPersonalSubTabChange, onPerformanceSubTabChange, pendingCreateData, onPendingCreateDataChange }) {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasAnyPermission, hasRole } = useAuth();
+  // a tab's permission is one string, or a list (any of them)
+  const allowed = (p) => hasRole("Administrator") || (Array.isArray(p) ? hasAnyPermission(...p) : hasPermission(p));
 
   const allItems = getEmployeeTabItems({ mode, initialData, onEmployeeChange, onPersonalSubTabChange, onPerformanceSubTabChange, pendingCreateData, onPendingCreateDataChange });
 
-  const items = allItems.filter((item) => hasPermission(TAB_PERMISSIONS[item.key]));
+  const items = allItems.filter((item) => allowed(TAB_PERMISSIONS[item.key]));
 
   const [activeKey, setActiveKey] = useState(items[0]?.key);
   // Reports the initial default tab up once on mount (onChange only fires

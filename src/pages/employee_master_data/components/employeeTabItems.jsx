@@ -2,7 +2,7 @@
 // Profile page (profile/EmployeeProfile.jsx, which reuses the record tabs).
 import {
   UserOutlined, SolutionOutlined, ScheduleOutlined, FieldTimeOutlined,
-  RiseOutlined, WarningOutlined, ReadOutlined, LogoutOutlined,
+  RiseOutlined, WarningOutlined, ReadOutlined, LogoutOutlined, LaptopOutlined,
 } from "@ant-design/icons";
 import PersonalDataTab from "./tabs/PersonalDataTab";
 import EmployeeDetailsTab from "./tabs/EmployeeDetailsTab";
@@ -12,6 +12,7 @@ import TrainingProgramTab from "./tabs/TrainingProgramTab";
 import OffboardingTab from "./tabs/OffboardingTab";
 import WorkScheduleTab from "./tabs/WorkScheduleTab";
 import AttendanceTab from "./tabs/AttendanceTab";
+import AssetAssignmentTab from "./tabs/AssetAssignmentTab";
 
 // Each tab is hidden entirely (not just empty) for a user without its own
 // permission — matches vueportal's `EmployeeInformationTabs.vue` `tabItems`
@@ -36,6 +37,8 @@ export const TAB_PERMISSIONS = {
   disciplinary: "employee-master-data-disciplinary-measures-penalties",
   training: "employee-master-data-training-program",
   offboarding: "employee-master-data-offboarding",
+  // Edit only; assign / return on it also need company-asset-assign
+  assets: "employee-master-data-asset-assignment",
 };
 
 // Every tab's {key, label, children}, unfiltered — EmployeeTabs filters them by
@@ -141,5 +144,14 @@ export function getEmployeeTabItems({ mode, initialData, onEmployeeChange, onPer
       // in this tab's own local records list. See EmployeeForm.jsx.
       children: <OffboardingTab mode={mode} initialData={initialData} onEmployeeChange={onEmployeeChange} />,
     },
+    // Edit only (the employee exists): assign / return / view company assets.
+    // The profile (View) keeps its own read-only Assets tab, so it doesn't
+    // take this one (not in its RECORD_TAB_KEYS).
+    ...(mode === "edit" ? [{
+      key: "assets",
+      label: "Asset Assignment",
+      icon: <LaptopOutlined />,
+      children: <AssetAssignmentTab initialData={initialData} />,
+    }] : []),
   ];
 }

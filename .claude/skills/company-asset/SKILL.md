@@ -24,6 +24,13 @@ depreciation, disposal lock, history-as-audit-trail) are in vueportal's
   Lost only — **Disposed only through Dispose**. Add may assign at once
   (`-assign`; "Not assigned" sends `assignment_type: null`). Edit never
   sends assignment keys, so it never changes the assignment.
+- **Edit Employee → Asset Assignment** (`employee_master_data/components/tabs/AssetAssignmentTab.jsx`,
+  tab permission `employee-master-data-asset-assignment`): the employee's
+  current assets (`employeeAssets`), View (this `AssetDetailsModal`,
+  dispose off; Reassign opens `AssetAssignModal`), Return, and **Assign
+  asset** — a picker of Active assets nobody holds (`getAll` with
+  `assignment_type: 'Unassigned'`); assign / return need `-assign`; only an
+  active employee can be given one.
 - `AssetDetailsModal.jsx` — details + book value (straight-line; blank
   without date acquired, cost and useful life), tabs Assignment History
   (newest first, Current = open row) and Maintenance Log (`-maintenance`;

@@ -57,6 +57,7 @@ src/pages/employee_master_data/
       TrainingProgramTab.jsx      HR-encoded training programs (on PerformanceRecordTab), before Offboarding
       OffboardingTab.jsx          + offboarding/OffboardingFileSlot.jsx, offboarding/OffboardingFormFields.jsx
       AttendanceTab.jsx           read-only, own fetch
+      AssetAssignmentTab.jsx      Edit only: company assets of the employee — View / Return / Assign asset (own fetch, no Form.Items)
   lists/                          segment / open-case list pages (see "Segment and Open-Case Lists")
     EmployeeSegmentList.jsx       shared server-paginated list → HiredThisMonth.jsx, ForRegularization.jsx, CareersSyncedList.jsx
     ResignedEmployees.jsx         latest offboarding per employee, date-filtered, edit/delete offboarding
@@ -350,7 +351,10 @@ Otherwise selecting it throws `Unknown column '<value>' in 'where clause'`
   umbrella permission — a tab the user lacks is absent from `items`, not
   disabled: `-personal-data`, `-employee-details`,
   `-performance-management`, `-disciplinary-measures-penalties`,
-  `-training-program`, `-offboarding`, `-attendance`, `-work-schedule`. Inner sub-tabs are filtered the same way
+  `-training-program`, `-offboarding`, `-attendance`, `-work-schedule`,
+  `-asset-assignment` (the Edit-only **Asset Assignment** tab; a
+  TAB_PERMISSIONS value may also be a list = any of them; Administrator
+  passes). Inner sub-tabs are filtered the same way
   by their own permission. A role can hold a sub-permission without the
   umbrella (e.g. Payroll Admin) — that must hide the whole tab.
 - Sub-modules use `employee-master-data-<sub>-list/-create/-edit/-delete`
