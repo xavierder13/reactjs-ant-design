@@ -7,6 +7,11 @@ export const hhmm = (time) => (time ? String(time).slice(0, 5) : null);
 // '06:00' → dayjs for a TimePicker (date part irrelevant).
 export const toTime = (time) => (time ? dayjs(`2000-01-01 ${hhmm(time)}`) : null);
 
+// Late make-up minutes ↔ 'H:MM' text and a TimePicker value (a duration typed as a time).
+export const makeupText = (minutes) => (minutes ? `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}` : null);
+export const minutesToTime = (minutes) => (minutes ? dayjs('2000-01-01 00:00').add(minutes, 'minute') : null);
+export const timeToMinutes = (t) => (t ? t.hour() * 60 + t.minute() : null);
+
 // One day of a shift / schedule as text: "Day off" or "06:00–15:00" (+1 = next day).
 export const dayText = (day) => {
   if (!day || day.is_day_off || day.day_off) return 'Day off';

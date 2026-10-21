@@ -26,11 +26,16 @@ with the permission change it directly. The system keeps every change.
 
 ## Rules
 
-- **Shift**: code (unique, upper-cased), name, grace minutes, active; 7
+- **Shift**: code (unique, upper-cased), name, grace minutes, late make-up
+  (`makeup_work_minutes`, null = off, 60–960, migration
+  `2026_10_27_100003`: a late day counts no late and no over-break when
+  last out − first in − the break taken — the shift's break when none was
+  punched — reaches it; else late counts as usual; form: Late make-up switch
+  + Required work (break excluded), list column Late Make-up), active; 7
   `shift_days` (Monday…Sunday): day off, or time in / out (both required,
   different; time out before time in = ends next day) + break minutes. A
-  shift ever assigned can't be deleted (set inactive) and its days, hours
-  and grace are locked (`ShiftController::patternChanged` → 422) —
+  shift ever assigned can't be deleted (set inactive) and its days, hours,
+  grace and late make-up are locked (`ShiftController::patternChanged` → 422) —
   ScheduleService reads the live pattern for past dates too, so changing it
   would rewrite past schedules; a different pattern = a new shift. Code,
   name, description, active stay editable (index returns `assigned`).
@@ -62,7 +67,7 @@ with the permission change it directly. The system keeps every change.
   (`work_schedule`), (4) a group default Work Schedule (`group_schedule`),
   (5) none (null = No Schedule). Per date: source, shift_code, group (null |
   { id, scope, name }), day_off, time_in, time_out, break_minutes,
-  grace_minutes. **Use it for anything that needs "the employee's schedule
+  grace_minutes, makeup_work_minutes. **Use it for anything that needs "the employee's schedule
   on a date"** — leave counting, time entries, overtime, the DTR and payroll adjustments
   do. React labels the source with `scheduleSourceLabel` (shiftHelpers).
 - **Scope**: `shift-assignment-list-all` (or Administrator) = every

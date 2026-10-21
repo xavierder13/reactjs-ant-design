@@ -3,9 +3,12 @@ import axios from '../../api/axiosInstance';
 // Shifts (patterns) — vueportal ShiftController, prefix `shift`
 // (shift.maintenance; Administrator bypasses). shift-list/-create/-edit/-delete.
 // - getAll() → { shifts: [{ id, code, name, description, grace_minutes,
+//   makeup_work_minutes (late make-up: work minutes, break excluded, that
+//   cancel a late; null = off),
 //   active, days: [{ day ('Monday'…'Sunday', in that order), is_day_off,
 //   time_in ('06:00:00' | null), time_out, break_minutes }] }], days: [...] }
 // - create / update payload { code, name, description, grace_minutes,
+//   makeup_work_minutes (null | 60–960; locked once assigned, like grace),
 //   active, days: [7 × { day, is_day_off, time_in 'HH:mm', time_out,
 //   break_minutes }] } → { message, shift }; validation → 422 bag (keys
 //   like `days.0.time_in`). Time out before time in = ends the next day.

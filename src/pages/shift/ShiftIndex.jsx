@@ -8,7 +8,7 @@ import { tablePagination } from '../../utils/tablePagination';
 import RecordToolbar from '../record_management/RecordToolbar';
 import RecordRowActions from '../record_management/RecordRowActions';
 import ActiveTag from '../record_management/ActiveTag';
-import { patternSummary } from './shiftHelpers';
+import { patternSummary, makeupText } from './shiftHelpers';
 import ShiftFormModal from './ShiftFormModal';
 
 // Shift patterns for temporary shifting (relieving). The employee's fixed
@@ -53,6 +53,7 @@ const ShiftIndex = () => {
     { title: 'Name', dataIndex: 'name', sorter: (a, b) => a.name.localeCompare(b.name) },
     { title: 'Weekly Pattern', key: 'pattern', render: (_, r) => patternSummary(r.days) },
     { title: 'Grace', dataIndex: 'grace_minutes', width: 80, render: (v) => `${v} min` },
+    { title: 'Late Make-up', dataIndex: 'makeup_work_minutes', width: 130, render: (v) => (v ? `${makeupText(v)} worked` : '—') },
     { title: 'Status', dataIndex: 'active', width: 100, render: (v) => <ActiveTag active={v ? 'Y' : 'N'} /> },
     {
       title: 'Actions',

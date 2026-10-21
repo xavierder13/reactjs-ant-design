@@ -80,7 +80,12 @@ to existing (filing on) cut-offs.
   `over_break_late`, default on, migration `2026_10_22_110000`): a paired
   break — break in after break out — longer than the shift's break adds to
   the day's late (`over_break_minutes`; payslip "09/15 6 min (over-break
-  6)"); no pair, no over-break.
+  6)"); no pair, no over-break. A hand-typed Work Schedule (no shift) has
+  break 0, so any paired break there is over-break — give the employee a
+  Work Schedule with a shift. Late make-up (the shift's
+  `makeup_work_minutes`): when last out − first in − the break taken reaches
+  it, the day's late and over-break are 0 (remark "Late made up: worked
+  8:00 …"); else they count as above.
 - Paid day = scheduled span − break, at most `hours_per_day` (hand-typed
   schedules have no break). Late (past grace, counted from the start),
   undertime, Absent (no punch, no leave), half-day leave 0.5 (a leave day
