@@ -47,6 +47,7 @@ src/pages/employee_master_data/
     ImportDataModal.jsx           Import Data (Document Type + file; error list)
     ExportEmployeesModal.jsx      Excel export (core record "Employee List" report only); optional presetValues/extraPayload/title
     SubmitAcknowledgmentReportModal.jsx  opened from the bulk-action bar
+    SelectionBar.jsx              bulk-action bar (count, Clear selection, actions) — main list + segment lists
     FileSlotCard.jsx              attachment card (status tag, drag-drop picker, download/delete) + FileSlots row wrapper; used by NTE and Disciplinary dialogs
     tabs/
       PersonalDataTab.jsx         nested: personal/PersonalInformation.jsx + personal/FilesRequirements.jsx
@@ -309,11 +310,14 @@ columns once a permission hid a button):
   first ascending. A sort on a column hidden via `ColumnSelector` is
   dropped. Paging and filtering keep the sort. A sort click fires only the
   Table's `onChange` (action `sort`), never `pagination.onChange`.
-- **Bulk action bar**: an `Alert` (`type="info"`) shown only when
-  `selectedRowKeys.length > 0` — selection count, Clear selection,
-  permission-gated Delete Selected (`Popconfirm` →
-  `deleteEmployee(selectedRowKeys, refetchParams)`), and Submit
-  Acknowledgment Report. Follow this pattern for any future bulk action.
+- **Bulk action bar**: `components/SelectionBar.jsx` (main list and the
+  segment lists), shown only when `selectedRowKeys.length > 0` — the count
+  and a link-style Clear selection on the left, the bulk actions passed as
+  children on the right (wraps under the count on narrow screens; colors
+  from the theme token, so dark mode follows): permission-gated Submit
+  Branch Report and Delete Selected (`Popconfirm` →
+  `deleteEmployee(selectedRowKeys, refetchParams)`). Add any future bulk
+  action as a child button (default size).
 - Use `App.useApp()` for every `message`/`notification` in this module —
   never the static `antd` import (it can't consume the `<AntApp>` context
   and warns).

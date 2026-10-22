@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Card, Row, Col, Typography, Input, Select, Space, Button, Grid, Breadcrumb, Alert, Popconfirm, App,
+  Card, Row, Col, Typography, Input, Select, Space, Button, Grid, Breadcrumb, Popconfirm, App,
 } from "antd";
 import { ReloadOutlined, SearchOutlined, ExportOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 
@@ -14,6 +14,7 @@ import EmployeeTable from "../components/EmployeeTable";
 import EmployeeCardMobile from "../components/EmployeeCardMobile";
 import PaginationControls from "../components/PaginationControls";
 import ExportEmployeesModal from "../components/ExportEmployeesModal";
+import SelectionBar from "../components/SelectionBar";
 import BranchFilter from "./BranchFilter";
 import useListAccess from "./useListAccess";
 import useEmployeeFormOptions from "../../../hooks/useEmployeeFormOptions";
@@ -232,22 +233,13 @@ export default function EmployeeSegmentList({
         </Row>
 
         {selectedRowKeys.length > 0 && (
-          <Alert
-            style={{ marginBottom: 16 }}
-            type="info"
-            showIcon
-            title={
-              <Space wrap>
-                <span>{selectedRowKeys.length} employee(s) selected</span>
-                <Button size="small" onClick={() => setSelectedRowKeys([])}>Clear selection</Button>
-                {can("employee-master-data-delete") && (
-                  <Popconfirm title={`Delete ${selectedRowKeys.length} selected employee(s)?`} onConfirm={handleBulkDelete}>
-                    <Button size="small" danger icon={<DeleteOutlined />} loading={bulkDeleting}>Delete Selected</Button>
-                  </Popconfirm>
-                )}
-              </Space>
-            }
-          />
+          <SelectionBar count={selectedRowKeys.length} onClear={() => setSelectedRowKeys([])}>
+            {can("employee-master-data-delete") && (
+              <Popconfirm title={`Delete ${selectedRowKeys.length} selected employee(s)?`} onConfirm={handleBulkDelete}>
+                <Button danger icon={<DeleteOutlined />} loading={bulkDeleting}>Delete Selected</Button>
+              </Popconfirm>
+            )}
+          </SelectionBar>
         )}
 
         {!isMobile ? (
