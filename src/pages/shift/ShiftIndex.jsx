@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Table, Alert, App } from 'antd';
+import { Table, Alert, App, Tag } from 'antd';
 import useAuth from '../../hooks/useAuth';
 import useShifts from '../../hooks/useShifts';
 import shiftApi from '../../services/shift/shiftApi';
@@ -52,8 +52,13 @@ const ShiftIndex = () => {
     { title: 'Code', dataIndex: 'code', width: 140, sorter: (a, b) => a.code.localeCompare(b.code) },
     { title: 'Name', dataIndex: 'name', sorter: (a, b) => a.name.localeCompare(b.name) },
     { title: 'Weekly Pattern', key: 'pattern', render: (_, r) => patternSummary(r.days) },
-    { title: 'Grace', dataIndex: 'grace_minutes', width: 80, render: (v) => `${v} min` },
-    { title: 'Late Make-up', dataIndex: 'makeup_work_minutes', width: 130, render: (v) => (v ? `${makeupText(v)} worked` : '—') },
+    { title: 'Grace', dataIndex: 'grace_minutes', width: 80, render: (v, r) => (r.flexible ? '—' : `${v} min`) },
+    {
+      title: 'Late Make-up',
+      dataIndex: 'makeup_work_minutes',
+      width: 130,
+      render: (v, r) => (r.flexible ? <Tag color='purple'>Flexible hours</Tag> : v ? `${makeupText(v)} worked` : '—'),
+    },
     { title: 'Status', dataIndex: 'active', width: 100, render: (v) => <ActiveTag active={v ? 'Y' : 'N'} /> },
     {
       title: 'Actions',

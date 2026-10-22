@@ -12,9 +12,11 @@ export const makeupText = (minutes) => (minutes ? `${Math.floor(minutes / 60)}:$
 export const minutesToTime = (minutes) => (minutes ? dayjs('2000-01-01 00:00').add(minutes, 'minute') : null);
 export const timeToMinutes = (t) => (t ? t.hour() * 60 + t.minute() : null);
 
-// One day of a shift / schedule as text: "Day off" or "06:00–15:00" (+1 = next day).
+// One day of a shift / schedule as text: "Day off", "06:00–15:00" (+1 = next
+// day) or, on a flexible shift (no times), "Flexible 8:00".
 export const dayText = (day) => {
   if (!day || day.is_day_off || day.day_off) return 'Day off';
+  if (day.work_minutes && !day.time_in) return `Flexible ${makeupText(day.work_minutes)}`;
   const tin = hhmm(day.time_in);
   const tout = hhmm(day.time_out);
   if (!tin || !tout) return '—';

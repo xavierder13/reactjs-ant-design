@@ -24,5 +24,8 @@ export const scheduleText = (s) => {
   if (!s) return '—';
   if (!s.source) return 'No schedule';
   const from = s.source === 'shift' ? `Shifting ${s.shift_code}` : `Work Schedule${s.shift_code ? ` ${s.shift_code}` : ''}`;
-  return `${from}: ${s.day_off ? 'Day off' : timeRange(s.time_in, s.time_out)}`;
+  const hours = s.flexible && s.work_minutes
+    ? `Flexible ${Math.floor(s.work_minutes / 60)}:${String(s.work_minutes % 60).padStart(2, '0')} (any time in)`
+    : timeRange(s.time_in, s.time_out);
+  return `${from}: ${s.day_off ? 'Day off' : hours}`;
 };
