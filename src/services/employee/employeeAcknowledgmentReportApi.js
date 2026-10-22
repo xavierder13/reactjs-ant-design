@@ -9,7 +9,9 @@ import axios from '../../api/axiosInstance';
 // - store() takes { branch_id, employees: [{ employee_id, is_active }] } —
 //   a snapshot of a row selection from the Employee Master Data list at
 //   submission time, not a file upload despite the Vue UI's "Upload
-//   Employee Report" button label/icon.
+//   Employee Report" button label/icon. Without Administrator or
+//   `employee-acknowledgment-reports-all`, branch_id must be the user's own
+//   (users.branch_id) — else 422 { message }.
 // - view()/export() take { acknowledgment_id }; export() returns an .xlsx
 //   blob (Excel::download server-side).
 const employeeAcknowledgmentReportApi = {

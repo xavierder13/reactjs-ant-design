@@ -46,7 +46,7 @@ src/pages/employee_master_data/
     GenerateTemplateModal.jsx     Generate Template (Document Type + its options)
     ImportDataModal.jsx           Import Data (Document Type + file; error list)
     ExportEmployeesModal.jsx      Excel export (core record "Employee List" report only); optional presetValues/extraPayload/title
-    SubmitAcknowledgmentReportModal.jsx  opened from the bulk-action bar
+    SubmitAcknowledgmentReportModal.jsx  opened from the bulk-action bar; Branch picker only for Administrator / employee-acknowledgment-reports-all, else the account's branch (users.branch_id) read-only — vueportal store() refuses another branch (422)
     SelectionBar.jsx              bulk-action bar (count, Clear selection, actions) — main list + segment lists
     FileSlotCard.jsx              attachment card (status tag, drag-drop picker, download/delete) + FileSlots row wrapper; used by NTE and Disciplinary dialogs
     tabs/
