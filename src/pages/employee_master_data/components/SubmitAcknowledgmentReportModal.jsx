@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal, Button, Select, Table, Switch, Alert, App } from "antd";
 import useEmployeeFormOptions from "../../../hooks/useEmployeeFormOptions";
+import useAuth from "../../../hooks/useAuth";
 import useAcknowledgmentReportStore from "../../../store/acknowledgmentReportStore";
 import handleApiError from "../../../utils/handleApiError";
 
@@ -12,8 +13,16 @@ import handleApiError from "../../../utils/handleApiError";
 // employees: the selected row objects from EmployeeTable/EmployeeCardMobile
 // (full employee records, not just ids), so their current `active` status
 // and `branch` can seed sensible defaults.
+// Branch: only the Administrator or a holder of
+// employee-acknowledgment-reports-all picks it; everyone else (e.g. a Branch
+// Manager) submits for their own account's branch (users.branch_id — the
+// branch the Branch Reports list scopes them to), shown read-only. vueportal's
+// store() refuses another branch too.
 export default function SubmitAcknowledgmentReportModal({ open, employees, onClose, onSubmitted }) {
   const { message: messageApi } = App.useApp();
+  const { user, hasRole, hasPermission } = useAuth();
+  const canPickBranch = hasRole('Administrator') || hasPermission('employee-acknowledgment-reports-all');
+  const ownBranchId = user?.branch_id ?? user?.branch?.id ?? undefined;
   // Module-gated options (/employee_master_data/create) — /branch/index
   // needs branch-list, which HR roles don't have.
   const { branchOptions } = useEmployeeFormOptions();
@@ -30,15 +39,23 @@ export default function SubmitAcknowledgmentReportModal({ open, employees, onClo
   const handleAfterOpenChange = (isOpen) => {
     if (!isOpen) { setBranchId(undefined); setStatusById({}); return; }
     const branchIds = [...new Set(employees.map((e) => e.branch?.id).filter(Boolean))];
-    setBranchId(branchIds.length === 1 ? branchIds[0] : undefined);
+    if (!canPickBranch) setBranchId(ownBranchId);
+    else setBranchId(branchIds.length === 1 ? branchIds[0] : undefined);
     setStatusById(Object.fromEntries(employees.map((e) => [e.id, Boolean(e.active)])));
   };
 
   const spansMultipleBranches = new Set(employees.map((e) => e.branch?.id).filter(Boolean)).size > 1;
+  // a locked branch: the employees selected from another branch
+  const outsideOwnBranch = !canPickBranch && ownBranchId
+    ? employees.filter((e) => e.branch?.id && e.branch.id !== ownBranchId).length : 0;
+  // the own branch may be missing from the options — label it from the account
+  const options = !canPickBranch && ownBranchId && !branchOptions.some((o) => o.value === ownBranchId)
+    ? [...branchOptions, { label: user?.branch?.name || `Branch #${ownBranchId}`, value: ownBranchId }]
+    : branchOptions;
 
   const handleSubmit = async () => {
     if (!branchId) {
-      messageApi.warning('Select a branch for this report.');
+      messageApi.warning(canPickBranch ? 'Select a branch for this report.' : 'Your account has no branch — ask an administrator to set it.');
       return;
     }
     setSaving(true);
@@ -68,10 +85,28 @@ export default function SubmitAcknowledgmentReportModal({ open, employees, onClo
       width={640}
       footer={[
         <Button key="cancel" onClick={onClose} disabled={saving}>Cancel</Button>,
-        <Button key="submit" type="primary" loading={saving} onClick={handleSubmit}>Submit</Button>,
+        <Button key="submit" type="primary" loading={saving} disabled={!branchId} onClick={handleSubmit}>Submit</Button>,
       ]}
     >
-      {spansMultipleBranches && (
+      {!canPickBranch && !ownBranchId && (
+        <Alert
+          type="error"
+          showIcon
+          style={{ marginBottom: 12 }}
+          title="Your account has no branch, so a branch report can't be submitted. Ask an administrator to set your account's branch."
+        />
+      )}
+
+      {!canPickBranch && outsideOwnBranch > 0 && (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 12 }}
+          title={`${outsideOwnBranch} selected employee(s) are not in your branch. The report is submitted for your branch.`}
+        />
+      )}
+
+      {canPickBranch && spansMultipleBranches && (
         <Alert
           type="warning"
           showIcon
@@ -81,13 +116,17 @@ export default function SubmitAcknowledgmentReportModal({ open, employees, onClo
       )}
 
       <Select
-        placeholder="Select branch"
-        style={{ width: '100%', marginBottom: 16 }}
-        options={branchOptions}
+        placeholder={canPickBranch ? "Select branch" : "No branch on your account"}
+        style={{ width: '100%', marginBottom: 16, ...(canPickBranch ? {} : { pointerEvents: 'none' }) }}
+        options={options}
         value={branchId}
         onChange={setBranchId}
-        showSearch
+        showSearch={canPickBranch}
         optionFilterProp="label"
+        // Locked look without AntD's `disabled` gray-out (as the Manpower
+        // Request Branch field): forced closed, no arrow, no pointer /
+        // keyboard interaction — normal (non-darkened) styling.
+        {...(canPickBranch ? {} : { open: false, suffixIcon: null, tabIndex: -1 })}
       />
 
       <Table

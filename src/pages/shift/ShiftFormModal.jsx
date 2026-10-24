@@ -6,22 +6,26 @@ import shiftApi from '../../services/shift/shiftApi';
 import handleApiError from '../../utils/handleApiError';
 import { DAYS, toTime, hhmm, applyErrors, makeupText, minutesToTime, timeToMinutes } from './shiftHelpers';
 
-const blankDays = () => DAYS.map((day) => ({ day, is_day_off: day === 'Sunday', time_in: null, time_out: null, break_minutes: 60 }));
+const blankDays = () => DAYS.map((day) => ({ day, is_day_off: day === 'Sunday', time_in: null, time_out: null, break_minutes: 60, work_time: minutesToTime(480) }));
 
 // Create/edit a shift pattern: per weekday a day off, or time in / out and
 // break minutes (time out before time in = ends the next day, e.g. a night
 // shift). `shift` = null for create. Late make-up: when on, a late day counts
 // no late (nor over-break) if the employee worked at least the required time
-// — last out − first in − the break taken (DtrService). A shift already
-// assigned keeps its days, hours, grace and late make-up (changing them would
-// rewrite past schedules — the backend refuses it): only code, name,
-// description and active change.
+// — last out − first in − the break taken (DtrService). Flexible hours: no
+// time in / out — each work day needs its required work (break excluded)
+// from whatever time the employee comes in; no late (no grace or make-up),
+// short of it = undertime. A shift already assigned keeps its days, hours,
+// grace, late make-up and flexible hours (changing them would rewrite past
+// schedules — the backend refuses it): only code, name, description and
+// active change.
 const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
   const days = Form.useWatch('days', form) || [];
   const makeupOn = Form.useWatch('makeup_on', form);
+  const flexibleOn = Form.useWatch('flexible', form);
   const locked = !!shift?.assigned;
 
   const handleAfterOpenChange = (isOpen) => {
@@ -34,12 +38,16 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
       grace_minutes: shift.grace_minutes,
       makeup_on: !!shift.makeup_work_minutes,
       makeup_time: minutesToTime(shift.makeup_work_minutes || 480),
+      flexible: !!shift.flexible,
       active: shift.active,
       days: DAYS.map((day) => {
         const d = shift.days.find((x) => x.day === day) || { is_day_off: true };
-        return { day, is_day_off: !!d.is_day_off, time_in: toTime(d.time_in), time_out: toTime(d.time_out), break_minutes: d.break_minutes ?? 0 };
+        return {
+          day, is_day_off: !!d.is_day_off, time_in: toTime(d.time_in), time_out: toTime(d.time_out), break_minutes: d.break_minutes ?? 0,
+          work_time: minutesToTime(d.work_minutes || 480),
+        };
       }),
-    } : { grace_minutes: 0, makeup_on: false, makeup_time: minutesToTime(480), active: true, days: blankDays() });
+    } : { grace_minutes: 0, makeup_on: false, makeup_time: minutesToTime(480), flexible: false, active: true, days: blankDays() });
   };
 
   // Copy Monday's hours to every other working day.
@@ -47,7 +55,9 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
     const all = form.getFieldValue('days');
     const mon = all[0];
     form.setFieldsValue({
-      days: all.map((d, i) => (i === 0 || d.is_day_off ? d : { ...d, time_in: mon.time_in, time_out: mon.time_out, break_minutes: mon.break_minutes })),
+      days: all.map((d, i) => (i === 0 || d.is_day_off ? d : {
+        ...d, time_in: mon.time_in, time_out: mon.time_out, break_minutes: mon.break_minutes, work_time: mon.work_time,
+      })),
     });
   };
 
@@ -58,21 +68,25 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
     } catch {
       return; // AntD shows inline field errors
     }
+    const flexible = !!form.getFieldValue('flexible');
     const payload = {
       code: values.code.trim(),
       name: values.name.trim(),
       description: values.description?.trim() || null,
-      grace_minutes: values.grace_minutes ?? 0,
-      makeup_work_minutes: form.getFieldValue('makeup_on') ? timeToMinutes(form.getFieldValue('makeup_time')) : null,
+      // a flexible shift has no time in, so no grace or late make-up
+      grace_minutes: flexible ? 0 : values.grace_minutes ?? 0,
+      makeup_work_minutes: !flexible && form.getFieldValue('makeup_on') ? timeToMinutes(form.getFieldValue('makeup_time')) : null,
+      flexible,
       active: values.active,
       // the full stored rows — a locked shift renders its days as text, and
       // validateFields() only returns values of rendered fields
       days: (form.getFieldValue('days') || []).map((d, i) => ({
         day: DAYS[i],
         is_day_off: !!d.is_day_off,
-        time_in: d.is_day_off ? null : d.time_in?.format('HH:mm') || null,
-        time_out: d.is_day_off ? null : d.time_out?.format('HH:mm') || null,
+        time_in: d.is_day_off || flexible ? null : d.time_in?.format('HH:mm') || null,
+        time_out: d.is_day_off || flexible ? null : d.time_out?.format('HH:mm') || null,
         break_minutes: d.is_day_off ? 0 : d.break_minutes ?? 0,
+        work_minutes: d.is_day_off || !flexible ? null : timeToMinutes(d.work_time),
       })),
     };
 
@@ -82,9 +96,9 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
       message.success(data.message);
       onSaved();
     } catch (error) {
-      // `days.3.time_in` → ['days', 3, 'time_in']
+      // `days.3.time_in` → ['days', 3, 'time_in'] (work_minutes → the work_time picker)
       applyErrors(error, form, message, handleApiError, (key) => (key.startsWith('days.')
-        ? key.split('.').map((p) => (/^\d+$/.test(p) ? Number(p) : p)) : key));
+        ? key.replace(/work_minutes$/, 'work_time').split('.').map((p) => (/^\d+$/.test(p) ? Number(p) : p)) : key));
     } finally {
       setSaving(false);
     }
@@ -92,6 +106,10 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
 
   const requiredWhenWorking = (index, label) => [{
     validator: (_, value) => (days[index]?.is_day_off || value ? Promise.resolve() : Promise.reject(new Error(`${label} is required`))),
+  }];
+  const workTimeRules = (index) => [{
+    validator: (_, value) => (days[index]?.is_day_off || (value && timeToMinutes(value) >= 60)
+      ? Promise.resolve() : Promise.reject(new Error('At least 1:00'))),
   }];
 
   // A locked shift shows its stored days as read-only text, not greyed
@@ -103,8 +121,12 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
   const lockedColumns = [
     { title: 'Day', key: 'day', width: 110, render: (_, __, i) => DAYS[i] },
     { title: 'Day Off', key: 'off', width: 80, render: (_, __, i) => (storedDay(i).is_day_off ? 'Yes' : 'No') },
-    { title: 'Time In', key: 'in', render: (_, __, i) => (storedDay(i).is_day_off ? '—' : hhmm(storedDay(i).time_in) || '—') },
-    { title: 'Time Out', key: 'out', render: (_, __, i) => (storedDay(i).is_day_off ? '—' : hhmm(storedDay(i).time_out) || '—') },
+    ...(shift?.flexible ? [
+      { title: 'Required Work (break excluded)', key: 'work', render: (_, __, i) => (storedDay(i).is_day_off ? '—' : makeupText(storedDay(i).work_minutes) || '—') },
+    ] : [
+      { title: 'Time In', key: 'in', render: (_, __, i) => (storedDay(i).is_day_off ? '—' : hhmm(storedDay(i).time_in) || '—') },
+      { title: 'Time Out', key: 'out', render: (_, __, i) => (storedDay(i).is_day_off ? '—' : hhmm(storedDay(i).time_out) || '—') },
+    ]),
     { title: 'Break (min)', key: 'break', width: 110, render: (_, __, i) => (storedDay(i).is_day_off ? '—' : storedDay(i).break_minutes ?? 0) },
   ];
 
@@ -118,12 +140,19 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
           <Switch
             size='small'
             // a day off needs no times — drop errors left on them
-            onChange={() => form.setFields([{ name: ['days', i, 'time_in'], errors: [] }, { name: ['days', i, 'time_out'], errors: [] }])}
+            onChange={() => form.setFields(['time_in', 'time_out', 'work_time'].map((f) => ({ name: ['days', i, f], errors: [] })))}
           />
         </Form.Item>
       ),
     },
-    {
+    ...(flexibleOn ? [{
+      title: 'Required Work (break excluded)',
+      render: (_, __, i) => (
+        <Form.Item name={[i, 'work_time']} rules={workTimeRules(i)} style={{ margin: 0 }}>
+          <TimePicker format='H:mm' minuteStep={5} showNow={false} needConfirm={false} disabled={days[i]?.is_day_off} style={{ width: '100%' }} />
+        </Form.Item>
+      ),
+    }] : [{
       title: 'Time In',
       render: (_, __, i) => (
         <Form.Item name={[i, 'time_in']} rules={requiredWhenWorking(i, 'Time in')} style={{ margin: 0 }}>
@@ -138,7 +167,7 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
           <TimePicker format='HH:mm' minuteStep={5} disabled={days[i]?.is_day_off} style={{ width: '100%' }} />
         </Form.Item>
       ),
-    },
+    }]),
     {
       title: 'Break (min)',
       width: 110,
@@ -176,8 +205,8 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
             </Form.Item>
           </Col>
           <Col xs={12} md={3}>
-            <Form.Item name='grace_minutes' label='Grace (min)' tooltip='Minutes after time in before it counts as late.'>
-              <InputNumber min={0} max={240} readOnly={locked} style={{ width: '100%' }} />
+            <Form.Item name='grace_minutes' label='Grace (min)' tooltip='Minutes after time in before it counts as late. None on a flexible shift (no late).'>
+              <InputNumber min={0} max={240} readOnly={locked} disabled={flexibleOn} style={{ width: '100%' }} />
             </Form.Item>
           </Col>
           <Col xs={12} md={3}>
@@ -186,51 +215,82 @@ const ShiftFormModal = ({ open, shift, onClose, onSaved }) => {
         </Row>
         {locked ? (
           <Typography.Paragraph style={{ marginBottom: 8 }}>
-            <strong>Late make-up:</strong>{' '}
-            {shift.makeup_work_minutes
-              ? `on — no late when at least ${makeupText(shift.makeup_work_minutes)} worked (break excluded)`
-              : 'off'}
+            {shift.flexible ? (
+              <><strong>Flexible hours:</strong> on — each work day needs its required work (break excluded) from any time in; no late, short of it is undertime</>
+            ) : (
+              <>
+                <strong>Late make-up:</strong>{' '}
+                {shift.makeup_work_minutes
+                  ? `on — no late when at least ${makeupText(shift.makeup_work_minutes)} worked (break excluded)`
+                  : 'off'}
+              </>
+            )}
           </Typography.Paragraph>
         ) : (
-          <Row gutter={16} align='bottom'>
-            <Col xs={12} md={6}>
-              <Form.Item
-                name='makeup_on'
-                label='Late make-up'
-                valuePropName='checked'
-                tooltip='A late day counts no late (and no over-break) when the employee worked at least the required time: last out − first in − the break taken (the shift break when none was punched). Otherwise late counts as usual.'
-              >
-                <Switch />
-              </Form.Item>
-            </Col>
-            <Col xs={12} md={8}>
-              <Form.Item
-                name='makeup_time'
-                label='Required work (break excluded)'
-                rules={[{ validator: (_, v) => (!makeupOn || (v && timeToMinutes(v) >= 60) ? Promise.resolve() : Promise.reject(new Error('At least 1:00'))) }]}
-              >
-                <TimePicker format='H:mm' minuteStep={5} showNow={false} needConfirm={false} disabled={!makeupOn} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={10}>
-              <Typography.Text type='secondary' style={{ fontSize: 12, display: 'block', marginBottom: 24 }}>
-                {makeupOn
-                  ? `E.g. 8:00 — in 8:30 with a 60-min break needs out 17:30; a 90-min break needs 18:00.`
-                  : 'Off: late counts from the time in (and over-break) as usual.'}
-              </Typography.Text>
-            </Col>
-          </Row>
+          <>
+            <Row gutter={16} align='bottom'>
+              <Col xs={12} md={6}>
+                <Form.Item
+                  name='flexible'
+                  label='Flexible hours'
+                  valuePropName='checked'
+                  tooltip='No time in / out: each work day needs its required work (break excluded) counted from whatever time the employee comes in. No late (no grace or late make-up); short of the required work is undertime.'
+                >
+                  <Switch />
+                </Form.Item>
+              </Col>
+              <Col xs={12} md={18}>
+                <Typography.Text type='secondary' style={{ fontSize: 12, display: 'block', marginBottom: 24 }}>
+                  {flexibleOn
+                    ? 'E.g. 8:00 with a 60-min break — in 10:30 needs out 19:30; out 18:30 is 1:00 undertime. Set the required work per day below.'
+                    : 'Off: fixed time in / out per day.'}
+                </Typography.Text>
+              </Col>
+            </Row>
+            {!flexibleOn && (
+              <Row gutter={16} align='bottom'>
+                <Col xs={12} md={6}>
+                  <Form.Item
+                    name='makeup_on'
+                    label='Late make-up'
+                    valuePropName='checked'
+                    tooltip='A late day counts no late (and no over-break) when the employee worked at least the required time: last out − first in − the break taken (the shift break when none was punched). Otherwise late counts as usual.'
+                  >
+                    <Switch />
+                  </Form.Item>
+                </Col>
+                <Col xs={12} md={8}>
+                  <Form.Item
+                    name='makeup_time'
+                    label='Required work (break excluded)'
+                    rules={[{ validator: (_, v) => (!makeupOn || (v && timeToMinutes(v) >= 60) ? Promise.resolve() : Promise.reject(new Error('At least 1:00'))) }]}
+                  >
+                    <TimePicker format='H:mm' minuteStep={5} showNow={false} needConfirm={false} disabled={!makeupOn} style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={10}>
+                  <Typography.Text type='secondary' style={{ fontSize: 12, display: 'block', marginBottom: 24 }}>
+                    {makeupOn
+                      ? `E.g. 8:00 — in 8:30 with a 60-min break needs out 17:30; a 90-min break needs 18:00.`
+                      : 'Off: late counts from the time in (and over-break) as usual.'}
+                  </Typography.Text>
+                </Col>
+              </Row>
+            )}
+          </>
         )}
         {locked ? (
           <Alert
             type='info'
             showIcon
-            title='This shift has been assigned, so its days, hours, grace and late make-up are locked — past schedules depend on them. Create a new shift for a different pattern.'
+            title='This shift has been assigned, so its days, hours, grace, late make-up and flexible hours are locked — past schedules depend on them. Create a new shift for a different pattern.'
             style={{ marginBottom: 8 }}
           />
         ) : (
           <Typography.Text type='secondary'>
-            A time out earlier than the time in ends the next day (night shift).
+            {flexibleOn
+              ? 'Required work per day, break excluded — counted from the first time in to the last time out.'
+              : 'A time out earlier than the time in ends the next day (night shift).'}
           </Typography.Text>
         )}
         <Form.List name='days'>

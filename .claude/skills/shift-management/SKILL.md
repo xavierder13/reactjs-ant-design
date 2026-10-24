@@ -31,11 +31,18 @@ with the permission change it directly. The system keeps every change.
   `2026_10_27_100003`: a late day counts no late and no over-break when
   last out − first in − the break taken — the shift's break when none was
   punched — reaches it; else late counts as usual; form: Late make-up switch
-  + Required work (break excluded), list column Late Make-up), active; 7
+  + Required work (break excluded), list column Late Make-up), flexible
+  hours (`shifts.flexible` + `shift_days.work_minutes`, 60–960, migration
+  `2026_10_27_100004`: a work day has no time in / out, only its required
+  work, break excluded, from any time in — no late, so grace 0 and no
+  make-up (the backend forces both); form: Flexible hours switch → the days
+  table shows Required Work instead of Time In / Out; list: "Flexible
+  hours" tag; `dayText` "Flexible 8:00"), active; 7
   `shift_days` (Monday…Sunday): day off, or time in / out (both required,
-  different; time out before time in = ends next day) + break minutes. A
+  different; time out before time in = ends next day) — or on a flexible
+  shift the required work — + break minutes. A
   shift ever assigned can't be deleted (set inactive) and its days, hours,
-  grace and late make-up are locked (`ShiftController::patternChanged` → 422) —
+  grace, late make-up and flexible hours are locked (`ShiftController::patternChanged` → 422) —
   ScheduleService reads the live pattern for past dates too, so changing it
   would rewrite past schedules; a different pattern = a new shift. Code,
   name, description, active stay editable (index returns `assigned`).
@@ -67,7 +74,8 @@ with the permission change it directly. The system keeps every change.
   (`work_schedule`), (4) a group default Work Schedule (`group_schedule`),
   (5) none (null = No Schedule). Per date: source, shift_code, group (null |
   { id, scope, name }), day_off, time_in, time_out, break_minutes,
-  grace_minutes, makeup_work_minutes. **Use it for anything that needs "the employee's schedule
+  grace_minutes, makeup_work_minutes, flexible, work_minutes (a flexible
+  work day: time_in / time_out null). **Use it for anything that needs "the employee's schedule
   on a date"** — leave counting, time entries, overtime, the DTR and payroll adjustments
   do. React labels the source with `scheduleSourceLabel` (shiftHelpers).
 - **Scope**: `shift-assignment-list-all` (or Administrator) = every

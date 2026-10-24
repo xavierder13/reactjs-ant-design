@@ -85,7 +85,14 @@ to existing (filing on) cut-offs.
   Work Schedule with a shift. Late make-up (the shift's
   `makeup_work_minutes`): when last out − first in − the break taken reaches
   it, the day's late and over-break are 0 (remark "Late made up: worked
-  8:00 …"); else they count as above.
+  8:00 …"); else they count as above. Flexible hours (the shift's
+  `flexible`, the day's `work_minutes`): no late or over-break; worked =
+  last out − first in − the break taken (punched pair, else the shift's
+  break once half the day is worked); short of the required work =
+  undertime (at most the paid day, which is the required work capped at
+  `hours_per_day`); remark "Flexible: worked 7:00 of 8:00". The punch window
+  of a flexible day is 04:00 to the next day's start, so a time out after
+  04:00 the next day isn't matched (overnight flexible work — a known limit).
 - Paid day = scheduled span − break, at most `hours_per_day` (hand-typed
   schedules have no break). Late (past grace, counted from the start),
   undertime, Absent (no punch, no leave), half-day leave 0.5 (a leave day

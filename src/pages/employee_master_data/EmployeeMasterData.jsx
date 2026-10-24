@@ -12,7 +12,6 @@ import {
   Grid,
   Form,
   Breadcrumb,
-  Alert,
   Popconfirm,
   App,
 } from "antd";
@@ -43,6 +42,7 @@ import GenerateTemplateModal from "./components/GenerateTemplateModal";
 import { TEMPLATE_PERMISSIONS, IMPORT_PERMISSIONS } from "./components/importDocumentTypes";
 import ExportEmployeesModal from "./components/ExportEmployeesModal";
 import SubmitAcknowledgmentReportModal from "./components/SubmitAcknowledgmentReportModal";
+import SelectionBar from "./components/SelectionBar";
 import { EMPLOYEE_COLUMNS as headers, DEFAULT_EMPLOYEE_COLUMNS as defaultHeaders } from "./components/employeeColumns";
 
 const { useBreakpoint } = Grid;
@@ -414,34 +414,23 @@ export default function EmployeeMasterData() {
         </Space>
 
         {selectedRowKeys.length > 0 && (
-          <Alert
-            style={{ marginBottom: 16 }}
-            type="info"
-            showIcon
-            title={
-              <Space wrap>
-                <span>{selectedRowKeys.length} employee(s) selected</span>
-                <Button size="small" onClick={() => setSelectedRowKeys([])}>
-                  Clear selection
+          <SelectionBar count={selectedRowKeys.length} onClear={() => setSelectedRowKeys([])}>
+            {hasPermission('employee-acknowledgment-reports') && (
+              <Button icon={<UploadOutlined />} onClick={() => setAcknowledgmentReportOpen(true)}>
+                Submit Branch Report
+              </Button>
+            )}
+            {hasPermission('employee-master-data-delete') && (
+              <Popconfirm
+                title={`Delete ${selectedRowKeys.length} selected employee(s)?`}
+                onConfirm={handleBulkDelete}
+              >
+                <Button danger icon={<DeleteOutlined />} loading={bulkDeleting}>
+                  Delete Selected
                 </Button>
-                {hasPermission('employee-acknowledgment-reports') && (
-                  <Button size="small" icon={<UploadOutlined />} onClick={() => setAcknowledgmentReportOpen(true)}>
-                    Submit Branch Report
-                  </Button>
-                )}
-                {hasPermission('employee-master-data-delete') && (
-                  <Popconfirm
-                    title={`Delete ${selectedRowKeys.length} selected employee(s)?`}
-                    onConfirm={handleBulkDelete}
-                  >
-                    <Button size="small" danger icon={<DeleteOutlined />} loading={bulkDeleting}>
-                      Delete Selected
-                    </Button>
-                  </Popconfirm>
-                )}
-              </Space>
-            }
-          />
+              </Popconfirm>
+            )}
+          </SelectionBar>
         )}
 
         {!isMobile && (

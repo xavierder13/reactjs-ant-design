@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { Table, Tag, Tooltip, Typography } from 'antd';
 import { DAY_TYPE_COLORS } from '../../overtime/overtimeHelpers';
 import { DTR_STATUS_COLORS, minutesText, daysText } from './runHelpers';
-import { scheduleSourceLabel } from '../../shift/shiftHelpers';
+import { dayText, scheduleSourceLabel } from '../../shift/shiftHelpers';
 
 const empty = <Typography.Text type='secondary'>—</Typography.Text>;
 
@@ -52,7 +52,7 @@ const DtrDaysTable = ({ days }) => {
         if (!s.source) return <Typography.Text type='warning'>No schedule</Typography.Text>;
         return (
           <div>
-            <div>{s.day_off ? 'Day off' : `${s.time_in}–${s.time_out}`}</div>
+            <div>{s.day_off ? 'Day off' : s.flexible ? dayText(s) : `${s.time_in}–${s.time_out}`}</div>
             <Typography.Text type='secondary' style={{ fontSize: 12, display: 'block' }}>{scheduleSourceLabel(s)}</Typography.Text>
             {s.shift_code && <Typography.Text type='secondary' style={{ fontSize: 12, display: 'block', whiteSpace: 'nowrap' }}>{s.shift_code}</Typography.Text>}
           </div>

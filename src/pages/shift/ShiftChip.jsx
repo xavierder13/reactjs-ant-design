@@ -1,9 +1,11 @@
 import { Popover, Table, Tag, Typography } from 'antd';
 import { DAYS, dayText, hhmm } from './shiftHelpers';
 
-// Hours worked in a day: time in → out (overnight wraps), minus the break.
+// Hours worked in a day: time in → out (overnight wraps), minus the break
+// (a flexible day: its required work).
 const workHours = (day) => {
   if (!day || day.is_day_off) return null;
+  if (day.work_minutes && !day.time_in) return day.work_minutes / 60;
   const tin = hhmm(day.time_in);
   const tout = hhmm(day.time_out);
   if (!tin || !tout) return null;
