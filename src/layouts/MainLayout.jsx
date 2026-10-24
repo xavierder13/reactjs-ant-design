@@ -950,12 +950,10 @@ const MainLayout = () => {
     <div className="app-sidebar">
       <div className="app-sidebar__brand">
         <img className="app-sidebar__logo" src={LOGO_URL} alt="ADDESSA" />
-        {(isMobile || !collapsed) && (
-          <div style={{ minWidth: 0 }}>
-            <div className="app-sidebar__name">ADDESSA Corp</div>
-            <div className="app-sidebar__tagline">HR Information System</div>
-          </div>
-        )}
+        <div style={{ minWidth: 0 }}>
+          <div className="app-sidebar__name">ADDESSA Corp</div>
+          <div className="app-sidebar__tagline">HR Information System</div>
+        </div>
         {/* drawers close only by their own button (persistent) */}
         {isMobile && (
           <Button
@@ -993,6 +991,9 @@ const MainLayout = () => {
         >
           <Menu
             mode="inline"
+            // the Sider hides to 0 width, so never switch to icon-only mode on
+            // collapse — that re-renders the whole menu and stalls the slide
+            inlineCollapsed={false}
             inlineIndent={14}
             selectedKeys={[activeKey]}
             defaultOpenKeys={openKeys}

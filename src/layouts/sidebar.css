@@ -17,6 +17,11 @@
   background: linear-gradient(180deg, var(--sb-bg-top) 0%, var(--sb-bg-bottom) 100%);
   color: var(--sb-text);
 }
+/* desktop Sider: keep the full width while it slides to 0, so the content
+   is clipped instead of reflowing mid-animation */
+.ant-layout-sider .app-sidebar {
+  width: 240px;
+}
 
 /* ── Brand ─────────────────────────────────────────────── */
 .app-sidebar__brand {
