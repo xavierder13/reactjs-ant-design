@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import dayjs from 'dayjs';
 import { Table, Tag, Button, Space, Select, Input, Tooltip, Typography, Alert, App } from 'antd';
 import { EyeOutlined, ReloadOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import useAuth from '../../../hooks/useAuth';
@@ -43,7 +44,8 @@ const TimekeepingIndex = () => {
         const { data } = await dtrApi.options();
         setOptions(data);
         // the cut-off that holds today, else the latest one already started
-        const today = new Date().toISOString().slice(0, 10);
+        // local date (toISOString is UTC: yesterday before 8 AM in Manila)
+        const today = dayjs().format('YYYY-MM-DD');
         const current = data.cutoffs.find((c) => c.date_from <= today && c.date_to >= today)
           || data.cutoffs.find((c) => c.date_from <= today) || data.cutoffs[0];
         if (current) setCutoffId(current.id);
