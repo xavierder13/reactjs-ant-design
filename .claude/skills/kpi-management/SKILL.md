@@ -137,6 +137,12 @@ action; the backend's `KpiMaintenance` and controllers bypass it too
 - `canEdit` (grade inputs + **Compute Grades**): `kpi-evaluation-create` or
   `-edit`, and status `draft`/`rejected` (supervisor type) or
   `self`/`rejected` (self type).
+- **Compute Grades** (`handleCompute`): a `fullscreen` `Spin` ("Computing
+  grades from SAP…", a run takes tens of seconds) covers the screen while it
+  runs — not a Spin wrapped around the tab, whose centred icon sat below the
+  fold on the tall Evaluation tab; a 422 with an `errors` array (items that could not be computed —
+  the backend then saved nothing) opens a `modal.error` listing them, any
+  other failure goes through `handleApiError`.
 - `canSubmit` (**Mark as Submitted**, with client-side "all grades/ratings
   filled" check): same permissions, status `draft` (supervisor) / `self`
   (self) — not `rejected`.

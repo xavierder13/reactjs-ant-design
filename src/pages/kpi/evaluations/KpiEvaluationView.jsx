@@ -34,7 +34,7 @@ const statusColors = {
 const KpiEvaluationView = () => {
   const { id }                      = useParams();
   const navigate                    = useNavigate();
-  const { message }                 = App.useApp();
+  const { message, modal }          = App.useApp();
   const { hasRole, hasAnyRole, hasAnyPermission, hasPermission } = useAuth();
   // Product rule: the Administrator can do every action
   const isAdmin = hasRole('Administrator');
@@ -197,7 +197,27 @@ const KpiEvaluationView = () => {
         message.error(data.message);
       }
     } catch (error) {
-      handleApiError(error, message);
+      // 422 with a list of items that could not be computed — nothing was saved
+      const errors = error.response?.status === 422 ? error.response.data?.errors : null;
+      if (Array.isArray(errors) && errors.length) {
+        modal.error({
+          title:    'Grades were not computed',
+          keyboard: false,
+          width:    560,
+          content: (
+            <>
+              <Typography.Paragraph>
+                No grade was saved. Fix the item(s) below and compute again:
+              </Typography.Paragraph>
+              <ul style={{ paddingLeft: 20, margin: 0 }}>
+                {errors.map((text, i) => <li key={i}>{text}</li>)}
+              </ul>
+            </>
+          ),
+        });
+      } else {
+        handleApiError(error, message);
+      }
     } finally {
       setComputing(false);
     }
@@ -416,6 +436,14 @@ const KpiEvaluationView = () => {
 
   return (
     <>
+      {/* Covers the screen while grades compute — centred wherever the page is scrolled */}
+      <Spin
+        fullscreen
+        spinning={computing}
+        size='large'
+        description='Computing grades from SAP — this can take a minute…'
+      />
+
       <Breadcrumb
         style={{ marginBottom: 16 }}
         items={[
