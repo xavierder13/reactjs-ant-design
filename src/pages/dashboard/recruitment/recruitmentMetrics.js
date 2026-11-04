@@ -53,6 +53,14 @@ export const getTodayIso = () => {
   return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
 };
 export const getJanFirstThisYearIso = () => `${new Date().getFullYear()}-01-01`;
+
+// A 'YYYY-MM-DD' range date as that day in local time. new Date('YYYY-MM-DD')
+// is UTC midnight (8 AM in Manila), which dropped every applicant of the From day.
+export const parseRangeDate = (iso, endOfDay = false) => {
+  if (!iso) return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  return endOfDay ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d);
+};
 export const defaultDateRange = () => ({ from: getJanFirstThisYearIso(), to: getTodayIso() });
 export const emptyFilters = () => ({ branch: '', position: '', source: '', stage: '', gender: '' });
 
@@ -143,8 +151,8 @@ export const loadApplicantRows = (apiRows) => {
 // source, stage, gender }; dateRange: { from, to } ('YYYY-MM-DD' or '');
 // positions/branches: the /recruitment/applicant_list lookups; today: Date.
 export function computeRecruitmentMetrics({ allApplicantRows, filters, dateRange, positions = [], branches = [], today = new Date() }) {
-  const fromDate = dateRange.from ? new Date(dateRange.from) : null;
-  const toDate   = dateRange.to   ? new Date(dateRange.to + 'T23:59:59') : null;
+  const fromDate = parseRangeDate(dateRange.from);
+  const toDate   = parseRangeDate(dateRange.to, true);
 
   const allFilterOptions = Object.fromEntries(
     Object.entries({ branch: 'appliedBranch', position: 'appliedPosition', source: 'applicationSource', stage: 'recruitmentStage' })
@@ -157,10 +165,9 @@ export function computeRecruitmentMetrics({ allApplicantRows, filters, dateRange
     if (filters.source   && applicant.applicationSource !== filters.source)   return false;
     if (filters.gender   && applicant.applicantGender   !== filters.gender)   return false;
     if (filters.stage    && applicant.recruitmentStage  !== filters.stage)    return false;
-    if (applicant.dateHired !== null) {
-      if (fromDate && applicant.dateHired < fromDate) return false;
-      if (toDate   && applicant.dateHired > toDate)   return false;
-    } else if (applicant.dateApplied) {
+    // by date submitted, hired or not — the same count as the Front Page
+    // reports and the Job Applicants list (hires by contract date: hiredApplicants)
+    if (applicant.dateApplied) {
       if (fromDate && applicant.dateApplied < fromDate) return false;
       if (toDate   && applicant.dateApplied > toDate)   return false;
     }
@@ -182,10 +189,9 @@ export function computeRecruitmentMetrics({ allApplicantRows, filters, dateRange
     return true;
   });
 
-  // vueportal: hired applicants are in BOTH lists, so anything built on this
-  // counts each hire twice (gender, education, civil status, top positions,
-  // branch breakdown). Kept identical so the numbers match vueportal.
-  const allDateFilteredApplicants = [...dateFilteredApplicants, ...hiredApplicants];
+  // applicants submitted in the range plus those hired in it, each once
+  // (same as vueportal and the recruitment portal dashboards)
+  const allDateFilteredApplicants = [...new Set([...dateFilteredApplicants, ...hiredApplicants])];
 
   const daysToHireValues = dateFilteredApplicants.filter((a) => a.daysToHire > 0).map((a) => a.daysToHire);
   const averageDaysToHire = daysToHireValues.length

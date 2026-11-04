@@ -14,9 +14,13 @@ the two.
 - `src/pages/dashboard/recruitment/recruitmentMetrics.js` — every metric.
   A line-for-line port of Dashboard.vue's `computed` block plus the chart
   data its components build. Pure JS, no React. vueportal quirks are kept on
-  purpose (marked `vueportal:`), e.g. hired applicants appear in both
-  `dateFilteredApplicants` and `hiredApplicants`, so gender/education/civil
-  status/top positions/branch breakdown count each hire twice. One deliberate
+  purpose (marked `vueportal:`). Dates (same in vueportal's and the
+  recruitment portal's Dashboard.vue): `dateFilteredApplicants` is by **date submitted** for everyone
+  (hired too), so Total Applicants equals the recruitment portal's Front Page
+  Sourcing `total_applicants` and its Job Applicants list; `hiredApplicants`
+  is by contract date; `allDateFilteredApplicants` is their union without
+  duplicates. Range dates go through `parseRangeDate` (local day) —
+  `new Date('YYYY-MM-DD')` is UTC midnight and dropped the From day. One deliberate
   difference: every section follows the dashboard filters (user,
   2026-10-07), so the stage filter also applies to `hiredApplicants`
   (vueportal skips it there).
