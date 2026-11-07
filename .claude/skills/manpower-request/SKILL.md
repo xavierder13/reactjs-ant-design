@@ -20,43 +20,19 @@ canonical source for the status machine, validation and service rules.
 This repo can't see it when run on its own, so the backend facts the
 frontend depends on are summarized in "Backend Contract" below.
 
-## Architecture / File Map
+## Area files — read the one for the area you're changing
 
-```
-src/pages/manpower_request/request/
-  ManpowerRequestIndex.jsx    list/table page
-  CreateManpowerRequest.jsx   thin wrapper → ManpowerRequestForm mode="create"
-  EditManpowerRequest.jsx     fetches record, guards editability, → ManpowerRequestForm mode="edit"
-  ManpowerRequestForm.jsx     shared create/edit form (Form.List for position line items)
-  EmployeeSelect.jsx          async searchable employee picker (Replacement Employee + Record Hires)
-  ViewManpowerRequest.jsx     detail page: record + approve/disapprove/return/cancel/delete,
-                              Approval History, Record Hires, per-line attachment controls
-  ManpowerRequestPrint.jsx    print view (+ ManpowerRequestPrint.css)
+Sections in this file apply to every change in this module. Area-specific
+rules live beside it; **read the matching file before touching that area**
+(they are rules, not optional background).
 
-src/store/manpowerRequestStore.js
-src/services/manpower_request/manpowerRequestApi.js
-src/hooks/useManpowerRequests.js
-src/pages/dashboard/DashboardPage.jsx   "Manpower Request — Time to Fill" section
-```
-
-## Routes
-
-Registered in both `AppRoutes.jsx` (`permissionRoutes`) and
-`MainLayout.jsx` (`menuData` + `getPageMeta` regex cases for `:id` paths):
-
-```
-/manpower-requests            → ManpowerRequestIndex     (manpower-request-list OR -list-all)
-/manpower-requests/create     → CreateManpowerRequest    (manpower-request-create)
-/manpower-requests/:id        → ViewManpowerRequest      (manpower-request-list OR -list-all + action perms)
-/manpower-requests/:id/edit   → EditManpowerRequest      (manpower-request-create/-edit)
-/manpower-requests/:id/print  → ManpowerRequestPrint     (manpower-request-print)
-```
-
-`-list-all` must stay accepted alongside `-list` in `AppRoutes.jsx` and the
-"All Requests" `menuData` entry, or a role holding only `-list-all` is
-blocked client-side. The print route is opened via `window.open(...,
-'_blank')` from a Print button (no `menuData` entry) but has its own
-`getPageMeta` case.
+| Touching | Read |
+|---|---|
+| finding a file or route | `areas/file-map.md` |
+| Record Hires, Excel reports, Index date filter | `areas/record-hires-and-reports.md` |
+| per-line status / aging / Time to Fill | `areas/line-status-and-aging.md` |
+| approval procedures, line attachments (View page) | `areas/approval-procedures-and-attachments.md` |
+| print layout | `areas/print.md` |
 
 ## API / Service Pattern
 
@@ -244,139 +220,6 @@ The header grid shows **Approved Date** (`record.date_approved`) next to
 Current Level. Both Index and View have a manual Refresh (`ReloadOutlined`;
 Index → `refetch()`, View → `loadRecord()` with its own `refreshing`
 state) because visibility can change from other users' actions.
-
-## Record Hires ("FOR HR USE ONLY")
-
-- Button in `ViewManpowerRequest.jsx`'s header `extra`, visible when
-  `hasPermission('manpower-request-record-hire') && record.status ===
-  'Approved'` (no ownership check).
-- Modal: one `Card` per line (`hireRows`, seeded from `record.details` on
-  open), each with `slots` = `quantity`-many entries pre-filled from
-  `d.hires`. Each slot: `EmployeeSelect` (`activeOnly`, `branchId`,
-  `positionId`, `hiredOnOrAfter`) plus a **read-only** "Date Hired/Date
-  Assigned" `Typography.Text` — never a `DatePicker`. Slots are labelled
-  `Hired Employee #n` only when there's more than one. Employee and date
-  each take a full-width row (`Col span={24}`). Updates go through
-  `updateHireSlot(detailId, slotIndex, changes)`.
-- The date shown on selection is `option.preview_hire_date` (**not**
-  `date_employed`) — the same value the backend will persist (latest
-  branch assignment date first, else `date_employed`).
-- Save → `recordHire(record.id, hires)` with `hires: [{ detail_id,
-  hired_employee_ids }]` (array, empties filtered). **No `date_hired` in
-  the payload.** Then reload the record.
-- Duplicates: the same employee can't be in two slots/lines of one
-  request. Live feedback: duplicated slots get `status="error"` plus a red
-  "This employee is already selected for another position." line. On save,
-  `handleHireConfirm` blocks and names the employee (`hired_employee_label`
-  from `onChange`'s option). The backend enforces this too and is the real
-  authority; it also caps hires per line at `quantity`.
-- Main detail view maps over `d.hires` — one read-only row per hire with
-  its own Time to Fill.
-
-## Excel reports + Date Filter (Index page)
-
-- **Date Filter** `Select` (`DATE_FIELDS`: Date Created → `created_at`, Approved Date → `date_approved`; default `created_at`) sits next to the `RangePicker` and decides which field the range filters on — for the on-screen list (client-side; a record with no value for that field is excluded while a range is set) **and** both exports (sent as `date_field`/`date_from`/`date_to`, applied server-side).
-- **Export Report** `Dropdown`, grouped menu, keys `<report>:<option>`:
-  - *MRF Report (Approved only)* — `hiring:Open|Closed|Overall` → `exportReport()`. Always Approved-only regardless of Date Filter.
-  - *Status Report (per position line)* — `status:All|<status>` → `exportStatusReport()`.
-  - Saved via `downloadBlobResponse()`. Rows/columns are built server-side (vueportal `reportRows()`/`statusReportRows()`); search/status list filters are not sent.
-- The hiring report's Status uses the same Open/Closed rule as below; its Aging counts from `date_approved` like the on-screen Aging.
-
-## Per-line Status / Aging, Time to Fill
-
-- Each detail line shows a derived `Status` tag: `Open` while it has no
-  hires, `Closed` once it has at least one (user-confirmed direction).
-  `Aging` (days from `record.date_approved` to today) shows only while
-  `Open`.
-- **Time to Fill** = `date_approved` → each hire's `date_hired`, one value
-  per **hire**. Used per hire in `ViewManpowerRequest.jsx` and in
-  `DashboardPage.jsx`'s section (Recruitment KPI 4, computed by
-  `dashboard/recruitment/timeToFill.js`): Σ days ÷ positions filled, for
-  hires dated within the dashboard's date range, against the Standard Time
-  To Fill by position rank — RF 25 / SUP 45 / MGR 60 days (Top Management
-  uses 60); by-rank table with % within standard, by-position chart,
-  by-hire-month trend, filled-positions table. The rank comes from
-  `details.position.rank` (in `detailEagerLoads()`); a position without a
-  rank gets no standard and a warning. MRFs without `date_approved`, hires
-  without `date_hired`, and hires dated before approval (warned) are
-  excluded. Follows the dashboard's date range, Branch and Position (by
-  name); Source/Stage/Gender are applicant-only.
-- **Hiring Efficiency** (Recruitment KPI 5, `dashboard/recruitment/hiringEfficiency.js`,
-  section after Time to Fill) = vacancies closed within the month ÷ open
-  positions within the month. Approved MRFs only; each line opens
-  `quantity` positions on `date_approved`, and its valid hires (on/after
-  approval, earliest first) close them one by one — so it counts positions,
-  unlike the MRF report's per-line Open/Closed. Open within a month = open at
-  its start + newly approved in it. Monthly table and chart over the
-  dashboard's date range (current month to date), the period rate, and the
-  "Still Open" count. Same filters as Time to Fill. Positions come from
-  `buildMrfPositions()` (shared with Aging of Vacancies).
-- **Aging of Vacancies** (Recruitment KPI 6, `dashboard/recruitment/vacancyAging.js`,
-  section after Hiring Efficiency) = days each approved MRF position has
-  been open since `date_approved`, as of the end of the dashboard's date
-  range (a snapshot; the range start doesn't apply), with average, oldest,
-  aging buckets (0–15 … over 90 days) and the count past the rank's
-  time-to-fill standard. Per **position**, so it can count more than the MRF
-  report's per-line Open rows (a line of 3 with no hires = 3 vacancies;
-  lines whose only hires predate approval stay open here, Closed there).
-
-## Approval procedures (backend-configured)
-
-Each MRF type has its own approval procedure — Access Charts `MRF -
-Replacement` / `MRF - Additional` / `MRF - New Position` (module Manpower
-Request), maintained on vueportal's existing Access Chart screen, not in
-this app. Level 1 of Additional/New Position is filtered by position
-hierarchy (approvers only get MRFs for positions under them).
-An MRF holds **one** request type — `ManpowerRequestForm.jsx`'s `details`
-list validator rejects mixed types (the backend does too). Full rules:
-vueportal `manpower-request` skill → "Approval procedure".
-
-- **Branch Manager requestor**: `create` returns `branch_level_only` +
-  `branch_level_cost_center` (stored in `manpowerRequestStore`);
-  `ManpowerRequestForm.jsx` then offers only positions with that
-  `cost_center`. The backend enforces it on store/update/submit.
-- **Level-1 approver requestor**: `create` returns `hierarchy_position_ids`
-  (`{ Additional: [ids], 'New Position': [ids] }` for the types whose level 1
-  the user approves; missing type = any position), stored as
-  `hierarchyPositionIds`. Each line's Position select re-filters when its
-  request type changes, and a validator flags a picked position outside the
-  list. The backend enforces it too, and auto-approves level 1 on submit for
-  such requestors (see vueportal's skill) — nothing to do on this side.
-- `approval_status` also carries `procedure_type` and `max_level` (levels
-  this MRF needs); `levels` already lists only those.
-
-## Line attachments (View page)
-
-`ViewManpowerRequest.jsx` also has a post-save attach/replace/remove/
-download control per line (`detailFileUpload`/`detailFileDownload`/
-`detailFileDelete`). Upload/delete gated on `canEdit`; download has no
-extra gate. The backend only allows upload/delete in editable statuses.
-
-## Print Layout
-
-`ManpowerRequestPrint.jsx` + `.css`, route `/manpower-requests/:id/print`,
-permission `manpower-request-print`. Follow `KpiEvaluationPrint.jsx`'s
-pattern — don't invent a new print technique:
-- A normal page route inside `MainLayout`/`ProtectedRoute`. `@media print`:
-  `body:has(.mrf-print) * { visibility: hidden }`, reveal only
-  `body:has(.mrf-print) .mrf-print(, *)`, force it to
-  `position: absolute; top: 0; left: 0`; paper size is the named
-  `@page manpower-request` (set on `body:has(.mrf-print)`). Scoped because
-  page CSS is global — see CLAUDE.md "Printing". The on-screen Print button calls
-  `window.print()`; `.no-print` hides it when printing.
-- Rows use `page-break-inside: avoid`; `thead { display:
-  table-header-group }` repeats headers.
-- Header logo: `src/assets/addessa-logo.jpg` (extracted from the backend's
-  MRF PDF) — reuse it.
-- A **filled record**, not the blank template: approval signature lines are
-  the real `approval_history` entries. "Reason for Request" prints once for
-  the whole request, with the Replacement/Additional/New Position columns
-  each itemizing their lines (numbered when more than one) — not once per
-  line. "FOR HR USE ONLY" is always the itemized table: one row per (line,
-  hire), a line with no hire gets one blank row. Its label stays "Date
-  Hired".
-- Header uses the branch name; Job Description uses the position name.
-- Dates print as `MM/DD/YYYY`. Real paper/PDF pagination is unverified.
 
 ## Backend Contract (vueportal) the frontend depends on
 

@@ -352,6 +352,11 @@ Dated change history for each lives in `docs/<module>-history.md`.
   `.claude/skills/company-asset/SKILL.md`. Non-IT company property on
   vueportal's Company Asset module: registry, assign / return, history,
   maintenance log, disposal; `create` options are GET.
+- **Time & Leave and payroll records** — one skill each in `.claude/skills/<name>/SKILL.md`:
+  `leave-management` (leave types, applications, balances, credits),
+  `shift-management` (shifts, shifting, Work Schedule, Default Schedules),
+  `manual-time-entry` (time in/out filings), `payroll-cutoff` (cut-off
+  periods and the filing switch), `compensation` (Salary History).
 - **Record management pages / Area Assignment / Organization** (`src/pages/area/`,
   `src/pages/record_management/`, routes `/areas`, `/companies`, `/branches`,
   `/departments`, `/positions`, `/ranks`, `/promodizer-brands`) —
@@ -395,6 +400,13 @@ that narrative belongs in the commit message (and optionally
 `docs/<module>-history.md`). Only add to this file for a new repo-wide
 convention or a new entry under "Modules with their own skill". A new
 non-trivial module gets its own skill rather than a section here.
+
+Keep a skill under ~20 KB: keep cross-cutting rules and traps in `SKILL.md`;
+move lookup material (file maps, route tables) and area-specific sections to
+files beside it (e.g. `areas/<area>.md`), listed in a "touching X → read Y"
+table in `SKILL.md`. Read `docs/<module>-history.md` only when you
+need the *why* behind a decision. Feature status and deploy steps go in the
+workspace roadmap, not in skills or memory.
 
 ## Important Rules for Modifying This Existing Project
 
