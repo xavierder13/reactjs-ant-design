@@ -295,75 +295,24 @@ are available; do not add one unless explicitly requested.
 
 ## Modules with their own skill
 
-Module-specific detail lives in `.claude/skills/<module>/SKILL.md`, not
-here. **Read the module's skill before changing that module's files.**
-Dated change history for each lives in `docs/<module>-history.md`.
+Module detail lives in `.claude/skills/<name>/SKILL.md`, not here. **Read
+the skill before changing that module's files** (touching X → read Y);
+dated change history in `docs/<module>-history.md`.
 
-- **Employee Master Data** (`src/pages/employee_master_data/`, routes
-  `/employees…`, `/acknowledgment-reports…`) —
-  `.claude/skills/employee-master-data/SKILL.md`. Key traps: no
-  single-employee fetch endpoint (View/Edit re-read via `useLatestEmployee`); server-side
-  pagination; tabs render bare `Form.Item`s inside `EmployeeForm`'s single
-  `<Form>`; new list columns must pass the backend `$table_fields` check.
-- **Manpower Request** (`src/pages/manpower_request/request/`, routes
-  `/manpower-requests…`) — `.claude/skills/manpower-request/SKILL.md`.
-  Key traps: POST-only API; `fetchById` returns `{ manpower_request,
-  approval_status }`; gates combine permission + ownership + status;
-  existing attachments must be re-sent on every update.
-- **Workforce Dashboard** (`src/pages/dashboard/workforce/`, route
-  `/workforce-dashboard`) — `.claude/skills/workforce-dashboard/SKILL.md`.
-  HR analytics over Employee Master Data; aggregated backend endpoint,
-  `hr-payroll-dashboard` gate, data caveats, phase plan.
-- **Recruitment Dashboard** (`src/pages/dashboard/`, route
-  `/recruitment-dashboard`; the old `/dashboard` redirects there) —
-  `.claude/skills/recruitment-dashboard/SKILL.md`. Must match vueportal's
-  Dashboard.vue number-for-number; metrics module, component map, parity check.
-- **KPI Management** (`src/pages/kpi/`, routes `/kpi-templates…`,
-  `/kpi-evaluations…`, `/my-evaluations…`) —
-  `.claude/skills/kpi-management/SKILL.md`. Key traps: REST verbs (not
-  POST-only); most actions are gated only in the UI (backend checks just
-  approve/reject); `KPI Self Evaluation` accounts land on
-  `/my-evaluations` (menu: the normal permission-driven one).
-- **Recruitment ATS** (`src/pages/recruitment/JobApplicantList.jsx`,
-  `applicants/`, `setup/`, routes `/recruitment/<stage>-list`,
-  `/recruitment/setup/…`) —
-  `.claude/skills/recruitment-ats/SKILL.md`. Key traps: data comes from
-  the careers portal through vueportal's gateway (one route + permission
-  per stage); gateway dates are `MM/DD/YYYY` strings; several gateway
-  routes the Vue page calls don't exist.
-- **Payroll processing** (`src/pages/payroll/run/`, `timekeeping/`,
-  `reports/`, `my_payslips/`, routes `/timekeeping`, `/payroll-runs`,
-  `/remittances`, `/thirteenth-month`, `/year-end-tax`, `/final-pay`,
-  `/my-payslips`) — `.claude/skills/payroll-run/SKILL.md`.
-  Key traps: the DTR is computed live (DtrService) and copied onto the run;
-  a holiday is never an absence; rest-day work pays only through approved
-  overtime; approved runs are locked (corrections = payroll adjustments);
-  reports read approved runs only.
-- **Payroll Assistant** (`src/components/payroll_assistant/`,
-  `src/pages/payroll/assistant/`, route `/payroll-assistant`, top-bar "?") —
-  `.claude/skills/payroll-assistant/SKILL.md`. No AI: keyword / synonym
-  search over topics the payroll manager edits, question → answer trees,
-  read-only "Check my case" lookups.
-- **Clearance** (`src/pages/clearance/`, routes `/clearances…`) —
-  `.claude/skills/clearance/SKILL.md`. Offboarding department sign-offs
-  (checklist, accountabilities, assets still assigned), final approval on the
-  "Clearance" Access Chart, Deduct from Final Pay lines on Final Pay.
-- **Company Assets** (`src/pages/company_asset/`, route `/company-assets`) —
-  `.claude/skills/company-asset/SKILL.md`. Non-IT company property on
-  vueportal's Company Asset module: registry, assign / return, history,
-  maintenance log, disposal; `create` options are GET.
-- **Time & Leave and payroll records** — one skill each in `.claude/skills/<name>/SKILL.md`:
-  `leave-management` (leave types, applications, balances, credits),
-  `shift-management` (shifts, shifting, Work Schedule, Default Schedules),
-  `manual-time-entry` (time in/out filings), `payroll-cutoff` (cut-off
-  periods and the filing switch), `compensation` (Salary History).
-- **Record management pages / Area Assignment / Organization** (`src/pages/area/`,
-  `src/pages/record_management/`, routes `/areas`, `/companies`, `/branches`,
-  `/departments`, `/positions`, `/ranks`, `/promodizer-brands`) —
-  `.claude/skills/record-management/SKILL.md`. Recipe for any
-  new admin CRUD master-data page (Area is the reference implementation).
-  Key traps: populate modal forms in `afterOpenChange`; reuse
-  `EmployeeSelect` for employee pickers; `Transfer` for picking many items.
+| Touching … | Read | Key traps |
+|---|---|---|
+| `src/pages/employee_master_data/`, `/employees…`, `/acknowledgment-reports…` | `employee-master-data` | no single-employee fetch (`useLatestEmployee`); server-side pagination; tabs are bare `Form.Item`s in one `<Form>`; new list columns must pass `$table_fields` |
+| `src/pages/manpower_request/request/`, `/manpower-requests…` | `manpower-request` | POST-only; `fetchById` → `{ manpower_request, approval_status }`; gates = permission + ownership + status; re-send existing attachments on update |
+| `src/pages/dashboard/workforce/`, `/workforce-dashboard` | `workforce-dashboard` | aggregated endpoint, `hr-payroll-dashboard` gate |
+| `src/pages/dashboard/`, `/recruitment-dashboard` | `recruitment-dashboard` | must match vueportal's Dashboard.vue number for number |
+| `src/pages/kpi/`, `/kpi-*`, `/my-evaluations…` | `kpi-management` | REST verbs; most actions gated in the UI only; Self Evaluation accounts land on `/my-evaluations` |
+| `src/pages/recruitment/`, `/recruitment/…` | `recruitment-ats` | careers portal via the gateway (route + permission per stage); dates `MM/DD/YYYY` strings |
+| `src/pages/payroll/run/`, `timekeeping/`, `reports/`, `my_payslips/` | `payroll-run` | DTR computed live and copied onto the run; a holiday is never an absence; rest-day work pays only via approved overtime; approved runs locked |
+| `src/components/payroll_assistant/`, `/payroll-assistant` | `payroll-assistant` | no AI — keyword search over editable topics |
+| `src/pages/clearance/`, `/clearances…` | `clearance` | department sign-offs, final approval on the "Clearance" chart |
+| `src/pages/company_asset/`, `/company-assets` | `company-asset` | `create` options are GET |
+| leave / shifts / time entries / cut-offs / Salary History | `leave-management`, `shift-management`, `manual-time-entry`, `payroll-cutoff`, `compensation` | |
+| `src/pages/area/`, `src/pages/record_management/` (org pages) | `record-management` | recipe for a new CRUD page; populate modal forms in `afterOpenChange`; `EmployeeSelect`; `Transfer` |
 
 ## Role & Permission
 
