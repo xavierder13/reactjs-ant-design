@@ -37,10 +37,14 @@ axiosInstance.interceptors.response.use(
     const isLoginRequest = error.config?.url?.includes('/auth/login')
 
     if (!isLoginRequest && isSessionEnded(error) && window.location.pathname !== '/login' && !redirecting) {
-      redirecting = true
       rememberEndReason(error)
       clearTokens()
-      window.location.assign('/login')
+      // a caller that leaves by itself (ProtectedRoute's first check — no session state in this page yet) goes to
+      // /login through the router, without a reload; everyone else gets the full page load
+      if (!error.config?.sessionEndHandledByCaller) {
+        redirecting = true
+        window.location.assign('/login')
+      }
     }
 
     return Promise.reject(error)

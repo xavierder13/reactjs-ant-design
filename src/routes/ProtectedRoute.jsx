@@ -17,13 +17,16 @@ const ProtectedRoute = ({ permissions = [], selfService = false }) => {
     const loadUser = async () => {
       if (!isLoaded && token) {
         try {
-          const { data } = await axiosInstance.get('/auth/init');
-          
+          // the page's first check: an ended session (e.g. the first visit of the day) goes to /login through the
+          // router below (token cleared → Step 1) instead of the interceptor's full reload, which flashed the
+          // screen twice (router to /login, then the reload)
+          const { data } = await axiosInstance.get('/auth/init', { sessionEndHandledByCaller: true });
+
           setAuth(data.user, data.user_roles, data.user_permissions);
           setSessionSettings(data.session);
           setLoaded();
-        } catch (error) {
-          // axiosInstance interceptor handles 401 redirect
+        } catch {
+          // an ended session: the interceptor cleared the token and kept the reason → Step 1 redirects
         } finally {
           setLoading(false);
         }
