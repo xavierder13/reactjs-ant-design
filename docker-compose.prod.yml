@@ -1,0 +1,27 @@
+# Production build of the HRIS SPA, served by nginx. Standalone: use it on its own.
+#   docker compose -f docker-compose.prod.yml up -d --build
+# .env (not in git) sets:
+#   VITE_API_BASE_URL  vueportal API address(es), comma-separated, with fallback
+#                      (src/utils/apiBaseUrl.js) — applied at build time
+#   WEB_PORT           host port (default 3000)
+#   WEB_BIND           host address to listen on (default 127.0.0.1 = behind a
+#                      reverse proxy; 0.0.0.0 = reachable on the LAN)
+
+name: hris-web-prod
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?set VITE_API_BASE_URL in .env}
+    container_name: hris_web_prod_app
+    restart: unless-stopped
+    ports:
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-3000}:80"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

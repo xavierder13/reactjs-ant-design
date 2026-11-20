@@ -17,6 +17,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}   # .env is no longer copied into the image (.dockerignore)
     container_name: rbac-react-app
     env_file:
       - .env
