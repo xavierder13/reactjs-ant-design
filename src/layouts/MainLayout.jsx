@@ -870,6 +870,8 @@ const MainLayout = () => {
       const children = item.children.map(generateMenuItem).filter(Boolean);
       if (!children.length) return null;
       return {
+        // the group holding the current page gets its header marked (sidebar.css)
+        ...(openKeys.includes(item.key) ? { className: 'app-sidebar__group--active' } : {}),
         key: item.key,
         icon: item.icon,
         label: item.title,
