@@ -52,6 +52,8 @@ import ResignedEmployees from '../pages/employee_master_data/lists/ResignedEmplo
 import OpenNteList from '../pages/employee_master_data/lists/OpenNteList';
 import OpenDisciplinaryList from '../pages/employee_master_data/lists/OpenDisciplinaryList';
 import ReferralCodeList from '../pages/employee_master_data/referral_codes/ReferralCodeList';
+import ReferredApplicantList from '../pages/employee_master_data/referral_codes/ReferredApplicantList';
+import ReferredEmployeeList from '../pages/employee_master_data/referral_codes/ReferredEmployeeList';
 import NewHiredList from '../pages/employee_master_data/new_hired/NewHiredList';
 import OverdueDeactivation from '../pages/employee_master_data/lists/OverdueDeactivation';
 import OverdueRegularization from '../pages/employee_master_data/lists/OverdueRegularization';
@@ -153,6 +155,8 @@ const permissionRoutes = [
   { permissions: ['employee-master-data-nte-list'], path: '/employees/nte', element: <OpenNteList /> },
   { permissions: ['employee-master-data-disciplinary-list'], path: '/employees/disciplinary', element: <OpenDisciplinaryList /> },
   { permissions: ['employee-referral-list'], path: '/employees/referral-codes', element: <ReferralCodeList /> },
+  { permissions: ['employee-referral-view-referrals'], path: '/employees/referred-applicants', element: <ReferredApplicantList /> },
+  { permissions: ['employee-referral-employee-list'], path: '/employees/referred-employees', element: <ReferredEmployeeList /> },
   { permissions: ['employee-master-data-new-hired-list'], path: '/employees/new-hired', element: <NewHiredList /> },
   { permissions: ['employee-master-data-list'], path: '/employees/careers-synced', element: <CareersSyncedList /> },
   { permissions: ['employee-master-data-list'], path: '/employees/:id', element: <ViewEmployee /> },

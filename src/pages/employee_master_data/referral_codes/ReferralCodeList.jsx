@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Card, Row, Col, Typography, Input, Space, Button, Breadcrumb, Table, Select, Tag, Tooltip, App } from "antd";
-import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { Card, Row, Col, Typography, Input, Space, Button, Breadcrumb, Table, Select, Tag, Tooltip, Alert, App } from "antd";
+import { ReloadOutlined, SearchOutlined, EyeOutlined } from "@ant-design/icons";
 
 import employeeReferralApi from "../../../services/employee/employeeReferralApi";
 import handleApiError from "../../../utils/handleApiError";
 import { isActiveValue } from "../../../utils/employeeStatus";
 import { buildReferralLink, copyText } from "../../../utils/referralLink";
+import useAuth from "../../../hooks/useAuth";
+import ReferralApplicantsModal from "./ReferralApplicantsModal";
+import RecordLink from "../../../components/RecordLink";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100, 500];
 const STATUS_OPTIONS = [
@@ -20,6 +23,10 @@ const CODE_STATUS_OPTIONS = [
   { label: "Code Inactive", value: "Inactive" },
   { label: "No Code", value: "None" },
 ];
+const REFERRAL_OPTIONS = [
+  { label: "All Referrals", value: "" },
+  { label: "With Referrals", value: "1" },
+];
 
 const fullName = (r) => [`${r.last_name || ""},`, r.first_name, r.middle_name].filter(Boolean).join(" ");
 
@@ -27,16 +34,23 @@ const fullName = (r) => [`${r.last_name || ""},`, r.first_name, r.middle_name].f
 // referral link, copyable straight from the row. The portal only honours a
 // code whose is_active is true, so each code shows that status; employees
 // with no code yet show "No code" (Human Resource → Sync & Updates →
-// Generate Referral Codes creates them).
+// Generate Referral Codes creates them). With employee-referral-view-referrals
+// the list also counts each code's referred applicants (careers portal, any
+// stage), can show only codes with referrals, and opens View Referrals.
 export default function ReferralCodeList() {
   const { message: messageApi } = App.useApp();
+  const { hasRole, hasPermission } = useAuth();
+  const canViewReferrals = hasRole("Administrator") || hasPermission("employee-referral-view-referrals");
+  const canOpenEmployee = hasRole("Administrator") || hasPermission("employee-master-data-list");
 
   const [rows, setRows] = useState([]);
   const [branches, setBranches] = useState([]);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
   const [loading, setLoading] = useState(false);
   const [searchInput, setSearchInput] = useState("");
-  const [filters, setFilters] = useState({ search: "", status: "Active", code_status: "", branch_id: null });
+  const [filters, setFilters] = useState({ search: "", status: "Active", code_status: "", branch_id: null, has_referrals: "" });
+  const [referralsError, setReferralsError] = useState(null);
+  const [viewing, setViewing] = useState(null);
 
   const loadPage = useCallback(async (page, pageSize) => {
     setLoading(true);
@@ -46,17 +60,19 @@ export default function ReferralCodeList() {
         status: filters.status || undefined,
         code_status: filters.code_status || undefined,
         branch_id: filters.branch_id || undefined,
+        has_referrals: (canViewReferrals && filters.has_referrals) || undefined,
         items_per_page: pageSize,
       }, page);
       setRows(data.employees.data);
       setBranches(data.branches || []);
+      setReferralsError(data.referrals_error || null);
       setPagination({ current: data.employees.current_page, pageSize: Number(data.employees.per_page), total: data.employees.total });
     } catch (error) {
       handleApiError(error, messageApi);
     } finally {
       setLoading(false);
     }
-  }, [filters, messageApi]);
+  }, [filters, messageApi, canViewReferrals]);
 
   useEffect(() => {
     const load = async () => { await loadPage(1, pagination.pageSize); };
@@ -75,7 +91,14 @@ export default function ReferralCodeList() {
 
   const columns = [
     { title: "Emp. Code", dataIndex: "employee_code", key: "employee_code" },
-    { title: "Employee Name", key: "name", render: (_, r) => fullName(r) },
+    {
+      title: "Employee Name", key: "name",
+      render: (_, r) => (
+        <RecordLink to={canOpenEmployee ? `/employees/${r.id}` : undefined} state={{ returnTo: "/employees/referral-codes" }} title="Open employee record">
+          {fullName(r)}
+        </RecordLink>
+      ),
+    },
     { title: "Branch", dataIndex: "branch", key: "branch", render: (v) => v || "-" },
     { title: "Position", dataIndex: "position", key: "position", render: (v) => v || "-" },
     {
@@ -111,6 +134,25 @@ export default function ReferralCodeList() {
         </Space>
       ) : "-"),
     },
+    ...(canViewReferrals ? [
+      {
+        title: "Referrals",
+        dataIndex: "referral_count",
+        key: "referral_count",
+        align: "center",
+        render: (v) => (referralsError ? "-" : (Number(v) ? <Tag color="blue">{Number(v).toLocaleString()}</Tag> : <Typography.Text type="secondary">0</Typography.Text>)),
+      },
+      {
+        title: "Action",
+        key: "action",
+        align: "center",
+        render: (_, r) => (r.referral_code ? (
+          <Tooltip title="View Referrals">
+            <Button size="small" color="blue" variant="outlined" icon={<EyeOutlined />} onClick={() => setViewing(r)} />
+          </Tooltip>
+        ) : null),
+      },
+    ] : []),
   ];
 
   return (
@@ -162,7 +204,14 @@ export default function ReferralCodeList() {
             style={{ width: 200 }}
             options={branches.map((b) => ({ label: b.name, value: b.id }))}
           />
+          {canViewReferrals && (
+            <Select value={filters.has_referrals} onChange={(v) => setFilter("has_referrals", v)} options={REFERRAL_OPTIONS} style={{ width: 150 }} />
+          )}
         </Space>
+
+        {canViewReferrals && referralsError && (
+          <Alert type="warning" showIcon style={{ marginBottom: 16 }} title={`Referral counts are unavailable: ${referralsError}`} />
+        )}
 
         <Table
           rowKey="id"
@@ -180,6 +229,8 @@ export default function ReferralCodeList() {
           }}
         />
       </Card>
+
+      <ReferralApplicantsModal employee={viewing} onClose={() => setViewing(null)} />
     </>
   );
 }

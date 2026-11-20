@@ -1,0 +1,52 @@
+/* RecordLink — a record's identifier that opens it (themed green link) */
+.record-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 1px 6px 1px 0;
+  border-radius: 6px;
+  color: #389e0d;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, padding 0.2s;
+}
+.record-link__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: underline dotted rgba(56, 158, 13, 0.45);
+  text-underline-offset: 3px;
+}
+.record-link__chevron {
+  font-size: 10px;
+  opacity: 0.55;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.record-link:hover,
+.record-link:focus-visible {
+  color: #237804;
+  background: #f6ffed;
+  padding-left: 6px;
+  outline: none;
+}
+.record-link:hover .record-link__text,
+.record-link:focus-visible .record-link__text {
+  text-decoration-color: currentColor;
+}
+.record-link:hover .record-link__chevron,
+.record-link:focus-visible .record-link__chevron {
+  opacity: 1;
+  transform: translateX(2px);
+}
+.record-link:focus-visible {
+  box-shadow: 0 0 0 2px rgba(56, 158, 13, 0.25);
+}
+
+/* rows that open a record: light green hover + pointer (Table rowClassName) */
+.record-row--clickable > td {
+  cursor: pointer;
+}
+.ant-table-wrapper .ant-table-tbody > tr.record-row--clickable:hover > td {
+  background: #f6ffed;
+}

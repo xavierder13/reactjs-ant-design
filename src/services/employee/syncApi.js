@@ -5,6 +5,7 @@ import axios from "../../api/axiosInstance";
 // routes/api.php. Gates (backend middleware):
 //   syncReferralCodes          careers-referral-list-sync   (RecruitmentMaintenance)
 //   generateReferralCodes      Administrator role only      (EmployeeMasterDataMaintenance)
+//   syncReferredEmployees      Administrator role only      (EmployeeMasterDataMaintenance)
 //   deactivateResigned         employee-master-data-deactivate
 //   regularizePassed           employee-master-data-regularize
 // Each answers { success, message } (referral sync passes the careers
@@ -15,6 +16,7 @@ import axios from "../../api/axiosInstance";
 const syncApi = {
   syncReferralCodes:     () => axios.get("/recruitment/referral-sync"),
   generateReferralCodes: () => axios.get("/employee_master_data/generate_referral_codes"),
+  syncReferredEmployees: () => axios.get("/employee_master_data/sync_referred_employees"),
   deactivateResigned:    () => axios.get("/employee_master_data/deactivate_resigned_employees"),
   regularizePassed:      () => axios.get("/employee_master_data/regularize_passed_employees"),
   // rows: { id, employee_code, name, branch, position, employment_type, last_day_of_work, reason, days_overdue }

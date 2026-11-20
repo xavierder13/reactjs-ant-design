@@ -225,6 +225,15 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
   down; grey ring, primary ring + light fill when open; empty slot for
   non-expandable rows) —
   never a local up/down button or AntD's default plus/minus.
+- **Drill-down links**: a record's identifier in a list (name, document
+  no.) that opens that record uses `src/components/RecordLink.jsx` (theme
+  green, dotted underline, chevron that slides on hover) — `to` (+ `state`,
+  e.g. `{ returnTo }`) for a page, `onClick` for a drawer / modal, nothing
+  when the user can't open it (plain text). Reuse the record's existing view
+  (e.g. the recruitment `ApplicantDrawer`, `/employees/:id`). A list of
+  records shown inside another page (a modal, an expanded row) makes its
+  rows clickable too: `onRow` click (ignoring clicks on inner links /
+  buttons) + `className: 'record-row--clickable'` (green hover, pointer).
 - Row actions are permission- and status-gated inline functions
   (e.g. `canEdit(record)`, `canSubmit(record)`, `canCancel(record)`)
   combining `hasPermission`/`hasAnyPermission`, allowed statuses, and

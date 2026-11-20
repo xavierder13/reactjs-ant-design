@@ -71,6 +71,11 @@ const SYNC_ACTIONS = {
     content: 'Active employees without a referral code will get one, inactive codes of active employees will be reactivated, and codes of resigned employees will be deactivated. Run Sync Referral Codes afterwards to update the careers portal.',
     request: syncApi.generateReferralCodes,
   },
+  syncReferredEmployees: {
+    title: 'Sync Referred Employees',
+    content: 'Employees hired from the careers portal before referrals were recorded will get who referred them, from the referral code they applied with. Codes with no owner are matched again.',
+    request: syncApi.syncReferredEmployees,
+  },
   deactivateResigned: {
     title: 'Deactivate Resigned Employees',
     content: 'Employees whose last day of work has passed will be deactivated.',
@@ -121,6 +126,8 @@ const titleMap = {
   '/employees/nte':                 { title: 'Issued NTE (Open)', breadcrumb: ['Employee', 'Issued NTE'] },
   '/employees/disciplinary':        { title: 'Disciplinary Actions (Open)', breadcrumb: ['Employee', 'Disciplinary Actions'] },
   '/employees/referral-codes':      { title: 'Referral Codes', breadcrumb: ['Employee', 'Referral Codes'] },
+  '/employees/referred-applicants': { title: 'Referred Applicants', breadcrumb: ['Employee', 'Referred Applicants'] },
+  '/employees/referred-employees':  { title: 'Referred Employees', breadcrumb: ['Employee', 'Referred Employees'] },
   '/employees/new-hired':           { title: 'New Hired', breadcrumb: ['Employee', 'New Hired'] },
   '/employees/careers-synced':      { title: 'Synced from Careers', breadcrumb: ['Employee', 'Synced from Careers'] },
   '/vacancies':                     { title: 'Headcount Vacancies', breadcrumb: ['Employee', 'Workforce Reports', 'Headcount Vacancies'] },
@@ -327,6 +334,8 @@ const menuData = [
             label: 'Programs',
             children: [
               { key: 'referral-codes', title: 'Referral Codes', link: '/employees/referral-codes', permissions: ['employee-referral-list'] },
+              { key: 'referred-applicants', title: 'Referred Applicants', link: '/employees/referred-applicants', permissions: ['employee-referral-view-referrals'] },
+              { key: 'referred-employees', title: 'Referred Employees', link: '/employees/referred-employees', permissions: ['employee-referral-employee-list'] },
             ],
           },
           {
@@ -554,6 +563,7 @@ const menuData = [
         children: [
           { key: 'sync-referral-codes',     title: 'Sync Referral Codes',           action: 'syncReferralCodes',     permissions: ['careers-referral-list-sync'] },
           { key: 'generate-referral-codes', title: 'Generate Referral Codes',       action: 'generateReferralCodes', permissions: [] },
+          { key: 'sync-referred-employees', title: 'Sync Referred Employees',       action: 'syncReferredEmployees', permissions: [] },
           { key: 'deactivate-resigned',     title: 'Deactivate Resigned',           action: 'deactivateResigned',    permissions: ['employee-master-data-deactivate'] },
           { key: 'regularize-passed',       title: 'Regularize Passed',             action: 'regularizePassed',      permissions: ['employee-master-data-regularize'] },
         ],
@@ -860,6 +870,8 @@ const MainLayout = () => {
         type: 'group',
         key: item.key,
         label: item.label,
+        // the group holding the current page gets its header marked (sidebar.css)
+        ...(openKeys.includes(item.key) ? { className: 'app-sidebar__group--active' } : {}),
         children,
       };
     }
@@ -870,8 +882,6 @@ const MainLayout = () => {
       const children = item.children.map(generateMenuItem).filter(Boolean);
       if (!children.length) return null;
       return {
-        // the group holding the current page gets its header marked (sidebar.css)
-        ...(openKeys.includes(item.key) ? { className: 'app-sidebar__group--active' } : {}),
         key: item.key,
         icon: item.icon,
         label: item.title,
