@@ -124,6 +124,12 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
   a plain object of functions that call `axiosInstance` — no business logic.
 - All requests go through the shared `axiosInstance` (`src/api/axiosInstance.js`),
   which attaches the bearer token and sets JSON headers.
+- The API address comes from `src/utils/apiBaseUrl.js`, never from
+  `import.meta.env.VITE_API_BASE_URL` directly: it may list several
+  addresses with fallback (http page → http ones first, then https; https
+  page → https only; first that answers; a network failure moves to the
+  next and retries a GET once). Backend web routes (e.g. profile pictures)
+  use its `backendOrigin()`.
 - Handle errors with the shared `handleApiError(error, messageApi)` util in
   every `catch` block — it distinguishes 422 validation errors, AntD form
   validation errors, and generic failures.
