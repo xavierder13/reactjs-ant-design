@@ -7,24 +7,38 @@
 //   General Manager / Secretary → nobody; Audit → division manager;
 //   anyone else → department manager
 // Never the employee themselves (a branch manager's own branch manager).
+// Returns the manager plus `role` (which of the three it is) and
+// `displayName`: the name only — any leading code / number (e.g. an
+// "2172Joanalyn Chavez" from a backend that prefixes the record id) is
+// stripped, so no internal id or employee code is ever shown.
+const ROLE = {
+  branch_manager: 'Branch Manager',
+  department_manager: 'Department Manager',
+  division_manager: 'Division Manager',
+};
+
+const cleanName = (name) => String(name || '').replace(/^[\d\s\-–—:.|]+/, '').trim();
+
 export default function reportingManager(employee) {
   if (!employee) return null;
   const branch = (employee.branch?.name || '').toUpperCase();
   const position = (employee.position?.name || '').toUpperCase();
 
-  let manager = null;
+  let key = null;
   if (branch !== 'ADMINISTRATION') {
-    manager = employee.branch_manager;
+    key = 'branch_manager';
   } else if (position.includes('DEPARTMENT MANAGER')) {
-    manager = employee.division_manager;
+    key = 'division_manager';
   } else if (['DIRECTOR', 'DIVISION MANAGER', 'GENERAL MANAGER', 'SECRETARY'].some((k) => position.includes(k))) {
-    manager = null;
+    key = null;
   } else if (position.includes('AUDIT')) {
-    manager = employee.division_manager;
+    key = 'division_manager';
   } else if (position) {
-    manager = employee.department_manager;
+    key = 'department_manager';
   }
 
-  if (!manager?.name || manager.id === employee.id) return null;
-  return manager;
+  const manager = key ? employee[key] : null;
+  const displayName = cleanName(manager?.name);
+  if (!displayName || manager.id === employee.id) return null;
+  return { ...manager, role: ROLE[key], displayName };
 }

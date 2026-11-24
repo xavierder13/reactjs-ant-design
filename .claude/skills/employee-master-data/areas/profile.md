@@ -9,11 +9,19 @@ shared by `/employees/:id` (`view="hr"`) and `/user/profile`
 (`view="self"`, only when `employee_master_data/my_profile` returns the
 account's `users.employee_id` record; otherwise UserProfile shows just its
 account form with an info Alert). Parts:
-- `ProfileHeader.jsx` — photo (`profile_picture_upload/{id}`, gated
+- `ProfileHeader.jsx` — green cover band with the photo overlapping it
+  (`profile_picture_upload/{id}`, gated
   `employee-master-data-profile-picture-upload`; image from the public
   web route via `utils/employeePhoto.js`), name, status/employment-type
-  tags, contact, hire date / length of service / regularization or
-  resigned date, Reports To (`reportingManager.js`, Vue's `manager` rule).
+  tags, contact, then four fact tiles: hire date / length of service /
+  regularization or resigned date / Reports To (`reportingManager.js`,
+  Vue's `manager` rule; returns `displayName` with any leading code or
+  number stripped — never show an id/code — and `role`; the manager's
+  photo, person icon when none).
+- Look: sections use `profileUi.jsx`'s `SectionCard` (icon badge title)
+  and `useDescriptionStyles.js` (label above value, muted label); colors
+  from `theme.useToken()`, not hard-coded. Government IDs and Education
+  are always 2 per row.
 - `ProfileOverview.jsx` (personal, contact, gov IDs masked with reveal,
   education), `ProfileEmployment.jsx` (employment, job & org, assignment
   history timeline), `ProfileDocuments.jsx` (all core files; upload needs a

@@ -1,6 +1,10 @@
 import { useState } from "react";
-import { Card, Descriptions, Row, Col, Button, Space, Tooltip } from "antd";
-import { EyeOutlined, EyeInvisibleOutlined } from "@ant-design/icons";
+import { Descriptions, Row, Col, Button, Space, Tooltip } from "antd";
+import {
+  EyeOutlined, EyeInvisibleOutlined, UserOutlined, HomeOutlined, SafetyCertificateOutlined, ReadOutlined,
+} from "@ant-design/icons";
+import { SectionCard } from "./profileUi";
+import useDescriptionStyles from "./useDescriptionStyles";
 
 import { formatDate } from "../../../utils/formatDate";
 
@@ -28,16 +32,19 @@ function MaskedValue({ value }) {
   );
 }
 
-const SECTION_DESCRIPTIONS = { column: { xs: 1, sm: 2 }, size: "small" };
-
 // Personal Data, read-only: personal details, contact & address,
 // government IDs and education (EmployeeProfile2.vue's PERSONAL DATA tab).
 export default function ProfileOverview({ employee }) {
+  const desc = useDescriptionStyles();
+  // Personal Information: 2 per row on small screens, 3 from `md` up.
+  // Government IDs / Education: always 2 per row (2 rows of 2).
+  const personal = { ...desc, column: { xs: 1, sm: 2, md: 3 } };
+  const grid = { ...desc, column: 2 };
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} xl={12}>
-        <Card title="Personal Information" size="small" style={{ height: "100%" }}>
-          <Descriptions {...SECTION_DESCRIPTIONS} items={[
+        <SectionCard icon={<UserOutlined />} title="Personal Information">
+          <Descriptions {...personal} items={[
             { key: "Last Name", label: "Last Name", children: show(employee.last_name) },
             { key: "First Name", label: "First Name", children: show(employee.first_name) },
             { key: "Middle Name", label: "Middle Name", children: show(employee.middle_name) },
@@ -46,36 +53,36 @@ export default function ProfileOverview({ employee }) {
             { key: "Gender", label: "Gender", children: show(employee.gender) },
             { key: "Civil Status", label: "Civil Status", children: show(employee.civil_status) },
           ]} />
-        </Card>
+        </SectionCard>
       </Col>
       <Col xs={24} xl={12}>
-        <Card title="Contact & Address" size="small" style={{ height: "100%" }}>
-          <Descriptions {...SECTION_DESCRIPTIONS} column={1} items={[
+        <SectionCard icon={<HomeOutlined />} title="Contact & Address">
+          <Descriptions {...desc} column={1} items={[
             { key: "Email", label: "Email", children: employee.email ? <a href={`mailto:${employee.email}`}>{employee.email}</a> : "-" },
             { key: "Mobile", label: "Mobile", children: show(employee.contact) },
             { key: "Home Address", label: "Home Address", children: show(employee.address) },
           ]} />
-        </Card>
+        </SectionCard>
       </Col>
       <Col xs={24} xl={12}>
-        <Card title="Government IDs" size="small" style={{ height: "100%" }}>
-          <Descriptions {...SECTION_DESCRIPTIONS} items={[
+        <SectionCard icon={<SafetyCertificateOutlined />} title="Government IDs">
+          <Descriptions {...grid} items={[
             { key: "TIN", label: "TIN", children: <MaskedValue value={employee.tin_no} /> },
             { key: "SSS", label: "SSS", children: <MaskedValue value={employee.sss_no} /> },
             { key: "PhilHealth", label: "PhilHealth", children: <MaskedValue value={employee.philhealth_no} /> },
             { key: "Pag-IBIG", label: "Pag-IBIG", children: <MaskedValue value={employee.pagibig_no} /> },
           ]} />
-        </Card>
+        </SectionCard>
       </Col>
       <Col xs={24} xl={12}>
-        <Card title="Education" size="small" style={{ height: "100%" }}>
-          <Descriptions {...SECTION_DESCRIPTIONS} items={[
+        <SectionCard icon={<ReadOutlined />} title="Education">
+          <Descriptions {...grid} items={[
             { key: "Attainment", label: "Attainment", children: show(employee.educ_attain) },
             { key: "School Year", label: "School Year", children: show(employee.school_year) },
             { key: "School", label: "School", children: show(employee.school_attended) },
             { key: "Course", label: "Course", children: show(employee.course) },
           ]} />
-        </Card>
+        </SectionCard>
       </Col>
     </Row>
   );

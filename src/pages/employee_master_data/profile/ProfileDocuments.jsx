@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Card, Table, Select, Upload, Button, Space, Tooltip, Popconfirm, Tag, Typography, App } from "antd";
+import { Table, Select, Upload, Button, Space, Tooltip, Popconfirm, Tag, Typography, App } from "antd";
 import {
-  UploadOutlined, DownloadOutlined, DeleteOutlined,
+  UploadOutlined, DownloadOutlined, DeleteOutlined, FolderOpenOutlined,
   FileOutlined, FilePdfOutlined, FileWordOutlined, FileImageOutlined,
 } from "@ant-design/icons";
 
@@ -11,6 +11,7 @@ import downloadBlobResponse from "../../../utils/downloadBlobResponse";
 import { formatDate } from "../../../utils/formatDate";
 import { DOCUMENT_TYPES, REGULARIZATION_DOCUMENT_TYPES } from "../components/tabs/personal/documentTypes";
 import { tablePagination } from '../../../utils/tablePagination';
+import { SectionCard } from "./profileUi";
 
 const ACCEPTED_FILE_TYPES = ".jpeg,.jpg,.png,.docs,.docx,.pdf";
 const TYPE_OPTIONS = [...DOCUMENT_TYPES, ...REGULARIZATION_DOCUMENT_TYPES].map((t) => ({ label: t, value: t }));
@@ -138,9 +139,9 @@ export default function ProfileDocuments({ employee, canUpload, canDownload, can
   ];
 
   return (
-    <Card
-      title="Documents"
-      size="small"
+    <SectionCard
+      icon={<FolderOpenOutlined />}
+      title={<>Documents <Typography.Text type="secondary" style={{ fontWeight: 400 }}>({files.length})</Typography.Text></>}
       extra={canUpload && (
         <Space wrap>
           <Select
@@ -166,6 +167,6 @@ export default function ProfileDocuments({ employee, canUpload, canDownload, can
         locale={{ emptyText: "No documents uploaded yet." }}
         scroll={{ x: "max-content" }}
       />
-    </Card>
+    </SectionCard>
   );
 }
