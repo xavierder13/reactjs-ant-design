@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Form, Button, Card, Space, Divider, Tag, App } from 'antd';
+import { Form, Button, Card, Space, Divider, Tag, Tooltip, App } from 'antd';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import employeeApi from '../../../services/employee/employeeApi';
 import handleApiError from '../../../utils/handleApiError';
 import { isActiveValue } from '../../../utils/employeeStatus';
@@ -37,7 +38,7 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
   const navigate = useNavigate();
   // The list that opened the form (a segment list passes it in router state);
   // Cancel goes back there, and Save hands it on to the profile's Back to List.
-  const { state: locationState } = useLocation();
+  const { state: locationState, key: locationKey } = useLocation();
   const returnTo = locationState?.returnTo || '/employees';
   const { message: messageApi } = App.useApp();
   const { hasPermission, hasAnyPermission } = useAuth();
@@ -438,9 +439,17 @@ const EmployeeForm = ({ mode = 'create', initialData = null }) => {
     .filter(Boolean)
     .join(', ');
   const baseTitle = mode === 'create' ? 'Add Employee' : mode === 'edit' ? 'Edit Employee' : 'View Employee';
-  const cardTitle = mode === 'create' ? baseTitle : (
+  // Back: the page that opened this form (the profile or a list); a direct
+  // link / refresh has no in-app history (key 'default'), so it goes to the list.
+  const goBack = () => (locationKey !== 'default' ? navigate(-1) : navigate(returnTo));
+  const backButton = (
+    <Tooltip title="Back">
+      <Button type="text" icon={<ArrowLeftOutlined />} onClick={goBack} disabled={saving} />
+    </Tooltip>
+  );
+  const cardTitle = mode === 'create' ? <Space size="small">{backButton}<span>{baseTitle}</span></Space> : (
     <Space separator={<Divider orientation="vertical" />} size="middle">
-      <span>{baseTitle}</span>
+      <Space size="small">{backButton}<span>{baseTitle}</span></Space>
       <span>{employee?.employee_code} - {employeeFullName}</span>
       <Tag color={isActiveValue(employee?.active) ? 'success' : 'default'}>
         {isActiveValue(employee?.active) ? 'Active' : 'Inactive'}
