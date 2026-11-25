@@ -10,6 +10,7 @@ import { employeeName, peso } from '../payrollHelpers';
 import GenerateTemplateModal from '../../employee_master_data/components/GenerateTemplateModal';
 import ImportDataModal from '../../employee_master_data/components/ImportDataModal';
 import AllowanceFormModal from './AllowanceFormModal';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 const STATES = [
   { value: 'current', label: 'Current' },
@@ -159,6 +160,7 @@ const AllowanceIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll/allowance/AllowanceIndex', columns);
 
   return (
     <div>
@@ -191,6 +193,7 @@ const AllowanceIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canTemplate && <Button icon={<DownloadOutlined />} onClick={() => setTemplateOpen(true)}>Generate Template</Button>}
           {canImport && <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>}
@@ -200,7 +203,7 @@ const AllowanceIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 1250 }}

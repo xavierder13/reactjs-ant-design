@@ -7,6 +7,7 @@ import accessChartApi from '../../services/approval/accessChartApi';
 import handleApiError from '../../utils/handleApiError';
 import { tablePagination } from '../../utils/tablePagination';
 import { levelsOf, levelStatus, userLabel, addOfficers, addResultText } from './approvalHelpers';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // Approving Officers — the access charts' approvers seen per person: which
 // procedures and levels each user approves, grouped by procedure (the "what
@@ -116,6 +117,7 @@ const ApprovingOfficerIndex = () => {
     },
     { title: 'Procedures', key: 'count', width: 110, align: 'right', render: (_, o) => new Set(o.maps.map((m) => m.chart.id)).size },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:approval/ApprovingOfficerIndex', columns);
 
   const pickedChart = items.find((c) => c.id === chartId);
   const levelOptions = levelsOf(pickedChart).map((l) => ({ value: l.level, label: `Level ${l.level} — ${l.num_of_approvers} approval(s) needed` }));
@@ -140,6 +142,7 @@ const ApprovingOfficerIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={refetch} loading={isLoading}>Refresh</Button>
           {canCreate && (
             <Button type='primary' icon={<UserAddOutlined />} onClick={() => { form.resetFields(); setAssignOpen(true); }}>
@@ -151,7 +154,7 @@ const ApprovingOfficerIndex = () => {
       <Table
         rowKey={(o) => o.user.id}
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={officers}
         loading={isLoading}
         scroll={{ x: 700 }}

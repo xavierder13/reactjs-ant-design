@@ -9,6 +9,7 @@ import ActiveTag from '../../record_management/ActiveTag';
 import { tablePagination } from '../../../utils/tablePagination';
 import ExpandIcon from '../../../components/ExpandIcon';
 import DeductionTypeFormModal from './DeductionTypeFormModal';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 const CATEGORY_COLORS = { 'Government Loan': 'blue', 'Company Loan': 'purple', 'Cash Advance': 'gold', Other: 'default' };
 
@@ -88,12 +89,14 @@ const DeductionTypeIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll/deduction/DeductionTypeIndex', columns);
 
   return (
     <div>
       <RecordToolbar
         searchPlaceholder='Search code, name or category'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={fetchTypes}
         loading={loading}
         canCreate={canCreate}
@@ -103,7 +106,7 @@ const DeductionTypeIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={loading}
         scroll={{ x: 760 }}

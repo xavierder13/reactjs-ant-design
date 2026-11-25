@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   Card, Row, Col, Typography, Input, Space, Button, Breadcrumb, Table, Tag, Tooltip, Popconfirm, Select, App,
 } from "antd";
@@ -9,6 +9,7 @@ import handleApiError from "../../../utils/handleApiError";
 import { formatDate } from "../../../utils/formatDate";
 import useListAccess from "./useListAccess";
 import { tablePagination } from '../../../utils/tablePagination';
+import useTableColumns from "../../../hooks/useTableColumns";
 
 // Columns every open-case row carries (the backend queue joins the employee
 // and branch onto each record); the page's own `columns` go between these
@@ -119,6 +120,8 @@ export default function OpenCaseList({
       ),
     }] : []),
   ];
+  const { pathname } = useLocation();
+  const { columns: shownColumns, chooser } = useTableColumns(`table:${pathname}`, tableColumns);
 
   return (
     <>
@@ -140,6 +143,7 @@ export default function OpenCaseList({
               </Space>
             </Col>
             <Col flex="none">
+              {chooser}
               <Button icon={<ReloadOutlined />} onClick={fetchRows} disabled={loading}>Refresh</Button>
             </Col>
           </Row>
@@ -168,7 +172,7 @@ export default function OpenCaseList({
         <Table
           rowKey="id"
           size="small"
-          columns={tableColumns}
+          columns={shownColumns}
           dataSource={visibleRows}
           loading={loading}
           scroll={{ x: "max-content" }}

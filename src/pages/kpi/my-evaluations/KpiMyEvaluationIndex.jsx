@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import kpiEvaluationApi from '../../../services/kpi/kpiEvaluationApi';
 import useAuth from '../../../hooks/useAuth';
 import { formatDate } from '../../../utils/formatDate';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 const statusColors = {
   draft:     'default',
@@ -191,6 +192,9 @@ const KpiMyEvaluationIndex = () => {
       ),
     },
   ];
+  const selfTable = useTableColumns('table:kpi/my-evaluations/KpiMyEvaluationIndex:self', selfColumns);
+  const supervisorTable = useTableColumns('table:kpi/my-evaluations/KpiMyEvaluationIndex:supervisor', supervisorColumns);
+  const [activeTab, setActiveTab] = useState('self');
 
   // ── Tab Items ──────────────────────────────────────────────────────────────
   const tabItems = [
@@ -200,7 +204,7 @@ const KpiMyEvaluationIndex = () => {
       children: (
         <Table
           rowKey='id'
-          columns={selfColumns}
+          columns={selfTable.columns}
           dataSource={selfEvaluations}
           loading={loading}
           size='small'
@@ -214,7 +218,7 @@ const KpiMyEvaluationIndex = () => {
       children: (
         <Table
           rowKey='id'
-          columns={supervisorColumns}
+          columns={supervisorTable.columns}
           dataSource={supervisorEvaluations}
           loading={loading}
           size='small'
@@ -255,7 +259,9 @@ const KpiMyEvaluationIndex = () => {
         }
       >
         <Tabs
-          defaultActiveKey='self'
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          tabBarExtraContent={activeTab === 'self' ? selfTable.chooser : supervisorTable.chooser}
           items={tabItems}
         />
       </Card>

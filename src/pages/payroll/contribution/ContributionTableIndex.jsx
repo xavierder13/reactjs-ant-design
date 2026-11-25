@@ -11,6 +11,7 @@ import RecordRowActions from '../../record_management/RecordRowActions';
 import { AGENCY_NOTES, FIELD_LABELS, agencyLabel, formatCell } from './contributionColumns';
 import ContributionTableFormModal from './ContributionTableFormModal';
 import ContributionTableImportModal from './ContributionTableImportModal';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Government contribution / tax tables (SSS, PhilHealth, Pag-IBIG, BIR), one
 // tab per agency: each version is in force from its effective date until
@@ -115,6 +116,8 @@ const ContributionTableIndex = () => {
     });
   }
 
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll/contribution/ContributionTableIndex', columns);
+
   const bracketColumns = fields.map((f) => ({
     title: FIELD_LABELS[agency]?.[f] || f,
     dataIndex: f,
@@ -130,6 +133,7 @@ const ContributionTableIndex = () => {
         items={(options.agencies.length ? options.agencies : ['SSS', 'PhilHealth', 'Pag-IBIG', 'BIR']).map((a) => ({ key: a, label: agencyLabel(a) }))}
         tabBarExtraContent={(
           <Space wrap>
+            {chooser}
             <Button icon={<ReloadOutlined />} onClick={fetchTables} loading={loading}>Refresh</Button>
             {canCreate && (
               <Button icon={<UploadOutlined />} onClick={() => setImporting(true)} disabled={!fields.length}>
@@ -150,7 +154,7 @@ const ContributionTableIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={versions}
         loading={loading}
         pagination={false}

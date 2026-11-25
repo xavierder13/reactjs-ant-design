@@ -9,6 +9,7 @@ import { formatDate, DISPLAY_DATE_FORMAT } from '../../utils/formatDate';
 import LeaveDetailsModal from '../leave/LeaveDetailsModal';
 import TimeEntryDetailsModal from '../time_entry/TimeEntryDetailsModal';
 import OvertimeDetailsModal from '../overtime/OvertimeDetailsModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // Approvals (/approvals, My Workspace): every document waiting for the
 // user's decision, one tab per module (vueportal ApprovalInboxService — the
@@ -29,6 +30,26 @@ const COLUMN_TITLES = {
   thirteenth_month: ['13th Month', 'Employees · Amount'], clearance: ['Clearance No.', 'Details'],
 };
 const DATE_TITLES = { leave: 'From', time_entry: 'Date', overtime: 'Date', mrf: 'Requested', kpi: 'Period End', payroll_run: 'Pay Date', thirteenth_month: 'Pay Date', clearance: 'Clear By' };
+
+// one module's tab: its own column layout (hooks/useTableColumns)
+const InboxTable = ({ tableKey, columns, rows, loading }) => {
+  const { columns: shownColumns, chooser } = useTableColumns(tableKey, columns);
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>{chooser}</div>
+      <Table
+        rowKey='id'
+        size='small'
+        loading={loading}
+        columns={shownColumns}
+        dataSource={rows}
+        pagination={{ pageSize: 10, showSizeChanger: true }}
+        scroll={{ x: 'max-content' }}
+        locale={{ emptyText: 'Nothing waiting for you' }}
+      />
+    </>
+  );
+};
 
 export default function ApprovalsInbox() {
   const { message } = App.useApp();
@@ -107,16 +128,7 @@ export default function ApprovalsInbox() {
           key: m.key,
           label: <Space size={6}>{m.label}<Badge count={m.rows.length} showZero={false} size='small' /></Space>,
           children: (
-            <Table
-              rowKey='id'
-              size='small'
-              loading={loading}
-              columns={columnsFor(m.key)}
-              dataSource={m.rows}
-              pagination={{ pageSize: 10, showSizeChanger: true }}
-              scroll={{ x: 'max-content' }}
-              locale={{ emptyText: 'Nothing waiting for you' }}
-            />
+            <InboxTable tableKey={`table:approval/ApprovalsInbox:${m.key}`} columns={columnsFor(m.key)} rows={m.rows} loading={loading} />
           ),
         }))}
       />

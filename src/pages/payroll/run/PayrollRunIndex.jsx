@@ -12,6 +12,7 @@ import { cutoffLabel, peso } from '../payrollHelpers';
 import { RUN_STATUS_COLORS, PICKER_MODAL_WIDTH } from './runHelpers';
 import EmployeePickerTable from './EmployeePickerTable';
 import PaidFromSummary from './PaidFromSummary';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 const YEARS = Array.from({ length: 4 }, (_, i) => dayjs().year() + 1 - i);
 const ALL = 'all'; // the Company select's "All companies"
@@ -194,12 +195,14 @@ const PayrollRunIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll/run/PayrollRunIndex', columns);
 
   return (
     <div>
       <Space wrap style={{ marginBottom: 12, width: '100%', justifyContent: 'space-between' }}>
         <Select value={year} onChange={setYear} options={YEARS.map((y) => ({ value: y, label: y }))} style={{ width: 110 }} />
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRuns} loading={loading}>Refresh</Button>
           {canGenerate && <Button type='primary' icon={<PlusOutlined />} onClick={openGenerate}>Generate Payroll</Button>}
         </Space>
@@ -207,7 +210,7 @@ const PayrollRunIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={runs}
         loading={loading}
         scroll={{ x: 1730 }}

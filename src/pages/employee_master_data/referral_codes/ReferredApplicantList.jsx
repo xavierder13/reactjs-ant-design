@@ -13,6 +13,7 @@ import EmployeeRecordCell from "./EmployeeRecordCell";
 import { APPLICANT_LIST_PERMISSIONS, isInnerControl, lookupMaps } from "./referralHelpers";
 import { isActiveValue } from "../../../utils/employeeStatus";
 import { STAGE_FILTERS, matchesStage, progressTagProps, isoFromDisplay } from "../../recruitment/applicants/applicantStatus";
+import useTableColumns from "../../../hooks/useTableColumns";
 
 const show = (v) => (v === null || v === undefined || v === "" ? "-" : v);
 const textSorter = (key) => (a, b) => String(a[key] || "").localeCompare(String(b[key] || ""));
@@ -165,6 +166,8 @@ export default function ReferredApplicantList() {
     { title: "Referrals", dataIndex: "total", align: "center", sorter: (a, b) => a.total - b.total, render: (v) => <Tag color="blue">{v.toLocaleString()}</Tag> },
     { title: "Hired", dataIndex: "hired", align: "center", sorter: (a, b) => a.hired - b.hired, render: (v) => (v ? <Tag color="success">{v.toLocaleString()}</Tag> : <Typography.Text type="secondary">0</Typography.Text>) },
   ];
+  const groupTable = useTableColumns("table:employee_master_data/referral_codes/ReferredApplicantList:referrer", groupColumns);
+  const flatTable = useTableColumns("table:employee_master_data/referral_codes/ReferredApplicantList:all", applicantColumns(true));
 
   const pagination = { pageSize: 10, showSizeChanger: true, showTotal: (total, [from, to]) => `${from}-${to} of ${total}` };
 
@@ -185,7 +188,10 @@ export default function ReferredApplicantList() {
               <Typography.Title level={4} style={{ margin: 0 }}>Referred Applicants</Typography.Title>
             </Col>
             <Col flex="none">
-              <Button icon={<ReloadOutlined />} onClick={load} disabled={loading}>Refresh</Button>
+              <Space wrap>
+                {view === "referrer" ? groupTable.chooser : flatTable.chooser}
+                <Button icon={<ReloadOutlined />} onClick={load} disabled={loading}>Refresh</Button>
+              </Space>
             </Col>
           </Row>
         }
@@ -230,7 +236,7 @@ export default function ReferredApplicantList() {
           <Table
             rowKey="key"
             size="small"
-            columns={groupColumns}
+            columns={groupTable.columns}
             dataSource={groups}
             loading={loading}
             scroll={{ x: "max-content" }}
@@ -258,7 +264,7 @@ export default function ReferredApplicantList() {
           <Table
             rowKey="id"
             size="small"
-            columns={applicantColumns(true)}
+            columns={flatTable.columns}
             dataSource={rows}
             onRow={applicantRowProps}
             loading={loading}

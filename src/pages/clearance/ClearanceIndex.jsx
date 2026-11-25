@@ -11,6 +11,7 @@ import { DISPLAY_DATE_FORMAT, formatDate } from '../../utils/formatDate';
 import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../utils/tablePagination';
 import { CLEARANCE_STATUSES, CLEARANCE_STATUS_COLORS, statusLabel, isOverdue, separationLabel } from './clearanceHelpers';
 import ClearanceFormModal from './ClearanceFormModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // `can` = who the view is for (signatories, final approvers, HR)
 const VIEWS = [
@@ -156,6 +157,7 @@ const ClearanceIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:clearance/ClearanceIndex', columns);
 
   return (
     <div>
@@ -196,6 +198,7 @@ const ClearanceIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={() => setFormOpen(true)}>Start Clearance</Button>}
         </Space>
@@ -203,7 +206,7 @@ const ClearanceIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 1100 }}

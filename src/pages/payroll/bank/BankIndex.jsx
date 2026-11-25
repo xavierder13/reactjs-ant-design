@@ -11,6 +11,7 @@ import { tablePagination } from '../../../utils/tablePagination';
 import ExpandIcon from '../../../components/ExpandIcon';
 import BankFormModal from './BankFormModal';
 import BankEmployeesModal from './BankEmployeesModal';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Banks payroll accounts are held at (employee Bank Accounts and the
 // company's own in Payroll Settings). A bank in use can't be deleted — set
@@ -91,12 +92,14 @@ const BankIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll/bank/BankIndex', columns);
 
   return (
     <div>
       <RecordToolbar
         searchPlaceholder='Search code or name'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={fetchBanks}
         loading={loading}
         canCreate={canCreate}
@@ -106,7 +109,7 @@ const BankIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={loading}
         scroll={{ x: 640 }}

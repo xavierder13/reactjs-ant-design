@@ -13,6 +13,7 @@ import RecordRowActions from '../RecordRowActions';
 import HolidayCalendarFormModal from './HolidayCalendarFormModal';
 import { HOLIDAY_TYPES, holidayType } from './holidayTypes';
 import { tablePagination } from '../../../utils/tablePagination';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Holiday Calendar — replaces vueportal's calendar/HolidayCalendar.vue.
 // Calendar view (month grid; click a day to add, a holiday to edit) and a
@@ -147,6 +148,7 @@ const HolidayCalendarIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:record_management/holiday_calendar/HolidayCalendarIndex', columns);
 
   const years = useMemo(() => {
     const set = new Set(items.map((h) => dayjs(h.date).year()));
@@ -201,6 +203,7 @@ const HolidayCalendarIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={refetch} loading={isLoading}>Refresh</Button>
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={() => openCreate()}>Create Holiday</Button>}
         </Space>
@@ -233,7 +236,7 @@ const HolidayCalendarIndex = () => {
         <Table
           rowKey='id'
           size='small'
-          columns={columns}
+          columns={shownColumns}
           dataSource={yearRows}
           loading={isLoading}
           pagination={tablePagination(20)}

@@ -6,6 +6,7 @@ import { ReloadOutlined, SearchOutlined, CloudSyncOutlined } from "@ant-design/i
 import employeeApi from "../../../services/employee/employeeApi";
 import handleApiError from "../../../utils/handleApiError";
 import useAuth from "../../../hooks/useAuth";
+import useTableColumns from "../../../hooks/useTableColumns";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 500];
 const SEARCH_FIELDS = ["name", "employment_position", "branch_name", "branch_complied", "employment_branch", "email", "contact_no"];
@@ -40,6 +41,7 @@ export default function NewHiredList() {
   const [search, setSearch] = useState("");
   const [selectedKeys, setSelectedKeys] = useState([]);
   const [pageSize, setPageSize] = useState(20);
+  const { columns: shownColumns, chooser } = useTableColumns("table:employee_master_data/new_hired/NewHiredList", columns);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,6 +112,7 @@ export default function NewHiredList() {
                     Sync{selectedKeys.length ? ` (${selectedKeys.length})` : ""}
                   </Button>
                 )}
+                {chooser}
                 <Button icon={<ReloadOutlined />} onClick={load} disabled={loading || syncing}>Refresh</Button>
               </Space>
             </Col>
@@ -139,7 +142,7 @@ export default function NewHiredList() {
         <Table
           rowKey="id"
           size="small"
-          columns={columns}
+          columns={shownColumns}
           dataSource={filtered}
           loading={loading}
           rowSelection={canSync ? { selectedRowKeys: selectedKeys, onChange: setSelectedKeys, preserveSelectedRowKeys: true } : undefined}

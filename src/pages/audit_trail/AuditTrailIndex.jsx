@@ -8,6 +8,7 @@ import ExpandIcon from '../../components/ExpandIcon';
 import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../utils/formatDate';
 import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../utils/tablePagination';
+import useTableColumns from '../../hooks/useTableColumns';
 
 const ACTIONS = {
   created: { label: 'Added',   color: 'green' },
@@ -187,6 +188,7 @@ const AuditTrailIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:audit_trail/AuditTrailIndex', columns);
 
   return (
     <div>
@@ -246,12 +248,13 @@ const AuditTrailIndex = () => {
             })}
           />
         </Space>
+        {chooser}
         <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
       </Space>
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 1100 }}

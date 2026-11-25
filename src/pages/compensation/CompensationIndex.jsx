@@ -12,6 +12,7 @@ import ImportDataModal from '../employee_master_data/components/ImportDataModal'
 import { CHANGE_TYPE_COLORS, peso } from './compensationHelpers';
 import CompensationFormModal from './CompensationFormModal';
 import CompensationHistoryModal from './CompensationHistoryModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 const STATUSES = [
   { value: 1, label: 'Active employees' },
@@ -135,6 +136,7 @@ const CompensationIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:compensation/CompensationIndex', columns);
 
   return (
     <div>
@@ -169,6 +171,7 @@ const CompensationIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canTemplate && <Button icon={<DownloadOutlined />} onClick={() => setTemplateOpen(true)}>Generate Template</Button>}
           {canImport && <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>}
@@ -178,7 +181,7 @@ const CompensationIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 1300 }}

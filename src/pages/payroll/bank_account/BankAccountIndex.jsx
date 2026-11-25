@@ -11,6 +11,7 @@ import { employeeName } from '../payrollHelpers';
 import GenerateTemplateModal from '../../employee_master_data/components/GenerateTemplateModal';
 import ImportDataModal from '../../employee_master_data/components/ImportDataModal';
 import BankAccountFormModal from './BankAccountFormModal';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 const STATES = [
   { value: 'current', label: 'Current' },
@@ -166,6 +167,7 @@ const BankAccountIndex = () => {
       )),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll/bank_account/BankAccountIndex', columns);
 
   return (
     <div>
@@ -200,6 +202,7 @@ const BankAccountIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canTemplate && <Button icon={<DownloadOutlined />} onClick={() => setTemplateOpen(true)}>Generate Template</Button>}
           {canImport && <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>}
@@ -209,7 +212,7 @@ const BankAccountIndex = () => {
       <Table
         rowKey={(r) => r.id ?? `employee-${r.employee_id}`}
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: missing ? 640 : 1200 }}

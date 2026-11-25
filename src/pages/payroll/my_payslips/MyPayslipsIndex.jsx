@@ -12,6 +12,7 @@ import { tablePagination } from '../../../utils/tablePagination';
 import { cutoffLabel, peso } from '../payrollHelpers';
 import { payslipHtml } from '../reports/printTemplates';
 import PayslipModal from '../run/PayslipModal';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // The printed pay sheet's columns (one line per cut-off).
 const SHEET_COLUMNS = [
@@ -154,6 +155,7 @@ const MyPayslipsIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll/my_payslips/MyPayslipsIndex', columns);
 
   return (
     <div>
@@ -178,6 +180,7 @@ const MyPayslipsIndex = () => {
           )}
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchPayslips} loading={loading}>Refresh</Button>
           <Button icon={<PrinterOutlined />} onClick={printPaySheet} loading={busy === 'sheet'} disabled={!data.linked}>Print Pay Sheet</Button>
           <Button icon={<DownloadOutlined />} onClick={exportPaySheet} loading={busy === 'export'} disabled={!data.linked}>Export Pay Sheet</Button>
@@ -187,7 +190,7 @@ const MyPayslipsIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={shown}
         loading={loading}
         scroll={{ x: 760 }}

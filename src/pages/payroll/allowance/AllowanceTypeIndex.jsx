@@ -10,6 +10,7 @@ import { tablePagination } from '../../../utils/tablePagination';
 import { peso } from '../payrollHelpers';
 import ExpandIcon from '../../../components/ExpandIcon';
 import AllowanceTypeFormModal from './AllowanceTypeFormModal';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Allowance types and how they are taxed. Seeded with the common ones
 // (BIR de minimis limits as of RR 11-2018 — check the latest regulation).
@@ -103,12 +104,14 @@ const AllowanceTypeIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll/allowance/AllowanceTypeIndex', columns);
 
   return (
     <div>
       <RecordToolbar
         searchPlaceholder='Search code or name'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={fetchTypes}
         loading={loading}
         canCreate={canCreate}
@@ -118,7 +121,7 @@ const AllowanceTypeIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={loading}
         scroll={{ x: 820 }}

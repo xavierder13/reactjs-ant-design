@@ -12,6 +12,7 @@ import RecordLink from "../../../components/RecordLink";
 import { isActiveValue } from "../../../utils/employeeStatus";
 import { DISPLAY_DATE_FORMAT, formatDate } from "../../../utils/formatDate";
 import { isInnerControl } from "./referralHelpers";
+import useTableColumns from "../../../hooks/useTableColumns";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100];
 const RETURN_STATE = { returnTo: "/employees/referred-employees" };
@@ -121,6 +122,8 @@ export default function ReferredEmployeeList() {
     { title: "Still Active", dataIndex: "active_count", key: "active_count", align: "center", render: (v) => <Tag color="success">{Number(v).toLocaleString()}</Tag> },
     { title: "Regular", dataIndex: "regular_count", key: "regular_count", align: "center", render: (v) => (Number(v) ? <Tag color="green">{Number(v).toLocaleString()}</Tag> : <Typography.Text type="secondary">0</Typography.Text>) },
   ];
+  const groupTable = useTableColumns("table:employee_master_data/referral_codes/ReferredEmployeeList:referrer", groupColumns);
+  const flatTable = useTableColumns("table:employee_master_data/referral_codes/ReferredEmployeeList:employee", employeeColumns(true));
 
   const toggleGroup = (key) => setExpandedKeys((keys) => (keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]));
   const tablePagination = {
@@ -148,7 +151,10 @@ export default function ReferredEmployeeList() {
               <Typography.Title level={4} style={{ margin: 0 }}>Referred Employees</Typography.Title>
             </Col>
             <Col flex="none">
-              <Button icon={<ReloadOutlined />} onClick={refresh} disabled={loading}>Refresh</Button>
+              <Space wrap>
+                {view === "referrer" ? groupTable.chooser : flatTable.chooser}
+                <Button icon={<ReloadOutlined />} onClick={refresh} disabled={loading}>Refresh</Button>
+              </Space>
             </Col>
           </Row>
         }
@@ -204,7 +210,7 @@ export default function ReferredEmployeeList() {
           <Table
             rowKey="group_key"
             size="small"
-            columns={groupColumns}
+            columns={groupTable.columns}
             dataSource={rows}
             loading={loading}
             scroll={{ x: "max-content" }}
@@ -229,7 +235,7 @@ export default function ReferredEmployeeList() {
           <Table
             rowKey="id"
             size="small"
-            columns={employeeColumns(true)}
+            columns={flatTable.columns}
             dataSource={rows}
             loading={loading}
             scroll={{ x: "max-content" }}

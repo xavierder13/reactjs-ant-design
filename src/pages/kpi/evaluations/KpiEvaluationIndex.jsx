@@ -19,6 +19,7 @@ import useAuth               from '../../../hooks/useAuth';
 import handleApiError        from '../../../utils/handleApiError';
 
 import { formatDate } from '../../../utils/formatDate';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 const statusColors = {
   draft:     'default',
@@ -204,6 +205,7 @@ const KpiEvaluationIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:kpi/evaluations/KpiEvaluationIndex', columns);
 
   return (
     <>
@@ -228,6 +230,7 @@ const KpiEvaluationIndex = () => {
 
             <Col flex='none'>
               <Space wrap>
+                {chooser}
                 <Button
                   icon={<ReloadOutlined />}
                   onClick={() => {
@@ -318,7 +321,7 @@ const KpiEvaluationIndex = () => {
 
         <Table
           rowKey='id'
-          columns={columns}
+          columns={shownColumns}
           dataSource={filtered}
           loading={isLoading}
           size='small'

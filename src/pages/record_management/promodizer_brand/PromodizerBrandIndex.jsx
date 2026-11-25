@@ -8,6 +8,7 @@ import RecordToolbar from '../RecordToolbar';
 import RecordRowActions from '../RecordRowActions';
 import PromodizerBrandFormModal from './PromodizerBrandFormModal';
 import { tablePagination } from '../../../utils/tablePagination';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Promodizer Brand maintenance — replaces vueportal's promodizer_brand/PromodizerBrandIndex.vue.
 const PromodizerBrandIndex = () => {
@@ -61,12 +62,14 @@ const PromodizerBrandIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:record_management/promodizer_brand/PromodizerBrandIndex', columns);
 
   return (
     <div>
       <RecordToolbar
         searchPlaceholder='Search brand'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -76,7 +79,7 @@ const PromodizerBrandIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         pagination={tablePagination(10)}

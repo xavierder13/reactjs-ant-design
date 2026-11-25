@@ -9,6 +9,7 @@ import RecordRowActions from '../../../record_management/RecordRowActions';
 import { resultMessage, showGatewayError } from '../setupHelpers';
 import CareersRankFormModal from './CareersRankFormModal';
 import { tablePagination } from '../../../../utils/tablePagination';
+import useTableColumns from '../../../../hooks/useTableColumns';
 
 // Careers portal ranks — recruitment-portal rank/RankIndex.vue, run through
 // the vueportal gateway as the signed-in user. A rank groups careers
@@ -85,6 +86,7 @@ const CareersRankIndex = () => {
       },
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:recruitment/setup/rank/CareersRankIndex', columns);
 
   return (
     <div>
@@ -92,6 +94,7 @@ const CareersRankIndex = () => {
       <RecordToolbar
         searchPlaceholder='Search rank'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -101,7 +104,7 @@ const CareersRankIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         pagination={tablePagination(10)}

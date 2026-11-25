@@ -11,6 +11,7 @@ import RecordRowActions from '../RecordRowActions';
 import ActiveTag from '../ActiveTag';
 import DepartmentFormModal from './DepartmentFormModal';
 import { tablePagination } from '../../../utils/tablePagination';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Department maintenance — replaces vueportal's department/DepartmentIndex.vue.
 const DepartmentIndex = () => {
@@ -78,12 +79,14 @@ const DepartmentIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:record_management/department/DepartmentIndex', columns);
 
   return (
     <div>
       <RecordToolbar
         searchPlaceholder='Search department or division'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -93,7 +96,7 @@ const DepartmentIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         pagination={tablePagination(10)}

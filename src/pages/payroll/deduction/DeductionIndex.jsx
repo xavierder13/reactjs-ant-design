@@ -10,6 +10,7 @@ import DeductionFormModal from './DeductionFormModal';
 import DeductionDetailsModal from './DeductionDetailsModal';
 import GenerateTemplateModal from '../../employee_master_data/components/GenerateTemplateModal';
 import ImportDataModal from '../../employee_master_data/components/ImportDataModal';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Scheduled deductions (loans, cash advances, installments, …) with total,
 // paid and balance. The Deducting switch (deduction-edit) holds / resumes
@@ -232,6 +233,7 @@ const DeductionIndex = () => {
       },
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll/deduction/DeductionIndex', columns);
 
   return (
     <div>
@@ -279,6 +281,7 @@ const DeductionIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canTemplate && <Button icon={<DownloadOutlined />} onClick={() => setTemplateOpen(true)}>Generate Template</Button>}
           {canImport && <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import</Button>}
@@ -288,7 +291,7 @@ const DeductionIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 1550 }}

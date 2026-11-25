@@ -6,12 +6,12 @@ import recruitmentApi from '../../services/recruitment/recruitmentApi';
 import useAuth from '../../hooks/useAuth';
 import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../utils/formatDate';
-import ColumnSelector from '../employee_master_data/components/ColumnSelector';
 import { APPLICANT_STAGES, DATE_FIELDS } from './applicants/stages';
 import { STATUS_FILTERS, STAGE_FILTERS, matchesStage, progressTagProps, isoFromDisplay } from './applicants/applicantStatus';
 import ApplicantDrawer from './applicants/ApplicantDrawer';
 import ExportModal from './applicants/ExportModal';
 import { detailsComplete, finalRequiredFiles, missingFiles, errorMessage, gatewayMessage } from './applicants/requirements';
+import useTableColumns from '../../hooks/useTableColumns';
 
 const { RangePicker } = DatePicker;
 
@@ -93,8 +93,6 @@ const buildColumns = (names, secondary) => {
   ];
 };
 
-const MAX_COLUMNS = 12;
-
 // /recruitment/<stage> — one ATS applicant list (stage from APPLICANT_STAGES).
 // Loads the whole list once (the gateway doesn't paginate) and filters in
 // memory: search, status (counts shown on the filter), branch, position and
@@ -137,7 +135,6 @@ export default function JobApplicantList({ stageKey }) {
   const [pageSize, setPageSize] = useState(20);
   const allColumns = useMemo(() => buildColumns(names, secondary), [names, secondary]);
   const [viewingId, setViewingId] = useState(null);
-  const [selectedKeys, setSelectedKeys] = useState(stage.columns);
 
   useEffect(() => {
     let cancelled = false;
@@ -271,11 +268,11 @@ export default function JobApplicantList({ stageKey }) {
     .sort()
     .map((v) => ({ label: v, value: v }));
 
-  const columnHeaders = allColumns.map((c) => ({ title: c.title, value: c.dataIndex }));
   const columns = [
     // Position in the filtered list (AntD's render index restarts per page).
     { title: '#', key: 'row_no', width: 56, render: (_, record) => filtered.indexOf(record) + 1 },
-    ...allColumns.filter((c) => selectedKeys.includes(c.dataIndex)),
+    // every column in the Columns chooser; the stage's usual ones shown until the user picks (hooks/useTableColumns)
+    ...allColumns.map((c) => (stage.columns.includes(c.dataIndex) ? c : { ...c, defaultHidden: true })),
     {
       title: 'Actions', key: 'actions', fixed: 'right', width: canDelete ? 90 : 60,
       render: (_, record) => (
@@ -299,6 +296,7 @@ export default function JobApplicantList({ stageKey }) {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns(`table:recruitment/JobApplicantList:${stageKey}`, columns);
 
   return (
     <Card
@@ -313,6 +311,7 @@ export default function JobApplicantList({ stageKey }) {
           {can('careers-export') && (
             <Button icon={<FileExcelOutlined />} onClick={() => setExportOpen(true)}>Export</Button>
           )}
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={() => setReloadKey((k) => k + 1)} loading={loading}>
             Refresh
           </Button>
@@ -388,12 +387,6 @@ export default function JobApplicantList({ stageKey }) {
             onChange={setDateRange}
           />
         </Space.Compact>
-        <ColumnSelector
-          headers={columnHeaders}
-          selectedHeaders={columnHeaders.filter((h) => selectedKeys.includes(h.value))}
-          onChange={(selected) => setSelectedKeys(selected.map((h) => h.value))}
-          maxColumns={MAX_COLUMNS}
-        />
       </Space>
 
       <Table
@@ -401,7 +394,7 @@ export default function JobApplicantList({ stageKey }) {
         size="small"
         loading={loading}
         dataSource={filtered}
-        columns={columns}
+        columns={shownColumns}
         scroll={{ x: 'max-content' }}
         pagination={{
           current: currentPage,

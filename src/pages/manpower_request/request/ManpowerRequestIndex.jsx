@@ -10,6 +10,7 @@ import handleApiError from '../../../utils/handleApiError';
 import downloadBlobResponse from '../../../utils/downloadBlobResponse';
 import { formatDate, DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { tablePagination } from '../../../utils/tablePagination';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 const { RangePicker } = DatePicker;
 
@@ -259,6 +260,7 @@ const ManpowerRequestIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:manpower_request/request/ManpowerRequestIndex', columns);
 
   return (
     <div>
@@ -289,6 +291,7 @@ const ManpowerRequestIndex = () => {
         </Space>
 
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={refetch} loading={isLoading}>
             Refresh
           </Button>
@@ -314,7 +317,7 @@ const ManpowerRequestIndex = () => {
       <Table
         rowKey="id"
         size="small"
-        columns={columns}
+        columns={shownColumns}
         dataSource={filteredItems}
         loading={isLoading}
         scroll={{ x: 1000 }}

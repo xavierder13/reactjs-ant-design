@@ -8,6 +8,7 @@ import RecordRowActions from '../../../record_management/RecordRowActions';
 import { resultMessage, showGatewayError } from '../setupHelpers';
 import CareersPositionFormModal from './CareersPositionFormModal';
 import { tablePagination } from '../../../../utils/tablePagination';
+import useTableColumns from '../../../../hooks/useTableColumns';
 
 // Careers portal positions — recruitment-portal position/PositionIndex.vue,
 // run through the vueportal gateway as the signed-in user. These are what
@@ -81,6 +82,7 @@ const CareersPositionIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:recruitment/setup/position/CareersPositionIndex', columns);
 
   return (
     <div>
@@ -88,6 +90,7 @@ const CareersPositionIndex = () => {
       <RecordToolbar
         searchPlaceholder='Search position, rank, department or division'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -97,7 +100,7 @@ const CareersPositionIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         pagination={tablePagination(10)}

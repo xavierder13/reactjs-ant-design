@@ -4,6 +4,7 @@ import { Card, Table, Button, Space, Input, Tooltip, Popconfirm, Typography, Ale
 import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 
 import handleApiError from "../../../utils/handleApiError";
+import useTableColumns from "../../../hooks/useTableColumns";
 
 // Shared by the Overdue Deactivation / Overdue Regularization pages: the
 // employees a nightly job (Deactivate Resigned / Regularize Passed) would
@@ -85,6 +86,7 @@ export default function OverdueRunList({ fetchRows, runFor, columns, action, abo
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns(`table:${pathname}`, allColumns);
 
   const visibleIds = visible.map((r) => r.id);
 
@@ -105,6 +107,7 @@ export default function OverdueRunList({ fetchRows, runFor, columns, action, abo
           <Typography.Text type="secondary">{visible.length} employee(s)</Typography.Text>
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={load} loading={loading}>Refresh</Button>
           <Popconfirm
             title={`${action.label} ${selected.length} selected employee(s)?`}
@@ -132,7 +135,7 @@ export default function OverdueRunList({ fetchRows, runFor, columns, action, abo
         rowKey="id"
         size="small"
         loading={loading}
-        columns={allColumns}
+        columns={shownColumns}
         dataSource={visible}
         rowSelection={{ selectedRowKeys: selected, onChange: setSelected }}
         pagination={{ pageSize: 10, showSizeChanger: true }}

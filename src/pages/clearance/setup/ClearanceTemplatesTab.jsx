@@ -6,6 +6,7 @@ import {
 import { EditOutlined, DeleteOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import clearanceApi from '../../../services/clearance/clearanceApi';
 import handleApiError from '../../../utils/handleApiError';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Clearance Setup → Templates: each a clearance process (components in
 // clearing order, each with an in-charge and a checklist) for the branches
@@ -86,6 +87,7 @@ const ClearanceTemplatesTab = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:clearance/setup/ClearanceTemplatesTab', columns);
 
   return (
     <div>
@@ -96,10 +98,11 @@ const ClearanceTemplatesTab = () => {
         title='A clearance follows its template: the components clear one after another, each by its in-charge. After the last one it goes to final approval on the "Clearance" Access Chart (Approvals → Access Charts).'
       />
       <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'flex-end' }} wrap>
+        {chooser}
         <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
         <Button type='primary' icon={<PlusOutlined />} onClick={() => navigate('/clearances/templates/new')}>Add Template</Button>
       </Space>
-      <Table rowKey='id' size='small' columns={columns} dataSource={rows} loading={loading} pagination={false} scroll={{ x: 800 }} />
+      <Table rowKey='id' size='small' columns={shownColumns} dataSource={rows} loading={loading} pagination={false} scroll={{ x: 800 }} />
     </div>
   );
 };

@@ -9,6 +9,7 @@ import AreaFormModal from './AreaFormModal';
 import AssignAreasModal from './AssignAreasModal';
 import ExpandIcon from '../../components/ExpandIcon';
 import { tablePagination } from '../../utils/tablePagination';
+import useTableColumns from '../../hooks/useTableColumns';
 
 const { Text } = Typography;
 
@@ -198,6 +199,9 @@ const AreaIndex = () => {
       ),
     },
   ];
+  const areaTable = useTableColumns('table:area/AreaIndex:areas', areaColumns);
+  const hrHeadTable = useTableColumns('table:area/AreaIndex:hr-heads', hrHeadColumns);
+  const [activeTab, setActiveTab] = useState('areas');
 
   return (
     <div>
@@ -222,6 +226,9 @@ const AreaIndex = () => {
       </Space>
 
       <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        tabBarExtraContent={activeTab === 'areas' ? areaTable.chooser : hrHeadTable.chooser}
         items={[
           {
             key: 'areas',
@@ -230,7 +237,7 @@ const AreaIndex = () => {
               <Table
                 rowKey='id'
                 size='small'
-                columns={areaColumns}
+                columns={areaTable.columns}
                 dataSource={filteredAreas}
                 loading={isLoading}
                 scroll={{ x: 800 }}
@@ -254,7 +261,7 @@ const AreaIndex = () => {
               <Table
                 rowKey='key'
                 size='small'
-                columns={hrHeadColumns}
+                columns={hrHeadTable.columns}
                 dataSource={hrHeadRows}
                 loading={isLoading}
                 scroll={{ x: 800 }}

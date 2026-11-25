@@ -14,6 +14,7 @@ import AssetFormModal from './AssetFormModal';
 import AssetDetailsModal from './AssetDetailsModal';
 import AssetAssignModal from './AssetAssignModal';
 import AssetDisposeModal from './AssetDisposeModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // Company Assets (/company-assets): the registry of non-IT company property
 // (vueportal Company Asset module — the same data as its Vue Asset
@@ -142,6 +143,7 @@ const CompanyAssetIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:company_asset/CompanyAssetIndex', columns);
 
   return (
     <div>
@@ -158,6 +160,7 @@ const CompanyAssetIndex = () => {
           <Input.Search placeholder='Tag, name or serial no.' allowClear onSearch={(v) => { setSearch(v.trim()); setPage((p) => ({ ...p, current: 1 })); }} style={{ width: 230 }} />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {can.create && <Button type='primary' icon={<PlusOutlined />} onClick={() => { setEditing(null); setFormOpen(true); }}>Add Asset</Button>}
         </Space>
@@ -165,7 +168,7 @@ const CompanyAssetIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 1000 }}

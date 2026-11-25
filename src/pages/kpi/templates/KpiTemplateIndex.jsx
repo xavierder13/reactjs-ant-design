@@ -14,6 +14,7 @@ import { App } from 'antd';
 import kpiTemplateApi       from '../../../services/kpi/kpiTemplateApi';
 import useKpiTemplateStore  from '../../../store/kpiTemplateStore';
 import useAuth              from '../../../hooks/useAuth';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 const KpiTemplateIndex = () => {
   const navigate                              = useNavigate();
@@ -116,6 +117,7 @@ const KpiTemplateIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:kpi/templates/KpiTemplateIndex', columns);
 
   return (
     <>
@@ -158,6 +160,7 @@ const KpiTemplateIndex = () => {
                 >
                   Search
                 </Button>
+                {chooser}
                 <Button
                   icon={<ReloadOutlined />}
                   onClick={refreshTemplates}
@@ -183,7 +186,7 @@ const KpiTemplateIndex = () => {
       >
         <Table
           rowKey='id'
-          columns={columns}
+          columns={shownColumns}
           dataSource={filtered}
           loading={isLoading}
           size='small'

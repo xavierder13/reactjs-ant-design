@@ -9,6 +9,7 @@ import RecordRowActions from '../../../record_management/RecordRowActions';
 import HiringOfficerFormModal from './HiringOfficerFormModal';
 import { officerName, ineligibleReason } from './hiringOfficer';
 import { tablePagination } from '../../../../utils/tablePagination';
+import useTableColumns from '../../../../hooks/useTableColumns';
 
 // Hiring officers — the Hiring Officer Name options on an applicant's Final
 // Interview step; picking one there fills its position. Each is an Employee
@@ -89,6 +90,7 @@ const HiringOfficerIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:recruitment/setup/hiring_officer/HiringOfficerIndex', columns);
 
   return (
     <div>
@@ -96,6 +98,7 @@ const HiringOfficerIndex = () => {
       <RecordToolbar
         searchPlaceholder='Search code, name or position'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -105,7 +108,7 @@ const HiringOfficerIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         scroll={{ x: 700 }}

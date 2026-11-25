@@ -9,6 +9,7 @@ import EmployeeSelect from '../manpower_request/request/EmployeeSelect';
 import { LEAVE_STATUS_COLORS, leaveDates, num } from './leaveHelpers';
 import LeaveCreditModal from './LeaveCreditModal';
 import { tablePagination } from '../../utils/tablePagination';
+import useTableColumns from '../../hooks/useTableColumns';
 
 const YEARS = [-1, 0, 1].map((d) => dayjs().year() + d).map((y) => ({ value: y, label: y }));
 
@@ -122,6 +123,8 @@ const LeaveBalances = () => {
     { title: 'Days', dataIndex: 'days', width: 70, render: num },
     { title: 'Status', dataIndex: 'status', width: 110, render: (s) => <Tag color={LEAVE_STATUS_COLORS[s]}>{s}</Tag> },
   ];
+  const balanceTable = useTableColumns('table:leave/LeaveBalances:balances', balanceColumns);
+  const leaveTable = useTableColumns('table:leave/LeaveBalances:leaves', leaveColumns);
 
   return (
     <div>
@@ -154,11 +157,11 @@ const LeaveBalances = () => {
         <Empty description='Pick an employee to see their leave balances.' />
       ) : (
         <>
-          <Card size='small' title={`Balances — ${year}`} style={{ marginBottom: 16 }}>
+          <Card size='small' title={`Balances — ${year}`} extra={balanceTable.chooser} style={{ marginBottom: 16 }}>
             <Table
               rowKey={(r) => r.leave_type.id}
               size='small'
-              columns={balanceColumns}
+              columns={balanceTable.columns}
               dataSource={balances}
               loading={loading}
               pagination={false}
@@ -166,11 +169,11 @@ const LeaveBalances = () => {
             />
           </Card>
           {canListLeaves && (
-          <Card size='small' title={`Leave Applications — ${year}`}>
+          <Card size='small' title={`Leave Applications — ${year}`} extra={leaveTable.chooser}>
             <Table
               rowKey='id'
               size='small'
-              columns={leaveColumns}
+              columns={leaveTable.columns}
               dataSource={leaves}
               loading={loading}
               pagination={tablePagination(10, { hideOnSinglePage: true })}

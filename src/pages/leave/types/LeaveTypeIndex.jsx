@@ -11,6 +11,7 @@ import ExpandIcon from '../../../components/ExpandIcon';
 import { num } from '../leaveHelpers';
 import LeaveTypeFormModal from './LeaveTypeFormModal';
 import { tablePagination } from '../../../utils/tablePagination';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Leave types and their rules: yearly credits (the default for every
 // eligible employee; HR overrides per employee on Leave Balances),
@@ -102,6 +103,7 @@ const LeaveTypeIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:leave/types/LeaveTypeIndex', columns);
 
   return (
     <div>
@@ -109,6 +111,7 @@ const LeaveTypeIndex = () => {
       <RecordToolbar
         searchPlaceholder='Search code or name'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -118,7 +121,7 @@ const LeaveTypeIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         scroll={{ x: 760 }}

@@ -13,6 +13,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import roleApi from '../../services/role/roleApi';
 import useRoles from '../../hooks/useRoles';
 import useAuth from '../../hooks/useAuth';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // The seeded Administrator role always has id 1 — vueportal's RoleController
 // forbids updating/deleting it (403), so it's read-only here too.
@@ -115,6 +116,7 @@ const RoleIndex = () => {
       },
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:role/RoleIndex', columns);
 
   return (
     <>
@@ -157,6 +159,7 @@ const RoleIndex = () => {
                 >
                   Search
                 </Button>
+                {chooser}
                 <Button icon={<ReloadOutlined />} onClick={refreshRoles}>
                   Refresh
                 </Button>
@@ -179,7 +182,7 @@ const RoleIndex = () => {
       >
         <Table
           rowKey='id'
-          columns={columns}
+          columns={shownColumns}
           dataSource={filtered}
           loading={isLoading}
           size='small'

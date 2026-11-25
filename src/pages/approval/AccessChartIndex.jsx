@@ -11,6 +11,7 @@ import RecordRowActions from '../record_management/RecordRowActions';
 import AccessChartFormModal from './AccessChartFormModal';
 import { isSystemChart, levelsOf, levelStatus } from './approvalHelpers';
 import ApprovingOfficersModal from './ApprovingOfficersModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // Access Charts — replaces vueportal's access_chart/AccessChartIndex.vue.
 // One row per approval procedure (MRF, Leave Application, Manual Time Entry,
@@ -123,6 +124,7 @@ const AccessChartIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:approval/AccessChartIndex', columns);
 
   return (
     <div>
@@ -130,6 +132,7 @@ const AccessChartIndex = () => {
       <RecordToolbar
         searchPlaceholder='Search procedure or module'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -139,7 +142,7 @@ const AccessChartIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         scroll={{ x: 900 }}

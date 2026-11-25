@@ -8,6 +8,7 @@ import RecordRowActions from '../../../record_management/RecordRowActions';
 import { resultMessage, showGatewayError } from '../setupHelpers';
 import CareersBranchFormModal from './CareersBranchFormModal';
 import { tablePagination } from '../../../../utils/tablePagination';
+import useTableColumns from '../../../../hooks/useTableColumns';
 
 // Careers portal branches — recruitment-portal branch/BranchIndex.vue, run
 // through the vueportal gateway as the signed-in user. These are the
@@ -68,6 +69,7 @@ const CareersBranchIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:recruitment/setup/branch/CareersBranchIndex', columns);
 
   return (
     <div>
@@ -75,6 +77,7 @@ const CareersBranchIndex = () => {
       <RecordToolbar
         searchPlaceholder='Search branch or code'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -84,7 +87,7 @@ const CareersBranchIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         pagination={tablePagination(10)}

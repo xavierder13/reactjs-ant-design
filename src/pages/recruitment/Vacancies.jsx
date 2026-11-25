@@ -10,6 +10,7 @@ import handleApiError from "../../utils/handleApiError";
 import downloadBlobResponse from "../../utils/downloadBlobResponse";
 import useAuth from "../../hooks/useAuth";
 import { tablePagination } from '../../utils/tablePagination';
+import useTableColumns from '../../hooks/useTableColumns';
 
 const byText = (key) => (a, b) => String(a[key] ?? "").localeCompare(String(b[key] ?? ""));
 const byNumber = (key) => (a, b) => a[key] - b[key];
@@ -97,6 +98,7 @@ export default function Vacancies() {
       render: (v) => <Tag color={v < 0 ? "orange" : "red"}>{v}</Tag>,
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:recruitment/Vacancies', columns);
 
   return (
     <>
@@ -112,6 +114,7 @@ export default function Vacancies() {
             </Col>
             <Col flex="none">
               <Space wrap>
+                {chooser}
                 <Button icon={<ReloadOutlined />} onClick={fetchVacancies} disabled={loading}>Refresh</Button>
                 {canExport && <Button icon={<ExportOutlined />} onClick={handleExport} loading={exporting}>Export</Button>}
               </Space>
@@ -141,7 +144,7 @@ export default function Vacancies() {
         <Table
           rowKey="key"
           size="small"
-          columns={columns}
+          columns={shownColumns}
           dataSource={rows}
           loading={loading}
           scroll={{ x: "max-content" }}

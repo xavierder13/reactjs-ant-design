@@ -12,6 +12,7 @@ import { SHIFT_STATUS_COLORS, periodDays } from './shiftHelpers';
 import ShiftAssignmentFormModal from './ShiftAssignmentFormModal';
 import ShiftHistoryModal from './ShiftHistoryModal';
 import ShiftBulkAssignModal from './ShiftBulkAssignModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // Temporary shifting (relieving): a shift overrides an employee's Work
 // Schedule for a short period. No approval — users with the permission
@@ -153,6 +154,7 @@ const ShiftAssignmentIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:shift/ShiftAssignmentIndex', columns);
 
   return (
     <div>
@@ -199,6 +201,7 @@ const ShiftAssignmentIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canCreate && <Button icon={<TeamOutlined />} onClick={() => setBulkOpen(true)} disabled={!options}>Group Shift Allocation</Button>}
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={openCreate} disabled={!options}>Assign Shift</Button>}
@@ -207,7 +210,7 @@ const ShiftAssignmentIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 1000 }}

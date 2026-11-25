@@ -10,6 +10,7 @@ import RecordToolbar from '../RecordToolbar';
 import RecordRowActions from '../RecordRowActions';
 import BranchFormModal from './BranchFormModal';
 import { tablePagination } from '../../../utils/tablePagination';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Branch maintenance — replaces vueportal's branch/BranchIndex.vue.
 const BranchIndex = () => {
@@ -80,12 +81,14 @@ const BranchIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:record_management/branch/BranchIndex', columns);
 
   return (
     <div>
       <RecordToolbar
         searchPlaceholder='Search branch, code, BM/OIC or company'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -95,7 +98,7 @@ const BranchIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         pagination={tablePagination(10)}

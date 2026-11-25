@@ -10,6 +10,7 @@ import { formatDate } from '../../utils/formatDate';
 import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../utils/tablePagination';
 import { GROUP_KINDS, GROUP_SCOPES, SHIFT_STATUS_COLORS, patternSummary, periodDays, scopeLabel } from './shiftHelpers';
 import GroupScheduleFormModal from './GroupScheduleFormModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 const SCOPE_COLORS = { company: 'purple', branch: 'geekblue', position: 'cyan' };
 
@@ -166,6 +167,7 @@ const GroupScheduleIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:shift/GroupScheduleIndex', columns);
 
   return (
     <div>
@@ -211,6 +213,7 @@ const GroupScheduleIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={openCreate} disabled={!options}>Set Default Schedule</Button>}
         </Space>
@@ -218,7 +221,7 @@ const GroupScheduleIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={shown}
         loading={loading}
         scroll={{ x: 1000 }}

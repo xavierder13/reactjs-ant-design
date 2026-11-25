@@ -8,6 +8,7 @@ import RecordToolbar from '../RecordToolbar';
 import RecordRowActions from '../RecordRowActions';
 import RankFormModal from './RankFormModal';
 import { tablePagination } from '../../../utils/tablePagination';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Rank maintenance — replaces vueportal's rank/RankIndex.vue.
 const RankIndex = () => {
@@ -61,12 +62,14 @@ const RankIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:record_management/rank/RankIndex', columns);
 
   return (
     <div>
       <RecordToolbar
         searchPlaceholder='Search rank'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -76,7 +79,7 @@ const RankIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         pagination={tablePagination(10)}

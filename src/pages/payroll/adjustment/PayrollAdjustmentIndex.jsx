@@ -10,6 +10,7 @@ import { ADJUSTMENT_COLORS, ADJUSTMENT_STATUS_COLORS, cutoffOptions, employeeNam
 import PayrollAdjustmentFormModal from './PayrollAdjustmentFormModal';
 import PayrollAdjustmentDetailsModal from './PayrollAdjustmentDetailsModal';
 import PayrollAdjustmentSuggestionsModal from './PayrollAdjustmentSuggestionsModal';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Manual payroll adjustments, each paid (Earning) or recovered (Deduction)
 // on a payroll cut-off. Suggestions lists back-dated salary changes whose
@@ -171,6 +172,7 @@ const PayrollAdjustmentIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll/adjustment/PayrollAdjustmentIndex', columns);
 
   return (
     <div>
@@ -218,6 +220,7 @@ const PayrollAdjustmentIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={changed} loading={loading}>Refresh</Button>
           {perms.canCreate && (
             <Badge count={suggestionCount} size='small'>
@@ -230,7 +233,7 @@ const PayrollAdjustmentIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 1150 }}

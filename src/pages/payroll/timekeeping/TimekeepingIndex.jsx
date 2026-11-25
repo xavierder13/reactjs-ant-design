@@ -11,6 +11,7 @@ import { minutesText, daysText } from '../run/runHelpers';
 import DtrModal from './DtrModal';
 import GenerateTemplateModal from '../../employee_master_data/components/GenerateTemplateModal';
 import ImportDataModal from '../../employee_master_data/components/ImportDataModal';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Timekeeping: every active employee's DTR summary for a payroll cut-off —
 // present, absences, leave, late, undertime, overtime and the days that need
@@ -126,6 +127,7 @@ const TimekeepingIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll/timekeeping/TimekeepingIndex', columns);
 
   return (
     <div>
@@ -151,6 +153,7 @@ const TimekeepingIndex = () => {
           <Input.Search allowClear placeholder='Code or name' onSearch={(v) => { setSearch(v.trim()); resetPage(); }} style={{ width: 220 }} />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canTemplate && <Button icon={<DownloadOutlined />} onClick={() => setTemplateOpen(true)}>Attendance Template</Button>}
           {canImport && <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import Attendance</Button>}
@@ -165,7 +168,7 @@ const TimekeepingIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 1100 }}

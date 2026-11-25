@@ -11,6 +11,7 @@ import RecordRowActions from '../RecordRowActions';
 import PositionFormModal from './PositionFormModal';
 import ExpandIcon from '../../../components/ExpandIcon';
 import { tablePagination } from '../../../utils/tablePagination';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 const { Text } = Typography;
 
@@ -93,12 +94,14 @@ const PositionIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:record_management/position/PositionIndex', columns);
 
   return (
     <div>
       <RecordToolbar
         searchPlaceholder='Search position, rank, department or cost center'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -108,7 +111,7 @@ const PositionIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         pagination={tablePagination(10)}

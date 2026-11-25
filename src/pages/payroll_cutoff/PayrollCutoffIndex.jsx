@@ -12,6 +12,7 @@ import { tablePagination } from '../../utils/tablePagination';
 import RecordRowActions from '../record_management/RecordRowActions';
 import { applyLeaveErrors } from '../leave/leaveHelpers';
 import CutoffFilingHistoryModal from './CutoffFilingHistoryModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 const YEARS = [-1, 0, 1].map((d) => dayjs().year() + d);
 
@@ -185,12 +186,14 @@ const PayrollCutoffIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:payroll_cutoff/PayrollCutoffIndex', columns);
 
   return (
     <div>
       <Space wrap style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
         <Select value={year} onChange={setYear} options={YEARS.map((y) => ({ value: y, label: y }))} style={{ width: 100 }} />
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canCreate && (
             <Button icon={<ThunderboltOutlined />} onClick={() => { genForm.resetFields(); genForm.setFieldsValue({ year, pattern: 'semi-monthly', update_pay_dates: false }); setGenOpen(true); }}>
@@ -203,7 +206,7 @@ const PayrollCutoffIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 900 }}

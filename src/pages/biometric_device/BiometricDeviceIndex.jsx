@@ -16,6 +16,7 @@ import BiometricDeviceLogsModal from './BiometricDeviceLogsModal';
 import BiometricPullProgress from './BiometricPullProgress';
 import BiometricFeedsPanel from './BiometricFeedsPanel';
 import BiometricFetchModal from './BiometricFetchModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 const STATUS_COLORS = { OK: 'green', Failed: 'red' };
 
@@ -282,6 +283,7 @@ const BiometricDeviceIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:biometric_device/BiometricDeviceIndex', columns);
 
   return (
     <div>
@@ -295,6 +297,7 @@ const BiometricDeviceIndex = () => {
       <RecordToolbar
         searchPlaceholder='Search branch, IP or serial'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={fetchDevices}
         loading={loading}
         canCreate={canCreate}
@@ -332,7 +335,7 @@ const BiometricDeviceIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns.map((c) => ({
+        columns={shownColumns.map((c) => ({
           ...c,
           onCell: (r) => (isPulling(r) ? { style: { background: token.colorInfoBg } } : isWaiting(r) ? { style: { background: token.colorBgLayout } } : {}),
         }))}

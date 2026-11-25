@@ -10,6 +10,7 @@ import { buildReferralLink, copyText } from "../../../utils/referralLink";
 import useAuth from "../../../hooks/useAuth";
 import ReferralApplicantsModal from "./ReferralApplicantsModal";
 import RecordLink from "../../../components/RecordLink";
+import useTableColumns from '../../../hooks/useTableColumns';
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100, 500];
 const STATUS_OPTIONS = [
@@ -154,6 +155,7 @@ export default function ReferralCodeList() {
       },
     ] : []),
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:employee_master_data/referral_codes/ReferralCodeList', columns);
 
   return (
     <>
@@ -172,6 +174,7 @@ export default function ReferralCodeList() {
               <Typography.Title level={4} style={{ margin: 0 }}>Referral Codes</Typography.Title>
             </Col>
             <Col flex="none">
+              {chooser}
               <Button icon={<ReloadOutlined />} onClick={refresh} disabled={loading}>Refresh</Button>
             </Col>
           </Row>
@@ -216,7 +219,7 @@ export default function ReferralCodeList() {
         <Table
           rowKey="id"
           size="small"
-          columns={columns}
+          columns={shownColumns}
           dataSource={rows}
           loading={loading}
           scroll={{ x: "max-content" }}

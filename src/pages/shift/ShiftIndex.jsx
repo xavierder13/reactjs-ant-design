@@ -10,6 +10,7 @@ import RecordRowActions from '../record_management/RecordRowActions';
 import ActiveTag from '../record_management/ActiveTag';
 import { patternSummary, makeupText } from './shiftHelpers';
 import ShiftFormModal from './ShiftFormModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // Shift patterns for temporary shifting (relieving). The employee's fixed
 // schedule is their Work Schedule (EMD tab); a shift overrides it only for
@@ -75,6 +76,7 @@ const ShiftIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:shift/ShiftIndex', columns);
 
   return (
     <div>
@@ -82,6 +84,7 @@ const ShiftIndex = () => {
       <RecordToolbar
         searchPlaceholder='Search code or name'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -91,7 +94,7 @@ const ShiftIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         scroll={{ x: 800 }}

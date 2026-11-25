@@ -91,7 +91,9 @@ age when they applied; React computes it — see Phase 2).
   (All Applicants only; portal rule: stage name contained in
   `progress_status`), date filter with a per-stage date field, branch
   (hidden for the Branch Manager role — the gateway scopes them), position;
-  ColumnSelector (max 12); View action opens the drawer.
+  Columns chooser (`useTableColumns`, every column — the stage's `columns`
+  shown by default; order / shown saved per stage in localStorage); View
+  action opens the drawer.
 - `applicants/applicantStatus.js` — STATUS_FILTERS (any stage has the value;
   Reserved also needs no Failed), `progressColorOf` / `progressTagProps`
   (portal applicationProgress colours by furthest stage passed — orange

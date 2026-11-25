@@ -10,6 +10,7 @@ import RecordRowActions from '../RecordRowActions';
 import ActiveTag from '../ActiveTag';
 import CompanyFormModal from './CompanyFormModal';
 import { tablePagination } from '../../../utils/tablePagination';
+import useTableColumns from '../../../hooks/useTableColumns';
 
 // Company maintenance — replaces vueportal's company/CompanyIndex.vue.
 const CompanyIndex = () => {
@@ -71,12 +72,14 @@ const CompanyIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:record_management/company/CompanyIndex', columns);
 
   return (
     <div>
       <RecordToolbar
         searchPlaceholder='Search company'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -86,7 +89,7 @@ const CompanyIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         pagination={tablePagination(10)}

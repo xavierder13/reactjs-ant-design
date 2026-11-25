@@ -10,6 +10,7 @@ import RecordRowActions from '../../../record_management/RecordRowActions';
 import { resultMessage, showGatewayError } from '../setupHelpers';
 import JobVacancyFormModal from './JobVacancyFormModal';
 import { tablePagination } from '../../../../utils/tablePagination';
+import useTableColumns from '../../../../hooks/useTableColumns';
 
 // Careers portal job vacancies — recruitment-portal
 // recruitment/JobVacanciesIndex.vue, run through the vueportal gateway as
@@ -92,6 +93,7 @@ const JobVacancyIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:recruitment/setup/job_vacancy/JobVacancyIndex', columns);
 
   return (
     <div>
@@ -99,6 +101,7 @@ const JobVacancyIndex = () => {
       <RecordToolbar
         searchPlaceholder='Search position or branch type'
         onSearch={setSearchText}
+        extra={chooser}
         onRefresh={refetch}
         loading={isLoading}
         canCreate={canCreate}
@@ -108,7 +111,7 @@ const JobVacancyIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filtered}
         loading={isLoading}
         pagination={tablePagination(10)}

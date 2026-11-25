@@ -10,6 +10,7 @@ import UserFormModal from './UserFormModal';
 import { employeeLabel } from './userEmployee';
 import RolePermissionsModal from './RolePermissionsModal';
 import { tablePagination } from '../../utils/tablePagination';
+import useTableColumns from '../../hooks/useTableColumns';
 
 const { Text } = Typography;
 
@@ -143,6 +144,7 @@ const UserIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:user/UserIndex', columns);
 
   return (
     <div>
@@ -184,6 +186,7 @@ const UserIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={refetch} loading={isLoading}>Refresh</Button>
           {canCreate && (
             <Button type='primary' icon={<PlusOutlined />} onClick={openCreate}>Create User</Button>
@@ -194,7 +197,7 @@ const UserIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={filteredUsers}
         loading={isLoading}
         pagination={tablePagination(10, { showTotal: (total) => `${total} users` })}

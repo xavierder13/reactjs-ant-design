@@ -14,6 +14,7 @@ import permissionApi from '../../services/permission/permissionApi';
 import usePermissions from '../../hooks/usePermissions';
 import useAuth from '../../hooks/useAuth';
 import PermissionRolesModal from './PermissionRolesModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 const PermissionIndex = () => {
   const { message } = App.useApp();
@@ -194,6 +195,7 @@ const PermissionIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:permission/PermissionIndex', columns);
 
   return (
     <>
@@ -236,6 +238,7 @@ const PermissionIndex = () => {
                 >
                   Search
                 </Button>
+                {chooser}
                 <Button icon={<ReloadOutlined />} onClick={refreshPermissions}>
                   Refresh
                 </Button>
@@ -254,7 +257,7 @@ const PermissionIndex = () => {
       >
         <Table
           rowKey='id'
-          columns={columns}
+          columns={shownColumns}
           dataSource={filtered}
           loading={isLoading}
           size='small'

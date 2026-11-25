@@ -15,6 +15,7 @@ import OvertimeFormModal from './OvertimeFormModal';
 import PaidTag from '../../components/approval/PaidTag';
 import ApprovalViewToggle from '../../components/approval/ApprovalViewToggle';
 import OvertimeDetailsModal from './OvertimeDetailsModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // Overtime filings — only Approved overtime is paid. "For My Approval" =
 // waiting for this user's decision now (Access Chart level / subordinates,
@@ -168,6 +169,7 @@ const OvertimeIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:overtime/OvertimeIndex', columns);
 
   return (
     <div>
@@ -221,6 +223,7 @@ const OvertimeIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={openCreate}>File Overtime</Button>}
         </Space>
@@ -228,7 +231,7 @@ const OvertimeIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 1150 }}

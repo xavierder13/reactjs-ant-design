@@ -14,6 +14,7 @@ import TimeEntryFormModal from './TimeEntryFormModal';
 import PaidTag from '../../components/approval/PaidTag';
 import ApprovalViewToggle from '../../components/approval/ApprovalViewToggle';
 import TimeEntryDetailsModal from './TimeEntryDetailsModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // Manual time-in / time-out for days the biometric device couldn't record
 // (field work, official business, missed punch, device problem). "For My
@@ -169,6 +170,7 @@ const TimeEntryIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:time_entry/TimeEntryIndex', columns);
 
   return (
     <div>
@@ -222,6 +224,7 @@ const TimeEntryIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={openCreate}>File Time Entry</Button>}
         </Space>
@@ -229,7 +232,7 @@ const TimeEntryIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 1000 }}

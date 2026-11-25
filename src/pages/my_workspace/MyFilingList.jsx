@@ -10,6 +10,7 @@ import handleApiError from '../../utils/handleApiError';
 import { DISPLAY_DATE_FORMAT } from '../../utils/formatDate';
 import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../utils/tablePagination';
 import PaidTag from '../../components/approval/PaidTag';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // The signed-in employee's own filings of one module (My Leave / My Time
 // Entries / My Overtime): only their own (myFilingApi), filed / edited /
@@ -104,6 +105,7 @@ const MyFilingList = ({ config }) => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:my_workspace/MyFilingList', columns);
 
   return (
     <div>
@@ -130,6 +132,7 @@ const MyFilingList = ({ config }) => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canFile && <Button type='primary' icon={<PlusOutlined />} onClick={() => { setEditing(null); setFormOpen(true); }}>{`File ${config.title}`}</Button>}
         </Space>
@@ -137,7 +140,7 @@ const MyFilingList = ({ config }) => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 800 }}

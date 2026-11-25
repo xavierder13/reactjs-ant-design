@@ -12,6 +12,7 @@ import LeaveFormModal from './LeaveFormModal';
 import PaidTag from '../../components/approval/PaidTag';
 import ApprovalViewToggle from '../../components/approval/ApprovalViewToggle';
 import LeaveDetailsModal from './LeaveDetailsModal';
+import useTableColumns from '../../hooks/useTableColumns';
 
 // Leave applications. "For My Approval" = leaves waiting for this user's
 // decision now (Access Chart level / subordinates, like MRF); "All" = every
@@ -169,6 +170,7 @@ const LeaveApplicationIndex = () => {
       ),
     },
   ];
+  const { columns: shownColumns, chooser } = useTableColumns('table:leave/LeaveApplicationIndex', columns);
 
   return (
     <div>
@@ -222,6 +224,7 @@ const LeaveApplicationIndex = () => {
           />
         </Space>
         <Space wrap>
+          {chooser}
           <Button icon={<ReloadOutlined />} onClick={fetchRows} loading={loading}>Refresh</Button>
           {canCreate && <Button type='primary' icon={<PlusOutlined />} onClick={openCreate}>File Leave</Button>}
         </Space>
@@ -229,7 +232,7 @@ const LeaveApplicationIndex = () => {
       <Table
         rowKey='id'
         size='small'
-        columns={columns}
+        columns={shownColumns}
         dataSource={rows}
         loading={loading}
         scroll={{ x: 900 }}
