@@ -74,6 +74,13 @@ Approval → `Cleared`; or `Cancelled`. `EmployeeClearance::STAGES` / `OPEN`;
   HR Verification or on a pending department at sign-off): replaces both
   of the above for that department on that clearance
   (`itemSignerIds()`); visibility / bell / To Sign follow it.
+- **In-charge pickers** (the clearance's `options().assignees` and the
+  template editor's `setupOptions().users`, a template component's fixed
+  "Employee" in-charge) list only active users **linked to an employee**
+  (`users.employee_id`) or with the Administrator role
+  (`User::employeeOrAdministrator()`), plus anyone already chosen there
+  (vueportal `EmployeeClearanceController::inChargeUsers()`). Saving doesn't re-check
+  the link.
 - Signing also needs `clearance-sign`. `clearance-manage` (HR) signs any
   department and reopens a cleared one (In Progress / Pending → back to In
   Progress). Nobody signs their own clearance (Administrator excepted).

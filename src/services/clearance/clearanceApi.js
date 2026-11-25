@@ -16,7 +16,8 @@ import axios from '../../api/axiosInstance';
 //   status, current_level, current_step (component name), current_item_id,
 //   items_cleared, items_total, employee, … }.
 // - options() → { separation_types, accountability_statuses, branches,
-//   assignees [{ id, name }], templates [{ id, name, is_default, branch_ids }] }.
+//   assignees [{ id, name }] (active users linked to an employee or
+//   Administrators, plus those already assigned), templates [{ id, name, is_default, branch_ids }] }.
 // - candidates(search) → { candidates: [{ offboarding_id, employee_id,
 //   branch_id, branch, employee_code, employee_name, last_day_of_work }] }.
 // - create { employee_id, offboarding_id, clearance_template_id (none =
@@ -38,7 +39,8 @@ import axios from '../../api/axiosInstance';
 //   charges a checklist line → 'Charged').
 // - act('approve' | 'return', id, { remarks, target_item_id }) — return
 //   reopens that component (none = the last). cancel(id, remarks).
-// - Setup (clearance-setup): setupOptions() → { users, branches,
+// - Setup (clearance-setup): setupOptions() → { users (active users linked
+//   to an employee or Administrators, plus current template signers), branches,
 //   categories, asset_sources, signer_types }; templates() → { templates:
 //   [{ id, name, description, is_default, active, components_count,
 //   branches [{ branch { name } }] }] }; template(id) → { template:

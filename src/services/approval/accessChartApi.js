@@ -9,7 +9,9 @@ import axios from '../../api/axiosInstance';
 //   max_approval_level, access_module { id, name }, approver_per_level:
 //   [{ id, level, num_of_approvers }], access_chart_user_maps: [{ id,
 //   user_id, access_level, user { id, name, email, branch { name } } }] }],
-//   access_modules: [{ id, name }], users: [every user] }.
+//   access_modules: [{ id, name }], users } — `employees_only` asks for the
+//   picker's users: linked to an employee, or Administrators (the Vue SPA
+//   still gets every user).
 // - create / update(id) payload { name (unique), access_for (module id),
 //   max_approval_level, approver_per_level: [{ id?, level, num_of_approvers }] }
 //   → { success: '<message>', access_chart } or HTTP 200 { field: [msg] }.
@@ -22,7 +24,7 @@ import axios from '../../api/axiosInstance';
 // Modules find their chart BY NAME (e.g. "MRF - Additional", "Leave
 // Application") — renaming / deleting one stops that module's approvals.
 const accessChartApi = {
-  getAll:         ()            => axios.get('/access_chart/index'),
+  getAll:         ()            => axios.get('/access_chart/index', { params: { employees_only: 1 } }),
   create:         (payload)     => axios.post('/access_chart/store', payload),
   update:         (id, payload) => axios.post(`/access_chart/update/${id}`, payload),
   delete:         (id)          => axios.post('/access_chart/delete', { access_chart_id: id }),
