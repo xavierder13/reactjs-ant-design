@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Button, Card, Checkbox, Empty, Modal, Popconfirm, Space, Spin, Tag, Tooltip, Typography, Alert, App,
 } from 'antd';
-import { CopyOutlined, ReloadOutlined, SendOutlined, StopOutlined } from '@ant-design/icons';
+import { CopyOutlined, ExportOutlined, LinkOutlined, ReloadOutlined, SendOutlined, StopOutlined } from '@ant-design/icons';
 
 import recruitmentApi from '../../../services/recruitment/recruitmentApi';
 import { copyText } from '../../../utils/referralLink';
@@ -133,6 +133,21 @@ export default function OnlineExamTab({ applicant, canSend, isAdmin }) {
     }
   };
 
+  // Administrator: open the exam as the applicant sees it (preview key —
+  // nothing recorded, no timer started). The tab opens first so the browser
+  // doesn't block it as a pop-up, then gets the link.
+  const preview = async (id) => {
+    const tab = window.open('', '_blank');
+    try {
+      const { data } = await recruitmentApi.previewOnlineExam(id);
+      if (!data?.success || !data.link) throw Object.assign(new Error(), { response: { data } });
+      if (tab) { tab.opener = null; tab.location.href = data.link; } else window.location.assign(data.link);
+    } catch (err) {
+      tab?.close();
+      message.error(errorMessage(err, 'The preview link could not be created.'));
+    }
+  };
+
   const copy = (link) => copyText(link).then(() => message.success('Exam link copied.')).catch(() => message.error('Could not copy the link.'));
 
   return (
@@ -163,15 +178,37 @@ export default function OnlineExamTab({ applicant, canSend, isAdmin }) {
               </Typography.Text>
             </Space>
           )}
-          extra={inv.status === 'active' && canSend && (
+          extra={(isAdmin || (inv.status === 'active' && canSend)) && (
             <Space size={4}>
-              <Tooltip title="Copy link"><Button size="small" icon={<CopyOutlined />} onClick={() => copy(inv.link)} /></Tooltip>
-              <Popconfirm title="Revoke this exam link?" description="The applicant can no longer open it." onConfirm={() => revoke(inv.id)}>
-                <Tooltip title="Revoke"><Button size="small" danger icon={<StopOutlined />} /></Tooltip>
-              </Popconfirm>
+              {isAdmin && (
+                <Tooltip title="Preview the exam as the applicant sees it — nothing is saved and the applicant's timer doesn't start">
+                  <Button size="small" icon={<ExportOutlined />} onClick={() => preview(inv.id)}>Preview</Button>
+                </Tooltip>
+              )}
+              {inv.status === 'active' && canSend && (
+                <>
+                  <Tooltip title="Copy link"><Button size="small" icon={<CopyOutlined />} onClick={() => copy(inv.link)} /></Tooltip>
+                  <Popconfirm title="Revoke this exam link?" description="The applicant can no longer open it." onConfirm={() => revoke(inv.id)}>
+                    <Tooltip title="Revoke"><Button size="small" danger icon={<StopOutlined />} /></Tooltip>
+                  </Popconfirm>
+                </>
+              )}
             </Space>
           )}
         >
+          {inv.status === 'active' && inv.link && (canSend || isAdmin) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, minWidth: 0 }}>
+              <LinkOutlined style={{ opacity: 0.6 }} />
+              <Typography.Text
+                type="secondary"
+                style={{ fontSize: 12, minWidth: 0 }}
+                ellipsis={{ tooltip: inv.link }}
+                copyable={{ text: inv.link, tooltips: ['Copy the applicant\'s link', 'Copied'] }}
+              >
+                {inv.link}
+              </Typography.Text>
+            </div>
+          )}
           {inv.exams.map((exam) => <ExamResultCard key={exam.exam_id} exam={exam} onViewAnswers={setViewingAttempt} />)}
         </Card>
       ))}

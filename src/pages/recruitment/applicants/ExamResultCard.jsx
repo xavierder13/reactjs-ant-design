@@ -72,6 +72,33 @@ function Row({ label, children, value, tag }) {
   );
 }
 
+// The score bar with the passing mark: the part below the mark shaded, a
+// tall marker line across the bar and a "Pass 60%" label above it.
+function ScoreBar({ percent, pass, passed }) {
+  const { token } = theme.useToken();
+  const fill = passed === false ? token.colorError : token.colorSuccess;
+  return (
+    <div style={{ position: 'relative', paddingTop: pass !== null ? 22 : 4, marginTop: 4 }}>
+      <div style={{ position: 'relative', height: 12, borderRadius: 6, background: token.colorFillSecondary, overflow: 'hidden' }}>
+        {pass !== null && (
+          <div style={{ position: 'absolute', inset: `0 ${100 - pass}% 0 0`, background: token.colorErrorBg }} />
+        )}
+        <div style={{ position: 'absolute', inset: `0 ${100 - Math.min(100, percent)}% 0 0`, background: fill, borderRadius: 6 }} />
+      </div>
+      {pass !== null && (
+        <Tooltip title={`Passing mark ${pass}% — at or above it is Passed`}>
+          <div style={{ position: 'absolute', left: `${pass}%`, top: 0, bottom: -4, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'default' }}>
+            <span style={{ fontSize: 11, fontWeight: 600, lineHeight: '16px', padding: '0 6px', borderRadius: 4, background: token.colorText, color: token.colorBgContainer, whiteSpace: 'nowrap' }}>
+              Pass {pass}%
+            </span>
+            <span style={{ flex: 1, width: 3, background: token.colorText, borderRadius: 2, marginTop: 2 }} />
+          </div>
+        </Tooltip>
+      )}
+    </div>
+  );
+}
+
 export default function ExamResultCard({ exam, onViewAnswers }) {
   const { token } = theme.useToken();
   const submitted = exam.status === 'submitted';
@@ -124,16 +151,8 @@ export default function ExamResultCard({ exam, onViewAnswers }) {
             <Space align="baseline" size={10} wrap>
               <Typography.Title level={4} style={{ margin: 0 }}>{exam.score} / {exam.max_score}</Typography.Title>
               <Typography.Text strong>{exam.percent}%</Typography.Text>
-              {exam.passing_percent !== null && <Typography.Text type="secondary">passing mark {exam.passing_percent}%</Typography.Text>}
             </Space>
-            <div style={{ position: 'relative', marginTop: 4 }}>
-              <Progress percent={exam.percent} showInfo={false} status={exam.passed === false ? 'exception' : 'success'} />
-              {exam.passing_percent !== null && (
-                <Tooltip title={`Passing mark ${exam.passing_percent}%`}>
-                  <div style={{ position: 'absolute', top: 2, bottom: 6, left: `${exam.passing_percent}%`, width: 2, background: token.colorText }} />
-                </Tooltip>
-              )}
-            </div>
+            <ScoreBar percent={exam.percent} pass={exam.passing_percent} passed={exam.passed} />
           </div>
           <div style={{ display: 'grid', gap: 6 }}>
             <Typography.Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>By ability area</Typography.Text>

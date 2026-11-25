@@ -125,6 +125,9 @@ const recruitmentApi = {
   //   max_score, percent, passed, questions: [{ no, id, question, section, answer,
   //   aptitude: options [{ key, text }], correct_option, correct;
   //   personality: answer_label, reverse_scored, scored_as }] } (attempt_id from results)
+  // Administrator only → { success, link } — the link + ?preview=<key>: the exam
+  // as the applicant sees it, any link status, nothing recorded (no timer / attempt)
+  previewOnlineExam: (invitationId) => axios.post('/recruitment/online_exam/preview', { invitation_id: invitationId }),
   getOnlineExamAnswers: (attemptId) => axios.post(`/recruitment/online_exam/answers/${attemptId}`),
   // (careers-online-exam-send) { invitation_id } → { success, message } — not once completed
   revokeOnlineExam: (invitationId) => axios.post('/recruitment/online_exam/revoke', { invitation_id: invitationId }),

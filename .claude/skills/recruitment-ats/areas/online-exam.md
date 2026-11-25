@@ -19,7 +19,8 @@ expiry, through vueportal `recruitment/online_exam/*` → gateway
   exam's passing %, per area; personality (MPQ): each trait's average 1–5,
   no pass / fail — plus Late and the focus-lost / copy-screenshot counts.
   Each exam is an `ExamResultCard.jsx` panel: time taken (of the limit),
-  focus / copy flags; MDQ the score bar with a passing-mark tick and each
+  focus / copy flags; MDQ the score bar (`ScoreBar`: a labelled "Pass N%"
+  marker across it, below-pass zone shaded) and each
   area's bar + Strong (≥ 80%) / Average (≥ 60%) / Needs work; MPQ each
   trait's bar + High (≥ 4.0) / Moderate (≥ 2.5) / Low and a one-line
   reading (`TRAIT_READING` — sample traits; a new trait shows no reading).
@@ -38,8 +39,14 @@ expiry, through vueportal `recruitment/online_exam/*` → gateway
   adds `any_stage` from the user's Administrator role (never from the client).
   **Send exam link** (`-send`): pick exams (default all active), email it
   (needs an email; the link is shown to copy either way); a new link
-  doesn't cancel older active ones. Copy / Revoke on active links (not once
-  completed).
+  doesn't cancel older active ones. An active link is shown on its card
+  (copyable) to senders and Administrators; Copy / Revoke on active links
+  (not once completed). **Preview** (Administrator only, any link status):
+  `previewOnlineExam(invitation_id)` → the link + `?preview=<key>` (portal
+  HMAC of the token) opened in a new tab — the exam as the applicant sees
+  it, an "Administrator preview" banner, answers scored and shown but
+  nothing recorded (no opened_at, attempt or timer). vueportal refuses
+  non-Administrators (403) and sends `any_stage`; the gateway checks it.
 - **Recruitment → Setup → Online Exam** (`setup/online_exam/OnlineExamSettings.jsx`,
   `careers-online-exam-settings`): link expiry value + Hours / Days (1–720
   hours / 1–30 days; new links only), and the exams list (read-only —
