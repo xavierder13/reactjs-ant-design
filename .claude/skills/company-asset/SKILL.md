@@ -19,6 +19,12 @@ depreciation, disposal lock, history-as-audit-trail) are in vueportal's
   filters (category, status, assigned to employee / area, branch),
   `items_per_page` pagination. Row actions: View, Edit (`-edit`, not
   disposed), Delete (`-delete`; history and logs go with it).
+- **Asset Type** (`ASSET_TYPES` in `companyAssetHelpers.js`, vueportal
+  `CompanyAsset::TYPES`): Fixed Asset (default), Semi-expendable Asset,
+  Supply Asset, Leased Asset. Only a Fixed Asset is depreciated — the form
+  hides useful life / salvage for the others (sent null; the backend clears
+  them too), the details hide book value. List: Type column + type filter.
+  IT equipment is the IT Asset module's, not a type here.
 - `AssetFormModal.jsx` — add / edit details. Category is typed or picked
   (`AutoComplete`; a new name is created). Status: Active / Under Repair /
   Lost only — **Disposed only through Dispose**. Add may assign at once

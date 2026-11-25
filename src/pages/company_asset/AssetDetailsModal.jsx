@@ -8,7 +8,7 @@ import handleApiError from '../../utils/handleApiError';
 import { applyLeaveErrors } from '../leave/leaveHelpers';
 import { DISPLAY_DATE_FORMAT, formatDate } from '../../utils/formatDate';
 import { peso, pesoInputProps } from '../payroll/payrollHelpers';
-import { ASSET_STATUS_COLORS, MAINTENANCE_TYPES, assignedTo, fullName } from './companyAssetHelpers';
+import { ASSET_STATUS_COLORS, FIXED_ASSET, MAINTENANCE_TYPES, assetTypeOf, assignedTo, fullName } from './companyAssetHelpers';
 
 const when = (v) => (v ? dayjs(v).format(`${DISPLAY_DATE_FORMAT} hh:mm A`) : '—');
 
@@ -133,13 +133,16 @@ const AssetDetailsModal = ({ assetId, can, reloadKey, onClose, onAssign, onDispo
             column={{ xs: 1, sm: 2 }}
             items={[
               { key: 'status', label: 'Status', children: <Tag color={ASSET_STATUS_COLORS[asset.status]}>{asset.status}</Tag> },
+              { key: 'type', label: 'Asset Type', children: assetTypeOf(asset) },
               { key: 'category', label: 'Category', children: asset.asset_category?.name || '—' },
               { key: 'assigned', label: 'Assigned To', children: assignedTo(asset) ? <>{assignedTo(asset)}{asset.date_assigned && <Typography.Text type='secondary'>{` · since ${formatDate(asset.date_assigned)}`}</Typography.Text>}</> : 'Not assigned' },
               { key: 'bms', label: 'Brand / Model / Serial', children: [asset.brand, asset.model, asset.serial_number].filter(Boolean).join(' · ') || '—' },
               { key: 'acquired', label: 'Acquired', children: [formatDate(asset.date_acquired, ''), asset.vendor].filter(Boolean).join(' · ') || '—' },
               { key: 'cost', label: 'Cost', children: asset.cost === null ? '—' : peso(asset.cost) },
-              { key: 'life', label: 'Useful Life / Salvage', children: asset.useful_life_months ? `${asset.useful_life_months} months · ${peso(asset.salvage_value || 0)}` : '—' },
-              { key: 'book', label: 'Book Value (today)', children: asset.book_value === null ? '—' : <strong>{peso(asset.book_value)}</strong> },
+              ...(assetTypeOf(asset) === FIXED_ASSET ? [
+                { key: 'life', label: 'Useful Life / Salvage', children: asset.useful_life_months ? `${asset.useful_life_months} months · ${peso(asset.salvage_value || 0)}` : '—' },
+                { key: 'book', label: 'Book Value (today)', children: asset.book_value === null ? '—' : <strong>{peso(asset.book_value)}</strong> },
+              ] : []),
               { key: 'warranty', label: 'Warranty Until', children: formatDate(asset.warranty_expiry) },
               { key: 'remarks', label: 'Remarks', children: asset.remarks || '—' },
               ...(disposed ? [{ key: 'disposed', label: 'Disposed', span: 'filled', children: `${formatDate(asset.disposed_at)} — ${asset.disposal_reason}${asset.approved_by_name ? ` (approved by ${asset.approved_by_name})` : ''}` }] : []),

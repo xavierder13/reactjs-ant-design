@@ -8,16 +8,20 @@ import axios from '../../api/axiosInstance';
 // - getAll(params) → { company_assets: paginator } — params: page,
 //   items_per_page, search (tag / name / serial), asset_category_id,
 //   branch_id, department_id, employee_id, assignment_type ('Employee' |
-//   'Area'), status ('Active' | 'Under Repair' | 'Lost' | 'Disposed'). Row:
-//   { id, asset_tag (AST-<year>-<6>), name, asset_category { name }, brand,
+//   'Area'), status ('Active' | 'Under Repair' | 'Lost' | 'Disposed'),
+//   asset_type. Row:
+//   { id, asset_tag (AST-<year>-<6>), name, asset_type, asset_category { name }, brand,
 //   model, vendor, serial_number, date_acquired, cost, warranty_expiry,
 //   useful_life_months, salvage_value, status, assignment_type, location,
 //   employee { employee_code, full_name }, branch { name }, department
 //   { name }, remarks, disposed_at, disposal_reason, approved_by_name,
-//   date_assigned, book_value (straight-line, null without cost / life) }.
-// - getCreate() (GET) → { asset_categories, branches, departments }.
+//   date_assigned, book_value (straight-line, null without cost / life or
+//   when not a Fixed Asset) }.
+// - getCreate() (GET) → { asset_categories, asset_types, branches, departments }.
 // - getById(id) → { company_asset }.
-// - create(payload) / update(id, payload): { name, asset_category (a name —
+// - create(payload) / update(id, payload): { name, asset_type ('Fixed Asset' |
+//   'Semi-expendable Asset' | 'Supply Asset' | 'Leased Asset'; other types
+//   save no useful life / salvage), asset_category (a name —
 //   created if new), brand, model, vendor, serial_number, date_acquired,
 //   cost, warranty_expiry, useful_life_months, salvage_value, status
 //   ('Active' | 'Under Repair' | 'Lost'), remarks } (+ on create an optional

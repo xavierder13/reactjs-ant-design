@@ -7,24 +7,30 @@ import handleApiError from '../../utils/handleApiError';
 import { applyLeaveErrors } from '../leave/leaveHelpers';
 import { DISPLAY_DATE_FORMAT, toDayjs } from '../../utils/formatDate';
 import { pesoInputProps, toNumber } from '../payroll/payrollHelpers';
-import { EDITABLE_STATUSES, assignmentPayload } from './companyAssetHelpers';
+import {
+  EDITABLE_STATUSES, ASSET_TYPES, ASSET_TYPE_HELP, FIXED_ASSET, assetTypeOf, assignmentPayload,
+} from './companyAssetHelpers';
 import AssignmentFields from './AssignmentFields';
 
 // Add (asset = null) or edit an asset's details. The category is typed or
 // picked (a new name is added). Add may assign it at once (needs
 // company-asset-assign); editing never touches the assignment — that is
 // Assign / Return. Cost + useful life (+ salvage) give the straight-line
-// book value.
+// book value — a Fixed Asset only (the other types hide useful life /
+// salvage and send them null).
 const AssetFormModal = ({ open, asset, options, canAssign, onClose, onSaved }) => {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
+  const assetType = Form.useWatch('asset_type', form);
+  const depreciated = (assetType || FIXED_ASSET) === FIXED_ASSET;
 
   const handleAfterOpenChange = (isOpen) => {
     form.resetFields();
     if (!isOpen) return;
     form.setFieldsValue(asset ? {
       name: asset.name,
+      asset_type: assetTypeOf(asset),
       asset_category: asset.asset_category?.name,
       brand: asset.brand,
       model: asset.model,
@@ -37,7 +43,7 @@ const AssetFormModal = ({ open, asset, options, canAssign, onClose, onSaved }) =
       salvage_value: toNumber(asset.salvage_value),
       status: asset.status,
       remarks: asset.remarks,
-    } : { status: 'Active', assignment_type: '' });
+    } : { status: 'Active', asset_type: FIXED_ASSET, assignment_type: '' });
   };
 
   const handleSave = async () => {
@@ -49,6 +55,7 @@ const AssetFormModal = ({ open, asset, options, canAssign, onClose, onSaved }) =
     }
     const payload = {
       name: v.name,
+      asset_type: v.asset_type,
       asset_category: v.asset_category,
       brand: v.brand || null,
       model: v.model || null,
@@ -57,8 +64,8 @@ const AssetFormModal = ({ open, asset, options, canAssign, onClose, onSaved }) =
       date_acquired: v.date_acquired ? v.date_acquired.format('YYYY-MM-DD') : null,
       cost: v.cost ?? null,
       warranty_expiry: v.warranty_expiry ? v.warranty_expiry.format('YYYY-MM-DD') : null,
-      useful_life_months: v.useful_life_months ?? null,
-      salvage_value: v.salvage_value ?? null,
+      useful_life_months: depreciated ? v.useful_life_months ?? null : null,
+      salvage_value: depreciated ? v.salvage_value ?? null : null,
       status: v.status,
       remarks: v.remarks || null,
       ...(asset ? {} : assignmentPayload(v)),
@@ -91,12 +98,17 @@ const AssetFormModal = ({ open, asset, options, canAssign, onClose, onSaved }) =
     >
       <Form form={form} layout='vertical'>
         <Row gutter={16}>
+          <Col xs={24} sm={10}>
+            <Form.Item name='asset_type' label='Asset Type' extra={ASSET_TYPE_HELP[assetType]} rules={[{ required: true, message: 'Asset Type is required.' }]}>
+              <Select options={ASSET_TYPES.map((t) => ({ value: t, label: t }))} />
+            </Form.Item>
+          </Col>
           <Col xs={24} sm={14}>
             <Form.Item name='name' label='Asset Name' rules={[{ required: true, whitespace: true, message: 'Asset Name is required.' }]}>
               <Input maxLength={255} placeholder='e.g. Office chair, delivery van' />
             </Form.Item>
           </Col>
-          <Col xs={24} sm={10}>
+          <Col xs={24} sm={24}>
             <Form.Item name='asset_category' label='Category' extra='Pick one or type a new category.' rules={[{ required: true, whitespace: true, message: 'Category is required.' }]}>
               <AutoComplete
                 options={options.asset_categories.map((c) => ({ value: c.name }))}
@@ -114,8 +126,12 @@ const AssetFormModal = ({ open, asset, options, canAssign, onClose, onSaved }) =
           <Col xs={24} sm={8}><Form.Item name='date_acquired' label='Date Acquired'><DatePicker format={DISPLAY_DATE_FORMAT} style={{ width: '100%' }} /></Form.Item></Col>
           <Col xs={24} sm={8}><Form.Item name='cost' label='Cost'><InputNumber {...pesoInputProps} /></Form.Item></Col>
           <Col xs={24} sm={8}><Form.Item name='vendor' label='Vendor'><Input maxLength={255} /></Form.Item></Col>
-          <Col xs={24} sm={8}><Form.Item name='useful_life_months' label='Useful Life (months)'><InputNumber min={1} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
-          <Col xs={24} sm={8}><Form.Item name='salvage_value' label='Salvage Value'><InputNumber {...pesoInputProps} /></Form.Item></Col>
+          {depreciated && (
+            <>
+              <Col xs={24} sm={8}><Form.Item name='useful_life_months' label='Useful Life (months)'><InputNumber min={1} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
+              <Col xs={24} sm={8}><Form.Item name='salvage_value' label='Salvage Value'><InputNumber {...pesoInputProps} /></Form.Item></Col>
+            </>
+          )}
           <Col xs={24} sm={8}><Form.Item name='warranty_expiry' label='Warranty Until'><DatePicker format={DISPLAY_DATE_FORMAT} style={{ width: '100%' }} /></Form.Item></Col>
         </Row>
         <Row gutter={16}>

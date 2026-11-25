@@ -9,7 +9,7 @@ import handleApiError from '../../utils/handleApiError';
 import { formatDate } from '../../utils/formatDate';
 import { PAGE_SIZE_OPTIONS, showRecordRange } from '../../utils/tablePagination';
 import { peso } from '../payroll/payrollHelpers';
-import { ASSET_STATUSES, ASSET_STATUS_COLORS, assignedTo } from './companyAssetHelpers';
+import { ASSET_STATUSES, ASSET_STATUS_COLORS, ASSET_TYPES, assetTypeOf, assignedTo } from './companyAssetHelpers';
 import AssetFormModal from './AssetFormModal';
 import AssetDetailsModal from './AssetDetailsModal';
 import AssetAssignModal from './AssetAssignModal';
@@ -107,6 +107,7 @@ const CompanyAssetIndex = () => {
         </div>
       ),
     },
+    { title: 'Type', key: 'asset_type', width: 170, render: (_, r) => assetTypeOf(r) },
     {
       title: 'Assigned To',
       key: 'assigned',
@@ -149,6 +150,8 @@ const CompanyAssetIndex = () => {
     <div>
       <Space wrap style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
         <Space wrap>
+          <Select allowClear placeholder='All types' value={filters.asset_type} onChange={(v) => setFilter({ asset_type: v })}
+            options={ASSET_TYPES.map((t) => ({ value: t, label: t }))} style={{ width: 190 }} />
           <Select allowClear placeholder='All categories' value={filters.asset_category_id} onChange={(v) => setFilter({ asset_category_id: v })}
             options={options.asset_categories.map((c) => ({ value: c.id, label: c.name }))} style={{ width: 190 }} />
           <Select allowClear placeholder='All statuses' value={filters.status} onChange={(v) => setFilter({ status: v })}
