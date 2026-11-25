@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, Row, Col, Typography, Input, Space, Button, Breadcrumb, Table, Select, Tag, Tooltip, Alert, App } from "antd";
-import { ReloadOutlined, SearchOutlined, EyeOutlined } from "@ant-design/icons";
+import { ReloadOutlined, SearchOutlined, EyeOutlined, ExportOutlined } from "@ant-design/icons";
 
 import employeeReferralApi from "../../../services/employee/employeeReferralApi";
 import handleApiError from "../../../utils/handleApiError";
@@ -11,6 +11,7 @@ import useAuth from "../../../hooks/useAuth";
 import ReferralApplicantsModal from "./ReferralApplicantsModal";
 import RecordLink from "../../../components/RecordLink";
 import useTableColumns from '../../../hooks/useTableColumns';
+import { fetchAllPages, saveReferralWorkbook } from "./referralExport";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100, 500];
 const STATUS_OPTIONS = [
@@ -52,18 +53,21 @@ export default function ReferralCodeList() {
   const [filters, setFilters] = useState({ search: "", status: "Active", code_status: "", branch_id: null, has_referrals: "" });
   const [referralsError, setReferralsError] = useState(null);
   const [viewing, setViewing] = useState(null);
+  const [exporting, setExporting] = useState(false);
+
+  const payloadOf = useCallback((pageSize) => ({
+    search: filters.search,
+    status: filters.status || undefined,
+    code_status: filters.code_status || undefined,
+    branch_id: filters.branch_id || undefined,
+    has_referrals: (canViewReferrals && filters.has_referrals) || undefined,
+    items_per_page: pageSize,
+  }), [filters, canViewReferrals]);
 
   const loadPage = useCallback(async (page, pageSize) => {
     setLoading(true);
     try {
-      const { data } = await employeeReferralApi.getAll({
-        search: filters.search,
-        status: filters.status || undefined,
-        code_status: filters.code_status || undefined,
-        branch_id: filters.branch_id || undefined,
-        has_referrals: (canViewReferrals && filters.has_referrals) || undefined,
-        items_per_page: pageSize,
-      }, page);
+      const { data } = await employeeReferralApi.getAll(payloadOf(pageSize), page);
       setRows(data.employees.data);
       setBranches(data.branches || []);
       setReferralsError(data.referrals_error || null);
@@ -73,7 +77,7 @@ export default function ReferralCodeList() {
     } finally {
       setLoading(false);
     }
-  }, [filters, messageApi, canViewReferrals]);
+  }, [payloadOf, messageApi]);
 
   useEffect(() => {
     const load = async () => { await loadPage(1, pagination.pageSize); };
@@ -83,6 +87,40 @@ export default function ReferralCodeList() {
 
   const refresh = () => loadPage(pagination.current, pagination.pageSize);
   const setFilter = (key, value) => setFilters((f) => ({ ...f, [key]: value }));
+
+  // Export: every employee the filters match (not just this page)
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      let countsFailed = false;
+      const all = await fetchAllPages(async (page, perPage) => {
+        const { data } = await employeeReferralApi.getAll(payloadOf(perPage), page);
+        countsFailed = countsFailed || Boolean(data.referrals_error);
+        return data.employees;
+      });
+      if (!all.length) { messageApi.info("No employees to export."); return; }
+      saveReferralWorkbook("Referral Codes", [{
+        name: "Referral Codes",
+        rows: all,
+        columns: [
+          ["Emp. Code", (r) => r.employee_code],
+          ["Employee Name", fullName],
+          ["Branch", (r) => r.branch],
+          ["Position", (r) => r.position],
+          ["Status", (r) => (isActiveValue(r.active) ? "Active" : "Inactive")],
+          ["Referral Code", (r) => r.referral_code || "No code"],
+          ["Code Status", (r) => (r.referral_code ? (Number(r.referral_is_active) ? "Active" : "Inactive") : "")],
+          ["Referral Link", (r) => (r.referral_code ? buildReferralLink(r.referral_code) : "")],
+          ...(canViewReferrals && !countsFailed ? [["Referrals", (r) => Number(r.referral_count || 0)]] : []),
+        ],
+      }]);
+      if (canViewReferrals && countsFailed) messageApi.warning("Exported without the Referrals counts — the careers portal didn't answer.");
+    } catch (error) {
+      handleApiError(error, messageApi);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const copyLink = (code) => {
     copyText(buildReferralLink(code))
@@ -174,8 +212,11 @@ export default function ReferralCodeList() {
               <Typography.Title level={4} style={{ margin: 0 }}>Referral Codes</Typography.Title>
             </Col>
             <Col flex="none">
-              {chooser}
-              <Button icon={<ReloadOutlined />} onClick={refresh} disabled={loading}>Refresh</Button>
+              <Space wrap>
+                <Button icon={<ExportOutlined />} onClick={handleExport} loading={exporting} disabled={loading}>Export</Button>
+                {chooser}
+                <Button icon={<ReloadOutlined />} onClick={refresh} disabled={loading}>Refresh</Button>
+              </Space>
             </Col>
           </Row>
         }

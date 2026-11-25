@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { Card, Row, Col, Typography, Input, Space, Button, Breadcrumb, Table, Select, Tag, Segmented, DatePicker, App } from "antd";
-import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { ExportOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 
 import employeeReferralApi from "../../../services/employee/employeeReferralApi";
 import handleApiError from "../../../utils/handleApiError";
@@ -13,6 +13,7 @@ import { isActiveValue } from "../../../utils/employeeStatus";
 import { DISPLAY_DATE_FORMAT, formatDate } from "../../../utils/formatDate";
 import { isInnerControl } from "./referralHelpers";
 import useTableColumns from "../../../hooks/useTableColumns";
+import { fetchAllPages, saveReferralWorkbook } from "./referralExport";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100];
 const RETURN_STATE = { returnTo: "/employees/referred-employees" };
@@ -46,6 +47,7 @@ export default function ReferredEmployeeList() {
   const [searchInput, setSearchInput] = useState("");
   const [filters, setFilters] = useState({ search: "", status: "", branch_id: null, employment_type: null, dates: null });
   const [expandedKeys, setExpandedKeys] = useState([]);
+  const [exporting, setExporting] = useState(false);
 
   const payloadOf = useCallback((extra = {}) => ({
     search: filters.search,
@@ -125,6 +127,58 @@ export default function ReferredEmployeeList() {
   const groupTable = useTableColumns("table:employee_master_data/referral_codes/ReferredEmployeeList:referrer", groupColumns);
   const flatTable = useTableColumns("table:employee_master_data/referral_codes/ReferredEmployeeList:employee", employeeColumns(true));
 
+  // Export: every row the filters match (not just this page) — By Referrer and every referred employee
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const all = (v) => fetchAllPages(async (page, perPage) => (
+        (await employeeReferralApi.getReferredEmployees(payloadOf({ view: v, items_per_page: perPage }), page)).data.rows
+      ));
+      const [referrers, employees] = await Promise.all([all("referrer"), all("employee")]);
+      if (!employees.length) { messageApi.info("No referred employees to export."); return; }
+      const plainReferrer = (r, id) => (id ? referrerName(r) : "No employee owns this code");
+      const yesNo = (active) => (isActiveValue(active) ? "Active" : "Inactive");
+      saveReferralWorkbook("Referred Employees", [
+        {
+          name: "By Referrer",
+          rows: referrers,
+          columns: [
+            ["Referrer", (g) => plainReferrer(g, g.referrer_id)],
+            ["Employee Code", (g) => g.referrer_employee_code],
+            ["Referrer Status", (g) => (g.referrer_id ? yesNo(g.referrer_active) : "")],
+            ["Referral Code", (g) => g.referred_by_code],
+            ["Branch", (g) => g.referrer_branch],
+            ["Position", (g) => g.referrer_position],
+            ["Referred Employees", (g) => Number(g.total)],
+            ["Still Active", (g) => Number(g.active_count)],
+            ["Regular", (g) => Number(g.regular_count)],
+          ],
+        },
+        {
+          name: "Referred Employees",
+          rows: employees,
+          columns: [
+            ["Emp. Code", (r) => r.employee_code],
+            ["Employee Name", employeeName],
+            ["Branch", (r) => r.branch],
+            ["Position", (r) => r.position],
+            ["Employment Type", (r) => r.employment_type],
+            ["Date Employed", (r) => (r.date_employed ? formatDate(r.date_employed) : "")],
+            ["Date Resigned", (r) => (r.date_resigned ? formatDate(r.date_resigned) : "")],
+            ["Status", (r) => yesNo(r.active)],
+            ["Referred By", (r) => plainReferrer(r, r.referred_by_employee_id)],
+            ["Referrer Employee Code", (r) => r.referrer_employee_code],
+            ["Referral Code", (r) => String(r.referred_by_code || "").trim().toUpperCase()],
+          ],
+        },
+      ]);
+    } catch (error) {
+      handleApiError(error, messageApi);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const toggleGroup = (key) => setExpandedKeys((keys) => (keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]));
   const tablePagination = {
     ...pagination,
@@ -152,6 +206,7 @@ export default function ReferredEmployeeList() {
             </Col>
             <Col flex="none">
               <Space wrap>
+                <Button icon={<ExportOutlined />} onClick={handleExport} loading={exporting} disabled={loading}>Export</Button>
                 {view === "referrer" ? groupTable.chooser : flatTable.chooser}
                 <Button icon={<ReloadOutlined />} onClick={refresh} disabled={loading}>Refresh</Button>
               </Space>

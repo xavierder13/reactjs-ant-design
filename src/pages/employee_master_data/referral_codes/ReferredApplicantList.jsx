@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, Row, Col, Typography, Input, Space, Button, Breadcrumb, Table, Select, Tag, Segmented, App } from "antd";
-import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { ExportOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 
 import employeeReferralApi from "../../../services/employee/employeeReferralApi";
 import handleApiError from "../../../utils/handleApiError";
@@ -14,6 +14,7 @@ import { APPLICANT_LIST_PERMISSIONS, isInnerControl, lookupMaps } from "./referr
 import { isActiveValue } from "../../../utils/employeeStatus";
 import { STAGE_FILTERS, matchesStage, progressTagProps, isoFromDisplay } from "../../recruitment/applicants/applicantStatus";
 import useTableColumns from "../../../hooks/useTableColumns";
+import { saveReferralWorkbook } from "./referralExport";
 
 const show = (v) => (v === null || v === undefined || v === "" ? "-" : v);
 const textSorter = (key) => (a, b) => String(a[key] || "").localeCompare(String(b[key] || ""));
@@ -169,6 +170,44 @@ export default function ReferredApplicantList() {
   const groupTable = useTableColumns("table:employee_master_data/referral_codes/ReferredApplicantList:referrer", groupColumns);
   const flatTable = useTableColumns("table:employee_master_data/referral_codes/ReferredApplicantList:all", applicantColumns(true));
 
+  // Export: the filtered applicants (search, stage, branch) — By Referrer and every applicant
+  const plainReferrer = (r) => (r ? fullName(r) : "No employee owns this code");
+  const handleExport = () => {
+    if (!rows.length) { messageApi.info("No referred applicants to export."); return; }
+    saveReferralWorkbook("Referred Applicants", [
+      {
+        name: "By Referrer",
+        rows: groups,
+        columns: [
+          ["Referrer", (g) => plainReferrer(g.referrer)],
+          ["Employee Code", (g) => g.referrer?.employee_code],
+          ["Referrer Status", (g) => (g.referrer ? (isActiveValue(g.referrer.active) ? "Active" : "Inactive") : "")],
+          ["Referral Code", (g) => codeKey(g.referral_code)],
+          ["Branch", (g) => g.referrer?.branch],
+          ["Position", (g) => g.referrer?.position],
+          ["Referrals", (g) => g.total],
+          ["Hired", (g) => g.hired],
+        ],
+      },
+      {
+        name: "Applicants",
+        rows,
+        columns: [
+          ["Full Name", (r) => r.name],
+          ["Referred By", (r) => plainReferrer(r.referrer)],
+          ["Referrer Employee Code", (r) => r.referrer?.employee_code],
+          ["Referral Code", (r) => codeKey(r.referral_code)],
+          ["Position Applied", (r) => r.position_name],
+          ["Branch Applied", (r) => r.branch_name],
+          ["Date Submitted", (r) => r.created_at],
+          ["Contract Signed", (r) => r.signing_of_contract_date],
+          ["Status", (r) => r.progress_status],
+          ["Employee Record", (r) => r.employee_code || (isHired(r) ? "Not synced yet" : "")],
+        ],
+      },
+    ]);
+  };
+
   const pagination = { pageSize: 10, showSizeChanger: true, showTotal: (total, [from, to]) => `${from}-${to} of ${total}` };
 
   return (
@@ -189,6 +228,7 @@ export default function ReferredApplicantList() {
             </Col>
             <Col flex="none">
               <Space wrap>
+                <Button icon={<ExportOutlined />} onClick={handleExport} disabled={loading}>Export</Button>
                 {view === "referrer" ? groupTable.chooser : flatTable.chooser}
                 <Button icon={<ReloadOutlined />} onClick={load} disabled={loading}>Refresh</Button>
               </Space>

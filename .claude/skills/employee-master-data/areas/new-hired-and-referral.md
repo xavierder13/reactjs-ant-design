@@ -108,3 +108,15 @@ The notification bell counts this list
   total / still active / regular counts; an expanded group loads its
   employees with `group_key`. Rows open the profile with `returnTo`.
   Referred Applicants still lists synced hires too (user decision).
+
+## Export (Referral Codes, Referred Applicants, Referred Employees)
+
+Each page's **Export** button builds an .xlsx in the browser
+(`referral_codes/referralExport.js`, SheetJS): what the current filters
+match, as plain text. Server-paginated lists (Referral Codes, Referred
+Employees) are re-fetched page by page (`fetchAllPages`, 500 per request),
+not just the visible page. Sheets: Referral Codes — one (Referrals count only
+with `employee-referral-view-referrals`, left out if the portal didn't
+answer); Referred Applicants / Referred Employees — By Referrer + the flat
+list. No separate permission: anyone who can open the list can export it.
+File name `<page> (YYYY-MM-DD).xlsx`.
