@@ -96,6 +96,32 @@ const recruitmentApi = {
   //   [{ position, branch, required, current, vacancy }] } → .xls blob of
   //   exactly the rows sent (the page sends what it's showing).
   exportVacancies: (vacancies) => axios.post('/recruitment/export_vacancies', { vacancies }, { responseType: 'blob' }),
+
+  // Online examination — careers portal OnlineExamService through the gateway.
+  // The applicant takes it in the separate exam app (recruitment-exam) at the
+  // link <EXAM_APP_URL>/exam/<token>. Errors: 422 { error } (string or bag).
+  // POST /recruitment/online_exam/settings (careers-online-exam-settings) →
+  //   { success, settings: { link_expiry_value, link_expiry_unit: 'hours'|'days',
+  //   updated_at, updated_by_email }, exams: [{ id, code, title, kind:
+  //   'personality'|'aptitude', description, time_limit_minutes, passing_percent,
+  //   questions_count }] }
+  getOnlineExamSettings: () => axios.post('/recruitment/online_exam/settings'),
+  // { link_expiry_value (1–720 hours / 1–30 days), link_expiry_unit } → { success, message, settings }
+  updateOnlineExamSettings: (payload) => axios.post('/recruitment/online_exam/settings/update', payload),
+  // (careers-online-exam-send) { applicant_id, exam_ids, send_email } →
+  //   { success, message, link, invitation } — a new link; older active ones stay valid
+  inviteOnlineExam: (payload) => axios.post('/recruitment/online_exam/invite', payload),
+  // (careers-online-exam-results or -send) → { success, invitations: [{ id, status:
+  //   'active'|'expired'|'completed'|'revoked', link (active only), expires_at,
+  //   created_at, created_by_email, opened_at, completed_at, revoked_at, emailed_at,
+  //   exams: [{ exam_id, code, title, kind, passing_percent, status:
+  //   'not_started'|'in_progress'|'submitted', started_at, submitted_at, late,
+  //   score, max_score, percent, passed, section_scores, focus_lost_count,
+  //   copy_attempt_count }] }] } — newest first. section_scores: aptitude
+  //   [{ section, correct, items }], personality [{ section, average (1–5), answered, items }]
+  getOnlineExamResults: (applicantId) => axios.post(`/recruitment/online_exam/results/${applicantId}`),
+  // (careers-online-exam-send) { invitation_id } → { success, message } — not once completed
+  revokeOnlineExam: (invitationId) => axios.post('/recruitment/online_exam/revoke', { invitation_id: invitationId }),
 };
 
 export default recruitmentApi;

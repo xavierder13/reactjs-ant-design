@@ -5,6 +5,7 @@ import {
 } from 'antd';
 import {
   ReloadOutlined, EditOutlined, LockOutlined, MailOutlined, FilePdfOutlined, UserOutlined, SolutionOutlined, TeamOutlined, PaperClipOutlined,
+  FormOutlined,
 } from '@ant-design/icons';
 
 import useAuth from '../../../hooks/useAuth';
@@ -15,6 +16,7 @@ import { progressTagProps, ageFromBirthdate } from './applicantStatus';
 import { PIPELINE, STATUS_LABELS, stepState, currentStep } from './stageProgress';
 import StatusUpdateModal from './StatusUpdateModal';
 import ApplicantFilesTab from './ApplicantFilesTab';
+import OnlineExamTab from './OnlineExamTab';
 import SendNotificationModal from './SendNotificationModal';
 import { typeForResend } from './notifications';
 import { downloadApplicationFormPdf } from './applicationFormPdf';
@@ -368,6 +370,10 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps, onAp
                           onChanged={() => handleChanged()}
                         />
                       ),
+                    }] : []),
+                    ...(can('careers-online-exam-results') || can('careers-online-exam-send') ? [{
+                      key: 'online-exam', label: 'Online Exam', icon: <FormOutlined />,
+                      children: <OnlineExamTab applicant={applicant} canSend={can('careers-online-exam-send')} />,
                     }] : []),
                   ]}
                 />

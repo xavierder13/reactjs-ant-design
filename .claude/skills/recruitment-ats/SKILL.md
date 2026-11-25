@@ -19,6 +19,7 @@ rules live beside it; **read the matching file before touching that area**
 | applicant view actions: status update, files, hiring details, notifications / manual resend, list extras, application-form PDF | `areas/applicant-actions.md` |
 | Recruitment Setup: careers Positions / Ranks / Branches / Job Vacancies, Hiring Officers | `areas/recruitment-setup.md` |
 | local dev wiring (gateway, .env, tokens) | `areas/local-dev.md` |
+| online examination (exam links, results, expiry setting; the separate exam app) | `areas/online-exam.md` |
 
 ## How data flows
 

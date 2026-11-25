@@ -42,6 +42,7 @@ import BranchManpowerReport from '../pages/employee_master_data/branch_manpower/
 import CareersPositionIndex from '../pages/recruitment/setup/position/CareersPositionIndex';
 import CareersRankIndex from '../pages/recruitment/setup/rank/CareersRankIndex';
 import HiringOfficerIndex from '../pages/recruitment/setup/hiring_officer/HiringOfficerIndex';
+import OnlineExamSettings from '../pages/recruitment/setup/online_exam/OnlineExamSettings';
 import CareersBranchIndex from '../pages/recruitment/setup/branch/CareersBranchIndex';
 import JobVacancyIndex from '../pages/recruitment/setup/job_vacancy/JobVacancyIndex';
 import AcknowledgmentReportView from '../pages/employee_master_data/acknowledgment_report/AcknowledgmentReportView';
@@ -176,6 +177,7 @@ const permissionRoutes = [
   { permissions: ['careers-branch-list'], path: '/recruitment/setup/branches', element: <CareersBranchIndex /> },
   { permissions: ['careers-job-vacancy-list'], path: '/recruitment/setup/job-vacancies', element: <JobVacancyIndex /> },
   { permissions: ['hiring-officer-list'], path: '/recruitment/setup/hiring-officers', element: <HiringOfficerIndex /> },
+  { permissions: ['careers-online-exam-settings'], path: '/recruitment/setup/online-exam', element: <OnlineExamSettings /> },
 
   // Manpower Request Routes
   { permissions: ['manpower-request-list', 'manpower-request-list-all'],   path: '/manpower-requests',        element: <ManpowerRequestIndex /> },

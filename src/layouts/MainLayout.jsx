@@ -114,6 +114,7 @@ const titleMap = {
   '/recruitment/setup/branches':      { title: 'Careers Branches', breadcrumb: ['Recruitment', 'Setup', 'Careers Branches'] },
   '/recruitment/setup/job-vacancies': { title: 'Job Vacancies', breadcrumb: ['Recruitment', 'Setup', 'Job Vacancies'] },
   '/recruitment/setup/hiring-officers': { title: 'Hiring Officers', breadcrumb: ['Recruitment', 'Setup', 'Hiring Officers'] },
+  '/recruitment/setup/online-exam': { title: 'Online Exam', breadcrumb: ['Recruitment', 'Setup', 'Online Exam'] },
   '/reports/branch-manpower': { title: 'Branch Manpower Fill Rate', breadcrumb: ['Employee', 'Workforce Reports', 'Branch Manpower Fill Rate'] },
   '/employees/hired-this-month':    { title: 'Employees Hired This Month', breadcrumb: ['Employee', 'Hired This Month'] },
   '/employees/for-regularization':  { title: 'For Regularization', breadcrumb: ['Employee', 'For Regularization'] },
@@ -512,6 +513,8 @@ const menuData = [
               { key: 'careers-job-vacancies', title: 'Job Vacancies', link: '/recruitment/setup/job-vacancies', permissions: ['careers-job-vacancy-list'] },
               // This HRIS's own table, not the careers portal's — the Hiring Officer Name options.
               { key: 'hiring-officers',       title: 'Hiring Officers', link: '/recruitment/setup/hiring-officers', permissions: ['hiring-officer-list'] },
+              // careers portal: exam link expiry + the exams that can be sent
+              { key: 'online-exam',           title: 'Online Exam', link: '/recruitment/setup/online-exam', permissions: ['careers-online-exam-settings'] },
             ],
           },
         ],
