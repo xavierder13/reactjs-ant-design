@@ -42,8 +42,10 @@ Part of the `payroll-run` skill; read `SKILL.md` first (cross-cutting rules).
   Print Payslips (`my_payslip/payslips`, ≤ 100) — own data only, no permission),
   `my_attendance/MyAttendanceIndex` (`/my-attendance`, open route, My
   Workspace — vueportal `MyAttendanceController`: the linked employee's own
-  DTR per cut-off, no permission), `timekeeping/DtrSummary` (the DTR banner,
-  shared with `DtrModal`). Each DTR time in / out carries its source —
+  DTR per cut-off or for a date range of up to 93 days — `{ date_from,
+  date_to }`, `cutoff` null, `period` set — no permission),
+  `timekeeping/DtrSummary` (the DTR banner, shared with `DtrModal`; Period
+  instead of Cut-off for a range). Each DTR time in / out carries its source —
   `biometric` (Bio), `imported` (Attendance Logs import) or `time entry`
   (Manual) — shown as a tag in `DtrDaysTable`,
   `reports/RemittanceReport` (`/remittances`), `ThirteenthMonthIndex`

@@ -1,6 +1,8 @@
 import { Row, Col, Space, Avatar, Tag, Typography, Alert } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import { cutoffLabel } from '../payrollHelpers';
+import { DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { minutesText, daysText } from '../run/runHelpers';
 
 const Stat = ({ label, children, danger }) => (
@@ -15,7 +17,8 @@ const Stat = ({ label, children, danger }) => (
 // A DTR's summary banner (employee, cut-off, present / absent / late /
 // undertime / overtime, leave · holidays · rest days · night) and the
 // "days need a look" warning — Timekeeping's DtrModal and My Attendance.
-// `data` = a dtr/show (or my_attendance/show) response.
+// `data` = a dtr/show (or my_attendance/show) response; a my_attendance date
+// range has no `cutoff`, so its `period` shows instead.
 const DtrSummary = ({ data }) => {
   const s = data.summary;
   const e = data.employee;
@@ -36,7 +39,11 @@ const DtrSummary = ({ data }) => {
               </div>
             </Space>
           </Col>
-          <Col xs={24} md={6}><Stat label='Cut-off'>{cutoffLabel(data.cutoff)}</Stat></Col>
+          <Col xs={24} md={6}>
+            {data.cutoff || !data.period
+              ? <Stat label='Cut-off'>{cutoffLabel(data.cutoff)}</Stat>
+              : <Stat label='Period'>{`${dayjs(data.period.date_from).format(DISPLAY_DATE_FORMAT)} – ${dayjs(data.period.date_to).format(DISPLAY_DATE_FORMAT)}`}</Stat>}
+          </Col>
           <Col xs={8} md={2}><Stat label='Present'>{s.present}</Stat></Col>
           <Col xs={8} md={2}><Stat label='Absent' danger={s.absent_days > 0}>{daysText(s.absent_days)}</Stat></Col>
           <Col xs={8} md={2}><Stat label='Late' danger={s.late_minutes > 0}>{minutesText(s.late_minutes)}</Stat></Col>
