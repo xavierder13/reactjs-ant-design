@@ -113,7 +113,11 @@ export default function StatusUpdateModal({
   const { message, modal } = App.useApp();
   const [form] = Form.useForm();
   const [saving, setSaving] = useState(false);
-  const v = Form.useWatch([], form) || {};
+  // Every applicant field, rendered or not (the portal dialog's editedItem):
+  // a status update shows only its own step, but its rules read earlier
+  // steps — Exam / B.I status, Final Interview date and the Orientation
+  // dates are disabled by the step before — from the values set on open.
+  const v = Form.useWatch([], { form, preserve: true }) || {};
   // Hiring Officer Name options (Recruitment → Setup → Hiring Officers —
   // employees, still eligible); picking one fills the employee's position
   // (read-only). Loaded when the modal opens.

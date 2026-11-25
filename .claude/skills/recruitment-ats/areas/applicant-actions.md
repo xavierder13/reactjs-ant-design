@@ -9,7 +9,12 @@ not while the current step is 1, 4 or 5 — they see a lock note there
 instead). Shows only that step's
 fields; POST `update_status { applicant_id, step, ...step fields }`
 (dates `YYYY-MM-DD`, preferences comma-joined, `*_remarks` built from the
-Non-Compliant reason picker). Confirm → save → drawer reloads, list row
+Non-Compliant reason picker). Like the portal's `editedItem`, the rules
+read the whole applicant: Exam / B.I status, the Final Interview date and
+the Orientation dates are disabled by the step before, which isn't
+rendered — so `v` must be `Form.useWatch([], { form, preserve: true })`
+(without `preserve` it holds rendered fields only and steps 2–5 lock for
+everyone). Confirm → save → drawer reloads, list row
 replaced by the response's `applicant` (list-row shape). Portal rules, per
 step:
 - 0 Screening: `status` required; `screening_date` disabled until a
