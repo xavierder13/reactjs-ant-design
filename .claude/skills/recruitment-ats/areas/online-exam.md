@@ -18,6 +18,11 @@ expiry, through vueportal `recruitment/online_exam/*` → gateway
   status and result — aptitude (MDQ): score, %, Passed / Failed vs the
   exam's passing %, per area; personality (MPQ): each trait's average 1–5,
   no pass / fail — plus Late and the focus-lost / copy-screenshot counts.
+  Each exam is an `ExamResultCard.jsx` panel: time taken (of the limit),
+  focus / copy flags; MDQ the score bar with a passing-mark tick and each
+  area's bar + Strong (≥ 80%) / Average (≥ 60%) / Needs work; MPQ each
+  trait's bar + High (≥ 4.0) / Moderate (≥ 2.5) / Low and a one-line
+  reading (`TRAIT_READING` — sample traits; a new trait shows no reading).
   **View answers** on a submitted exam → `ExamAnswersModal.jsx`
   (`getOnlineExamAnswers(attempt_id)`): every question with the
   applicant's answer — MDQ the correct option and ✓ / ✗ (filter Wrong /

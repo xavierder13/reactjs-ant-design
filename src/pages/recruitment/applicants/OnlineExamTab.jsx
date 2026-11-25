@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Button, Card, Checkbox, Descriptions, Empty, Modal, Popconfirm, Progress, Space, Spin, Tag, Tooltip, Typography, Alert, App,
+  Button, Card, Checkbox, Empty, Modal, Popconfirm, Space, Spin, Tag, Tooltip, Typography, Alert, App,
 } from 'antd';
-import { CopyOutlined, EyeOutlined, ReloadOutlined, SendOutlined, StopOutlined, WarningOutlined } from '@ant-design/icons';
+import { CopyOutlined, ReloadOutlined, SendOutlined, StopOutlined } from '@ant-design/icons';
 
 import recruitmentApi from '../../../services/recruitment/recruitmentApi';
 import { copyText } from '../../../utils/referralLink';
 import { gatewayMessage, errorMessage } from './requirements';
 import { currentStep, STATUS_LABELS } from './stageProgress';
 import ExamAnswersModal from './ExamAnswersModal';
+import ExamResultCard from './ExamResultCard';
 
 // Applicant drawer → Online Exam: the links sent to this applicant (careers
 // portal OnlineExamService) with each exam's result, Send exam link
@@ -28,68 +29,8 @@ const LINK_STATUS = {
   expired: { color: 'default', label: 'Expired' },
   revoked: { color: 'error', label: 'Revoked' },
 };
-const EXAM_STATUS = {
-  not_started: { color: 'default', label: 'Not started' },
-  in_progress: { color: 'warning', label: 'In progress' },
-  submitted: { color: 'success', label: 'Submitted' },
-};
 const when = (v) => (v ? new Date(v.replace(' ', 'T')).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }) : '-');
 
-function ExamResult({ exam, onViewAnswers }) {
-  const head = (
-    <Space wrap size={6}>
-      <Typography.Text strong>{exam.title || exam.code}</Typography.Text>
-      <Tag color={EXAM_STATUS[exam.status]?.color}>{EXAM_STATUS[exam.status]?.label}</Tag>
-      {exam.late && <Tooltip title="Submitted after the time limit"><Tag color="orange">Late</Tag></Tooltip>}
-      {exam.kind === 'aptitude' && exam.passed !== null && (
-        <Tag color={exam.passed ? 'success' : 'error'}>{exam.passed ? 'Passed' : 'Failed'}</Tag>
-      )}
-      {exam.status === 'submitted' && exam.attempt_id && (
-        <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => onViewAnswers(exam.attempt_id)}>View answers</Button>
-      )}
-      {(exam.focus_lost_count > 0 || exam.copy_attempt_count > 0) && (
-        <Tooltip title="The exam page lost focus (another tab / window) or blocked a copy / screenshot attempt">
-          <Tag icon={<WarningOutlined />} color="warning">
-            {exam.focus_lost_count} focus lost · {exam.copy_attempt_count} copy / screenshot
-          </Tag>
-        </Tooltip>
-      )}
-    </Space>
-  );
-  if (exam.status !== 'submitted') return <div style={{ marginBottom: 8 }}>{head}</div>;
-
-  return (
-    <div style={{ marginBottom: 12 }}>
-      {head}
-      {exam.kind === 'aptitude' ? (
-        <div style={{ marginTop: 6 }}>
-          <Typography.Text>
-            Score <strong>{exam.score} / {exam.max_score}</strong> ({exam.percent}%)
-            {exam.passing_percent !== null && <Typography.Text type="secondary">{` · passing ${exam.passing_percent}%`}</Typography.Text>}
-          </Typography.Text>
-          <Descriptions
-            size="small" column={{ xs: 1, sm: 2 }} style={{ marginTop: 4 }}
-            items={(exam.section_scores || []).map((s) => ({ key: s.section, label: s.section, children: `${s.correct} / ${s.items}` }))}
-          />
-        </div>
-      ) : (
-        <div style={{ marginTop: 6, maxWidth: 460 }}>
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>Average per trait, 1 (low) – 5 (high); no pass / fail.</Typography.Text>
-          {(exam.section_scores || []).map((s) => (
-            <div key={s.section} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 150 }}>{s.section}</span>
-              <Progress
-                style={{ flex: 1, margin: 0 }} size="small" showInfo={false}
-                percent={s.average === null ? 0 : ((s.average - 1) / 4) * 100}
-              />
-              <span style={{ width: 70, textAlign: 'right' }}>{s.average ?? '-'}{s.answered < s.items ? ` (${s.answered}/${s.items})` : ''}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 const EXAM_STEP = 2;
 
@@ -231,7 +172,7 @@ export default function OnlineExamTab({ applicant, canSend, isAdmin }) {
             </Space>
           )}
         >
-          {inv.exams.map((exam) => <ExamResult key={exam.exam_id} exam={exam} onViewAnswers={setViewingAttempt} />)}
+          {inv.exams.map((exam) => <ExamResultCard key={exam.exam_id} exam={exam} onViewAnswers={setViewingAttempt} />)}
         </Card>
       ))}
 
