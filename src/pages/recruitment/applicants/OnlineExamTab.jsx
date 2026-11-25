@@ -43,7 +43,8 @@ export default function OnlineExamTab({ applicant, canSend, isAdmin }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [inviting, setInviting] = useState(false);
-  const [exams, setExams] = useState([]);
+  // Active exams for the link dialog — null while they load.
+  const [exams, setExams] = useState(null);
   const [picked, setPicked] = useState([]);
   const [sendEmail, setSendEmail] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,6 +73,7 @@ export default function OnlineExamTab({ applicant, canSend, isAdmin }) {
   const openInvite = async () => {
     setCreated(null);
     setSendEmail(Boolean(applicant.email));
+    setExams(null);
     setInviting(true);
     try {
       const { data } = await recruitmentApi.getOnlineExamSettings();
@@ -223,7 +225,7 @@ export default function OnlineExamTab({ applicant, canSend, isAdmin }) {
         title="Send exam link"
         okText={created ? 'Done' : 'Create link'}
         onOk={created ? () => setInviting(false) : invite}
-        okButtonProps={{ loading: saving }}
+        okButtonProps={{ loading: saving, disabled: !created && !exams?.length }}
         cancelButtonProps={{ style: created ? { display: 'none' } : undefined }}
         onCancel={() => setInviting(false)}
         destroyOnHidden
@@ -239,8 +241,16 @@ export default function OnlineExamTab({ applicant, canSend, isAdmin }) {
             <Typography.Paragraph type="secondary">
               The link is personal to {applicant.firstname || 'the applicant'} and expires per Recruitment → Setup → Online Exam.
             </Typography.Paragraph>
+            {exams === null && <Spin style={{ display: 'block', margin: '12px auto' }} />}
+            {exams?.length === 0 && (
+              <Alert
+                type="warning" showIcon
+                title="No active exams are set up"
+                description="Exams are added on the careers portal (OnlineExamSeeder); Recruitment → Setup → Online Exam lists them."
+              />
+            )}
             <Checkbox.Group value={picked} onChange={setPicked} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {exams.map((e) => (
+              {(exams || []).map((e) => (
                 <Checkbox key={e.id} value={e.id}>
                   <strong>{e.title}</strong>
                   <Typography.Text type="secondary">{` · ${e.questions_count} items · ${e.time_limit_minutes} min`}</Typography.Text>
