@@ -126,7 +126,8 @@ export default function JobApplicantList({ stageKey }) {
   const [loadError, setLoadError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState('');           // applied (filters the list)
+  const [searchInput, setSearchInput] = useState(''); // typed, applied on Enter / Search
   // Stage lists open on On Process (the portal fixes them there); All
   // Applicants and Hired show every status.
   const [statusFilter, setStatusFilter] = useState(['applicant-list', 'hired-list'].includes(stageKey) ? 'all' : 'process');
@@ -358,13 +359,18 @@ export default function JobApplicantList({ stageKey }) {
       )}
 
       <Space wrap align="end" style={{ marginBottom: 16 }}>
-        <Input
+        {/* filters on Enter or Search (not on every keystroke); clearing shows everything */}
+        <Input.Search
           allowClear
-          prefix={<SearchOutlined />}
           placeholder="Search name, position, branch, email, contact"
-          style={{ width: 320 }}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          style={{ width: 360 }}
+          enterButton={<><SearchOutlined /> Search</>}
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            if (!e.target.value) { setSearch(''); setPageNo(1); }
+          }}
+          onSearch={(value) => { setSearch(value.trim()); setPageNo(1); }}
         />
         {showStageFilter && (
           <Select

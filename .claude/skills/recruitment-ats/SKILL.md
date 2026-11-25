@@ -88,7 +88,8 @@ age when they applied; React computes it — see Phase 2).
   permission; MainLayout titleMap + menu (incl. Hired) come from it.
 - `JobApplicantList.jsx` (`stageKey`) — loads the full list once
   (`recruitmentApi.getApplicants(api)`, GET; no server paging), filters in
-  memory: search, status filter **buttons** with live counts, Stage filter
+  memory: search (applied on Enter / the Search button, not per keystroke;
+  clearing applies at once; a new search goes to page 1), status filter **buttons** with live counts, Stage filter
   (All Applicants only; portal rule: stage name contained in
   `progress_status`), date filter with a per-stage date field, branch
   (hidden for the Branch Manager role — the gateway scopes them), position;
