@@ -9,7 +9,7 @@ import { copyText } from '../../../utils/referralLink';
 import { gatewayMessage, errorMessage } from './requirements';
 import { currentStep, STATUS_LABELS } from './stageProgress';
 import ExamAnswersModal from './ExamAnswersModal';
-import ExamResultCard from './ExamResultCard';
+import ExamResultCard, { ExamSummary } from './ExamResultCard';
 
 // Applicant drawer → Online Exam: the links sent to this applicant (careers
 // portal OnlineExamService) with each exam's result, Send exam link
@@ -33,6 +33,7 @@ const when = (v) => (v ? new Date(v.replace(' ', 'T')).toLocaleString('en-PH', {
 
 
 const EXAM_STEP = 2;
+
 
 export default function OnlineExamTab({ applicant, canSend, isAdmin }) {
   const { message, modal } = App.useApp();
@@ -209,6 +210,7 @@ export default function OnlineExamTab({ applicant, canSend, isAdmin }) {
               </Typography.Text>
             </div>
           )}
+          <ExamSummary inv={inv} applicant={applicant} />
           {inv.exams.map((exam) => <ExamResultCard key={exam.exam_id} exam={exam} onViewAnswers={setViewingAttempt} />)}
         </Card>
       ))}

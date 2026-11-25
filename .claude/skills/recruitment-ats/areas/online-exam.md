@@ -18,7 +18,12 @@ expiry, through vueportal `recruitment/online_exam/*` → gateway
   status and result — aptitude (MDQ): score, %, Passed / Failed vs the
   exam's passing %, per area; personality (MPQ): each trait's average 1–5,
   no pass / fail — plus Late and the focus-lost / copy-screenshot counts.
-  Each exam is an `ExamResultCard.jsx` panel: time taken (of the limit),
+  Each link card opens with **Examination result** (`ExamSummary`): a
+  PASSED / FAILED badge (`Verdict` — every scored exam passed → Passed),
+  each scored exam's % vs its pass mark, the MPQ traits rated High, and the
+  applicant's HRIS Exam status (unchanged by the result — HR sets it).
+  Each exam is an `ExamResultCard.jsx` panel (the MDQ with a large Verdict
+  beside its score): time taken (of the limit),
   focus / copy flags; MDQ the score bar (`ScoreBar`: a labelled "Pass N%"
   marker in amber (warning color) across it, below-pass zone shaded) and each
   area's bar + Strong (≥ 80%) / Average (≥ 60%) / Needs work; MPQ each
