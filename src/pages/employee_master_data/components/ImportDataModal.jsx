@@ -41,7 +41,7 @@ export default function ImportDataModal({ open, onClose, onImported, types }) {
   const [errorRows, setErrorRows] = useState(null);
 
   const isAdmin = hasRole('Administrator');
-  const options = DOCUMENT_TYPES.filter((type) => !types || types.includes(type.value))
+  const options = DOCUMENT_TYPES.filter((type) => (types ? types.includes(type.value) : !type.pageOnly))
     .filter((type) => isAdmin || hasPermission(type.importPermission))
     .map(({ value, label }) => ({ value, label }));
   const selectedType = DOCUMENT_TYPES.find((t) => t.value === documentType);

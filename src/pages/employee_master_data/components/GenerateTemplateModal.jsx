@@ -32,7 +32,7 @@ export default function GenerateTemplateModal({ open, onClose, types }) {
   const documentType = Form.useWatch("document_type", form);
 
   const isAdmin = hasRole("Administrator");
-  const options = DOCUMENT_TYPES.filter((type) => !types || types.includes(type.value))
+  const options = DOCUMENT_TYPES.filter((type) => (types ? types.includes(type.value) : !type.pageOnly))
     .filter((type) => isAdmin || hasPermission(type.templatePermission))
     .map(({ value, label }) => ({ value, label }));
   const type = DOCUMENT_TYPES.find((t) => t.value === documentType);

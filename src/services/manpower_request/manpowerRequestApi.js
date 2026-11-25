@@ -48,6 +48,19 @@ const manpowerRequestApi = {
   exportReport:       (reportType, dates) => axios.post('/manpower_request/export', { report_type: reportType, ...dates }, { responseType: 'blob' }),
   // Status report, one row per detail line — status is any MRF status or 'All'.
   exportStatusReport: (status, dates)     => axios.post('/manpower_request/export_status', { status, ...dates }, { responseType: 'blob' }),
+
+  // Mass upload of approved (Open) MRFs (manpower-request-import): the
+  // blank template (.xlsx: sheet "Manpower Requests" + "Values") and its
+  // import → the shared Generate Template → Import contract (HTTP 200:
+  // success + mrf_numbers | error_column | error_row_data + field_values |
+  // error_empty | error). Lines with the same mrf_group = one MRF, created
+  // Approved (date_approved from the file) with no hires; all or nothing.
+  templateDownload: () => axios.post('/manpower_request/template/download', {}, { responseType: 'blob' }),
+  import: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return axios.post('/manpower_request/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
 };
 
 export default manpowerRequestApi;

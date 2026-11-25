@@ -11,6 +11,7 @@ import allowanceApi from "../../../services/payroll/allowanceApi";
 import deductionApi from "../../../services/payroll/deductionApi";
 import contributionProfileApi from "../../../services/payroll/contributionProfileApi";
 import bankAccountApi from "../../../services/payroll/bankAccountApi";
+import manpowerRequestApi from "../../../services/manpower_request/manpowerRequestApi";
 
 // Bulk create/update document types — one list for GenerateTemplateModal
 // and ImportDataModal, matching vueportal's TemplateDownloadDialog.vue /
@@ -25,6 +26,9 @@ import bankAccountApi from "../../../services/payroll/bankAccountApi";
 //   employees:      Branch + Position + Employees (any user who may download
 //                   the template — the salary template is already HR-only)
 //   dateRange:      Date From – To (required; date_from / date_to)
+//
+// pageOnly: offered only where a page asks for it by `types` (not in the
+//   Employee Master Data dialogs) — e.g. Manpower Requests.
 //
 // Not offered: Classroom / OJT Performance Rating — vueportal lists them,
 // but their controllers have no import()/template_download(), so both fail
@@ -154,6 +158,17 @@ export const DOCUMENT_TYPES = [
     upload: (file) => bankAccountApi.import(file),
     templateOptions: { status: true, employees: true },
     hint: "The template lists each employee's payroll account in force today (current_from is for reference) with a blank effective_from. Fill bank_code (see the Values sheet), account_name, account_no (digits, spaces and dashes — keep the cell as Text so leading zeros stay) and effective_from (YYYY-MM-DD, Text) on the lines to add or change — blank effective_from lines are skipped. A new effective_from adds the account from that date (the earlier one stays as history); the same employee and effective_from as a saved account updates it. One wrong line stops the whole import.",
+  },
+  {
+    value: "manpower_request",
+    label: "Approved Manpower Requests",
+    templatePermission: "manpower-request-import",
+    importPermission: "manpower-request-import",
+    filename: "ManpowerRequestImportTemplate.xlsx",
+    download: () => manpowerRequestApi.templateDownload(),
+    upload: (file) => manpowerRequestApi.import(file),
+    pageOnly: true,
+    hint: "One line per position line; lines with the same mrf_group become one MRF, created as Approved with no hires (Open). Header columns (branch … remarks) are read from the group's first line. Required: mrf_group, branch, date_approved, reason, position, quantity. Dates YYYY-MM-DD typed as Text. One request_type per group (blank = Additional); a Replacement line is quantity 1 with replacement_employee_code and replacement_reason. Allowed values, branches and positions are on the Values sheet. One wrong line stops the whole import.",
   },
   {
     value: "attendance_log",

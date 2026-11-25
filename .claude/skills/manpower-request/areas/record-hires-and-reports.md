@@ -38,3 +38,13 @@ Part of the `manpower-request` skill; read `SKILL.md` first (cross-cutting rules
   - *Status Report (per position line)* — `status:All|<status>` → `exportStatusReport()`.
   - Saved via `downloadBlobResponse()`. Rows/columns are built server-side (vueportal `reportRows()`/`statusReportRows()`); search/status list filters are not sent.
 - The hiring report's Status uses the same Open/Closed rule as below; its Aging counts from `date_approved` like the on-screen Aging.
+
+## Mass upload of approved MRFs (Index page)
+
+**Generate Template** / **Import Approved MRFs** buttons (`manpower-request-import`;
+Administrator) open the shared `GenerateTemplateModal` / `ImportDataModal`
+with `types={['manpower_request']}` — a `pageOnly` document type in
+`importDocumentTypes.js`, so it isn't offered in the Employee Master Data
+dialogs. The backend (vueportal `areas/import-approved.md`) creates each
+`mrf_group` as an Approved MRF with no hires (Open); all or nothing. The
+list refetches after an import.

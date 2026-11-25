@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Table, Tag, Button, Input, Select, DatePicker, Space, Popconfirm, Tooltip, Dropdown, message } from 'antd';
-import { PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, CloseCircleOutlined, DeleteOutlined, ReloadOutlined, FileExcelOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, CloseCircleOutlined, DeleteOutlined, ReloadOutlined, FileExcelOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useAuth from '../../../hooks/useAuth';
 import useManpowerRequests from '../../../hooks/useManpowerRequests';
@@ -11,6 +11,8 @@ import downloadBlobResponse from '../../../utils/downloadBlobResponse';
 import { formatDate, DISPLAY_DATE_FORMAT } from '../../../utils/formatDate';
 import { tablePagination } from '../../../utils/tablePagination';
 import useTableColumns from '../../../hooks/useTableColumns';
+import GenerateTemplateModal from '../../employee_master_data/components/GenerateTemplateModal';
+import ImportDataModal from '../../employee_master_data/components/ImportDataModal';
 
 const { RangePicker } = DatePicker;
 
@@ -38,8 +40,12 @@ const ManpowerRequestIndex = () => {
   const [dateRange, setDateRange]     = useState(null);
   const [dateField, setDateField]     = useState('created_at');
   const [exporting, setExporting]     = useState(false);
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [importOpen, setImportOpen]     = useState(false);
 
   const canExport = hasRole('Administrator') || hasPermission('manpower-request-export');
+  // Mass upload of MRFs approved outside the system (created Approved / Open)
+  const canImport = hasRole('Administrator') || hasPermission('manpower-request-import');
 
   // Editing is Administrator-or-owner, same pattern as canDelete: Admin
   // bypasses ownership, everyone else needs the permission AND to be the
@@ -306,6 +312,8 @@ const ManpowerRequestIndex = () => {
               <Button icon={<FileExcelOutlined />} loading={exporting}>Export Report</Button>
             </Dropdown>
           )}
+          {canImport && <Button icon={<DownloadOutlined />} onClick={() => setTemplateOpen(true)}>Generate Template</Button>}
+          {canImport && <Button icon={<UploadOutlined />} onClick={() => setImportOpen(true)}>Import Approved MRFs</Button>}
           {hasPermission('manpower-request-create') && (
             <Link to="/manpower-requests/create">
               <Button type="primary" icon={<PlusOutlined />}>Create MRF</Button>
@@ -323,6 +331,8 @@ const ManpowerRequestIndex = () => {
         scroll={{ x: 1000 }}
         pagination={tablePagination(10)}
       />
+      <GenerateTemplateModal open={templateOpen} types={['manpower_request']} onClose={() => setTemplateOpen(false)} />
+      <ImportDataModal open={importOpen} types={['manpower_request']} onClose={() => setImportOpen(false)} onImported={refetch} />
     </div>
   );
 };
