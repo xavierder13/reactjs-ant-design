@@ -7,12 +7,16 @@ import { CopyOutlined, EyeOutlined, ReloadOutlined, SendOutlined, StopOutlined, 
 import recruitmentApi from '../../../services/recruitment/recruitmentApi';
 import { copyText } from '../../../utils/referralLink';
 import { gatewayMessage, errorMessage } from './requirements';
+import { currentStep, STATUS_LABELS } from './stageProgress';
 import ExamAnswersModal from './ExamAnswersModal';
 
 // Applicant drawer → Online Exam: the links sent to this applicant (careers
 // portal OnlineExamService) with each exam's result, Send exam link
 // (careers-online-exam-send: pick the exams, optionally email it — the link
-// is shown to copy either way) and Revoke. The applicant takes the exams in
+// is shown to copy either way) and Revoke. Sending is allowed while the
+// applicant's current phase is Exam (On Process / Failed / Non-Compliant /
+// Reserved); an Administrator may send at any phase after confirming. The
+// careers portal enforces the same rule (online_exam_invite). The applicant takes the exams in
 // the separate exam app; the link expires per Recruitment → Setup → Online
 // Exam. Results: aptitude (MDQ) score / passing mark per area; personality
 // (MPQ) each trait's average on 1–5 (no pass / fail). Focus-lost and
@@ -87,8 +91,12 @@ function ExamResult({ exam, onViewAnswers }) {
   );
 }
 
-export default function OnlineExamTab({ applicant, canSend }) {
-  const { message } = App.useApp();
+const EXAM_STEP = 2;
+
+export default function OnlineExamTab({ applicant, canSend, isAdmin }) {
+  const { message, modal } = App.useApp();
+  const atExam = applicant.iq_status !== null && applicant.iq_status !== undefined && currentStep(applicant) === EXAM_STEP;
+  const mayOpen = canSend && (atExam || isAdmin);
   const [invitations, setInvitations] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -134,19 +142,44 @@ export default function OnlineExamTab({ applicant, canSend }) {
     }
   };
 
-  const invite = async () => {
-    if (!picked.length) { message.warning('Pick at least one exam.'); return; }
+  const send = async (confirmAnyStage) => {
     setSaving(true);
     try {
-      const { data } = await recruitmentApi.inviteOnlineExam({ applicant_id: applicant.id, exam_ids: picked, send_email: sendEmail });
+      const { data } = await recruitmentApi.inviteOnlineExam({
+        applicant_id: applicant.id, exam_ids: picked, send_email: sendEmail, confirm_any_stage: confirmAnyStage || undefined,
+      });
       if (!data?.success) throw Object.assign(new Error(), { response: { data } });
       setCreated({ link: data.link, message: data.message });
       load();
     } catch (err) {
+      // the applicant moved out of the Exam phase meanwhile: an Administrator may still confirm
+      if (err?.response?.data?.needs_confirmation && isAdmin && !confirmAnyStage) { setSaving(false); confirmOutside(); return; }
       message.error(errorMessage(err, 'The exam link could not be created.'));
     } finally {
       setSaving(false);
     }
+  };
+
+  const phaseLabel = () => {
+    const step = currentStep(applicant);
+    const field = ['status', 'initial_interview_status', 'iq_status', 'bi_status', 'final_interview_status', 'orientation_status'][step];
+    const names = ['Screening', 'Initial Interview', 'Exam', 'B.I & Basic Req', 'Final Interview', 'Orientation'];
+    const status = applicant[field];
+    return `${names[step]}${status !== null && status !== undefined ? ` (${STATUS_LABELS[Number(status)]})` : ''}`;
+  };
+
+  const confirmOutside = () => modal.confirm({
+    keyboard: false,
+    title: 'Send an exam link outside the Exam phase?',
+    content: `${applicant.firstname || 'The applicant'} is at ${phaseLabel()}, not at the Exam phase. As Administrator you can still send it.`,
+    okText: 'Send anyway',
+    onOk: () => send(true),
+  });
+
+  const invite = () => {
+    if (!picked.length) { message.warning('Pick at least one exam.'); return; }
+    if (!atExam) { confirmOutside(); return; }
+    send(false);
   };
 
   const revoke = async (id) => {
@@ -164,7 +197,11 @@ export default function OnlineExamTab({ applicant, canSend }) {
   return (
     <div>
       <Space style={{ marginBottom: 12 }} wrap>
-        {canSend && <Button type="primary" icon={<SendOutlined />} onClick={openInvite}>Send exam link</Button>}
+        {canSend && (
+          <Tooltip title={mayOpen ? (atExam ? null : 'Not at the Exam phase — Administrator only, with confirmation') : `Available while the applicant is at the Exam phase (now ${phaseLabel()})`}>
+            <Button type="primary" icon={<SendOutlined />} onClick={openInvite} disabled={!mayOpen}>Send exam link</Button>
+          </Tooltip>
+        )}
         <Button icon={<ReloadOutlined />} onClick={load} loading={loading}>Refresh</Button>
       </Space>
       {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 12 }} />}

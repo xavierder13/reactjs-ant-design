@@ -23,6 +23,14 @@ expiry, through vueportal `recruitment/online_exam/*` → gateway
   applicant's answer — MDQ the correct option and ✓ / ✗ (filter Wrong /
   Unanswered), MPQ the scale label, Reverse items and the score each
   counted as (6 − answer).
+  **Who can send when:** with `-send`, only while the applicant's current
+  phase is Exam (`currentStep` = 2 with `iq_status` set: On Process, Failed,
+  Non-Compliant or Reserved) — otherwise the button is disabled with the
+  current phase in its tooltip. An Administrator can send at any phase;
+  outside Exam a confirm ("Send anyway") sends `confirm_any_stage`.
+  Enforced by the portal gateway (`online_exam_invite`: 422, or 422
+  `needs_confirmation` for an Administrator without the confirm); vueportal
+  adds `any_stage` from the user's Administrator role (never from the client).
   **Send exam link** (`-send`): pick exams (default all active), email it
   (needs an email; the link is shown to copy either way); a new link
   doesn't cancel older active ones. Copy / Revoke on active links (not once

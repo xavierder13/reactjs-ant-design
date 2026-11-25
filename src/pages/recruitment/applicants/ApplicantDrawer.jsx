@@ -373,7 +373,7 @@ export default function ApplicantDrawer({ applicantId, open, onClose, maps, onAp
                     }] : []),
                     ...(can('careers-online-exam-results') || can('careers-online-exam-send') ? [{
                       key: 'online-exam', label: 'Online Exam', icon: <FormOutlined />,
-                      children: <OnlineExamTab applicant={applicant} canSend={can('careers-online-exam-send')} />,
+                      children: <OnlineExamTab applicant={applicant} canSend={can('careers-online-exam-send')} isAdmin={isAdmin} />,
                     }] : []),
                   ]}
                 />
