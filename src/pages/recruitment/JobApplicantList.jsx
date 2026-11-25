@@ -45,6 +45,12 @@ const incompleteWarnings = (row, secondary) => {
 const needsSecondary = (row) => (Number(row.status) === 1 && row.initial_interview_status !== null && Number(row.initial_interview_status) === 0)
   || (row.final_interview_status !== null && Number(row.final_interview_status) === 0);
 
+const FAILED_REMARKS_FIELDS = [
+  ['status', 'screening_failed_remarks'], ['initial_interview_status', 'initial_interview_failed_remarks'],
+  ['iq_status', 'iq_failed_remarks'], ['bi_status', 'bi_failed_remarks'],
+  ['final_interview_status', 'final_interview_failed_remarks'], ['orientation_status', 'orientation_failed_remarks'],
+];
+
 const buildColumns = (names, secondary) => {
   const preference = (ids, map) => (ids
     ? String(ids).split(',').map((id) => map[id.trim()] || id).join(', ')
@@ -74,6 +80,11 @@ const buildColumns = (names, secondary) => {
     text('email', 'Email'),
     text('contact_no', 'Contact No.'),
     text('how_learn', 'Source'),
+    // the remarks of the stage the applicant failed (hidden by default)
+    {
+      title: 'Failed Remarks', key: 'failed_remarks', width: 240,
+      render: (_, row) => FAILED_REMARKS_FIELDS.map(([status, field]) => Number(row[status]) === 2 && row[field]).find(Boolean) || '-',
+    },
     {
       title: 'Status', dataIndex: 'progress_status', sorter: textSorter('progress_status'),
       render: (v, row) => {

@@ -149,17 +149,20 @@ function PeopleTable({ rows, empty, firstColumn }) {
 // email / SMS.
 function ProgressSummary({ applicant, maps, onEdit, onNotify, onUpdateStatus, lockedNote }) {
   const current = currentStep(applicant);
+  const failed = (s, field) => (Number(applicant[PIPELINE[s].field]) === 2 && applicant[field] ? [['Failed Remarks', applicant[field]]] : []);
   const extra = {
-    0: [['Date Applied', applicant.date_submitted || formatDate(applicant.date_applied)], ['Position Applied', applicant.position_name], ['Branch Applied', applicant.branch_name]],
-    1: [['Position Preference', names(applicant.position_preference, maps.positions)], ['Branch Preference', names(applicant.branch_preference, maps.branches)]],
-    2: [['Branch Complied', applicant.branch_complied]],
+    0: [['Date Applied', applicant.date_submitted || formatDate(applicant.date_applied)], ['Position Applied', applicant.position_name], ['Branch Applied', applicant.branch_name], ...failed(0, 'screening_failed_remarks')],
+    1: [['Position Preference', names(applicant.position_preference, maps.positions)], ['Branch Preference', names(applicant.branch_preference, maps.branches)], ...failed(1, 'initial_interview_failed_remarks')],
+    2: [['Branch Complied', applicant.branch_complied], ...failed(2, 'iq_failed_remarks')],
+    3: failed(3, 'bi_failed_remarks'),
     4: [
       ['Employment Position', maps.positions[String(applicant.employment_position)] || applicant.employment_position],
       ['Employment Branch', maps.branches[String(applicant.employment_branch)] || applicant.employment_branch],
       ['Hiring Officer', [applicant.hiring_officer_name, applicant.hiring_officer_position].filter(Boolean).join(' — ')],
       ['Non-Compliant Reason', applicant.final_interview_remarks],
+      ...failed(4, 'final_interview_failed_remarks'),
     ],
-    5: [['Contract Signed', formatDate(applicant.signing_of_contract_date)], ['Non-Compliant Reason', applicant.orientation_remarks]],
+    5: [['Contract Signed', formatDate(applicant.signing_of_contract_date)], ['Non-Compliant Reason', applicant.orientation_remarks], ...failed(5, 'orientation_failed_remarks')],
   };
   return (
     <Card

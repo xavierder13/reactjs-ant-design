@@ -37,6 +37,15 @@ step:
   out due to Training / Others (Specify)).
 - 5 Orientation: both dates required > 0; status disabled until the
   orientation date; Non-Compliant → reason.
+- **Failed remarks (every step):** status Failed (2) shows a required
+  "Failed Remarks" text (≤ 1000) → `<stage>_failed_remarks`
+  (`screening_`, `initial_interview_`, `iq_`, `bi_`, `final_interview_`,
+  `orientation_failed_remarks`; portal columns, separate from the
+  Non-Compliant `*_remarks`), sent null once the step isn't Failed. Required
+  only when the step *becomes* Failed (a step already Failed can be edited
+  without it). The gateway enforces it too (`missingFailedRemarks`, 422
+  error bag → `form.setFields`). Shown on the progress timeline and as the
+  hidden-by-default list column "Failed Remarks".
 File gates apply only while the applicant is on process at that step
 (portal checks `progress_status`); the gateway enforces them too.
 

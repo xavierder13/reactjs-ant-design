@@ -33,17 +33,22 @@ const NON_COMPLIANT_REASONS = ['Hired in other organization', 'Back out due to T
 const STATUS_FIELDS = PIPELINE.map((p) => p.field);
 const DATE_FIELDS = ['screening_date', 'initial_interview_date', 'iq_date', 'bi_date', 'final_interview_date', 'orientation_date', 'signing_of_contract_date'];
 const PREFERENCE_FIELDS = ['position_preference', 'branch_preference'];
+// Why the applicant failed a step — required when its status becomes Failed
+// (2); the gateway enforces it too (missingFailedRemarks).
+const FAILED = 2;
+const FAILED_REMARKS = ['screening_failed_remarks', 'initial_interview_failed_remarks', 'iq_failed_remarks',
+  'bi_failed_remarks', 'final_interview_failed_remarks', 'orientation_failed_remarks'];
 
 // Per step: its status field first, then everything else it owns. Reason
 // pickers are form-only; they become *_remarks in the payload.
 const STEP_FIELDS = {
-  0: ['status', 'screening_date'],
-  1: ['initial_interview_status', 'initial_interview_date', 'position_preference', 'branch_preference'],
-  2: ['iq_status', 'branch_id_complied', 'iq_date'],
-  3: ['bi_status', 'bi_date'],
+  0: ['status', 'screening_date', FAILED_REMARKS[0]],
+  1: ['initial_interview_status', 'initial_interview_date', 'position_preference', 'branch_preference', FAILED_REMARKS[1]],
+  2: ['iq_status', 'branch_id_complied', 'iq_date', FAILED_REMARKS[2]],
+  3: ['bi_status', 'bi_date', FAILED_REMARKS[3]],
   4: ['final_interview_status', 'final_interview_date', 'employment_position', 'employment_branch',
-    'hiring_officer_position', 'hiring_officer_name', 'final_reason', 'final_reason_other'],
-  5: ['orientation_status', 'orientation_date', 'signing_of_contract_date', 'orientation_reason', 'orientation_reason_other'],
+    'hiring_officer_position', 'hiring_officer_name', 'final_reason', 'final_reason_other', FAILED_REMARKS[4]],
+  5: ['orientation_status', 'orientation_date', 'signing_of_contract_date', 'orientation_reason', 'orientation_reason_other', FAILED_REMARKS[5]],
 };
 const EMPLOYMENT_FIELDS = ['employment_position', 'employment_branch', 'hiring_officer_position', 'hiring_officer_name'];
 
@@ -76,6 +81,7 @@ const formValuesOf = (a) => {
     final_reason_other: finalOther,
     orientation_reason: orientationReason,
     orientation_reason_other: orientationOther,
+    ...Object.fromEntries(FAILED_REMARKS.map((f) => [f, a[f] || null])),
   };
 };
 
@@ -93,6 +99,9 @@ const payloadOf = (values) => {
   if ('orientation_status' in values) {
     out.orientation_remarks = values.orientation_status === 3 ? joinReason(values.orientation_reason, values.orientation_reason_other) : null;
   }
+  FAILED_REMARKS.forEach((f, s) => {
+    if (f in values) out[f] = values[STATUS_FIELDS[s]] === FAILED ? values[f]?.trim() || null : null;
+  });
   return out;
 };
 
@@ -197,6 +206,7 @@ export default function StatusUpdateModal({
     if ('orientation_status' in changed && changed.orientation_status !== 3) {
       Object.assign(set, { orientation_reason: null, orientation_reason_other: null });
     }
+    if (changedStatus > -1 && changed[STATUS_FIELDS[changedStatus]] !== FAILED) set[FAILED_REMARKS[changedStatus]] = null;
     if ('final_reason' in changed && changed.final_reason !== OTHERS) set.final_reason_other = null;
     if ('orientation_reason' in changed && changed.orientation_reason !== OTHERS) set.orientation_reason_other = null;
 
@@ -240,6 +250,12 @@ export default function StatusUpdateModal({
       if (res?.warning) message.warning(res.warning);
       else message.error(gatewayMessage(res, 'The status could not be saved.'));
     } catch (err) {
+      const bag = err?.response?.data?.error;
+      if (bag && typeof bag === 'object') {
+        form.setFields(Object.entries(bag)
+          .filter(([name]) => name in values)
+          .map(([name, errors]) => ({ name, errors: [].concat(errors) })));
+      }
       message.error(errorMessage(err, 'The status could not be saved.'));
     } finally {
       setSaving(false);
@@ -288,6 +304,18 @@ export default function StatusUpdateModal({
       )}
     </>
   );
+  // Required when the step becomes Failed now; one already Failed before the
+  // rule can be edited without it (same as the gateway).
+  const failedItem = (s) => v[STATUS_FIELDS[s]] === FAILED && (
+    <Form.Item
+      name={FAILED_REMARKS[s]}
+      label="Failed Remarks"
+      rules={required(num(applicant?.[STATUS_FIELDS[s]]) !== FAILED, 'Please enter the Failed remarks.')
+        .map((r) => ({ ...r, whitespace: true }))}
+    >
+      <Input.TextArea rows={3} maxLength={1000} showCount placeholder="Why did the applicant fail this stage?" />
+    </Form.Item>
+  );
   const filesAlert = (missing) => missing.length > 0 && (
     <Alert type="error" showIcon style={{ marginBottom: 12 }} title={`Please upload: ${missing.join(', ')}`} />
   );
@@ -304,6 +332,7 @@ export default function StatusUpdateModal({
       <Row gutter={16}>
         {col(statusItem('status', 'Screening Status'))}
         {col(dateItem('screening_date', 'Screening Date', { when: v.status > 0 && canEditHiringDetails, disabled: !v.status }))}
+        <Col span={24}>{failedItem(0)}</Col>
       </Row>
     )),
     section(1, (
@@ -320,6 +349,7 @@ export default function StatusUpdateModal({
             when: details ? v.initial_interview_status > 0 : v.initial_interview_status === 1,
           }))}
           {col(statusItem('initial_interview_status', 'Initial Interview Status'))}
+          <Col span={24}>{failedItem(1)}</Col>
           <Col span={24}>
             <Form.Item name="position_preference" label="Position Preference" rules={required(v.initial_interview_status === 1, 'Position Preference is required.')}>
               <Select mode="multiple" allowClear maxTagCount="responsive" options={positionOptions} showSearch={{ optionFilterProp: 'label' }} disabled={v.initial_interview_status !== 1} />
@@ -344,6 +374,7 @@ export default function StatusUpdateModal({
               <Select allowClear options={branchOptions} showSearch={{ optionFilterProp: 'label' }} disabled={!v.iq_status || isBranchManager} />
             </Form.Item>,
           )}
+          <Col span={24}>{failedItem(2)}</Col>
         </Row>
       </>
     )),
@@ -351,6 +382,7 @@ export default function StatusUpdateModal({
       <Row gutter={16}>
         {col(statusItem('bi_status', 'B.I & Basic Req Status', { disabled: !v.iq_status }))}
         {col(dateItem('bi_date', 'B.I & Basic Req Date', { when: v.bi_status > 0, disabled: !v.bi_status }))}
+        <Col span={24}>{failedItem(3)}</Col>
       </Row>
     )),
     section(4, (
@@ -359,7 +391,7 @@ export default function StatusUpdateModal({
         <Row gutter={16}>
           {col(dateItem('final_interview_date', 'Final Interview Date', { when: v.final_interview_status > 0, disabled: !v.bi_status }))}
           {col(statusItem('final_interview_status', 'Final Interview Status', { disabled: !v.final_interview_date }))}
-          <Col span={24}>{reasonItems('final', 'Non-Compliant Reason', v.final_interview_status)}</Col>
+          <Col span={24}>{reasonItems('final', 'Non-Compliant Reason', v.final_interview_status)}{failedItem(4)}</Col>
           {col(
             <Form.Item name="employment_position" label="Employment Position" rules={required(v.final_interview_status === 1, 'Employment Position is required.')}>
               <Select allowClear options={positionOptions} showSearch={{ optionFilterProp: 'label' }} disabled={!v.final_interview_status} />
@@ -389,7 +421,7 @@ export default function StatusUpdateModal({
         {col(dateItem('orientation_date', 'Orientation / Training Date', { when: v.orientation_status > 0, disabled: v.final_interview_status !== 1 }))}
         {col(dateItem('signing_of_contract_date', 'Signing of Contract Date', { when: v.orientation_status > 0, disabled: v.final_interview_status !== 1 }))}
         {col(statusItem('orientation_status', 'Orientation Status', { disabled: !v.orientation_date }))}
-        <Col span={24}>{reasonItems('orientation', 'Orientation Non-Compliant Reason', v.orientation_status)}</Col>
+        <Col span={24}>{reasonItems('orientation', 'Orientation Non-Compliant Reason', v.orientation_status)}{failedItem(5)}</Col>
       </Row>
     )),
   ];
