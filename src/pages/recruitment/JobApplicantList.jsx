@@ -336,9 +336,11 @@ export default function JobApplicantList({ stageKey }) {
 
       {/* Status filter buttons, coloured like the status tags; the active
           one is filled, the rest outlined. Not on Hired — every row there
-          has the same outcome. */}
+          has the same outcome. Their own line, the fields below (display:
+          flex — Space is inline, so the two rows sat side by side on a
+          wide screen). */}
       {showStatusFilter && (
-        <Space wrap style={{ marginBottom: 16 }}>
+        <Space wrap style={{ display: 'flex', marginBottom: 12 }}>
           {STATUS_FILTERS.map((f) => {
             const active = statusFilter === f.value;
             return (
@@ -358,7 +360,7 @@ export default function JobApplicantList({ stageKey }) {
         </Space>
       )}
 
-      <Space wrap align="end" style={{ marginBottom: 16 }}>
+      <Space wrap align="end" style={{ display: 'flex', marginBottom: 16 }}>
         {/* filters on Enter or Search (not on every keystroke); clearing shows everything */}
         <Input.Search
           allowClear
