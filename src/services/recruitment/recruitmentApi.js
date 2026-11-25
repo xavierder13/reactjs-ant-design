@@ -120,6 +120,12 @@ const recruitmentApi = {
   //   copy_attempt_count }] }] } — newest first. section_scores: aptitude
   //   [{ section, correct, items }], personality [{ section, average (1–5), answered, items }]
   getOnlineExamResults: (applicantId) => axios.post(`/recruitment/online_exam/results/${applicantId}`),
+  // (careers-online-exam-results or -send) one submitted exam's answer sheet → { success,
+  //   applicant_id, exam: { id, code, title, kind, passing_percent }, submitted_at, score,
+  //   max_score, percent, passed, questions: [{ no, id, question, section, answer,
+  //   aptitude: options [{ key, text }], correct_option, correct;
+  //   personality: answer_label, reverse_scored, scored_as }] } (attempt_id from results)
+  getOnlineExamAnswers: (attemptId) => axios.post(`/recruitment/online_exam/answers/${attemptId}`),
   // (careers-online-exam-send) { invitation_id } → { success, message } — not once completed
   revokeOnlineExam: (invitationId) => axios.post('/recruitment/online_exam/revoke', { invitation_id: invitationId }),
 };

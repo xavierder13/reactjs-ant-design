@@ -2,11 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Button, Card, Checkbox, Descriptions, Empty, Modal, Popconfirm, Progress, Space, Spin, Tag, Tooltip, Typography, Alert, App,
 } from 'antd';
-import { CopyOutlined, ReloadOutlined, SendOutlined, StopOutlined, WarningOutlined } from '@ant-design/icons';
+import { CopyOutlined, EyeOutlined, ReloadOutlined, SendOutlined, StopOutlined, WarningOutlined } from '@ant-design/icons';
 
 import recruitmentApi from '../../../services/recruitment/recruitmentApi';
 import { copyText } from '../../../utils/referralLink';
 import { gatewayMessage, errorMessage } from './requirements';
+import ExamAnswersModal from './ExamAnswersModal';
 
 // Applicant drawer → Online Exam: the links sent to this applicant (careers
 // portal OnlineExamService) with each exam's result, Send exam link
@@ -30,7 +31,7 @@ const EXAM_STATUS = {
 };
 const when = (v) => (v ? new Date(v.replace(' ', 'T')).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }) : '-');
 
-function ExamResult({ exam }) {
+function ExamResult({ exam, onViewAnswers }) {
   const head = (
     <Space wrap size={6}>
       <Typography.Text strong>{exam.title || exam.code}</Typography.Text>
@@ -38,6 +39,9 @@ function ExamResult({ exam }) {
       {exam.late && <Tooltip title="Submitted after the time limit"><Tag color="orange">Late</Tag></Tooltip>}
       {exam.kind === 'aptitude' && exam.passed !== null && (
         <Tag color={exam.passed ? 'success' : 'error'}>{exam.passed ? 'Passed' : 'Failed'}</Tag>
+      )}
+      {exam.status === 'submitted' && exam.attempt_id && (
+        <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => onViewAnswers(exam.attempt_id)}>View answers</Button>
       )}
       {(exam.focus_lost_count > 0 || exam.copy_attempt_count > 0) && (
         <Tooltip title="The exam page lost focus (another tab / window) or blocked a copy / screenshot attempt">
@@ -94,6 +98,7 @@ export default function OnlineExamTab({ applicant, canSend }) {
   const [sendEmail, setSendEmail] = useState(true);
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState(null); // { link, message }
+  const [viewingAttempt, setViewingAttempt] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -189,9 +194,11 @@ export default function OnlineExamTab({ applicant, canSend }) {
             </Space>
           )}
         >
-          {inv.exams.map((exam) => <ExamResult key={exam.exam_id} exam={exam} />)}
+          {inv.exams.map((exam) => <ExamResult key={exam.exam_id} exam={exam} onViewAnswers={setViewingAttempt} />)}
         </Card>
       ))}
+
+      <ExamAnswersModal attemptId={viewingAttempt} onClose={() => setViewingAttempt(null)} />
 
       <Modal
         keyboard={false}

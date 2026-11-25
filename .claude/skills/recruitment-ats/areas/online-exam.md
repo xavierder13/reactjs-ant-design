@@ -18,6 +18,11 @@ expiry, through vueportal `recruitment/online_exam/*` → gateway
   status and result — aptitude (MDQ): score, %, Passed / Failed vs the
   exam's passing %, per area; personality (MPQ): each trait's average 1–5,
   no pass / fail — plus Late and the focus-lost / copy-screenshot counts.
+  **View answers** on a submitted exam → `ExamAnswersModal.jsx`
+  (`getOnlineExamAnswers(attempt_id)`): every question with the
+  applicant's answer — MDQ the correct option and ✓ / ✗ (filter Wrong /
+  Unanswered), MPQ the scale label, Reverse items and the score each
+  counted as (6 − answer).
   **Send exam link** (`-send`): pick exams (default all active), email it
   (needs an email; the link is shown to copy either way); a new link
   doesn't cancel older active ones. Copy / Revoke on active links (not once
