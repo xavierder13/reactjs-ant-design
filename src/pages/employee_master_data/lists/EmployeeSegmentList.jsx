@@ -9,7 +9,7 @@ import employeeApi from "../../../services/employee/employeeApi";
 import handleApiError from "../../../utils/handleApiError";
 import downloadBlobResponse from "../../../utils/downloadBlobResponse";
 import { EMPLOYEE_COLUMNS, DEFAULT_EMPLOYEE_COLUMNS } from "../components/employeeColumns";
-import ColumnSelector from "../components/ColumnSelector";
+import useEmployeeColumns from "../components/useEmployeeColumns";
 import EmployeeTable from "../components/EmployeeTable";
 import EmployeeCardMobile from "../components/EmployeeCardMobile";
 import PaginationControls from "../components/PaginationControls";
@@ -55,8 +55,10 @@ export default function EmployeeSegmentList({
   const [searchInput, setSearchInput] = useState("");
   const [filters, setFilters] = useState({ search: "", search_branch: "", search_position: "" });
   const { positionOptions, isLoading: positionsLoading } = useEmployeeFormOptions();
-  const [selectedHeaders, setSelectedHeaders] = useState(defaultColumns);
-  const shownColumns = [...selectedHeaders, ...extraColumns];
+  // ⚙ Columns: which columns (sent as table_headers, up to 8) and their order, per list, kept in this browser
+  const { columns: tableColumns, selectedHeaders, orderedHeaders, chooser: columnChooser } = useEmployeeColumns(
+    `table:employees:${returnTo}`, EMPLOYEE_COLUMNS, defaultColumns, { extraColumns, maxShown: 8 },
+  );
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -228,7 +230,7 @@ export default function EmployeeSegmentList({
             </Space>
           </Col>
           <Col flex="none">
-            <ColumnSelector headers={EMPLOYEE_COLUMNS} selectedHeaders={selectedHeaders} onChange={setSelectedHeaders} />
+            {columnChooser}
           </Col>
         </Row>
 
@@ -245,7 +247,7 @@ export default function EmployeeSegmentList({
         {!isMobile ? (
           <EmployeeTable
             employees={employees}
-            columns={shownColumns.map((h) => ({ title: h.title, dataIndex: h.dataIndex, render: h.render }))}
+            columns={tableColumns}
             loading={loading}
             pagination={{ ...pagination, showSizeChanger: true, pageSizeOptions: PAGE_SIZE_OPTIONS, showTotal: (total, [from, to]) => `${from}-${to} of ${total}` }}
             selectedRowKeys={selectedRowKeys}
@@ -259,7 +261,7 @@ export default function EmployeeSegmentList({
           <>
             <EmployeeCardMobile
               employees={employees}
-              selectedHeaders={shownColumns}
+              selectedHeaders={orderedHeaders}
               selectedRowKeys={selectedRowKeys}
               setSelectedRowKeys={setSelectedRowKeys}
               onDelete={deleteData}

@@ -96,8 +96,8 @@ export const EMPLOYEE_COLUMNS = [
     ),
   },
 ];
-// Kept in EMPLOYEE_COLUMNS order (Status is last there), matching the order
-// ColumnSelector produces when the user changes the selection.
+// Kept in EMPLOYEE_COLUMNS order (Status is last there) — the order the
+// ticked columns are sent in (useEmployeeColumns); the user may reorder.
 const DEFAULT_COLUMN_VALUES = [
   "branch.name",
   "employee_code",

@@ -192,6 +192,19 @@ src/api/axiosInstance.js      Shared axios instance + interceptors
 
 - AntD `Table` with `rowKey="id"`, `loading={isLoading}`,
   `pagination={{ pageSize: 10, showSizeChanger: true }}`.
+- **Column layout** (reference: sap-b1-web): a list page's table runs its
+  columns through `src/hooks/useTableColumns.jsx` —
+  `const { columns: shownColumns, chooser } = useTableColumns('table:<page path>', columns)`,
+  `{chooser}` before Refresh (`RecordToolbar` `extra`, a `Tabs`
+  `tabBarExtraContent` / `Card` `extra` per table), `columns={shownColumns}`.
+  Headers drag to reorder; the Columns button (`ColumnChooser`) shows / hides
+  and reorders. Saved per user and table in localStorage
+  (`store/tableLayoutStore.js`). Call it after the columns array is final (not
+  before a `columns.push`); a column with no `key` / `dataIndex` / plain-text
+  title needs a `key`; the actions column (key or title Actions / Action) is pinned right
+  and `fixed` columns stay pinned. `{ maxShown }` caps ticked columns. The
+  employee lists go through `employee_master_data/components/useEmployeeColumns.js`
+  (the ticked set is also the request's `table_headers`).
 - Client-side filtering (search text, status, date range) is done in-memory
   over the store's `items` array, not via server query params.
 - Status columns render an AntD `Tag` colored via a local

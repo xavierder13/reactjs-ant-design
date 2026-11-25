@@ -15,11 +15,15 @@ columns once a permission hid a button):
   (All/Active/Inactive), Branch, Rank and Position `Select`s (searchable,
   clearable; Branch and Rank only for the all-branch roles — see below),
   a "Clear filters" button shown only while any filter is set
-  (resets every filter, keeps the sort), `ColumnSelector`.
+  (resets every filter, keeps the sort), ⚙ Columns (`useEmployeeColumns` →
+  `useTableColumns`: tick up to 8, drag headers / ↑↓ to reorder, kept in
+  localStorage per list; the ticked set is `table_headers` in
+  `EMPLOYEE_COLUMNS` order, so a reorder doesn't re-fetch). Same on the
+  segment lists and Resigned (no cap there).
 - **Default columns** (`DEFAULT_EMPLOYEE_COLUMNS`): Branch, Emp. Code, Job
   Title Code, Lastname, Firstname, Middlename, Job Description, Status — kept in
-  `EMPLOYEE_COLUMNS` order, with Status last there so it stays last after
-  `ColumnSelector` changes. The Status column renders a green `success` /
+  `EMPLOYEE_COLUMNS` order, with Status last there (the user can then
+  reorder). The Status column renders a green `success` /
   grey `default` `Tag`, same as the View/Edit card header tag.
 - **Status filter** posts `search_status: 'Active' | 'Inactive'`; "All" is
   sent as `undefined` (key omitted) — the backend has no `'All'` case.
@@ -62,7 +66,7 @@ columns once a permission hid a button):
   backend maps `sort_field` through its own whitelist (join aliases for
   relation columns, real `employee_master_data` columns otherwise) and
   ignores anything else; `id` breaks ties. Empty relation values (`-`) sort
-  first ascending. A sort on a column hidden via `ColumnSelector` is
+  first ascending. A sort on a column hidden via ⚙ Columns is
   dropped. Paging and filtering keep the sort. A sort click fires only the
   Table's `onChange` (action `sort`), never `pagination.onChange`.
 - **Bulk action bar**: `components/SelectionBar.jsx` (main list and the

@@ -18,7 +18,8 @@ src/pages/employee_master_data/
     EmployeeTable.jsx             desktop table + row actions (View/Edit/Delete)
     EmployeeCardMobile.jsx        mobile card list, same actions
     employeeColumns.jsx           list columns (EMPLOYEE_COLUMNS / DEFAULT_EMPLOYEE_COLUMNS), shared with the segment lists
-    ColumnSelector.jsx            column picker (max 8 by default, `maxColumns` prop), part of the list request payload
+    useEmployeeColumns.js         ⚙ Columns for the employee lists (show ≤ 8 / reorder, localStorage) → selectedHeaders = table_headers
+    ColumnSelector.jsx            UNUSED (old multi-select picker, replaced by useEmployeeColumns)
     PaginationControls.jsx        mobile pagination UI
     EmployeeModal.jsx             UNUSED — see SKILL.md "Decisions" #3
     importDocumentTypes.js        bulk create/update document types (shared by the two modals below)

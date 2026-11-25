@@ -12,7 +12,7 @@ import offboardingApi from "../../../services/employee/offboardingApi";
 import handleApiError from "../../../utils/handleApiError";
 import downloadBlobResponse from "../../../utils/downloadBlobResponse";
 import { formatDate, toDayjs, DISPLAY_DATE_FORMAT } from "../../../utils/formatDate";
-import ColumnSelector from "../components/ColumnSelector";
+import useEmployeeColumns from "../components/useEmployeeColumns";
 import OffboardingFormFields from "../components/tabs/offboarding/OffboardingFormFields";
 import OffboardingFileSlot, { OffboardingFileSlots } from "../components/tabs/offboarding/OffboardingFileSlot";
 import BranchFilter from "./BranchFilter";
@@ -61,7 +61,10 @@ export default function ResignedEmployees() {
     date_field_param: "resignation_date_filed",
     date_range: [dayjs().startOf("month"), dayjs()],
   });
-  const [selectedColumns, setSelectedColumns] = useState(COLUMNS);
+  // ⚙ Columns: which columns (sent as table_headers) and their order, kept in this browser
+  const { columns: dataColumns, selectedHeaders: selectedColumns, chooser } = useEmployeeColumns(
+    "table:employee_master_data/lists/ResignedEmployees", COLUMNS, COLUMNS,
+  );
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [pendingFiles, setPendingFiles] = useState({});
@@ -208,7 +211,7 @@ export default function ResignedEmployees() {
   };
 
   const columns = [
-    ...selectedColumns.map(({ title, dataIndex, render }) => ({ title, dataIndex, render, key: dataIndex })),
+    ...dataColumns,
     ...(canEdit || canDelete ? [{
       title: "Actions",
       key: "actions",
@@ -270,6 +273,7 @@ export default function ResignedEmployees() {
             </Col>
             <Col flex="none">
               <Space wrap>
+                {chooser}
                 <Button icon={<ReloadOutlined />} onClick={refresh} disabled={loading}>Refresh</Button>
                 {can("employee-master-data-export") && (
                   <Button icon={<ExportOutlined />} onClick={handleExport} loading={exporting}>Export</Button>
@@ -307,9 +311,6 @@ export default function ResignedEmployees() {
             allowEmpty={[true, true]}
           />
         </Space>
-        <div style={{ marginBottom: 16 }}>
-          <ColumnSelector headers={COLUMNS} selectedHeaders={selectedColumns} onChange={setSelectedColumns} maxColumns={COLUMNS.length} />
-        </div>
 
         <Table
           rowKey="id"

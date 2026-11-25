@@ -33,7 +33,7 @@ import useAuth from "../../hooks/useAuth";
 import useListAccess from "./lists/useListAccess";
 import handleApiError from "../../utils/handleApiError";
 
-import ColumnSelector from "./components/ColumnSelector";
+import useEmployeeColumns from "./components/useEmployeeColumns";
 import EmployeeTable from "./components/EmployeeTable";
 import EmployeeCardMobile from "./components/EmployeeCardMobile";
 import PaginationControls from "./components/PaginationControls";
@@ -100,7 +100,19 @@ export default function EmployeeMasterData() {
   // Server-side column sort: { field: column value, order: 'ascend' | 'descend' }
   // or null (backend default order).
   const [sort, setSort] = useState(null);
-  const [selectedHeaders, setSelectedHeaders] = useState(defaultHeaders);
+  // ⚙ Columns: which columns (sent as table_headers, up to 8) and their order, kept in this browser
+  const { columns: tableColumns, selectedHeaders, orderedHeaders, chooser: columnChooser } = useEmployeeColumns(
+    "table:employees", headers, defaultHeaders, {
+      maxShown: 8,
+      toColumn: (h) => ({
+        title: h.title,
+        dataIndex: h.dataIndex,
+        render: h.render,
+        sorter: true,
+        sortOrder: sort?.field === h.value ? sort.order : null,
+      }),
+    },
+  );
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [generateTemplateOpen, setGenerateTemplateOpen] = useState(false);
@@ -410,7 +422,7 @@ export default function EmployeeMasterData() {
             </Button>
           )}
 
-          <ColumnSelector headers={headers} selectedHeaders={selectedHeaders} onChange={setSelectedHeaders} />
+          {columnChooser}
         </Space>
 
         {selectedRowKeys.length > 0 && (
@@ -436,14 +448,7 @@ export default function EmployeeMasterData() {
         {!isMobile && (
           <EmployeeTable
             employees={employees}
-            columns={selectedHeaders.map((h) => ({
-              key: h.value,
-              title: h.title,
-              dataIndex: h.dataIndex,
-              render: h.render,
-              sorter: true,
-              sortOrder: sort?.field === h.value ? sort.order : null,
-            }))}
+            columns={tableColumns}
             loading={isLoading}
             pagination={pagination}
             pageSizeOptions={PAGE_SIZE_OPTIONS}
@@ -461,7 +466,7 @@ export default function EmployeeMasterData() {
           <>
             <EmployeeCardMobile
               employees={employees}
-              selectedHeaders={selectedHeaders}
+              selectedHeaders={orderedHeaders}
               selectedRowKeys={selectedRowKeys}
               setSelectedRowKeys={setSelectedRowKeys}
               onDelete={deleteData}
