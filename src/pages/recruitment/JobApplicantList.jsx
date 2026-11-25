@@ -364,7 +364,7 @@ export default function JobApplicantList({ stageKey }) {
           allowClear
           placeholder="Search name, position, branch, email, contact"
           style={{ width: 360 }}
-          enterButton={<><SearchOutlined /> Search</>}
+          enterButton={<Button icon={<SearchOutlined />}>Search</Button>} /* outlined, not the primary color */
           value={searchInput}
           onChange={(e) => {
             setSearchInput(e.target.value);
