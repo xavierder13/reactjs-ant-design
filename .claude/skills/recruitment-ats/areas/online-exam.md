@@ -20,7 +20,7 @@ expiry, through vueportal `recruitment/online_exam/*` → gateway
   no pass / fail — plus Late and the focus-lost / copy-screenshot counts.
   Each exam is an `ExamResultCard.jsx` panel: time taken (of the limit),
   focus / copy flags; MDQ the score bar (`ScoreBar`: a labelled "Pass N%"
-  marker across it, below-pass zone shaded) and each
+  marker in amber (warning color) across it, below-pass zone shaded) and each
   area's bar + Strong (≥ 80%) / Average (≥ 60%) / Needs work; MPQ each
   trait's bar + High (≥ 4.0) / Moderate (≥ 2.5) / Low and a one-line
   reading (`TRAIT_READING` — sample traits; a new trait shows no reading).

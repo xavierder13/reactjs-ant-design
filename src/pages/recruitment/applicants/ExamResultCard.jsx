@@ -73,7 +73,8 @@ function Row({ label, children, value, tag }) {
 }
 
 // The score bar with the passing mark: the part below the mark shaded, a
-// tall marker line across the bar and a "Pass 60%" label above it.
+// tall amber marker line across the bar and a "Pass 60%" label above it
+// (amber = threshold; distinct from the green / red score colors).
 function ScoreBar({ percent, pass, passed }) {
   const { token } = theme.useToken();
   const fill = passed === false ? token.colorError : token.colorSuccess;
@@ -88,10 +89,10 @@ function ScoreBar({ percent, pass, passed }) {
       {pass !== null && (
         <Tooltip title={`Passing mark ${pass}% — at or above it is Passed`}>
           <div style={{ position: 'absolute', left: `${pass}%`, top: 0, bottom: -4, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'default' }}>
-            <span style={{ fontSize: 11, fontWeight: 600, lineHeight: '16px', padding: '0 6px', borderRadius: 4, background: token.colorText, color: token.colorBgContainer, whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 600, lineHeight: '16px', padding: '0 6px', borderRadius: 4, background: token.colorWarning, color: 'rgba(0, 0, 0, 0.88)', whiteSpace: 'nowrap' }}>
               Pass {pass}%
             </span>
-            <span style={{ flex: 1, width: 3, background: token.colorText, borderRadius: 2, marginTop: 2 }} />
+            <span style={{ flex: 1, width: 3, background: token.colorWarning, borderRadius: 2, marginTop: 2, boxShadow: `0 0 0 1px ${token.colorBgContainer}` }} />
           </div>
         </Tooltip>
       )}
